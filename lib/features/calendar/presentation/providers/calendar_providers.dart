@@ -24,7 +24,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   @override
   Future<List<CalendarEvent>> build() async {
     final selectedDate = ref.watch(selectedDateProvider);
-    final repository = ref.read(calendarRepositoryProvider);
+    final repository = ref.watch(calendarRepositoryProvider);
     return repository.getEventsByMonth(selectedDate.year, selectedDate.month);
   }
 

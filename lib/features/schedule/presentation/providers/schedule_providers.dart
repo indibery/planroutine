@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../data/schedule_repository.dart';
 import '../../domain/schedule.dart';
 
@@ -34,10 +35,18 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     return repository.getSchedules(status: status, category: category);
   }
 
-  /// 일정 상태 변경
+  /// 일정 상태 변경 (확정 시 캘린더 이벤트 자동 생성)
   Future<void> updateStatus(int id, ScheduleStatus status) async {
     final repository = ref.read(scheduleRepositoryProvider);
     await repository.updateStatus(id, status);
+
+    // 확정 시 캘린더 이벤트 자동 생성
+    if (status == ScheduleStatus.confirmed) {
+      final calendarRepo = ref.read(calendarRepositoryProvider);
+      await calendarRepo.createFromSchedule(id);
+      ref.invalidate(selectedMonthEventsProvider);
+    }
+
     ref.invalidateSelf();
   }
 
@@ -65,10 +74,26 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
-  /// 검토 대기 일정 일괄 확정
+  /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성)
   Future<void> confirmAllPending() async {
     final repository = ref.read(scheduleRepositoryProvider);
+
+    // 확정 전에 pending 일정 ID를 미리 조회
+    final pendingSchedules = await repository.getSchedules(
+      status: ScheduleStatus.pending,
+    );
+
     await repository.confirmAllPending();
+
+    // 각 확정된 일정에 대해 캘린더 이벤트 생성
+    final calendarRepo = ref.read(calendarRepositoryProvider);
+    for (final schedule in pendingSchedules) {
+      if (schedule.id != null) {
+        await calendarRepo.createFromSchedule(schedule.id!);
+      }
+    }
+    ref.invalidate(selectedMonthEventsProvider);
+
     ref.invalidateSelf();
   }
 
