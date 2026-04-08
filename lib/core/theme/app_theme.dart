@@ -24,6 +24,8 @@ class AppTheme {
           scrolledUnderElevation: 1,
         ),
         cardTheme: CardThemeData(
+          color: Colors.white,
+          surfaceTintColor: Colors.transparent,
           elevation: AppSizes.cardElevation,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.radius12),

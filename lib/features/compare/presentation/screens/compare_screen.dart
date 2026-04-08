@@ -140,6 +140,15 @@ class CompareScreen extends ConsumerWidget {
       grouped.putIfAbsent(item.sortMonth, () => []).add(item);
     }
 
+    // 각 월 그룹 내 날짜 오름차순 정렬
+    for (final entries in grouped.values) {
+      entries.sort((a, b) {
+        final dayA = _extractDay(a);
+        final dayB = _extractDay(b);
+        return dayA.compareTo(dayB);
+      });
+    }
+
     final sortedMonths = grouped.keys.toList()..sort();
 
     return ListView.builder(
@@ -244,6 +253,18 @@ class CompareScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// CompareItem에서 일(day) 추출
+  int _extractDay(CompareItem item) {
+    final dateStr = item.lastYearItem?.registrationDate ??
+        item.thisYearItem?.scheduledDate ??
+        '';
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length >= 3) return int.parse(parts[2]);
+    } catch (_) {}
+    return 1;
   }
 }
 
