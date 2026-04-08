@@ -19,63 +19,83 @@ class CalendarScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
     final monthEventsMap = ref.watch(monthEventsMapProvider);
-    final dateEvents = ref.watch(selectedDateEventsProvider);
+    final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.calendarTitle)),
       body: Column(
         children: [
           _buildMonthHeader(context, ref, selectedDate),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
-            child: monthEventsMap.when(
-              data: (eventsMap) => CalendarGrid(
-                year: selectedDate.year,
-                month: selectedDate.month,
-                selectedDate: selectedDate,
-                eventsMap: eventsMap,
-                onDateSelected: (date) {
-                  ref.read(selectedDateProvider.notifier).state = date;
-                },
-              ),
-              loading: () => const SizedBox(
-                height: 280,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (_, _) => const SizedBox(
-                height: 280,
-                child: Center(child: Text(AppStrings.error)),
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if (details.primaryVelocity == null) return;
+              if (details.primaryVelocity! < 0) {
+                // 왼쪽 스와이프 → 다음 달
+                final next = DateTime(selectedDate.year, selectedDate.month + 1, 1);
+                ref.read(selectedDateProvider.notifier).state = next;
+              } else if (details.primaryVelocity! > 0) {
+                // 오른쪽 스와이프 → 이전 달
+                final prev = DateTime(selectedDate.year, selectedDate.month - 1, 1);
+                ref.read(selectedDateProvider.notifier).state = prev;
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
+              child: monthEventsMap.when(
+                data: (eventsMap) => CalendarGrid(
+                  year: selectedDate.year,
+                  month: selectedDate.month,
+                  selectedDate: selectedDate,
+                  eventsMap: eventsMap,
+                  onDateSelected: (date) {
+                    ref.read(selectedDateProvider.notifier).state = date;
+                  },
+                ),
+                loading: () => const SizedBox(
+                  height: 280,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, _) => const SizedBox(
+                  height: 280,
+                  child: Center(child: Text(AppStrings.error)),
+                ),
               ),
             ),
           ),
           const Divider(height: 1),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                top: AppSizes.spacing16,
-                bottom: AppSizes.spacing48,
-              ),
-              child: dateEvents.when(
-                data: (events) => EventListSection(
-                  selectedDate: selectedDate,
-                  events: events,
-                  onEventTap: (event) => _onEditEvent(context, ref, event),
-                  onEventLongPress: (event) =>
-                      _onDeleteEvent(context, ref, event),
-                ),
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppSizes.spacing32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (_, _) => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppSizes.spacing32),
-                    child: Text(AppStrings.error),
-                  ),
-                ),
-              ),
+            child: monthEventsGrouped.when(
+              data: (groupedEntries) => groupedEntries.isEmpty
+                  ? const Center(
+                      child: Text(
+                        AppStrings.calendarNoEvents,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(
+                        top: AppSizes.spacing16,
+                        bottom: AppSizes.spacing48,
+                      ),
+                      itemCount: groupedEntries.length,
+                      itemBuilder: (context, index) {
+                        final entry = groupedEntries[index];
+                        final date = DateTime.parse(entry.key);
+                        return EventListSection(
+                          selectedDate: date,
+                          events: entry.value,
+                          onEventTap: (event) =>
+                              _onEditEvent(context, ref, event),
+                          onEventLongPress: (event) =>
+                              _onDeleteEvent(context, ref, event),
+                        );
+                      },
+                    ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) => const Center(child: Text(AppStrings.error)),
             ),
           ),
         ],
