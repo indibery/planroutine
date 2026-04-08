@@ -16,6 +16,7 @@ class CalendarRepository {
 
   /// 이벤트 수정
   Future<int> updateEvent(CalendarEvent event) async {
+    if (event.id == null) return 0;
     final db = await _dbHelper.database;
     final map = event.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();

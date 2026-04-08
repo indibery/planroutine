@@ -23,8 +23,10 @@ class CsvParser {
 
   /// CSV 문자열을 파싱하여 ImportedSchedule 목록 반환
   List<ImportedSchedule> parse(String csvContent) {
+    // Windows(\r\n) 및 구형 Mac(\r) EOL 정규화
+    final normalized = csvContent.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     final converter = const CsvToListConverter(eol: '\n');
-    final rows = converter.convert(csvContent.trim());
+    final rows = converter.convert(normalized.trim());
 
     if (rows.isEmpty) {
       return [];

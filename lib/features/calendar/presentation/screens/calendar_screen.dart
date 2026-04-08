@@ -201,10 +201,10 @@ class CalendarScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed == true && event.id != null) {
-      await ref
-          .read(selectedMonthEventsProvider.notifier)
-          .deleteEvent(event.id!);
+    if (confirmed == true) {
+      if (event.id case final id?) {
+        await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+      }
     }
   }
 }

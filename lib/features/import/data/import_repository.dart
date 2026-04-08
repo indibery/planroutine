@@ -105,7 +105,7 @@ class ImportRepository {
     final summary = <String, int>{};
     for (final row in results) {
       final category = row['category'] as String? ?? '미분류';
-      final count = row['count'] as int;
+      final count = (row['count'] as num).toInt();
       summary[category] = count;
     }
     return summary;
