@@ -38,26 +38,27 @@ planroutine/
 │   ├── core/
 │   │   ├── constants/       # app_strings, app_colors, app_sizes
 │   │   ├── theme/           # app_theme
-│   │   ├── router/          # GoRouter 설정
-│   │   └── database/        # DatabaseHelper (sqflite)
+│   │   ├── router/          # GoRouter 설정 (ShellRoute + 4탭)
+│   │   └── database/        # DatabaseHelper (sqflite, 3 테이블)
 │   ├── features/
 │   │   ├── import/          # CSV 가져오기
 │   │   │   ├── data/        # csv_parser, import_repository
-│   │   │   ├── domain/      # schedule_item.dart (@freezed)
-│   │   │   └── presentation/
+│   │   │   ├── domain/      # imported_schedule.dart (@freezed)
+│   │   │   └── presentation/ # screens, widgets, providers
 │   │   ├── compare/         # 비교 뷰
-│   │   │   └── presentation/
+│   │   │   ├── data/        # compare_repository (매칭 로직)
+│   │   │   ├── domain/      # compare_item.dart (@freezed)
+│   │   │   └── presentation/ # screens, widgets, providers
 │   │   ├── schedule/        # 일정 검토/확정
 │   │   │   ├── data/        # schedule_repository
-│   │   │   ├── domain/      # schedule.dart
-│   │   │   └── presentation/
+│   │   │   ├── domain/      # schedule.dart (@freezed)
+│   │   │   └── presentation/ # screens, widgets, providers
 │   │   └── calendar/        # 자체 캘린더
 │   │       ├── data/        # calendar_repository
-│   │       ├── domain/      # calendar_event.dart
-│   │       └── presentation/
+│   │       ├── domain/      # calendar_event.dart (@freezed)
+│   │       └── presentation/ # screens, widgets, providers
 │   └── shared/
-│       ├── widgets/         # 공통 위젯
-│       └── models/
+│       └── widgets/         # main_shell (하단 탭 네비게이션)
 ├── data/
 │   └── sample/              # 테스트용 샘플 CSV
 ├── docs/
