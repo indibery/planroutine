@@ -1,0 +1,112 @@
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
+/// SQLite 데이터베이스 관리
+class DatabaseHelper {
+  DatabaseHelper._();
+  static final instance = DatabaseHelper._();
+
+  static const _databaseName = 'planroutine.db';
+  static const _databaseVersion = 1;
+
+  // 테이블명
+  static const tableImportedSchedules = 'imported_schedules';
+  static const tableSchedules = 'schedules';
+  static const tableCalendarEvents = 'calendar_events';
+
+  Database? _database;
+
+  Future<Database> get database async {
+    _database ??= await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, _databaseName);
+    return openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: _onCreate,
+    );
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    // CSV에서 가져온 작년 일정 (원본 보관)
+    await db.execute('''
+      CREATE TABLE $tableImportedSchedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_number TEXT,
+        approval_type TEXT,
+        title TEXT NOT NULL,
+        drafter TEXT,
+        registration_date TEXT NOT NULL,
+        category TEXT,
+        sub_category TEXT,
+        retention_period TEXT,
+        source_year INTEGER,
+        imported_at TEXT NOT NULL
+      )
+    ''');
+
+    // 올해 확정 일정
+    await db.execute('''
+      CREATE TABLE $tableSchedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        scheduled_date TEXT NOT NULL,
+        category TEXT,
+        sub_category TEXT,
+        source_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (source_id) REFERENCES $tableImportedSchedules(id)
+      )
+    ''');
+
+    // 캘린더 이벤트
+    await db.execute('''
+      CREATE TABLE $tableCalendarEvents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        event_date TEXT NOT NULL,
+        end_date TEXT,
+        is_all_day INTEGER NOT NULL DEFAULT 1,
+        color TEXT,
+        schedule_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
+      )
+    ''');
+
+    // 인덱스
+    await db.execute(
+      'CREATE INDEX idx_imported_date ON $tableImportedSchedules(registration_date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_imported_category ON $tableImportedSchedules(category)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_schedule_date ON $tableSchedules(scheduled_date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_schedule_status ON $tableSchedules(status)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_event_date ON $tableCalendarEvents(event_date)',
+    );
+  }
+
+  /// 데이터베이스 닫기
+  Future<void> close() async {
+    final db = _database;
+    if (db != null) {
+      await db.close();
+      _database = null;
+    }
+  }
+}
