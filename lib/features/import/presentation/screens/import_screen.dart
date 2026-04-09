@@ -234,9 +234,14 @@ class ImportScreen extends ConsumerWidget {
         .registerAllAsSchedules(schedules);
     ref.invalidate(schedulesProvider);
     if (context.mounted) {
-      final msg = result.skipped > 0
-          ? '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)'
-          : '${result.created}${AppStrings.importRegisterCount}';
+      String msg;
+      if (result.created == 0 && result.skipped > 0) {
+        msg = '이미 전체 등록됨 (${result.skipped}건 중복)';
+      } else if (result.skipped > 0) {
+        msg = '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
+      } else {
+        msg = '${result.created}${AppStrings.importRegisterCount}';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
@@ -282,9 +287,14 @@ class ImportScreen extends ConsumerWidget {
     ref.invalidate(schedulesProvider);
     _cancelSelectMode(ref);
     if (context.mounted) {
-      final msg = result.skipped > 0
-          ? '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)'
-          : '${result.created}${AppStrings.importRegisterCount}';
+      String msg;
+      if (result.created == 0 && result.skipped > 0) {
+        msg = '이미 등록된 항목입니다 (${result.skipped}건 중복)';
+      } else if (result.skipped > 0) {
+        msg = '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
+      } else {
+        msg = '${result.created}${AppStrings.importRegisterCount}';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
