@@ -78,17 +78,8 @@ final monthEventsMapProvider =
 /// 현재 월의 이벤트를 날짜별로 그룹화하여 정렬된 리스트로 반환
 final monthEventsGroupedProvider =
     Provider<AsyncValue<List<MapEntry<String, List<CalendarEvent>>>>>((ref) {
-  final monthEvents = ref.watch(selectedMonthEventsProvider);
-
-  return monthEvents.whenData((events) {
-    final map = <String, List<CalendarEvent>>{};
-    for (final event in events) {
-      map.putIfAbsent(event.eventDate, () => []).add(event);
-    }
-    // 날짜순 정렬
-    final sorted = map.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    return sorted;
+  return ref.watch(monthEventsMapProvider).whenData((map) {
+    return map.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
   });
 });
 

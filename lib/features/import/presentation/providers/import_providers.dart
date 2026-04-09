@@ -7,7 +7,7 @@ import '../../data/csv_parser.dart';
 import '../../data/import_repository.dart';
 import '../../domain/imported_schedule.dart';
 import '../../../schedule/data/schedule_repository.dart';
-
+import '../../../schedule/presentation/providers/schedule_providers.dart';
 /// ImportRepository 프로바이더
 final importRepositoryProvider = Provider<ImportRepository>((ref) {
   return ImportRepository();
@@ -46,9 +46,11 @@ class ImportError extends ImportState {
 
 /// 가져오기 상태 관리 Notifier
 class ImportStateNotifier extends StateNotifier<ImportState> {
-  ImportStateNotifier(this._repository) : super(const ImportInitial());
+  ImportStateNotifier(this._repository, this._scheduleRepository)
+      : super(const ImportInitial());
 
   final ImportRepository _repository;
+  final ScheduleRepository _scheduleRepository;
 
   /// 파일 선택 후 CSV 가져오기
   Future<void> pickAndImportCsv() async {
@@ -113,8 +115,7 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
       items.add((importedId: schedule.id!, date: date));
     }
 
-    final repository = ScheduleRepository();
-    return repository.createBulkFromImported(items);
+    return _scheduleRepository.createBulkFromImported(items);
   }
 
   /// 등록일자를 올해 날짜로 변환
@@ -136,8 +137,9 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
 /// ImportState 프로바이더
 final importStateProvider =
     StateNotifierProvider<ImportStateNotifier, ImportState>((ref) {
-  final repository = ref.watch(importRepositoryProvider);
-  return ImportStateNotifier(repository);
+  final importRepo = ref.watch(importRepositoryProvider);
+  final scheduleRepo = ref.watch(scheduleRepositoryProvider);
+  return ImportStateNotifier(importRepo, scheduleRepo);
 });
 
 /// 저장된 일정 목록 프로바이더 (연도/카테고리 필터)

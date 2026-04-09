@@ -223,6 +223,19 @@ class ImportScreen extends ConsumerWidget {
     );
   }
 
+  /// 등록 결과 메시지 생성
+  String _buildResultMessage(
+    ({int created, int skipped}) result, {
+    String allSkippedMessage = '이미 전체 등록됨',
+  }) {
+    if (result.created == 0 && result.skipped > 0) {
+      return '$allSkippedMessage (${result.skipped}건 중복)';
+    } else if (result.skipped > 0) {
+      return '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
+    }
+    return '${result.created}${AppStrings.importRegisterCount}';
+  }
+
   /// 전체 등록
   Future<void> _registerAll(
     BuildContext context,
@@ -234,16 +247,8 @@ class ImportScreen extends ConsumerWidget {
         .registerAllAsSchedules(schedules);
     ref.invalidate(schedulesProvider);
     if (context.mounted) {
-      String msg;
-      if (result.created == 0 && result.skipped > 0) {
-        msg = '이미 전체 등록됨 (${result.skipped}건 중복)';
-      } else if (result.skipped > 0) {
-        msg = '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
-      } else {
-        msg = '${result.created}${AppStrings.importRegisterCount}';
-      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
+        SnackBar(content: Text(_buildResultMessage(result))),
       );
     }
   }
@@ -287,16 +292,13 @@ class ImportScreen extends ConsumerWidget {
     ref.invalidate(schedulesProvider);
     _cancelSelectMode(ref);
     if (context.mounted) {
-      String msg;
-      if (result.created == 0 && result.skipped > 0) {
-        msg = '이미 등록된 항목입니다 (${result.skipped}건 중복)';
-      } else if (result.skipped > 0) {
-        msg = '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
-      } else {
-        msg = '${result.created}${AppStrings.importRegisterCount}';
-      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
+        SnackBar(
+          content: Text(_buildResultMessage(
+            result,
+            allSkippedMessage: '이미 등록된 항목입니다',
+          )),
+        ),
       );
     }
   }

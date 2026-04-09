@@ -53,6 +53,10 @@ class AppStrings {
   static const scheduleAll = '전체';
   static const scheduleEmpty = '등록된 일정이 없습니다';
   static const scheduleEmptyFiltered = '해당 조건의 일정이 없습니다';
+  static const scheduleResetTitle = '전체 초기화';
+  static const scheduleResetMessage = '등록된 일정을 모두 삭제합니다.\n이 작업은 되돌릴 수 없습니다.';
+  static const scheduleResetConfirm = '초기화';
+  static const scheduleResetDone = '전체 초기화 완료';
   static const scheduleBulkConfirmTitle = '일괄 확정';
   static const scheduleBulkConfirmMessage = '검토 대기 중인 일정을 모두 확정하시겠습니까?';
   static const scheduleDeleteConfirm = '이 일정을 삭제하시겠습니까?';
