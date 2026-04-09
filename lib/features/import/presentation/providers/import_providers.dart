@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/csv_parser.dart';
 import '../../data/import_repository.dart';
 import '../../domain/imported_schedule.dart';
+import '../../../schedule/data/schedule_repository.dart';
 
 /// ImportRepository 프로바이더
 final importRepositoryProvider = Provider<ImportRepository>((ref) {
@@ -70,10 +71,10 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
         return;
       }
 
-      // 파일 바이트 읽기 및 디코딩
+      // 파일 바이트 읽기 및 디코딩 (UTF-8 → EUC-KR 순서로 시도)
       final bytes = await File(path).readAsBytes();
       final csvParser = const CsvParser();
-      final csvContent = csvParser.decodeBytes(bytes);
+      final csvContent = await csvParser.decodeBytes(bytes);
 
       // 파싱 및 DB 저장
       final schedules = await _repository.importFromCsv(csvContent);
@@ -96,6 +97,32 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
       );
     } catch (e) {
       state = ImportError('가져오기 중 오류: $e');
+    }
+  }
+
+  /// 가져온 일정을 올해 일정으로 일괄 등록
+  Future<int> registerAllAsSchedules(List<ImportedSchedule> schedules) async {
+    final thisYear = DateTime.now().year;
+    final items = <({int importedId, DateTime date})>[];
+
+    for (final schedule in schedules) {
+      if (schedule.id == null) continue;
+      final date = _convertToThisYear(schedule.registrationDate, thisYear);
+      items.add((importedId: schedule.id!, date: date));
+    }
+
+    final repository = ScheduleRepository();
+    final ids = await repository.createBulkFromImported(items);
+    return ids.length;
+  }
+
+  /// 등록일자를 올해 날짜로 변환
+  DateTime _convertToThisYear(String dateStr, int year) {
+    try {
+      final parsed = DateTime.parse(dateStr);
+      return DateTime(year, parsed.month, parsed.day);
+    } catch (_) {
+      return DateTime(year, 1, 1);
     }
   }
 
@@ -129,3 +156,9 @@ final importedYearsProvider = FutureProvider<List<int>>((ref) async {
   final repository = ref.watch(importRepositoryProvider);
   return repository.getImportedYears();
 });
+
+/// 선택 모드 상태
+final importSelectModeProvider = StateProvider<bool>((ref) => false);
+
+/// 선택된 일정 ID 목록
+final selectedImportIdsProvider = StateProvider<Set<int>>((ref) => {});

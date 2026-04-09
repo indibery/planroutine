@@ -179,6 +179,12 @@ class ScheduleRepository {
     return result.map(Schedule.fromMap).toList();
   }
 
+  /// 전체 일정 삭제 (테스트용)
+  Future<int> deleteAll() async {
+    final db = await _dbHelper.database;
+    return db.delete(DatabaseHelper.tableSchedules);
+  }
+
   /// 검토 대기 상태 일정 일괄 확정
   Future<int> confirmAllPending() async {
     final db = await _dbHelper.database;
