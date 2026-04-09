@@ -38,9 +38,12 @@ dependencies:
 
   # 날짜 포맷
   intl: ^0.20.2
+  charset_converter: ^2.3.0
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
