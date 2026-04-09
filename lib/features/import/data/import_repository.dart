@@ -13,7 +13,7 @@ class ImportRepository {
   final DatabaseHelper _databaseHelper;
   final CsvParser _csvParser;
 
-  /// CSV 콘텐츠를 파싱하여 DB에 일괄 저장
+  /// CSV 콘텐츠를 파싱하여 DB에 일괄 저장 (ID 포함 반환)
   Future<List<ImportedSchedule>> importFromCsv(String csvContent) async {
     final schedules = _csvParser.parse(csvContent);
     if (schedules.isEmpty) {
@@ -30,8 +30,12 @@ class ImportRepository {
       );
     }
 
-    await batch.commit(noResult: true);
-    return schedules;
+    final results = await batch.commit();
+
+    // 삽입된 ID를 반영한 목록 반환
+    return List.generate(schedules.length, (i) {
+      return schedules[i].copyWith(id: results[i] as int);
+    });
   }
 
   /// 저장된 일정 조회 (연도/카테고리 필터)
