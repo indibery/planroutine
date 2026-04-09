@@ -100,8 +100,10 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
     }
   }
 
-  /// 가져온 일정을 올해 일정으로 일괄 등록
-  Future<int> registerAllAsSchedules(List<ImportedSchedule> schedules) async {
+  /// 가져온 일정을 올해 일정으로 일괄 등록 (중복 자동 스킵)
+  Future<({int created, int skipped})> registerAllAsSchedules(
+    List<ImportedSchedule> schedules,
+  ) async {
     final thisYear = DateTime.now().year;
     final items = <({int importedId, DateTime date})>[];
 
@@ -112,8 +114,7 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
     }
 
     final repository = ScheduleRepository();
-    final ids = await repository.createBulkFromImported(items);
-    return ids.length;
+    return repository.createBulkFromImported(items);
   }
 
   /// 등록일자를 올해 날짜로 변환
