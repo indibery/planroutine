@@ -116,12 +116,13 @@ class ImportScreen extends ConsumerWidget {
 
     return Column(
       children: [
-        // 요약 카드
-        ImportSummaryCard(
-          totalCount: schedules.length,
-          categorySummary: categorySummary,
-          sourceYear: sourceYear,
-        ),
+        // 요약 카드 (선택 모드에서는 숨김)
+        if (!isSelectMode)
+          ImportSummaryCard(
+            totalCount: schedules.length,
+            categorySummary: categorySummary,
+            sourceYear: sourceYear,
+          ),
         // 액션 버튼 영역
         if (!isSelectMode)
           Padding(
@@ -228,13 +229,16 @@ class ImportScreen extends ConsumerWidget {
     WidgetRef ref,
     List<ImportedSchedule> schedules,
   ) async {
-    final count = await ref
+    final result = await ref
         .read(importStateProvider.notifier)
         .registerAllAsSchedules(schedules);
     ref.invalidate(schedulesProvider);
     if (context.mounted) {
+      final msg = result.skipped > 0
+          ? '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)'
+          : '${result.created}${AppStrings.importRegisterCount}';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$count${AppStrings.importRegisterCount}')),
+        SnackBar(content: Text(msg)),
       );
     }
   }
@@ -272,14 +276,17 @@ class ImportScreen extends ConsumerWidget {
     final selectedIds = ref.read(selectedImportIdsProvider);
     final selected =
         schedules.where((s) => selectedIds.contains(s.id)).toList();
-    final count = await ref
+    final result = await ref
         .read(importStateProvider.notifier)
         .registerAllAsSchedules(selected);
     ref.invalidate(schedulesProvider);
     _cancelSelectMode(ref);
     if (context.mounted) {
+      final msg = result.skipped > 0
+          ? '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)'
+          : '${result.created}${AppStrings.importRegisterCount}';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$count${AppStrings.importRegisterCount}')),
+        SnackBar(content: Text(msg)),
       );
     }
   }

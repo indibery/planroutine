@@ -8,12 +8,22 @@ class ScheduleRepository {
   ScheduleRepository({DatabaseHelper? dbHelper})
       : _dbHelper = dbHelper ?? DatabaseHelper.instance;
 
-  /// 가져온 일정에서 새 일정 생성
+  /// 가져온 일정에서 새 일정 생성 (중복 source_id 스킵, -1 반환)
   Future<int> createFromImported(
     int importedScheduleId,
     DateTime scheduledDate,
   ) async {
     final db = await _dbHelper.database;
+
+    // 중복 확인
+    final existing = await db.query(
+      DatabaseHelper.tableSchedules,
+      where: 'source_id = ?',
+      whereArgs: [importedScheduleId],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) return -1;
+
     final imported = await db.query(
       DatabaseHelper.tableImportedSchedules,
       where: 'id = ?',
@@ -40,15 +50,29 @@ class ScheduleRepository {
     return db.insert(DatabaseHelper.tableSchedules, schedule.toMap());
   }
 
-  /// 여러 가져온 일정에서 일괄 생성
-  Future<List<int>> createBulkFromImported(
+  /// 여러 가져온 일정에서 일괄 생성 (중복 source_id 스킵)
+  /// 반환: (등록 건수, 스킵 건수)
+  Future<({int created, int skipped})> createBulkFromImported(
     List<({int importedId, DateTime date})> items,
   ) async {
     final db = await _dbHelper.database;
-    final ids = <int>[];
+    var created = 0;
+    var skipped = 0;
 
     await db.transaction((txn) async {
       for (final item in items) {
+        // 이미 등록된 source_id인지 확인
+        final existing = await txn.query(
+          DatabaseHelper.tableSchedules,
+          where: 'source_id = ?',
+          whereArgs: [item.importedId],
+          limit: 1,
+        );
+        if (existing.isNotEmpty) {
+          skipped++;
+          continue;
+        }
+
         final imported = await txn.query(
           DatabaseHelper.tableImportedSchedules,
           where: 'id = ?',
@@ -70,15 +94,15 @@ class ScheduleRepository {
           updatedAt: now,
         );
 
-        final id = await txn.insert(
+        await txn.insert(
           DatabaseHelper.tableSchedules,
           schedule.toMap(),
         );
-        ids.add(id);
+        created++;
       }
     });
 
-    return ids;
+    return (created: created, skipped: skipped);
   }
 
   /// 필터 조건으로 일정 목록 조회
