@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:charset_converter/charset_converter.dart';
 import 'package:csv/csv.dart';
 
 import '../domain/imported_schedule.dart';
@@ -9,15 +11,19 @@ class CsvParser {
   const CsvParser();
 
   /// CSV 바이트를 문자열로 디코딩
-  /// UTF-8을 먼저 시도하고, 실패 시 latin1로 폴백
-  /// (EUC-KR은 Dart 기본 지원이 없어 UTF-8/latin1으로 처리.
-  ///  향후 euc_kr 패키지 도입 시 EUC-KR 직접 디코딩 가능)
-  String decodeBytes(List<int> bytes) {
+  /// UTF-8 → EUC-KR 순서로 시도
+  /// (한국 학교 행정 시스템 CSV는 대부분 EUC-KR 인코딩)
+  Future<String> decodeBytes(List<int> bytes) async {
     try {
       return utf8.decode(bytes);
     } on FormatException {
-      // UTF-8 디코딩 실패 시 latin1 폴백
-      return latin1.decode(bytes);
+      // UTF-8 실패 시 EUC-KR로 디코딩
+      final uint8Bytes = Uint8List.fromList(bytes);
+      final decoded = await CharsetConverter.decode(
+        'euc-kr',
+        uint8Bytes,
+      );
+      return decoded;
     }
   }
 

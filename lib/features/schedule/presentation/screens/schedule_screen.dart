@@ -24,7 +24,7 @@ class ScheduleScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep),
-            tooltip: '전체 초기화',
+            tooltip: AppStrings.scheduleResetTitle,
             onPressed: () => _showResetDialog(context, ref),
           ),
         ],
@@ -158,18 +158,16 @@ class ScheduleScreen extends ConsumerWidget {
           (schedule) => ScheduleTile(
             schedule: schedule,
             onConfirm: () {
-              if (schedule.id != null) {
+              if (schedule.id case final id?) {
                 ref.read(schedulesProvider.notifier).updateStatus(
-                      schedule.id ?? 0,
+                      id,
                       ScheduleStatus.confirmed,
                     );
               }
             },
             onDelete: () {
-              if (schedule.id != null) {
-                ref
-                    .read(schedulesProvider.notifier)
-                    .deleteSchedule(schedule.id ?? 0);
+              if (schedule.id case final id?) {
+                ref.read(schedulesProvider.notifier).deleteSchedule(id);
               }
             },
             onTap: () => _showEditBottomSheet(context, ref, schedule),
@@ -270,9 +268,9 @@ class ScheduleScreen extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (schedule.id != null) {
+                        if (schedule.id case final id?) {
                           ref.read(schedulesProvider.notifier).updateSchedule(
-                                schedule.id ?? 0,
+                                id,
                                 title: titleController.text,
                                 date: selectedDate,
                                 description: descController.text.isEmpty
@@ -298,8 +296,8 @@ class ScheduleScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('전체 초기화'),
-        content: const Text('등록된 일정을 모두 삭제합니다.\n이 작업은 되돌릴 수 없습니다.'),
+        title: const Text(AppStrings.scheduleResetTitle),
+        content: const Text(AppStrings.scheduleResetMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -310,11 +308,11 @@ class ScheduleScreen extends ConsumerWidget {
               ref.read(schedulesProvider.notifier).deleteAll();
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('전체 초기화 완료')),
+                const SnackBar(content: Text(AppStrings.scheduleResetDone)),
               );
             },
             child: Text(
-              '초기화',
+              AppStrings.scheduleResetConfirm,
               style: TextStyle(color: AppColors.error),
             ),
           ),
