@@ -27,10 +27,10 @@ class AppStrings {
   static const compareLastYear = '작년';
   static const compareThisYear = '올해';
   static const compareNoData = '비교할 데이터가 없습니다';
-  static const compareExactMatch = '일치';
-  static const compareSimilarMatch = '유사';
-  static const compareOnlyLastYear = '작년만';
-  static const compareOnlyThisYear = '올해만';
+  static const compareExactMatch = '반영됨';
+  static const compareSimilarMatch = '확인 필요';
+  static const compareOnlyLastYear = '미반영';
+  static const compareOnlyThisYear = '올해 신규';
   static const compareRegisterThisYear = '올해 일정으로 등록';
   static const compareSelectYear = '연도 선택';
   static const compareYearFormat = '년';
