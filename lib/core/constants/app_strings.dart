@@ -21,6 +21,11 @@ class AppStrings {
   static const importFailed = '가져오기 실패';
   static const importNoFile = '파일을 선택해주세요';
   static const importInvalidFormat = '올바른 CSV 형식이 아닙니다';
+  static const importRegisterAll = '전체 등록';
+  static const importRegisterSelected = '선택 등록';
+  static const importRegisterDone = '등록 완료';
+  static const importRegisterCount = '건 등록됨';
+  static const importSelected = '건 선택';
 
   // Compare 기능
   static const compareTitle = '일정 비교';

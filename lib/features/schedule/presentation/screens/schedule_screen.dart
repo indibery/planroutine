@@ -21,6 +21,13 @@ class ScheduleScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.scheduleTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            tooltip: '전체 초기화',
+            onPressed: () => _showResetDialog(context, ref),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -283,6 +290,35 @@ class ScheduleScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showResetDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('전체 초기화'),
+        content: const Text('등록된 일정을 모두 삭제합니다.\n이 작업은 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(AppStrings.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(schedulesProvider.notifier).deleteAll();
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('전체 초기화 완료')),
+              );
+            },
+            child: Text(
+              '초기화',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
       ),
     );
   }

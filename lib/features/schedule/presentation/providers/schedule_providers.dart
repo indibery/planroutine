@@ -97,6 +97,14 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
+  /// 전체 일정 삭제 (테스트용)
+  Future<void> deleteAll() async {
+    final repository = ref.read(scheduleRepositoryProvider);
+    await repository.deleteAll();
+    ref.invalidate(selectedMonthEventsProvider);
+    ref.invalidateSelf();
+  }
+
   /// 가져온 일정에서 생성
   Future<void> createFromImported(
     int importedScheduleId,
