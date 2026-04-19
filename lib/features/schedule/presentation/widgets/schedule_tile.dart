@@ -49,9 +49,13 @@ class ScheduleTile extends StatelessWidget {
           if (schedule.status == ScheduleStatus.confirmed) return false;
           onConfirm();
           return false;
-        } else {
+        }
+        // 삭제 방향은 애니메이션을 허용하고 실제 삭제는 onDismissed에서 처리
+        return true;
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
           onDelete();
-          return true;
         }
       },
       child: Card(
