@@ -190,7 +190,7 @@ class ScheduleScreen extends ConsumerWidget {
           SnackBar(
             content: Text('"${schedule.title}" ${AppStrings.scheduleDelete}'),
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 1),
             action: SnackBarAction(
               label: AppStrings.undo,
               onPressed: () {

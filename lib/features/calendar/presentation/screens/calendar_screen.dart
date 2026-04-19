@@ -212,7 +212,7 @@ class CalendarScreen extends ConsumerWidget {
             SnackBar(
               content: Text('"${event.title}" ${AppStrings.delete}'),
               behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
+              duration: const Duration(seconds: 1),
               action: SnackBarAction(
                 label: AppStrings.undo,
                 onPressed: () {
