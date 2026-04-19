@@ -44,6 +44,19 @@ class ImportError extends ImportState {
   final String message;
 }
 
+/// 등록 완료 상태 — 사용자가 "확인" 후 결과를 명시적으로 확인할 수 있도록 유지
+class ImportRegistered extends ImportState {
+  const ImportRegistered({
+    required this.created,
+    required this.skipped,
+    required this.sourceYear,
+  });
+
+  final int created;
+  final int skipped;
+  final int sourceYear;
+}
+
 /// 가져오기 상태 관리 Notifier
 class ImportStateNotifier extends StateNotifier<ImportState> {
   ImportStateNotifier(this._repository, this._scheduleRepository)
@@ -102,9 +115,10 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
     }
   }
 
-  /// 가져온 일정을 올해 일정으로 일괄 등록 (중복 자동 스킵)
-  Future<({int created, int skipped})> registerAllAsSchedules(
+  /// 가져온 일정을 올해 일정으로 일괄 등록 (중복 자동 스킵) → 등록 완료 상태로 전환
+  Future<void> registerAllAsSchedules(
     List<ImportedSchedule> schedules,
+    int sourceYear,
   ) async {
     final thisYear = DateTime.now().year;
     final items = <({int importedId, DateTime date})>[];
@@ -115,7 +129,12 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
       items.add((importedId: schedule.id!, date: date));
     }
 
-    return _scheduleRepository.createBulkFromImported(items);
+    final result = await _scheduleRepository.createBulkFromImported(items);
+    state = ImportRegistered(
+      created: result.created,
+      skipped: result.skipped,
+      sourceYear: sourceYear,
+    );
   }
 
   /// 등록일자를 올해 날짜로 변환

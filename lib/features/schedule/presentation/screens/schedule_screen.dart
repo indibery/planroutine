@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
+import '../widgets/schedule_edit_sheet.dart';
 import '../widgets/schedule_filter_bar.dart';
 import '../widgets/schedule_tile.dart';
 import '../widgets/slide_hint_bar.dart';
@@ -20,16 +20,7 @@ class ScheduleScreen extends ConsumerWidget {
     final schedulesAsync = ref.watch(schedulesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.scheduleTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            tooltip: AppStrings.scheduleResetTitle,
-            onPressed: () => _showResetDialog(context, ref),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text(AppStrings.scheduleTitle)),
       body: Column(
         children: [
           const SlideHintBar(),
@@ -167,182 +158,15 @@ class ScheduleScreen extends ConsumerWidget {
                     );
               }
             },
-            onDelete: () => _deleteWithUndo(context, ref, schedule),
-            onTap: () => _showEditBottomSheet(context, ref, schedule),
+            onDelete: () {
+              if (schedule.id case final id?) {
+                ref.read(schedulesProvider.notifier).deleteSchedule(id);
+              }
+            },
+            onTap: () => ScheduleEditSheet.show(context, schedule),
           ),
         ),
       ],
-    );
-  }
-
-  /// 일정을 삭제하고 실행취소 스낵바를 띄운다.
-  void _deleteWithUndo(
-    BuildContext context,
-    WidgetRef ref,
-    Schedule schedule,
-  ) {
-    if (schedule.id case final id?) {
-      ref.read(schedulesProvider.notifier).deleteSchedule(id);
-      // clearSnackBars()는 현재 + queue까지 모두 제거하여 연속 삭제 시 누적 방지
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('"${schedule.title}" ${AppStrings.scheduleDelete}'),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 1),
-            action: SnackBarAction(
-              label: AppStrings.undo,
-              onPressed: () {
-                ref.read(schedulesProvider.notifier).restoreSchedule(schedule);
-              },
-            ),
-          ),
-        );
-    }
-  }
-
-  void _showEditBottomSheet(
-    BuildContext context,
-    WidgetRef ref,
-    Schedule schedule,
-  ) {
-    final titleController = TextEditingController(text: schedule.title);
-    final descController =
-        TextEditingController(text: schedule.description ?? '');
-    DateTime selectedDate =
-        DateTime.tryParse(schedule.scheduledDate) ?? DateTime.now();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radius16),
-        ),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSizes.spacing24,
-            AppSizes.spacing24,
-            AppSizes.spacing24,
-            MediaQuery.of(context).viewInsets.bottom + AppSizes.spacing24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                AppStrings.scheduleEditTitle,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSizes.spacing16),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.scheduleTitleLabel,
-                ),
-              ),
-              const SizedBox(height: AppSizes.spacing12),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(
-                  labelText: AppStrings.scheduleDescriptionHint,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: AppSizes.spacing12),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                    locale: const Locale('ko', 'KR'),
-                  );
-                  if (picked != null) {
-                    setState(() => selectedDate = picked);
-                  }
-                },
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: AppStrings.scheduleDateLabel,
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(selectedDate),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.spacing24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text(AppStrings.cancel),
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.spacing12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (schedule.id case final id?) {
-                          ref.read(schedulesProvider.notifier).updateSchedule(
-                                id,
-                                title: titleController.text,
-                                date: selectedDate,
-                                description: descController.text.isEmpty
-                                    ? null
-                                    : descController.text,
-                              );
-                        }
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text(AppStrings.save),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showResetDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.scheduleResetTitle),
-        content: const Text(AppStrings.scheduleResetMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(schedulesProvider.notifier).deleteAll();
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text(AppStrings.scheduleResetDone)),
-              );
-            },
-            child: Text(
-              AppStrings.scheduleResetConfirm,
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

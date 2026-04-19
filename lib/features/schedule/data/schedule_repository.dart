@@ -209,12 +209,6 @@ class ScheduleRepository {
     return db.delete(DatabaseHelper.tableSchedules);
   }
 
-  /// 일정 복구용 재삽입 (undo 스낵바에서 사용)
-  Future<int> insert(Schedule schedule) async {
-    final db = await _dbHelper.database;
-    return db.insert(DatabaseHelper.tableSchedules, schedule.toMap());
-  }
-
   /// 검토 대기 상태 일정 일괄 확정
   Future<int> confirmAllPending() async {
     final db = await _dbHelper.database;
