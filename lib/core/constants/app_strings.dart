@@ -12,6 +12,19 @@ class AppStrings {
   static const tabSchedule = '일정';
   static const tabCompare = '비교';
 
+  // 설정 기능
+  static const settingsTitle = '설정';
+  static const settingsDataSection = '데이터 관리';
+  static const settingsResetAll = '전체 데이터 초기화';
+  static const settingsResetAllDescription =
+      '가져온 일정, 확정된 일정, 캘린더 이벤트를 모두 삭제합니다';
+  static const settingsResetAllConfirmTitle = '정말 초기화하시겠어요?';
+  static const settingsResetAllConfirmMessage =
+      '모든 데이터가 영구 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.';
+  static const settingsResetAllConfirm = '초기화';
+  static const settingsResetAllDone = '전체 데이터가 초기화되었습니다';
+  static const settingsResetAllFailed = '초기화 중 오류가 발생했습니다';
+
   // Import 기능
   static const importTitle = '작년 일정 가져오기';
   static const importDescription = 'CSV 파일을 업로드하여\n작년 업무 일정을 불러옵니다';

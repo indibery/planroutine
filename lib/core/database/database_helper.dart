@@ -109,4 +109,19 @@ class DatabaseHelper {
       _database = null;
     }
   }
+
+  /// 모든 테이블의 데이터를 삭제한다 (테스트용 전체 초기화).
+  ///
+  /// - 트랜잭션으로 감싸 중간 실패 시 전체 롤백
+  /// - FK 참조 역순(자식 → 부모)으로 삭제하여 제약 위반 방지
+  /// - `sqlite_sequence`까지 비워 AUTOINCREMENT id를 1부터 재시작
+  Future<void> resetAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(tableCalendarEvents);
+      await txn.delete(tableSchedules);
+      await txn.delete(tableImportedSchedules);
+      await txn.delete('sqlite_sequence');
+    });
+  }
 }
