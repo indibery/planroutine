@@ -211,5 +211,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('취소 테스트 이벤트'), findsWidgets);
     });
+
+    testWidgets('휴지통 플로우: 이벤트 추가 → 슬라이드 삭제 → 휴지통 확인 → 복구',
+        (tester) async {
+      await _startFresh(tester);
+
+      // 1) 이벤트 추가
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '휴지통 테스트 이벤트',
+      );
+      await tester.tap(find.text(AppStrings.save));
+      await tester.pumpAndSettle();
+      expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
+
+      // 2) 왼쪽 슬라이드로 soft-delete
+      await tester.drag(
+        find.text('휴지통 테스트 이벤트'),
+        const Offset(-400, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('휴지통 테스트 이벤트'), findsNothing);
+
+      // 3) 설정 탭 → 휴지통 진입
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
+      await tester.pumpAndSettle();
+      // 설정 섹션 헤더와 ListTile title이 둘 다 "휴지통"이라 설명 텍스트로 식별
+      await tester.tap(find.text(AppStrings.settingsTrashDescription));
+      await tester.pumpAndSettle();
+
+      // 4) 휴지통에 삭제한 이벤트가 보여야 함 (섹션 헤더는 "캘린더 이벤트 (N)" 형식)
+      expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
+      expect(find.textContaining(AppStrings.trashSectionEvents), findsWidgets);
+
+      // 5) 복구 버튼 탭
+      await tester.tap(find.byIcon(Icons.restore));
+      await tester.pumpAndSettle();
+      // 휴지통이 비면 안내 노출
+      expect(find.text(AppStrings.trashEmpty), findsOneWidget);
+
+      // 6) 캘린더 돌아가면 이벤트 복구됨
+      final calendarTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.calendar_month),
+      );
+      await tester.tap(calendarTabIcon);
+      await tester.pumpAndSettle();
+      expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
+    });
   });
 }
