@@ -14,9 +14,7 @@ class AppStrings {
 
   // 설정 기능
   static const settingsTitle = '설정';
-  static const settingsImportSection = '가져오기';
-  static const settingsImportLastYear = '작년 일정 가져오기';
-  static const settingsImportLastYearDescription = 'CSV 파일로 작년 업무 일정을 불러옵니다';
+  static const settingsImportSection = '작년 일정 가져오기';
   static const settingsDataSection = '데이터 관리';
   static const settingsResetAll = '전체 데이터 초기화';
   static const settingsResetAllDescription =
@@ -77,7 +75,8 @@ class AppStrings {
   static const scheduleDescriptionHint = '설명 (선택사항)';
   static const scheduleDateLabel = '일정 날짜';
   static const scheduleTitleLabel = '제목';
-  static const scheduleSlideHint = '좌우로 밀어 확정 또는 삭제';
+  static const scheduleSlideHintConfirm = '오른쪽으로 밀기 — 확정';
+  static const scheduleSlideHintDelete = '왼쪽으로 밀기 — 삭제';
 
   // Calendar 기능
   static const calendarTitle = '캘린더';

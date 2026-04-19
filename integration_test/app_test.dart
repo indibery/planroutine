@@ -113,24 +113,7 @@ void main() {
       expect(find.text(AppStrings.scheduleEmpty), findsOneWidget);
     });
 
-    testWidgets('가져오기 진입: 설정 탭 → 작년 일정 가져오기', (tester) async {
-      await _startFresh(tester);
-
-      // 설정 탭 → 작년 일정 가져오기 ListTile
-      final settingsTabIcon = find.descendant(
-        of: find.byType(BottomNavigationBar),
-        matching: find.byIcon(Icons.settings),
-      );
-      await tester.tap(settingsTabIcon);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(AppStrings.settingsImportLastYear));
-      await tester.pumpAndSettle();
-
-      // 가져오기 초기 화면 확인
-      expect(find.text(AppStrings.importSelectFile), findsOneWidget);
-    });
-
-    testWidgets('설정 탭 기본 구성 확인', (tester) async {
+    testWidgets('설정 탭: 가져오기 인라인 섹션 + 전체 삭제 메뉴 노출', (tester) async {
       await _startFresh(tester);
 
       // 설정 탭 이동
@@ -141,9 +124,11 @@ void main() {
       await tester.tap(settingsTabIcon);
       await tester.pumpAndSettle();
 
-      // 섹션 + 메뉴 확인
+      // 가져오기 섹션이 인라인으로 표시 (별도 화면 이동 없이 파일선택 버튼 노출)
       expect(find.text(AppStrings.settingsImportSection), findsOneWidget);
-      expect(find.text(AppStrings.settingsImportLastYear), findsOneWidget);
+      expect(find.text(AppStrings.importSelectFile), findsOneWidget);
+
+      // 데이터 관리 섹션
       expect(find.text(AppStrings.settingsDataSection), findsOneWidget);
       expect(find.text(AppStrings.settingsResetAll), findsOneWidget);
     });

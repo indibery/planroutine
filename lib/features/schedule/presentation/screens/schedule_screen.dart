@@ -183,12 +183,14 @@ class ScheduleScreen extends ConsumerWidget {
   ) {
     if (schedule.id case final id?) {
       ref.read(schedulesProvider.notifier).deleteSchedule(id);
+      // clearSnackBars()는 현재 + queue까지 모두 제거하여 연속 삭제 시 누적 방지
       ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
+        ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
             content: Text('"${schedule.title}" ${AppStrings.scheduleDelete}'),
-            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: AppStrings.undo,
               onPressed: () {
