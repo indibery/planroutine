@@ -43,6 +43,13 @@ dependencies:
   # 온보딩 힌트 표시 여부 영구 저장
   shared_preferences: ^2.3.3
 
+  # 앱 버전/빌드 번호 조회 (설정 화면 앱 정보 섹션)
+  package_info_plus: ^8.1.2
+
+  # CSV 내보내기 공유시트 (파일/이메일/에어드롭)
+  share_plus: ^10.1.2
+  path_provider: ^2.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

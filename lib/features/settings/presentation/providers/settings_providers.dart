@@ -4,6 +4,7 @@ import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../import/presentation/providers/import_providers.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../data/app_reset_repository.dart';
+import '../../data/schedule_csv_exporter.dart';
 
 /// 전체 초기화 저장소 프로바이더
 final appResetRepositoryProvider = Provider<AppResetRepository>((ref) {
@@ -60,4 +61,9 @@ class AppResetNotifier extends StateNotifier<ResetState> {
 final appResetProvider =
     StateNotifierProvider<AppResetNotifier, ResetState>((ref) {
   return AppResetNotifier(ref);
+});
+
+/// CSV 내보내기 프로바이더
+final scheduleCsvExporterProvider = Provider<ScheduleCsvExporter>((ref) {
+  return ScheduleCsvExporter();
 });
