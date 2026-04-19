@@ -205,12 +205,14 @@ class CalendarScreen extends ConsumerWidget {
     if (event.id case final id?) {
       await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
       if (context.mounted) {
+        // clearSnackBars()는 현재 + queue까지 모두 제거하여 연속 삭제 시 누적 방지
         ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
+          ..clearSnackBars()
           ..showSnackBar(
             SnackBar(
               content: Text('"${event.title}" ${AppStrings.delete}'),
-              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
               action: SnackBarAction(
                 label: AppStrings.undo,
                 onPressed: () {
