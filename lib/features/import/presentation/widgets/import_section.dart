@@ -30,6 +30,12 @@ class ImportSection extends ConsumerWidget {
           categorySummary,
           sourceYear,
         ),
+      ImportRegistered(
+        :final created,
+        :final skipped,
+        :final sourceYear,
+      ) =>
+        _buildRegisteredView(context, ref, created, skipped, sourceYear),
       ImportError(:final message) => _buildErrorView(context, ref, message),
     };
   }
@@ -112,9 +118,10 @@ class ImportSection extends ConsumerWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _registerAll(context, ref, schedules),
-                  icon: const Icon(Icons.playlist_add_check),
-                  label: const Text(AppStrings.importRegisterAll),
+                  onPressed: () =>
+                      _confirmRegister(context, ref, schedules, sourceYear),
+                  icon: const Icon(Icons.check),
+                  label: const Text(AppStrings.confirm),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -132,6 +139,76 @@ class ImportSection extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// 등록 완료 상태 — 사용자가 결과를 명시적으로 확인 가능
+  Widget _buildRegisteredView(
+    BuildContext context,
+    WidgetRef ref,
+    int created,
+    int skipped,
+    int sourceYear,
+  ) {
+    final skippedMessage = skipped > 0 ? ' (중복 $skipped건 제외)' : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing16,
+        vertical: AppSizes.spacing8,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSizes.spacing16),
+        decoration: BoxDecoration(
+          color: AppColors.statusConfirmed.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppSizes.radius12),
+          border: Border.all(
+            color: AppColors.statusConfirmed.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.statusConfirmed,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Text(
+                  '$sourceYear${AppStrings.compareYearFormat} 일정 $created${AppStrings.importRegisterCount}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            if (skippedMessage.isNotEmpty) ...[
+              const SizedBox(height: AppSizes.spacing4),
+              Text(
+                skippedMessage.trim(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSizes.spacing12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () =>
+                    ref.read(importStateProvider.notifier).reset(),
+                icon: const Icon(Icons.file_open, size: 16),
+                label: const Text(AppStrings.importSelectFileAgain),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -179,30 +256,17 @@ class ImportSection extends ConsumerWidget {
     );
   }
 
-  String _buildResultMessage(({int created, int skipped}) result) {
-    if (result.created == 0 && result.skipped > 0) {
-      return '이미 전체 등록됨 (${result.skipped}건 중복)';
-    } else if (result.skipped > 0) {
-      return '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
-    }
-    return '${result.created}${AppStrings.importRegisterCount}';
-  }
-
-  Future<void> _registerAll(
+  /// 확인 버튼 → 등록 수행 후 notifier가 ImportRegistered 상태로 전환,
+  /// 그 상태에서 결과가 화면에 인라인 표시됨(스낵바 사용 없음).
+  Future<void> _confirmRegister(
     BuildContext context,
     WidgetRef ref,
     List<ImportedSchedule> schedules,
+    int sourceYear,
   ) async {
-    final result = await ref
+    await ref
         .read(importStateProvider.notifier)
-        .registerAllAsSchedules(schedules);
+        .registerAllAsSchedules(schedules, sourceYear);
     ref.invalidate(schedulesProvider);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(content: Text(_buildResultMessage(result))),
-        );
-    }
   }
 }

@@ -196,7 +196,7 @@ class CalendarScreen extends ConsumerWidget {
     }
   }
 
-  /// 캘린더 이벤트 삭제 (확인 다이얼로그 없이 즉시 삭제 + 실행취소 스낵바)
+  /// 캘린더 이벤트 삭제 (즉시 삭제, 스낵바 없음)
   Future<void> _onDeleteEvent(
     BuildContext context,
     WidgetRef ref,
@@ -204,27 +204,6 @@ class CalendarScreen extends ConsumerWidget {
   ) async {
     if (event.id case final id?) {
       await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
-      if (context.mounted) {
-        // clearSnackBars()는 현재 + queue까지 모두 제거하여 연속 삭제 시 누적 방지
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            SnackBar(
-              content: Text('"${event.title}" ${AppStrings.delete}'),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              action: SnackBarAction(
-                label: AppStrings.undo,
-                onPressed: () {
-                  // id를 비운 새 이벤트로 재삽입 (새 id 부여)
-                  ref
-                      .read(selectedMonthEventsProvider.notifier)
-                      .addEvent(event.copyWith(id: null));
-                },
-              ),
-            ),
-          );
-      }
     }
   }
 }
