@@ -12,10 +12,19 @@ class AppStrings {
   // 설정 기능
   static const settingsTitle = '설정';
   static const settingsImportSection = '작년 일정 가져오기';
+  static const settingsExportSection = '현재 일정 내보내기';
+  static const settingsExportTitle = 'CSV로 내보내기';
+  static const settingsExportDescription =
+      '올해 등록된 일정을 CSV 파일로 저장·공유합니다';
+  static const settingsExportEmpty = '내보낼 일정이 없습니다';
+  static const settingsExportFailed = '내보내기 중 오류가 발생했습니다';
+  static const settingsExportShareSubject = '플랜루틴 일정';
+  static const settingsExportShareCountSuffix = '건의 일정을 공유합니다';
   static const settingsTrashSection = '휴지통';
   static const settingsTrashDescription =
       '삭제한 일정·캘린더 이벤트 (30일 후 자동 영구 삭제)';
   static const settingsDataSection = '데이터 관리';
+  static const settingsAboutSection = '앱 정보';
   static const settingsResetAll = '전체 데이터 초기화';
   static const settingsResetAllDescription =
       '가져온 일정, 확정된 일정, 캘린더 이벤트를 모두 삭제합니다';
