@@ -6,8 +6,7 @@ part 'schedule.g.dart';
 /// 일정 상태
 enum ScheduleStatus {
   pending,
-  confirmed,
-  completed;
+  confirmed;
 
   /// DB 저장용 문자열
   String get value => name;

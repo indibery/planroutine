@@ -105,6 +105,13 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
+  /// 일정 복구 (undo 스낵바에서 사용)
+  Future<void> restoreSchedule(Schedule schedule) async {
+    final repository = ref.read(scheduleRepositoryProvider);
+    await repository.insert(schedule);
+    ref.invalidateSelf();
+  }
+
   /// 가져온 일정에서 생성
   Future<void> createFromImported(
     int importedScheduleId,

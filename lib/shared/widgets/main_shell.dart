@@ -13,7 +13,7 @@ class MainShell extends StatelessWidget {
   static const _tabs = [
     (route: AppRoutes.calendar, icon: Icons.calendar_month, label: AppStrings.tabCalendar),
     (route: AppRoutes.schedule, icon: Icons.checklist, label: AppStrings.tabSchedule),
-    (route: AppRoutes.import_, icon: Icons.upload_file, label: AppStrings.tabImport),
+    (route: AppRoutes.settings, icon: Icons.settings, label: AppStrings.settingsTitle),
   ];
 
   int _currentIndex(BuildContext context) {

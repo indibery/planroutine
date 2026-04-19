@@ -76,8 +76,20 @@ class CalendarRepository {
   }
 
   /// 확정된 일정에서 캘린더 이벤트 생성
+  ///
+  /// 같은 [scheduleId]에 대한 이벤트가 이미 존재하면 -1 반환 (중복 생성 방지).
   Future<int> createFromSchedule(int scheduleId) async {
     final db = await _dbHelper.database;
+
+    // 중복 체크: 같은 schedule_id로 이미 생성된 이벤트가 있으면 스킵
+    final existing = await db.query(
+      DatabaseHelper.tableCalendarEvents,
+      where: 'schedule_id = ?',
+      whereArgs: [scheduleId],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) return -1;
+
     final scheduleResults = await db.query(
       DatabaseHelper.tableSchedules,
       where: 'id = ?',

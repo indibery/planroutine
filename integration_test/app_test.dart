@@ -30,47 +30,46 @@ void main() {
 
   group('앱 기본 동작 검증', () {
     testWidgets('앱 실행 및 캘린더 탭 표시', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
+      await _startFresh(tester);
 
       // 캘린더 화면이 기본으로 표시 (AppBar + 탭 라벨로 2개)
       expect(find.text(AppStrings.calendarTitle), findsWidgets);
 
-      // 하단 3탭 네비게이션 확인
+      // 하단 3탭 네비게이션 확인 (캘린더 / 일정 / 설정)
       expect(find.byType(BottomNavigationBar), findsOneWidget);
       expect(find.text(AppStrings.tabSchedule), findsOneWidget);
-      expect(find.text(AppStrings.tabImport), findsOneWidget);
+      expect(find.text(AppStrings.settingsTitle), findsWidgets);
     });
 
-    testWidgets('탭 전환: 캘린더 → 일정 → 가져오기', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
+    testWidgets('탭 전환: 캘린더 → 일정 → 설정', (tester) async {
+      await _startFresh(tester);
 
       // 일정 탭으로 이동
       await tester.tap(find.text(AppStrings.tabSchedule));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.scheduleTitle), findsOneWidget);
 
-      // 가져오기 탭으로 이동
-      await tester.tap(find.text(AppStrings.tabImport));
+      // 설정 탭으로 이동 (하단 탭 아이콘으로 식별)
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.importTitle), findsOneWidget);
+      expect(find.text(AppStrings.settingsImportSection), findsOneWidget);
 
-      // 다시 캘린더 탭으로
-      await tester.tap(find.text(AppStrings.tabCalendar));
+      // 다시 캘린더 탭으로 (아이콘으로 식별)
+      final calendarTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.calendar_month),
+      );
+      await tester.tap(calendarTabIcon);
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.calendarTitle), findsWidgets);
     });
 
     testWidgets('캘린더 월 이동 (화살표 버튼)', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
+      await _startFresh(tester);
 
       // 현재 월 헤더 확인
       final now = DateTime.now();
@@ -88,10 +87,7 @@ void main() {
     });
 
     testWidgets('캘린더 이벤트 추가 다이얼로그', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
+      await _startFresh(tester);
 
       // FAB 버튼 탭
       await tester.tap(find.byType(FloatingActionButton));
@@ -107,10 +103,7 @@ void main() {
     });
 
     testWidgets('일정 검토 빈 상태 표시', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
+      await _startFresh(tester);
 
       // 일정 탭으로 이동
       await tester.tap(find.text(AppStrings.tabSchedule));
@@ -120,30 +113,37 @@ void main() {
       expect(find.text(AppStrings.scheduleEmpty), findsOneWidget);
     });
 
-    testWidgets('가져오기 초기 화면 표시', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(child: PlanRoutineApp()),
-      );
-      await tester.pumpAndSettle();
-
-      // 가져오기 탭으로 이동
-      await tester.tap(find.text(AppStrings.tabImport));
-      await tester.pumpAndSettle();
-
-      // 초기 화면 확인
-      expect(find.text(AppStrings.importSelectFile), findsOneWidget);
-      expect(find.byIcon(Icons.upload_file), findsWidgets);
-    });
-
-    testWidgets('설정 진입: 캘린더 AppBar ⚙️ → 설정 화면', (tester) async {
+    testWidgets('가져오기 진입: 설정 탭 → 작년 일정 가져오기', (tester) async {
       await _startFresh(tester);
 
-      // 캘린더 AppBar의 설정 아이콘 탭
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      // 설정 탭 → 작년 일정 가져오기 ListTile
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.settingsImportLastYear));
       await tester.pumpAndSettle();
 
-      // 설정 화면 로드 확인
-      expect(find.text(AppStrings.settingsTitle), findsOneWidget);
+      // 가져오기 초기 화면 확인
+      expect(find.text(AppStrings.importSelectFile), findsOneWidget);
+    });
+
+    testWidgets('설정 탭 기본 구성 확인', (tester) async {
+      await _startFresh(tester);
+
+      // 설정 탭 이동
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
+      await tester.pumpAndSettle();
+
+      // 섹션 + 메뉴 확인
+      expect(find.text(AppStrings.settingsImportSection), findsOneWidget);
+      expect(find.text(AppStrings.settingsImportLastYear), findsOneWidget);
       expect(find.text(AppStrings.settingsDataSection), findsOneWidget);
       expect(find.text(AppStrings.settingsResetAll), findsOneWidget);
     });
@@ -163,8 +163,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('콜드로드 테스트 이벤트'), findsWidgets);
 
-      // 2) 설정 진입 → 전체 초기화
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      // 2) 설정 탭 → 전체 초기화
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.settingsResetAll));
       await tester.pumpAndSettle();
@@ -178,7 +182,11 @@ void main() {
       expect(find.text(AppStrings.settingsResetAllDone), findsOneWidget);
 
       // 3) 캘린더로 복귀 → 이벤트 사라짐
-      await tester.tap(find.text(AppStrings.tabCalendar));
+      final calendarTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.calendar_month),
+      );
+      await tester.tap(calendarTabIcon);
       await tester.pumpAndSettle();
       expect(find.text('콜드로드 테스트 이벤트'), findsNothing);
       expect(find.text(AppStrings.calendarNoEvents), findsOneWidget);
@@ -197,8 +205,12 @@ void main() {
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
-      // 설정 진입 → 초기화 탭 → 취소
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      // 설정 탭 → 초기화 → 취소
+      final settingsTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.settings),
+      );
+      await tester.tap(settingsTabIcon);
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.settingsResetAll));
       await tester.pumpAndSettle();
@@ -206,7 +218,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // 캘린더 복귀 → 이벤트 그대로 존재
-      await tester.tap(find.text(AppStrings.tabCalendar));
+      final calendarTabIcon = find.descendant(
+        of: find.byType(BottomNavigationBar),
+        matching: find.byIcon(Icons.calendar_month),
+      );
+      await tester.tap(calendarTabIcon);
       await tester.pumpAndSettle();
       expect(find.text('취소 테스트 이벤트'), findsWidgets);
     });

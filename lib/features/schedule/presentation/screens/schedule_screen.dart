@@ -9,6 +9,7 @@ import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_filter_bar.dart';
 import '../widgets/schedule_tile.dart';
+import '../widgets/slide_hint_bar.dart';
 
 /// 일정 검토/확정 화면
 class ScheduleScreen extends ConsumerWidget {
@@ -31,6 +32,7 @@ class ScheduleScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          const SlideHintBar(),
           const ScheduleFilterBar(),
           const Divider(height: 1),
           Expanded(
@@ -165,16 +167,37 @@ class ScheduleScreen extends ConsumerWidget {
                     );
               }
             },
-            onDelete: () {
-              if (schedule.id case final id?) {
-                ref.read(schedulesProvider.notifier).deleteSchedule(id);
-              }
-            },
+            onDelete: () => _deleteWithUndo(context, ref, schedule),
             onTap: () => _showEditBottomSheet(context, ref, schedule),
           ),
         ),
       ],
     );
+  }
+
+  /// 일정을 삭제하고 실행취소 스낵바를 띄운다.
+  void _deleteWithUndo(
+    BuildContext context,
+    WidgetRef ref,
+    Schedule schedule,
+  ) {
+    if (schedule.id case final id?) {
+      ref.read(schedulesProvider.notifier).deleteSchedule(id);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('"${schedule.title}" ${AppStrings.scheduleDelete}'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: AppStrings.undo,
+              onPressed: () {
+                ref.read(schedulesProvider.notifier).restoreSchedule(schedule);
+              },
+            ),
+          ),
+        );
+    }
   }
 
   void _showEditBottomSheet(

@@ -3,28 +3,27 @@ import 'package:planroutine/features/schedule/domain/schedule.dart';
 
 void main() {
   group('ScheduleStatus', () {
-    test('3개 상태값 존재', () {
-      expect(ScheduleStatus.values.length, 3);
+    test('2개 상태값 존재', () {
+      expect(ScheduleStatus.values.length, 2);
       expect(ScheduleStatus.values, contains(ScheduleStatus.pending));
       expect(ScheduleStatus.values, contains(ScheduleStatus.confirmed));
-      expect(ScheduleStatus.values, contains(ScheduleStatus.completed));
     });
 
     test('value 게터가 name과 동일', () {
       expect(ScheduleStatus.pending.value, 'pending');
       expect(ScheduleStatus.confirmed.value, 'confirmed');
-      expect(ScheduleStatus.completed.value, 'completed');
     });
 
     test('fromValue로 문자열에서 상태 변환', () {
       expect(ScheduleStatus.fromValue('pending'), ScheduleStatus.pending);
       expect(ScheduleStatus.fromValue('confirmed'), ScheduleStatus.confirmed);
-      expect(ScheduleStatus.fromValue('completed'), ScheduleStatus.completed);
     });
 
-    test('fromValue에 잘못된 값이면 pending 기본값', () {
+    test('fromValue에 잘못된 값이면 pending 기본값 (기존 completed 포함)', () {
       expect(ScheduleStatus.fromValue('unknown'), ScheduleStatus.pending);
       expect(ScheduleStatus.fromValue(''), ScheduleStatus.pending);
+      // 레거시 'completed' 값은 pending으로 폴백
+      expect(ScheduleStatus.fromValue('completed'), ScheduleStatus.pending);
     });
   });
 
@@ -174,16 +173,6 @@ void main() {
         expect(schedule.toMap()['status'], 'confirmed');
       });
 
-      test('상태를 completed로 지정', () {
-        final schedule = Schedule(
-          title: '완료 일정',
-          scheduledDate: '2026-04-01',
-          status: ScheduleStatus.completed,
-        );
-
-        expect(schedule.status, ScheduleStatus.completed);
-        expect(schedule.toMap()['status'], 'completed');
-      });
     });
   });
 }

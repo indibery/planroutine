@@ -22,11 +22,9 @@ class ImportScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(AppStrings.importTitle),
         actions: [
-          // 성공 상태일 때만 초기화 버튼 표시
           if (importState is ImportSuccess)
             IconButton(
               onPressed: () {
-                _cancelSelectMode(ref);
                 ref.read(importStateProvider.notifier).reset();
               },
               icon: const Icon(Icons.refresh),
@@ -103,7 +101,7 @@ class ImportScreen extends ConsumerWidget {
     );
   }
 
-  /// 성공 화면: 요약 + 등록 버튼 + 일정 목록
+  /// 성공 화면: 요약 + 전체 등록 버튼 + 일정 목록
   Widget _buildSuccessView(
     BuildContext context,
     WidgetRef ref,
@@ -111,83 +109,31 @@ class ImportScreen extends ConsumerWidget {
     Map<String, int> categorySummary,
     int sourceYear,
   ) {
-    final isSelectMode = ref.watch(importSelectModeProvider);
-    final selectedIds = ref.watch(selectedImportIdsProvider);
-
     return Column(
       children: [
-        // 요약 카드 (선택 모드에서는 숨김)
-        if (!isSelectMode)
-          ImportSummaryCard(
-            totalCount: schedules.length,
-            categorySummary: categorySummary,
-            sourceYear: sourceYear,
+        ImportSummaryCard(
+          totalCount: schedules.length,
+          categorySummary: categorySummary,
+          sourceYear: sourceYear,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing16,
           ),
-        // 액션 버튼 영역
-        if (!isSelectMode)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.spacing16,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _registerAll(context, ref, schedules),
-                    icon: const Icon(Icons.playlist_add_check),
-                    label: const Text(AppStrings.importRegisterAll),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.spacing8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _toggleSelectMode(ref),
-                    icon: const Icon(Icons.checklist),
-                    label: const Text(AppStrings.importRegisterSelected),
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.spacing16,
-            ),
-            child: Row(
-              children: [
-                Text(
-                  '${selectedIds.length}${AppStrings.importSelected}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => _cancelSelectMode(ref),
-                  child: const Text(AppStrings.cancel),
-                ),
-                const SizedBox(width: AppSizes.spacing8),
-                ElevatedButton(
-                  onPressed: selectedIds.isEmpty
-                      ? null
-                      : () => _registerSelected(context, ref, schedules),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text(AppStrings.importRegisterSelected),
-                ),
-              ],
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _registerAll(context, ref, schedules),
+              icon: const Icon(Icons.playlist_add_check),
+              label: const Text(AppStrings.importRegisterAll),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
+        ),
         const SizedBox(height: AppSizes.spacing8),
-        // 일정 목록
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(
@@ -195,28 +141,8 @@ class ImportScreen extends ConsumerWidget {
               vertical: AppSizes.spacing4,
             ),
             itemCount: schedules.length,
-            itemBuilder: (context, index) {
-              final schedule = schedules[index];
-              if (isSelectMode) {
-                final isSelected = selectedIds.contains(schedule.id);
-                return GestureDetector(
-                  onTap: () => _toggleSelection(ref, schedule.id),
-                  child: Row(
-                    children: [
-                      Checkbox(
-                        value: isSelected,
-                        onChanged: (_) => _toggleSelection(ref, schedule.id),
-                        activeColor: AppColors.primary,
-                      ),
-                      Expanded(
-                        child: ImportedScheduleTile(schedule: schedule),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ImportedScheduleTile(schedule: schedule);
-            },
+            itemBuilder: (context, index) =>
+                ImportedScheduleTile(schedule: schedules[index]),
           ),
         ),
       ],
@@ -224,12 +150,9 @@ class ImportScreen extends ConsumerWidget {
   }
 
   /// 등록 결과 메시지 생성
-  String _buildResultMessage(
-    ({int created, int skipped}) result, {
-    String allSkippedMessage = '이미 전체 등록됨',
-  }) {
+  String _buildResultMessage(({int created, int skipped}) result) {
     if (result.created == 0 && result.skipped > 0) {
-      return '$allSkippedMessage (${result.skipped}건 중복)';
+      return '이미 전체 등록됨 (${result.skipped}건 중복)';
     } else if (result.skipped > 0) {
       return '${result.created}${AppStrings.importRegisterCount} (중복 ${result.skipped}건 제외)';
     }
@@ -249,56 +172,6 @@ class ImportScreen extends ConsumerWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_buildResultMessage(result))),
-      );
-    }
-  }
-
-  /// 선택 모드 진입
-  void _toggleSelectMode(WidgetRef ref) {
-    ref.read(importSelectModeProvider.notifier).state = true;
-    ref.read(selectedImportIdsProvider.notifier).state = {};
-  }
-
-  /// 선택 모드 해제
-  void _cancelSelectMode(WidgetRef ref) {
-    ref.read(importSelectModeProvider.notifier).state = false;
-    ref.read(selectedImportIdsProvider.notifier).state = {};
-  }
-
-  /// 체크박스 토글
-  void _toggleSelection(WidgetRef ref, int? id) {
-    if (id == null) return;
-    final notifier = ref.read(selectedImportIdsProvider.notifier);
-    final current = notifier.state;
-    if (current.contains(id)) {
-      notifier.state = {...current}..remove(id);
-    } else {
-      notifier.state = {...current, id};
-    }
-  }
-
-  /// 선택 등록
-  Future<void> _registerSelected(
-    BuildContext context,
-    WidgetRef ref,
-    List<ImportedSchedule> schedules,
-  ) async {
-    final selectedIds = ref.read(selectedImportIdsProvider);
-    final selected =
-        schedules.where((s) => selectedIds.contains(s.id)).toList();
-    final result = await ref
-        .read(importStateProvider.notifier)
-        .registerAllAsSchedules(selected);
-    ref.invalidate(schedulesProvider);
-    _cancelSelectMode(ref);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_buildResultMessage(
-            result,
-            allSkippedMessage: '이미 등록된 항목입니다',
-          )),
-        ),
       );
     }
   }

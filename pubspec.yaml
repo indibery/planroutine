@@ -40,6 +40,9 @@ dependencies:
   intl: ^0.20.2
   charset_converter: ^2.3.0
 
+  # 온보딩 힌트 표시 여부 영구 저장
+  shared_preferences: ^2.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
