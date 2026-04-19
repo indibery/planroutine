@@ -89,7 +89,7 @@ class CalendarScreen extends ConsumerWidget {
                           events: entry.value,
                           onEventTap: (event) =>
                               _onEditEvent(context, ref, event),
-                          onEventLongPress: (event) =>
+                          onEventDelete: (event) =>
                               _onDeleteEvent(context, ref, event),
                         );
                       },

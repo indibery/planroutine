@@ -20,6 +20,7 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'schedule_id') int? scheduleId,
     @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'updated_at') String? updatedAt,
+    @JsonKey(name: 'deleted_at') String? deletedAt,
   }) = _CalendarEvent;
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) =>
@@ -38,10 +39,11 @@ abstract class CalendarEvent with _$CalendarEvent {
       scheduleId: map['schedule_id'] as int?,
       createdAt: map['created_at'] as String?,
       updatedAt: map['updated_at'] as String?,
+      deletedAt: map['deleted_at'] as String?,
     );
   }
 
-  /// DB 삽입용 Map 변환
+  /// DB 삽입용 Map 변환 (deletedAt은 repository에서 별도 관리)
   Map<String, dynamic> toMap() {
     final now = DateTime.now().toIso8601String();
     return {

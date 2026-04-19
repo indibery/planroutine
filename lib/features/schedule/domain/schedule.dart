@@ -36,6 +36,7 @@ abstract class Schedule with _$Schedule {
     @Default(ScheduleStatus.pending) ScheduleStatus status,
     @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'updated_at') String? updatedAt,
+    @JsonKey(name: 'deleted_at') String? deletedAt,
   }) = _Schedule;
 
   factory Schedule.fromJson(Map<String, dynamic> json) =>
@@ -71,6 +72,7 @@ abstract class Schedule with _$Schedule {
       status: ScheduleStatus.fromValue(map['status'] as String? ?? 'pending'),
       createdAt: map['created_at'] as String?,
       updatedAt: map['updated_at'] as String?,
+      deletedAt: map['deleted_at'] as String?,
     );
   }
 }

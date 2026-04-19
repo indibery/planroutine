@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../import/presentation/widgets/import_section.dart';
+import '../../../trash/presentation/providers/trash_providers.dart';
 import '../providers/settings_providers.dart';
 
 /// 설정 화면 (하단 탭)
@@ -47,6 +50,9 @@ class SettingsScreen extends ConsumerWidget {
           _SectionHeader(title: AppStrings.settingsImportSection),
           const ImportSection(),
           const SizedBox(height: AppSizes.spacing8),
+          const Divider(height: 1),
+          _SectionHeader(title: AppStrings.settingsTrashSection),
+          _TrashListTile(),
           const Divider(height: 1),
           _SectionHeader(title: AppStrings.settingsDataSection),
           ListTile(
@@ -101,6 +107,47 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(appResetProvider.notifier).resetAll();
     }
+  }
+}
+
+/// 휴지통 ListTile — 건수 배지 포함
+class _TrashListTile extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshotAsync = ref.watch(trashSnapshotProvider);
+    final count = snapshotAsync.valueOrNull?.total ?? 0;
+    return ListTile(
+      leading: const Icon(Icons.delete_outline, color: AppColors.primary),
+      title: const Text(AppStrings.trashTitle),
+      subtitle: const Text(AppStrings.settingsTrashDescription),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (count > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.spacing8,
+                vertical: AppSizes.spacing4,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              ),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          const SizedBox(width: AppSizes.spacing4),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
+      onTap: () => context.push(AppRoutes.trash),
+    );
   }
 }
 

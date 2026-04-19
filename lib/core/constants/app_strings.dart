@@ -12,6 +12,9 @@ class AppStrings {
   // 설정 기능
   static const settingsTitle = '설정';
   static const settingsImportSection = '작년 일정 가져오기';
+  static const settingsTrashSection = '휴지통';
+  static const settingsTrashDescription =
+      '삭제한 일정·캘린더 이벤트 (30일 후 자동 영구 삭제)';
   static const settingsDataSection = '데이터 관리';
   static const settingsResetAll = '전체 데이터 초기화';
   static const settingsResetAllDescription =
@@ -70,6 +73,19 @@ class AppStrings {
   static const calendarEventAllDay = '종일';
   static const calendarEventColor = '색상';
   static const calendarTitleRequired = '제목을 입력해주세요';
+
+  // 휴지통
+  static const trashTitle = '휴지통';
+  static const trashEmpty = '휴지통이 비어있습니다';
+  static const trashAutoPurgeNotice = '삭제 후 30일 뒤 자동 영구 삭제됩니다';
+  static const trashSectionSchedules = '일정';
+  static const trashSectionEvents = '캘린더 이벤트';
+  static const trashRestore = '복구';
+  static const trashPermanentDelete = '영구 삭제';
+  static const trashPermanentDeleteTitle = '영구 삭제하시겠어요?';
+  static const trashPermanentDeleteMessage =
+      '이 항목은 복구할 수 없게 됩니다.';
+  static const trashDeletedPrefix = '삭제 ';
 
   // 요일
   static const weekdaySun = '일';

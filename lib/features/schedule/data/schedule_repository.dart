@@ -1,7 +1,10 @@
 import '../../../core/database/database_helper.dart';
 import '../domain/schedule.dart';
 
-/// 일정 데이터 관리 리포지토리
+/// 일정 데이터 관리 리포지토리.
+///
+/// 삭제는 soft-delete: `deleted_at` 컬럼에 삭제 시각을 기록하여
+/// 휴지통에서 복구 가능. 모든 활성 조회는 `deleted_at IS NULL` 필터를 적용.
 class ScheduleRepository {
   final DatabaseHelper _dbHelper;
 
@@ -15,10 +18,10 @@ class ScheduleRepository {
   ) async {
     final db = await _dbHelper.database;
 
-    // 중복 확인
+    // 중복 확인 (활성 기준 — 휴지통 항목은 재임포트 가능)
     final existing = await db.query(
       DatabaseHelper.tableSchedules,
-      where: 'source_id = ?',
+      where: 'source_id = ? AND deleted_at IS NULL',
       whereArgs: [importedScheduleId],
       limit: 1,
     );
@@ -61,10 +64,10 @@ class ScheduleRepository {
 
     await db.transaction((txn) async {
       for (final item in items) {
-        // 이미 등록된 source_id인지 확인
+        // 이미 등록된 source_id인지 확인 (활성 기준)
         final existing = await txn.query(
           DatabaseHelper.tableSchedules,
-          where: 'source_id = ?',
+          where: 'source_id = ? AND deleted_at IS NULL',
           whereArgs: [item.importedId],
           limit: 1,
         );
@@ -105,13 +108,13 @@ class ScheduleRepository {
     return (created: created, skipped: skipped);
   }
 
-  /// 필터 조건으로 일정 목록 조회
+  /// 필터 조건으로 일정 목록 조회 (삭제되지 않은 것만)
   Future<List<Schedule>> getSchedules({
     ScheduleStatus? status,
     String? category,
   }) async {
     final db = await _dbHelper.database;
-    final where = <String>[];
+    final where = <String>['deleted_at IS NULL'];
     final whereArgs = <dynamic>[];
 
     if (status != null) {
@@ -125,7 +128,7 @@ class ScheduleRepository {
 
     final result = await db.query(
       DatabaseHelper.tableSchedules,
-      where: where.isEmpty ? null : where.join(' AND '),
+      where: where.join(' AND '),
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       orderBy: 'scheduled_date ASC',
     );
@@ -173,8 +176,30 @@ class ScheduleRepository {
     );
   }
 
-  /// 일정 삭제
+  /// 일정 soft-delete (휴지통으로 이동)
   Future<int> deleteSchedule(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableSchedules,
+      {'deleted_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 일정 복구
+  Future<int> restoreSchedule(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableSchedules,
+      {'deleted_at': null},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 일정 영구 삭제 (DB row 제거)
+  Future<int> permanentDeleteSchedule(int id) async {
     final db = await _dbHelper.database;
     return db.delete(
       DatabaseHelper.tableSchedules,
@@ -183,7 +208,18 @@ class ScheduleRepository {
     );
   }
 
-  /// 월별 일정 조회
+  /// 휴지통 일정 목록 (최근 삭제 순)
+  Future<List<Schedule>> getDeletedSchedules() async {
+    final db = await _dbHelper.database;
+    final results = await db.query(
+      DatabaseHelper.tableSchedules,
+      where: 'deleted_at IS NOT NULL',
+      orderBy: 'deleted_at DESC',
+    );
+    return results.map(Schedule.fromMap).toList();
+  }
+
+  /// 월별 일정 조회 (삭제되지 않은 것만)
   Future<List<Schedule>> getSchedulesByMonth(int year, int month) async {
     final db = await _dbHelper.database;
     final startDate =
@@ -195,7 +231,8 @@ class ScheduleRepository {
 
     final result = await db.query(
       DatabaseHelper.tableSchedules,
-      where: 'scheduled_date >= ? AND scheduled_date < ?',
+      where:
+          'scheduled_date >= ? AND scheduled_date < ? AND deleted_at IS NULL',
       whereArgs: [startDate, endDate],
       orderBy: 'scheduled_date ASC',
     );
@@ -203,7 +240,7 @@ class ScheduleRepository {
     return result.map(Schedule.fromMap).toList();
   }
 
-  /// 전체 일정 삭제 (테스트용)
+  /// 전체 일정 삭제 (설정의 "전체 데이터 초기화"에서 사용 — hard delete)
   Future<int> deleteAll() async {
     final db = await _dbHelper.database;
     return db.delete(DatabaseHelper.tableSchedules);
@@ -218,8 +255,19 @@ class ScheduleRepository {
         'status': ScheduleStatus.confirmed.value,
         'updated_at': DateTime.now().toIso8601String(),
       },
-      where: 'status = ?',
+      where: 'status = ? AND deleted_at IS NULL',
       whereArgs: [ScheduleStatus.pending.value],
+    );
+  }
+
+  /// [cutoff]보다 오래 전에 soft-delete된 일정을 영구 삭제.
+  /// 반환: 영구 삭제된 건수.
+  Future<int> purgeOlderThan(DateTime cutoff) async {
+    final db = await _dbHelper.database;
+    return db.delete(
+      DatabaseHelper.tableSchedules,
+      where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+      whereArgs: [cutoff.toIso8601String()],
     );
   }
 }
