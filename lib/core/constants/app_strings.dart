@@ -30,6 +30,7 @@ class AppStrings {
   static const importParsing = '파일 분석 중...';
   static const importSuccess = '가져오기 완료';
   static const importFailed = '가져오기 실패';
+  static const importRegisterAll = '전체 등록';
   static const importRegisterCount = '건 등록됨';
 
   // 비교 기능 (가져오기 요약 카드에서 연도 표기 등에 사용)
@@ -82,7 +83,6 @@ class AppStrings {
   // 공통
   static const save = '저장';
   static const cancel = '취소';
-  static const confirm = '확인';
   static const delete = '삭제';
   static const retry = '다시 시도';
   static const loading = '로딩 중...';

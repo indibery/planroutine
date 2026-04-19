@@ -117,11 +117,12 @@ class ImportSection extends ConsumerWidget {
           child: Row(
             children: [
               Expanded(
+                flex: 2,
                 child: ElevatedButton.icon(
                   onPressed: () =>
                       _confirmRegister(context, ref, schedules, sourceYear),
-                  icon: const Icon(Icons.check),
-                  label: const Text(AppStrings.confirm),
+                  icon: const Icon(Icons.playlist_add_check),
+                  label: const Text(AppStrings.importRegisterAll),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -129,11 +130,12 @@ class ImportSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSizes.spacing8),
-              IconButton(
-                tooltip: AppStrings.retry,
-                icon: const Icon(Icons.refresh),
-                onPressed: () =>
-                    ref.read(importStateProvider.notifier).reset(),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () =>
+                      ref.read(importStateProvider.notifier).reset(),
+                  child: const Text(AppStrings.cancel),
+                ),
               ),
             ],
           ),
