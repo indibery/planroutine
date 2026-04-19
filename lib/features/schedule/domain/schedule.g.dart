@@ -19,6 +19,7 @@ _Schedule _$ScheduleFromJson(Map<String, dynamic> json) => _Schedule(
       ScheduleStatus.pending,
   createdAt: json['created_at'] as String?,
   updatedAt: json['updated_at'] as String?,
+  deletedAt: json['deleted_at'] as String?,
 );
 
 Map<String, dynamic> _$ScheduleToJson(_Schedule instance) => <String, dynamic>{
@@ -32,6 +33,7 @@ Map<String, dynamic> _$ScheduleToJson(_Schedule instance) => <String, dynamic>{
   'status': _$ScheduleStatusEnumMap[instance.status]!,
   'created_at': instance.createdAt,
   'updated_at': instance.updatedAt,
+  'deleted_at': instance.deletedAt,
 };
 
 const _$ScheduleStatusEnumMap = {

@@ -72,15 +72,25 @@ class ScheduleTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        schedule.title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          if (schedule.status == ScheduleStatus.confirmed) ...[
+                            _buildConfirmedBadge(),
+                            const SizedBox(width: AppSizes.spacing8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              schedule.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: AppSizes.spacing4),
                       Row(
@@ -123,6 +133,35 @@ class ScheduleTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(AppSizes.radius4),
+      ),
+    );
+  }
+
+  /// 확정된 일정에만 붙는 "확정" 뱃지 (녹색 배경 + 흰 글씨 + 체크 아이콘)
+  Widget _buildConfirmedBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing8,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.statusConfirmed,
+        borderRadius: BorderRadius.circular(AppSizes.radius4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.check, size: 12, color: Colors.white),
+          SizedBox(width: 3),
+          Text(
+            AppStrings.scheduleConfirm,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

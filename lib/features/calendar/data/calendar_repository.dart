@@ -1,7 +1,10 @@
 import '../../../core/database/database_helper.dart';
 import '../domain/calendar_event.dart';
 
-/// 캘린더 이벤트 DB 저장소
+/// 캘린더 이벤트 DB 저장소.
+///
+/// 삭제는 soft-delete: `deleted_at` 컬럼에 삭제 시각을 기록하여
+/// 휴지통에서 복구 가능. 모든 활성 조회는 `deleted_at IS NULL` 필터를 적용한다.
 class CalendarRepository {
   final DatabaseHelper _dbHelper;
 
@@ -28,8 +31,30 @@ class CalendarRepository {
     );
   }
 
-  /// 이벤트 삭제
+  /// 이벤트 soft-delete (휴지통으로 이동)
   Future<int> deleteEvent(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableCalendarEvents,
+      {'deleted_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 이벤트 복구
+  Future<int> restoreEvent(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableCalendarEvents,
+      {'deleted_at': null},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 이벤트 영구 삭제 (DB row 제거)
+  Future<int> permanentDeleteEvent(int id) async {
     final db = await _dbHelper.database;
     return db.delete(
       DatabaseHelper.tableCalendarEvents,
@@ -38,13 +63,24 @@ class CalendarRepository {
     );
   }
 
-  /// 특정 날짜의 이벤트 조회
+  /// 휴지통 이벤트 목록 (최근 삭제 순)
+  Future<List<CalendarEvent>> getDeletedEvents() async {
+    final db = await _dbHelper.database;
+    final results = await db.query(
+      DatabaseHelper.tableCalendarEvents,
+      where: 'deleted_at IS NOT NULL',
+      orderBy: 'deleted_at DESC',
+    );
+    return results.map(CalendarEvent.fromMap).toList();
+  }
+
+  /// 특정 날짜의 이벤트 조회 (삭제되지 않은 것만)
   Future<List<CalendarEvent>> getEventsByDate(DateTime date) async {
     final db = await _dbHelper.database;
     final dateStr = _formatDate(date);
     final results = await db.query(
       DatabaseHelper.tableCalendarEvents,
-      where: 'event_date = ?',
+      where: 'event_date = ? AND deleted_at IS NULL',
       whereArgs: [dateStr],
       orderBy: 'created_at ASC',
     );
@@ -58,7 +94,7 @@ class CalendarRepository {
     return getEventsByDateRange(start, end);
   }
 
-  /// 날짜 범위 이벤트 조회
+  /// 날짜 범위 이벤트 조회 (삭제되지 않은 것만)
   Future<List<CalendarEvent>> getEventsByDateRange(
     DateTime start,
     DateTime end,
@@ -68,23 +104,24 @@ class CalendarRepository {
     final endStr = _formatDate(end);
     final results = await db.query(
       DatabaseHelper.tableCalendarEvents,
-      where: 'event_date >= ? AND event_date <= ?',
+      where: 'event_date >= ? AND event_date <= ? AND deleted_at IS NULL',
       whereArgs: [startStr, endStr],
       orderBy: 'event_date ASC, created_at ASC',
     );
     return results.map(CalendarEvent.fromMap).toList();
   }
 
-  /// 확정된 일정에서 캘린더 이벤트 생성
+  /// 확정된 일정에서 캘린더 이벤트 생성.
   ///
-  /// 같은 [scheduleId]에 대한 이벤트가 이미 존재하면 -1 반환 (중복 생성 방지).
+  /// 같은 [scheduleId]에 대한 활성(삭제되지 않은) 이벤트가 이미 존재하면
+  /// -1 반환 (중복 생성 방지).
   Future<int> createFromSchedule(int scheduleId) async {
     final db = await _dbHelper.database;
 
-    // 중복 체크: 같은 schedule_id로 이미 생성된 이벤트가 있으면 스킵
+    // 중복 체크 (활성 이벤트 기준)
     final existing = await db.query(
       DatabaseHelper.tableCalendarEvents,
-      where: 'schedule_id = ?',
+      where: 'schedule_id = ? AND deleted_at IS NULL',
       whereArgs: [scheduleId],
       limit: 1,
     );
@@ -95,9 +132,8 @@ class CalendarRepository {
       where: 'id = ?',
       whereArgs: [scheduleId],
     );
-    if (scheduleResults.isEmpty) {
-      return -1;
-    }
+    if (scheduleResults.isEmpty) return -1;
+
     final schedule = scheduleResults.first;
     final now = DateTime.now().toIso8601String();
     final event = CalendarEvent(
@@ -111,7 +147,17 @@ class CalendarRepository {
     return createEvent(event);
   }
 
-  /// DateTime을 yyyy-MM-dd 형식 문자열로 변환
+  /// [cutoff]보다 오래 전에 soft-delete된 이벤트를 영구 삭제.
+  /// 반환: 영구 삭제된 건수.
+  Future<int> purgeOlderThan(DateTime cutoff) async {
+    final db = await _dbHelper.database;
+    return db.delete(
+      DatabaseHelper.tableCalendarEvents,
+      where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+      whereArgs: [cutoff.toIso8601String()],
+    );
+  }
+
   String _formatDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
