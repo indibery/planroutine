@@ -5,6 +5,25 @@ import 'package:integration_test/integration_test.dart';
 
 import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/database/database_helper.dart';
+
+/// 각 테스트를 깨끗한 상태(캘린더 탭 + 빈 DB)에서 시작시킨다.
+/// appRouter / DatabaseHelper가 싱글톤이라 테스트 간 상태가 누적된다.
+Future<void> _startFresh(WidgetTester tester) async {
+  await DatabaseHelper.instance.resetAllData();
+  await tester.pumpWidget(const ProviderScope(child: PlanRoutineApp()));
+  await tester.pumpAndSettle();
+  // 하단 탭의 캘린더 아이콘을 탭해 /calendar로 복귀
+  // (AppBar 타이틀 "캘린더"와 탭 라벨 "캘린더"가 중복될 수 있어 아이콘으로 식별)
+  final calendarTabIcon = find.descendant(
+    of: find.byType(BottomNavigationBar),
+    matching: find.byIcon(Icons.calendar_month),
+  );
+  if (calendarTabIcon.evaluate().isNotEmpty) {
+    await tester.tap(calendarTabIcon);
+    await tester.pumpAndSettle();
+  }
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -114,6 +133,82 @@ void main() {
       // 초기 화면 확인
       expect(find.text(AppStrings.importSelectFile), findsOneWidget);
       expect(find.byIcon(Icons.upload_file), findsWidgets);
+    });
+
+    testWidgets('설정 진입: 캘린더 AppBar ⚙️ → 설정 화면', (tester) async {
+      await _startFresh(tester);
+
+      // 캘린더 AppBar의 설정 아이콘 탭
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+
+      // 설정 화면 로드 확인
+      expect(find.text(AppStrings.settingsTitle), findsOneWidget);
+      expect(find.text(AppStrings.settingsDataSection), findsOneWidget);
+      expect(find.text(AppStrings.settingsResetAll), findsOneWidget);
+    });
+
+    testWidgets('전체 초기화 플로우: 이벤트 추가 → 초기화 → 사라짐 확인',
+        (tester) async {
+      await _startFresh(tester);
+
+      // 1) 캘린더에 이벤트 추가
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '콜드로드 테스트 이벤트',
+      );
+      await tester.tap(find.text(AppStrings.save));
+      await tester.pumpAndSettle();
+      expect(find.text('콜드로드 테스트 이벤트'), findsWidgets);
+
+      // 2) 설정 진입 → 전체 초기화
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.settingsResetAll));
+      await tester.pumpAndSettle();
+
+      // 확인 다이얼로그 표시
+      expect(find.text(AppStrings.settingsResetAllConfirmTitle), findsOneWidget);
+      await tester.tap(find.text(AppStrings.settingsResetAllConfirm));
+      await tester.pumpAndSettle();
+
+      // 성공 스낵바
+      expect(find.text(AppStrings.settingsResetAllDone), findsOneWidget);
+
+      // 3) 캘린더로 복귀 → 이벤트 사라짐
+      await tester.tap(find.text(AppStrings.tabCalendar));
+      await tester.pumpAndSettle();
+      expect(find.text('콜드로드 테스트 이벤트'), findsNothing);
+      expect(find.text(AppStrings.calendarNoEvents), findsOneWidget);
+    });
+
+    testWidgets('초기화 취소: 다이얼로그에서 취소 시 데이터 유지', (tester) async {
+      await _startFresh(tester);
+
+      // 이벤트 추가
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '취소 테스트 이벤트',
+      );
+      await tester.tap(find.text(AppStrings.save));
+      await tester.pumpAndSettle();
+
+      // 설정 진입 → 초기화 탭 → 취소
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.settingsResetAll));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.cancel));
+      await tester.pumpAndSettle();
+
+      // 캘린더 복귀 → 이벤트 그대로 존재
+      await tester.tap(find.text(AppStrings.tabCalendar));
+      await tester.pumpAndSettle();
+      expect(find.text('취소 테스트 이벤트'), findsWidgets);
     });
   });
 }

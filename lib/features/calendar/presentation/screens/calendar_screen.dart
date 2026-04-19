@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/router/app_router.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_grid.dart';
@@ -22,7 +24,16 @@ class CalendarScreen extends ConsumerWidget {
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.calendarTitle)),
+      appBar: AppBar(
+        title: const Text(AppStrings.calendarTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: AppStrings.settingsTitle,
+            onPressed: () => context.push(AppRoutes.settings),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _buildMonthHeader(context, ref, selectedDate),
