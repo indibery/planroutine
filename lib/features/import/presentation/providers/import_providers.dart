@@ -159,9 +159,3 @@ final importedYearsProvider = FutureProvider<List<int>>((ref) async {
   final repository = ref.watch(importRepositoryProvider);
   return repository.getImportedYears();
 });
-
-/// 선택 모드 상태
-final importSelectModeProvider = StateProvider<bool>((ref) => false);
-
-/// 선택된 일정 ID 목록
-final selectedImportIdsProvider = StateProvider<Set<int>>((ref) => {});

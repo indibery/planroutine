@@ -33,7 +33,6 @@ class AppColors {
   // 일정 상태별 색상
   static const statusPending = Color(0xFFFBBF24);
   static const statusConfirmed = Color(0xFF34D399);
-  static const statusCompleted = Color(0xFF9CA3AF);
 
   // 카테고리별 색상
   static const categoryDailyOps = Color(0xFF6366F1);

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/router/app_router.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_grid.dart';
@@ -24,16 +22,7 @@ class CalendarScreen extends ConsumerWidget {
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.calendarTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: AppStrings.settingsTitle,
-            onPressed: () => context.push(AppRoutes.settings),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text(AppStrings.calendarTitle)),
       body: Column(
         children: [
           _buildMonthHeader(context, ref, selectedDate),
@@ -207,34 +196,32 @@ class CalendarScreen extends ConsumerWidget {
     }
   }
 
+  /// 캘린더 이벤트 삭제 (확인 다이얼로그 없이 즉시 삭제 + 실행취소 스낵바)
   Future<void> _onDeleteEvent(
     BuildContext context,
     WidgetRef ref,
     CalendarEvent event,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.delete),
-        content: const Text(AppStrings.calendarDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              AppStrings.delete,
-              style: TextStyle(color: AppColors.error),
+    if (event.id case final id?) {
+      await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('"${event.title}" ${AppStrings.delete}'),
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: AppStrings.undo,
+                onPressed: () {
+                  // id를 비운 새 이벤트로 재삽입 (새 id 부여)
+                  ref
+                      .read(selectedMonthEventsProvider.notifier)
+                      .addEvent(event.copyWith(id: null));
+                },
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      if (event.id case final id?) {
-        await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+          );
       }
     }
   }

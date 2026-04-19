@@ -14,6 +14,9 @@ class AppStrings {
 
   // 설정 기능
   static const settingsTitle = '설정';
+  static const settingsImportSection = '가져오기';
+  static const settingsImportLastYear = '작년 일정 가져오기';
+  static const settingsImportLastYearDescription = 'CSV 파일로 작년 업무 일정을 불러옵니다';
   static const settingsDataSection = '데이터 관리';
   static const settingsResetAll = '전체 데이터 초기화';
   static const settingsResetAllDescription =
@@ -35,10 +38,8 @@ class AppStrings {
   static const importNoFile = '파일을 선택해주세요';
   static const importInvalidFormat = '올바른 CSV 형식이 아닙니다';
   static const importRegisterAll = '전체 등록';
-  static const importRegisterSelected = '선택 등록';
   static const importRegisterDone = '등록 완료';
   static const importRegisterCount = '건 등록됨';
-  static const importSelected = '건 선택';
 
   // Compare 기능
   static const compareTitle = '일정 비교';
@@ -62,7 +63,6 @@ class AppStrings {
   static const scheduleDelete = '삭제';
   static const schedulePending = '검토 대기';
   static const scheduleConfirmed = '확정됨';
-  static const scheduleCompleted = '완료';
   static const scheduleAll = '전체';
   static const scheduleEmpty = '등록된 일정이 없습니다';
   static const scheduleEmptyFiltered = '해당 조건의 일정이 없습니다';
@@ -77,6 +77,7 @@ class AppStrings {
   static const scheduleDescriptionHint = '설명 (선택사항)';
   static const scheduleDateLabel = '일정 날짜';
   static const scheduleTitleLabel = '제목';
+  static const scheduleSlideHint = '좌우로 밀어 확정 또는 삭제';
 
   // Calendar 기능
   static const calendarTitle = '캘린더';
@@ -114,6 +115,7 @@ class AppStrings {
   static const retry = '다시 시도';
   static const loading = '로딩 중...';
   static const error = '오류가 발생했습니다';
+  static const undo = '실행취소';
 
   // 카테고리 (과제명)
   static const categoryAll = '전체';

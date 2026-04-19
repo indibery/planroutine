@@ -37,5 +37,4 @@ Map<String, dynamic> _$ScheduleToJson(_Schedule instance) => <String, dynamic>{
 const _$ScheduleStatusEnumMap = {
   ScheduleStatus.pending: 'pending',
   ScheduleStatus.confirmed: 'confirmed',
-  ScheduleStatus.completed: 'completed',
 };

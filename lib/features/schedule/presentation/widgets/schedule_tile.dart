@@ -25,6 +25,12 @@ class ScheduleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key('schedule_${schedule.id}'),
+      // 기본 0.4 → 0.2/0.25로 낮춰 더 짧은 스와이프로 반응
+      dismissThresholds: const {
+        DismissDirection.startToEnd: 0.2,
+        DismissDirection.endToStart: 0.25,
+      },
+      movementDuration: const Duration(milliseconds: 150),
       background: _buildSwipeBackground(
         color: AppColors.statusConfirmed,
         icon: Icons.check_circle_outline,
@@ -39,15 +45,13 @@ class ScheduleTile extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
+          // 이미 확정된 항목은 재슬라이드 시 무시 (C6)
+          if (schedule.status == ScheduleStatus.confirmed) return false;
           onConfirm();
           return false;
         } else {
-          return await _showDeleteDialog(context);
-        }
-      },
-      onDismissed: (direction) {
-        if (direction == DismissDirection.endToStart) {
           onDelete();
+          return true;
         }
       },
       child: Card(
@@ -174,36 +178,12 @@ class ScheduleTile extends StatelessWidget {
     );
   }
 
-  Future<bool> _showDeleteDialog(BuildContext context) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.scheduleDelete),
-        content: const Text(AppStrings.scheduleDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text(AppStrings.delete),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
   Color _statusColor(ScheduleStatus status) {
     switch (status) {
       case ScheduleStatus.pending:
         return AppColors.statusPending;
       case ScheduleStatus.confirmed:
         return AppColors.statusConfirmed;
-      case ScheduleStatus.completed:
-        return AppColors.statusCompleted;
     }
   }
 

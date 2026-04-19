@@ -51,16 +51,6 @@ class ScheduleFilterBar extends ConsumerWidget {
                   ScheduleStatus.confirmed;
             },
           ),
-          const SizedBox(width: AppSizes.spacing8),
-          _StatusChip(
-            label: AppStrings.scheduleCompleted,
-            color: AppColors.statusCompleted,
-            isSelected: currentStatus == ScheduleStatus.completed,
-            onTap: () {
-              ref.read(scheduleStatusFilterProvider.notifier).state =
-                  ScheduleStatus.completed;
-            },
-          ),
         ],
       ),
     );
