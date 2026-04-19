@@ -26,6 +26,11 @@ final trashSnapshotProvider =
 class TrashNotifier extends AsyncNotifier<TrashSnapshot> {
   @override
   Future<TrashSnapshot> build() async {
+    // 활성 목록이 바뀔 때(=삭제·복구·생성) 휴지통도 함께 갱신되도록 watch.
+    // 값은 사용하지 않고 invalidation 전파 목적.
+    ref.watch(schedulesProvider);
+    ref.watch(selectedMonthEventsProvider);
+
     final scheduleRepo = ref.watch(scheduleRepositoryProvider);
     final calendarRepo = ref.watch(calendarRepositoryProvider);
     final (schedules, events) = await (
