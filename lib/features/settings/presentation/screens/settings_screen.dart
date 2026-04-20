@@ -246,6 +246,44 @@ class _NotificationSettingsTiles extends ConsumerWidget {
         ListTile(
           leading: const SizedBox(width: 40),
           title: const Text(
+            AppStrings.settingsNotificationTime,
+            style: TextStyle(fontSize: 14),
+          ),
+          subtitle: const Text(
+            AppStrings.settingsNotificationTimeDescription,
+            style: TextStyle(fontSize: 12),
+          ),
+          trailing: Text(
+            _formatTime(settings.hour, settings.minute),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: subEnabled
+                  ? AppColors.primary
+                  : AppColors.textHint,
+            ),
+          ),
+          enabled: subEnabled,
+          onTap: subEnabled
+              ? () => _pickTime(context, ref, settings)
+              : null,
+        ),
+        ListTile(
+          leading: const SizedBox(width: 40),
+          title: const Text(
+            AppStrings.settingsNotificationDebug,
+            style: TextStyle(fontSize: 14),
+          ),
+          subtitle: const Text(
+            AppStrings.settingsNotificationDebugDescription,
+            style: TextStyle(fontSize: 12),
+          ),
+          trailing: const Icon(Icons.list_alt, color: AppColors.primary),
+          onTap: () => _showPendingDialog(context, ref),
+        ),
+        ListTile(
+          leading: const SizedBox(width: 40),
+          title: const Text(
             AppStrings.settingsNotificationTest,
             style: TextStyle(fontSize: 14),
           ),
@@ -273,6 +311,88 @@ class _NotificationSettingsTiles extends ConsumerWidget {
           },
         ),
       ],
+    );
+  }
+
+  String _formatTime(int hour, int minute) {
+    final h = hour.toString().padLeft(2, '0');
+    final m = minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  Future<void> _pickTime(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationSettings settings,
+  ) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
+      // iOS 느낌 유지 위해 다이얼 고정 (입력 모드는 터치 실수 유발)
+      initialEntryMode: TimePickerEntryMode.dial,
+    );
+    if (picked == null) return;
+    if (picked.hour == settings.hour && picked.minute == settings.minute) {
+      return;
+    }
+    await ref.read(notificationSettingsProvider.notifier).setTime(
+          hour: picked.hour,
+          minute: picked.minute,
+        );
+  }
+
+  Future<void> _showPendingDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final service = ref.read(notificationServiceProvider);
+    final list = await service.listPending();
+    if (!context.mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          '${AppStrings.settingsNotificationDebugTitle} '
+          '${list.length}${AppStrings.settingsNotificationDebugCountSuffix}',
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: list.isEmpty
+              ? const Text(AppStrings.settingsNotificationDebugEmpty)
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: list.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final p = list[i];
+                    return ListTile(
+                      dense: true,
+                      title: Text(
+                        p.title,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        p.body,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: Text(
+                        '#${p.id}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(AppStrings.cancel),
+          ),
+        ],
+      ),
     );
   }
 }

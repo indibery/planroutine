@@ -27,6 +27,24 @@ abstract class NotificationService {
     required String body,
     int seconds = 5,
   });
+
+  /// 현재 OS에 예약된 알림 목록. 디버그/검증용.
+  /// scheduledAt 정보는 OS가 보존하지 않으므로 title/body/id만 반환.
+  Future<List<PendingNotificationInfo>> listPending();
+}
+
+/// [NotificationService.listPending] 반환 값.
+/// OS 계층에선 scheduledAt이 보존되지 않아 id/title/body만 제공.
+class PendingNotificationInfo {
+  const PendingNotificationInfo({
+    required this.id,
+    required this.title,
+    required this.body,
+  });
+
+  final int id;
+  final String title;
+  final String body;
 }
 
 class FlutterLocalNotificationService implements NotificationService {
@@ -106,6 +124,18 @@ class FlutterLocalNotificationService implements NotificationService {
 
   @override
   Future<void> cancel(int id) => _plugin.cancel(id);
+
+  @override
+  Future<List<PendingNotificationInfo>> listPending() async {
+    final list = await _plugin.pendingNotificationRequests();
+    return list
+        .map((p) => PendingNotificationInfo(
+              id: p.id,
+              title: p.title ?? '',
+              body: p.body ?? '',
+            ))
+        .toList();
+  }
 
   @override
   Future<void> scheduleQuickTest({

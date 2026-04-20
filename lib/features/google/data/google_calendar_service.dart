@@ -72,6 +72,46 @@ class GoogleCalendarService {
     }
   }
 
+  /// 이미 저장된 이벤트 [eventId]를 primary 캘린더에서 업데이트.
+  ///
+  /// 구글쪽에서 사용자가 이미 삭제했으면 404가 반환되므로 [NotFoundException]으로
+  /// 감싸서 호출측에서 "insert로 재시도" 전략을 쓸 수 있게 한다.
+  Future<gcal.Event> updateEvent({
+    required String eventId,
+    required String title,
+    String? description,
+    required DateTime startDate,
+    DateTime? endDate,
+    required bool isAllDay,
+  }) async {
+    final account = _signIn.currentUser;
+    if (account == null) {
+      throw StateError('Google 로그인이 필요합니다');
+    }
+    final headers = await account.authHeaders;
+    final client = _AuthenticatedClient(headers);
+    try {
+      final api = gcal.CalendarApi(client);
+      final event = _buildEvent(
+        title: title,
+        description: description,
+        startDate: startDate,
+        endDate: endDate,
+        isAllDay: isAllDay,
+      );
+      try {
+        return await api.events.update(event, 'primary', eventId);
+      } on gcal.DetailedApiRequestError catch (e) {
+        if (e.status == 404 || e.status == 410) {
+          throw const GoogleEventNotFoundException();
+        }
+        rethrow;
+      }
+    } finally {
+      client.close();
+    }
+  }
+
   gcal.Event _buildEvent({
     required String title,
     String? description,
@@ -97,6 +137,14 @@ class GoogleCalendarService {
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+}
+
+/// 구글쪽에서 이미 삭제/만료된 이벤트 id로 update를 시도한 경우.
+/// 호출측은 이를 잡아 insert로 재시도할지 결정한다.
+class GoogleEventNotFoundException implements Exception {
+  const GoogleEventNotFoundException();
+  @override
+  String toString() => 'GoogleEventNotFoundException';
 }
 
 /// google_sign_in이 반환한 auth header를 모든 요청에 붙이는 http 클라이언트.
