@@ -83,7 +83,14 @@ class FlutterLocalNotificationService implements NotificationService {
         p.body,
         tzTime,
         const NotificationDetails(
-          iOS: DarwinNotificationDetails(),
+          iOS: DarwinNotificationDetails(
+            // 업무 일정 리마인더는 집중 모드/수업 중에도 사용자가 놓치면 안 됨.
+            // timeSensitive는 iOS의 집중 필터를 뚫고 올린다.
+            // ※ 효과 활성화에는 앱 entitlements + Apple Developer Portal의
+            //   "Time Sensitive Notifications" capability가 추가로 필요.
+            //   미설정 시 iOS가 silent 무시하고 기본 우선순위로 동작.
+            interruptionLevel: InterruptionLevel.timeSensitive,
+          ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -112,7 +119,11 @@ class FlutterLocalNotificationService implements NotificationService {
       title,
       body,
       at,
-      const NotificationDetails(iOS: DarwinNotificationDetails()),
+      const NotificationDetails(
+        iOS: DarwinNotificationDetails(
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
+      ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
