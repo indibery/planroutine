@@ -23,6 +23,17 @@ class AppStrings {
   static const settingsTrashSection = '휴지통';
   static const settingsTrashDescription =
       '삭제한 일정·캘린더 이벤트 (30일 후 자동 영구 삭제)';
+  static const settingsNotificationSection = '알림';
+  static const settingsNotificationMaster = '알림 사용';
+  static const settingsNotificationMasterDescription =
+      '월초·1주 전·1일 전에 알림을 보냅니다';
+  static const settingsNotificationMonthStart = '월초 알림';
+  static const settingsNotificationWeekBefore = '1주 전 알림';
+  static const settingsNotificationDayBefore = '1일 전 알림';
+  static const settingsNotificationTest = '테스트 알림 보내기';
+  static const settingsNotificationTestDescription = '5초 후 알림이 발송됩니다';
+  static const settingsNotificationTestScheduled =
+      '5초 후 알림이 발송됩니다. 앱을 벗어나 대기해주세요';
   static const settingsGoogleSection = '구글 계정';
   static const settingsGoogleSignIn = '구글 캘린더 연결';
   static const settingsGoogleSignInDescription =
