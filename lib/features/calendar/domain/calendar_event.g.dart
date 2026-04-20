@@ -19,6 +19,7 @@ _CalendarEvent _$CalendarEventFromJson(Map<String, dynamic> json) =>
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
       deletedAt: json['deleted_at'] as String?,
+      completedAt: json['completed_at'] as String?,
     );
 
 Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>
@@ -34,4 +35,5 @@ Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>
       'created_at': instance.createdAt,
       'updated_at': instance.updatedAt,
       'deleted_at': instance.deletedAt,
+      'completed_at': instance.completedAt,
     };

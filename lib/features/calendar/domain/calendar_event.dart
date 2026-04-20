@@ -21,6 +21,7 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'updated_at') String? updatedAt,
     @JsonKey(name: 'deleted_at') String? deletedAt,
+    @JsonKey(name: 'completed_at') String? completedAt,
   }) = _CalendarEvent;
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) =>
@@ -40,8 +41,12 @@ abstract class CalendarEvent with _$CalendarEvent {
       createdAt: map['created_at'] as String?,
       updatedAt: map['updated_at'] as String?,
       deletedAt: map['deleted_at'] as String?,
+      completedAt: map['completed_at'] as String?,
     );
   }
+
+  /// 완료된 이벤트인지 (completedAt이 null이 아니면 완료)
+  bool get isCompleted => completedAt != null;
 
   /// DB 삽입용 Map 변환 (deletedAt은 repository에서 별도 관리)
   Map<String, dynamic> toMap() {

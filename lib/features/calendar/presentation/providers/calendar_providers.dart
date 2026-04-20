@@ -48,6 +48,19 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     await repository.deleteEvent(id);
     ref.invalidateSelf();
   }
+
+  /// 완료/완료 취소 토글
+  Future<void> toggleCompleted(CalendarEvent event) async {
+    final id = event.id;
+    if (id == null) return;
+    final repository = ref.read(calendarRepositoryProvider);
+    if (event.isCompleted) {
+      await repository.markIncomplete(id);
+    } else {
+      await repository.markCompleted(id);
+    }
+    ref.invalidateSelf();
+  }
 }
 
 /// 선택된 날짜의 이벤트 (월 이벤트에서 필터링)

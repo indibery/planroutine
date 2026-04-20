@@ -7,6 +7,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
+import '../providers/calendar_providers.dart';
 
 /// 이벤트 추가/수정 바텀시트
 class EventEditDialog extends ConsumerStatefulWidget {
@@ -296,8 +297,12 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   Widget _buildButtons() {
     final googleAccount = ref.watch(googleAccountProvider).valueOrNull;
     final isSignedIn = googleAccount != null;
+    final isCompleted = widget.event?.isCompleted ?? false;
+    final canComplete = _isEditing; // 새로 추가하는 이벤트는 먼저 저장해야 완료 가능
+
     return Column(
       children: [
+        // Row 1: 취소 / 저장
         Row(
           children: [
             Expanded(
@@ -307,7 +312,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 child: const Text(AppStrings.cancel),
               ),
             ),
-            const SizedBox(width: AppSizes.spacing12),
+            const SizedBox(width: AppSizes.spacing8),
             Expanded(
               child: ElevatedButton(
                 onPressed: _savingToGoogle ? null : _onSave,
@@ -317,26 +322,55 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           ],
         ),
         const SizedBox(height: AppSizes.spacing8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _savingToGoogle ? null : _onSaveToGoogle,
-            icon: _savingToGoogle
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.calendar_month, size: 18),
-            label: Text(
-              isSignedIn
-                  ? AppStrings.calendarSaveToGoogle
-                  : AppStrings.calendarSaveToGoogleNeedsSignIn,
+        // Row 2: Google 저장 / 일정 완료(or 완료 취소)
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _savingToGoogle ? null : _onSaveToGoogle,
+                icon: _savingToGoogle
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.calendar_month, size: 16),
+                label: Text(
+                  isSignedIn
+                      ? AppStrings.calendarSaveToGoogleShort
+                      : AppStrings.calendarSaveToGoogleNeedsSignInShort,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
             ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
+            const SizedBox(width: AppSizes.spacing8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: (canComplete && !_savingToGoogle)
+                    ? _onToggleCompleted
+                    : null,
+                icon: Icon(
+                  isCompleted
+                      ? Icons.radio_button_unchecked
+                      : Icons.check_circle,
+                  size: 16,
+                ),
+                label: Text(
+                  isCompleted
+                      ? AppStrings.calendarUndoComplete
+                      : AppStrings.calendarMarkComplete,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isCompleted
+                      ? AppColors.textSecondary
+                      : AppColors.statusConfirmed,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -412,6 +446,21 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         );
       }
     }
+  }
+
+  /// 완료/완료 취소 토글: 현재 편집 중인 내용을 먼저 저장 후 상태 변경.
+  Future<void> _onToggleCompleted() async {
+    if (!_formKey.currentState!.validate()) return;
+    final event = widget.event;
+    if (event == null) return;
+
+    // 편집 내용 먼저 반영
+    final edited = _buildEvent();
+    await ref.read(selectedMonthEventsProvider.notifier).updateEvent(edited);
+    // 완료 상태 토글
+    await ref.read(selectedMonthEventsProvider.notifier).toggleCompleted(event);
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   CalendarEvent _buildEvent() {

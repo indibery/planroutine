@@ -90,9 +90,13 @@ class AppStrings {
   static const calendarEventColor = '색상';
   static const calendarTitleRequired = '제목을 입력해주세요';
   static const calendarSaveToGoogle = 'Google 캘린더에도 저장';
+  static const calendarSaveToGoogleShort = 'Google 저장';
   static const calendarSaveToGoogleNeedsSignIn = 'Google 로그인 후 저장';
+  static const calendarSaveToGoogleNeedsSignInShort = 'Google 로그인';
   static const calendarSaveToGoogleDone = '구글 캘린더에 저장했습니다';
   static const calendarSaveToGoogleFailed = '구글 캘린더 저장 실패';
+  static const calendarMarkComplete = '일정 완료';
+  static const calendarUndoComplete = '완료 취소';
 
   // 휴지통
   static const trashTitle = '휴지통';
