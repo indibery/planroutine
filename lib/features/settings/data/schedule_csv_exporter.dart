@@ -18,11 +18,14 @@ class ScheduleCsvExporter {
   final DatabaseHelper _dbHelper;
 
   /// 내보낸 CSV 파일 경로 + 포함된 일정 수를 반환한다.
+  ///
+  /// 확정된(캘린더에 등록된) 일정만 포함한다. 검토 대기(pending) 상태는 제외.
   Future<({String filePath, int count})> exportActiveSchedules() async {
     final db = await _dbHelper.database;
     final rows = await db.query(
       DatabaseHelper.tableSchedules,
-      where: 'deleted_at IS NULL',
+      where: 'deleted_at IS NULL AND status = ?',
+      whereArgs: ['confirmed'],
       orderBy: 'scheduled_date ASC',
     );
     final schedules = rows.map(Schedule.fromMap).toList();

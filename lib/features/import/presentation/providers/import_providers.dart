@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/csv_parser.dart';
 import '../../data/import_repository.dart';
 import '../../domain/imported_schedule.dart';
+import '../../../calendar/data/calendar_repository.dart';
+import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../schedule/data/schedule_repository.dart';
+import '../../../schedule/domain/schedule.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 /// ImportRepository 프로바이더
 final importRepositoryProvider = Provider<ImportRepository>((ref) {
@@ -59,13 +62,24 @@ class ImportRegistered extends ImportState {
 
 /// 가져오기 상태 관리 Notifier
 class ImportStateNotifier extends StateNotifier<ImportState> {
-  ImportStateNotifier(this._repository, this._scheduleRepository)
-      : super(const ImportInitial());
+  ImportStateNotifier(
+    this._ref,
+    this._repository,
+    this._scheduleRepository,
+    this._calendarRepository,
+  ) : super(const ImportInitial());
 
+  final Ref _ref;
   final ImportRepository _repository;
   final ScheduleRepository _scheduleRepository;
+  final CalendarRepository _calendarRepository;
 
-  /// 파일 선택 후 CSV 가져오기
+  /// 파일 선택 후 CSV 가져오기.
+  ///
+  /// 플랜루틴 자체 export CSV(헤더에 "상태" 포함)는 바로 확정 일정으로 저장하고
+  /// 캘린더 이벤트까지 자동 생성 → `ImportRegistered` 상태로 전환.
+  /// 원본 생산문서등록대장 CSV는 기존 흐름대로 `ImportSuccess` → 사용자가
+  /// "전체 등록" 버튼 탭.
   Future<void> pickAndImportCsv() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -86,25 +100,29 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
         return;
       }
 
-      // 파일 바이트 읽기 및 디코딩 (UTF-8 → EUC-KR 순서로 시도)
       final bytes = await File(path).readAsBytes();
       final csvParser = const CsvParser();
       final csvContent = await csvParser.decodeBytes(bytes);
+      final parsed = csvParser.parseWithMetadata(csvContent);
 
-      // 파싱 및 DB 저장
-      final schedules = await _repository.importFromCsv(csvContent);
-
-      if (schedules.isEmpty) {
+      if (parsed.schedules.isEmpty) {
         state = const ImportError('가져올 일정이 없습니다');
         return;
       }
 
-      // 연도 추출 (첫 번째 항목 기준)
+      if (parsed.isPlanRoutineFormat) {
+        await _importPlanRoutineCsv(parsed);
+        return;
+      }
+
+      // 원본 생산문서등록대장 CSV: imported_schedules에 저장 후 사용자 확인
+      final schedules = await _repository.importFromCsv(csvContent);
+      if (schedules.isEmpty) {
+        state = const ImportError('가져올 일정이 없습니다');
+        return;
+      }
       final sourceYear = schedules.first.sourceYear ?? DateTime.now().year;
-
-      // 카테고리 요약
       final categorySummary = await _repository.getCategorySummary(sourceYear);
-
       state = ImportSuccess(
         schedules: schedules,
         categorySummary: categorySummary,
@@ -113,6 +131,57 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
     } catch (e) {
       state = ImportError('가져오기 중 오류: $e');
     }
+  }
+
+  /// 플랜루틴 export CSV를 직접 schedules + calendar_events로 복원한다.
+  Future<void> _importPlanRoutineCsv(ParsedCsv parsed) async {
+    final now = DateTime.now().toIso8601String();
+    var created = 0;
+    var skipped = 0;
+
+    for (final row in parsed.schedules) {
+      final key = '${row.title}|${row.registrationDate}';
+      final isConfirmed = parsed.confirmedTitles.contains(key);
+      final description = parsed.descriptionsByTitle[key];
+
+      final scheduleId = await _scheduleRepository.insertConfirmedOrPending(
+        Schedule(
+          title: row.title,
+          description: description,
+          scheduledDate: row.registrationDate,
+          category: row.category,
+          status:
+              isConfirmed ? ScheduleStatus.confirmed : ScheduleStatus.pending,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      if (scheduleId < 0) {
+        skipped++;
+        continue;
+      }
+      created++;
+
+      // 확정 상태면 캘린더 이벤트 자동 생성 (내부에서 중복 체크)
+      if (isConfirmed) {
+        await _calendarRepository.createFromSchedule(scheduleId);
+      }
+    }
+
+    // 일정 탭 + 캘린더 즉시 반영
+    _ref.invalidate(schedulesProvider);
+    _ref.invalidate(selectedMonthEventsProvider);
+
+    state = ImportRegistered(
+      created: created,
+      skipped: skipped,
+      sourceYear: _extractYear(parsed.schedules.first.registrationDate),
+    );
+  }
+
+  int _extractYear(String dateStr) {
+    if (dateStr.length < 4) return DateTime.now().year;
+    return int.tryParse(dateStr.substring(0, 4)) ?? DateTime.now().year;
   }
 
   /// 가져온 일정을 올해 일정으로 일괄 등록 (중복 자동 스킵) → 등록 완료 상태로 전환
@@ -158,7 +227,8 @@ final importStateProvider =
     StateNotifierProvider<ImportStateNotifier, ImportState>((ref) {
   final importRepo = ref.watch(importRepositoryProvider);
   final scheduleRepo = ref.watch(scheduleRepositoryProvider);
-  return ImportStateNotifier(importRepo, scheduleRepo);
+  final calendarRepo = ref.watch(calendarRepositoryProvider);
+  return ImportStateNotifier(ref, importRepo, scheduleRepo, calendarRepo);
 });
 
 /// 저장된 일정 목록 프로바이더 (연도/카테고리 필터)

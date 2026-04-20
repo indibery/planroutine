@@ -208,6 +208,22 @@ class ScheduleRepository {
     );
   }
 
+  /// 플랜루틴 export CSV 재임포트용 — Schedule을 주어진 상태 그대로 삽입.
+  ///
+  /// 같은 (title, scheduled_date) 조합의 활성 일정이 이미 있으면 스킵하고 -1 반환.
+  /// 성공 시 새 row id 반환.
+  Future<int> insertConfirmedOrPending(Schedule schedule) async {
+    final db = await _dbHelper.database;
+    final existing = await db.query(
+      DatabaseHelper.tableSchedules,
+      where: 'title = ? AND scheduled_date = ? AND deleted_at IS NULL',
+      whereArgs: [schedule.title, schedule.scheduledDate],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) return -1;
+    return db.insert(DatabaseHelper.tableSchedules, schedule.toMap());
+  }
+
   /// 휴지통 일정 목록 (최근 삭제 순)
   Future<List<Schedule>> getDeletedSchedules() async {
     final db = await _dbHelper.database;
