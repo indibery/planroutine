@@ -108,6 +108,7 @@ class AppStrings {
   static const calendarSaveToGoogleFailed = '구글 캘린더 저장 실패';
   static const calendarMarkComplete = '일정 완료';
   static const calendarUndoComplete = '완료 취소';
+  static const calendarSwipeGoogleSave = 'Google 저장';
 
   // 휴지통
   static const trashTitle = '휴지통';
