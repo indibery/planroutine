@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
@@ -465,8 +466,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
 
   CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();
-    final dateStr = _formatDate(_eventDate);
-    final endDateStr = _endDate != null ? _formatDate(_endDate!) : null;
+    final dateStr = formatDate(_eventDate);
+    final endDateStr = _endDate != null ? formatDate(_endDate!) : null;
     final colorHex = CalendarEvent.colorToHex(_selectedColor);
     return CalendarEvent(
       id: widget.event?.id,
@@ -484,10 +485,4 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
 }

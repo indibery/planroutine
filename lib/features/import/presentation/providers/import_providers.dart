@@ -231,20 +231,3 @@ final importStateProvider =
   return ImportStateNotifier(ref, importRepo, scheduleRepo, calendarRepo);
 });
 
-/// 저장된 일정 목록 프로바이더 (연도/카테고리 필터)
-final importedSchedulesProvider = FutureProvider.family<
-    List<ImportedSchedule>, ({int? year, String? category})>(
-  (ref, filter) async {
-    final repository = ref.watch(importRepositoryProvider);
-    return repository.getImportedSchedules(
-      year: filter.year,
-      category: filter.category,
-    );
-  },
-);
-
-/// 가져온 연도 목록 프로바이더
-final importedYearsProvider = FutureProvider<List<int>>((ref) async {
-  final repository = ref.watch(importRepositoryProvider);
-  return repository.getImportedYears();
-});

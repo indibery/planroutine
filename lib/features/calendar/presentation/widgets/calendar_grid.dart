@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../domain/calendar_event.dart';
 import 'calendar_day_cell.dart';
 
@@ -102,7 +103,7 @@ class CalendarGrid extends StatelessWidget {
     for (var i = 0; i < firstWeekday; i++) {
       final day = daysInPrevMonth - firstWeekday + 1 + i;
       final date = DateTime(prevYear, prevMonth, day);
-      final dateStr = _formatDate(date);
+      final dateStr = formatDate(date);
       cells.add(CalendarDayCell(
         day: day,
         isToday: false,
@@ -118,7 +119,7 @@ class CalendarGrid extends StatelessWidget {
     // 이번 달 셀
     for (var day = 1; day <= daysInMonth; day++) {
       final date = DateTime(year, month, day);
-      final dateStr = _formatDate(date);
+      final dateStr = formatDate(date);
       final weekday = (firstWeekday + day - 1) % 7;
 
       cells.add(CalendarDayCell(
@@ -146,7 +147,7 @@ class CalendarGrid extends StatelessWidget {
     for (var i = 0; i < targetCells - totalCells; i++) {
       final day = i + 1;
       final date = DateTime(nextYear, nextMonth, day);
-      final dateStr = _formatDate(date);
+      final dateStr = formatDate(date);
       final weekday = (totalCells + i) % 7;
 
       cells.add(CalendarDayCell(
@@ -164,10 +165,4 @@ class CalendarGrid extends StatelessWidget {
     return cells;
   }
 
-  String _formatDate(DateTime date) {
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
 }

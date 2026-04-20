@@ -1,4 +1,5 @@
 import '../../../core/database/database_helper.dart';
+import '../../../core/utils/date_utils.dart';
 import '../domain/calendar_event.dart';
 
 /// 캘린더 이벤트 DB 저장소.
@@ -99,7 +100,7 @@ class CalendarRepository {
   /// 특정 날짜의 이벤트 조회 (삭제되지 않은 것만)
   Future<List<CalendarEvent>> getEventsByDate(DateTime date) async {
     final db = await _dbHelper.database;
-    final dateStr = _formatDate(date);
+    final dateStr = formatDate(date);
     final results = await db.query(
       DatabaseHelper.tableCalendarEvents,
       where: 'event_date = ? AND deleted_at IS NULL',
@@ -122,8 +123,8 @@ class CalendarRepository {
     DateTime end,
   ) async {
     final db = await _dbHelper.database;
-    final startStr = _formatDate(start);
-    final endStr = _formatDate(end);
+    final startStr = formatDate(start);
+    final endStr = formatDate(end);
     final results = await db.query(
       DatabaseHelper.tableCalendarEvents,
       where: 'event_date >= ? AND event_date <= ? AND deleted_at IS NULL',
@@ -180,10 +181,4 @@ class CalendarRepository {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
 }
