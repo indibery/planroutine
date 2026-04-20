@@ -8,7 +8,8 @@ import '../../data/notification_rules.dart';
 import '../../data/notification_service.dart';
 import '../../domain/notification_settings.dart';
 
-const _prefsKey = 'notification_settings_v1';
+// v1 → v2: 기본 알림 시각 09:00 → 08:00. 키 bump으로 기존 저장값 자연 리셋.
+const _prefsKey = 'notification_settings_v2';
 
 /// 플랫폼 NotificationService 프로바이더 (앱 시작 시 init 필수).
 final notificationServiceProvider = Provider<NotificationService>((ref) {
