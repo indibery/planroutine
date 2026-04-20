@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
@@ -26,8 +27,9 @@ class ScheduleCsvExporter {
     );
     final schedules = rows.map(Schedule.fromMap).toList();
 
+    // 컬럼명을 기존 parser와 호환되도록 "등록일자" 사용 → 재임포트 round-trip 가능
     final data = <List<dynamic>>[
-      const ['제목', '날짜', '카테고리', '설명', '상태'],
+      const ['제목', '등록일자', '카테고리', '설명', '상태'],
       for (final s in schedules)
         [
           s.title,
@@ -47,8 +49,14 @@ class ScheduleCsvExporter {
         '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
         '_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
     final path = '${dir.path}/planroutine_일정_$ts.csv';
-    // UTF-8 BOM 추가 — Excel에서 한글 깨짐 방지
-    final bytes = [0xEF, 0xBB, 0xBF, ...csv.codeUnits];
+
+    // UTF-8 BOM + UTF-8 본문 바이트로 저장.
+    // (String.codeUnits는 UTF-16이라 writeAsBytes에 쓰면 한글이 깨지므로
+    //  반드시 utf8.encode()로 바이트 변환)
+    final bytes = <int>[
+      0xEF, 0xBB, 0xBF, // UTF-8 BOM (Excel 한글 자동 인식)
+      ...utf8.encode(csv),
+    ];
     await File(path).writeAsBytes(bytes);
 
     return (filePath: path, count: schedules.length);

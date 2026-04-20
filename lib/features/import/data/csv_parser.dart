@@ -12,19 +12,31 @@ class CsvParser {
 
   /// CSV 바이트를 문자열로 디코딩
   /// UTF-8 → EUC-KR 순서로 시도
-  /// (한국 학교 행정 시스템 CSV는 대부분 EUC-KR 인코딩)
+  /// (한국 학교 행정 시스템 CSV는 대부분 EUC-KR, 플랜루틴 export는 UTF-8 BOM)
   Future<String> decodeBytes(List<int> bytes) async {
+    // UTF-8 BOM(EF BB BF)이 앞에 있으면 스트립 — 첫 헤더가 "\uFEFF제목"이 되는 것 방지
+    final payload = _stripUtf8Bom(bytes);
     try {
-      return utf8.decode(bytes);
+      return utf8.decode(payload);
     } on FormatException {
       // UTF-8 실패 시 EUC-KR로 디코딩
-      final uint8Bytes = Uint8List.fromList(bytes);
+      final uint8Bytes = Uint8List.fromList(payload);
       final decoded = await CharsetConverter.decode(
         'euc-kr',
         uint8Bytes,
       );
       return decoded;
     }
+  }
+
+  List<int> _stripUtf8Bom(List<int> bytes) {
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xEF &&
+        bytes[1] == 0xBB &&
+        bytes[2] == 0xBF) {
+      return bytes.sublist(3);
+    }
+    return bytes;
   }
 
   /// CSV 문자열을 파싱하여 ImportedSchedule 목록 반환
