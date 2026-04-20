@@ -76,5 +76,16 @@ dev_dependencies:
   # Repository 유닛 테스트용 — in-memory SQLite (FFI)
   sqflite_common_ffi: ^2.3.4+4
 
+  # 앱 아이콘 자동 생성 (assets/icon/app_icon.png → ios/Runner/Assets.xcassets)
+  # 실행: `dart run flutter_launcher_icons`
+  flutter_launcher_icons: ^0.14.3
+
+# 앱 아이콘 설정 — 원본 이미지는 scripts/generate_app_icon.py로 생성 가능.
+flutter_launcher_icons:
+  ios: true
+  android: false # Android는 미검증 상태 (CLAUDE.md 참조)
+  image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true # App Store 업로드 요구 (iOS 아이콘 alpha 금지)
+
 flutter:
   uses-material-design: true

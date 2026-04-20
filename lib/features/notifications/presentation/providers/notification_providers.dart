@@ -71,6 +71,11 @@ class NotificationSettingsNotifier
   Future<void> setDayBefore(bool value) async =>
       save((state.valueOrNull ?? NotificationSettings.defaults)
           .copyWith(dayBeforeEnabled: value));
+
+  /// 알림 발송 시각 변경. 저장 후 자동 재동기화.
+  Future<void> setTime({required int hour, required int minute}) async =>
+      save((state.valueOrNull ?? NotificationSettings.defaults)
+          .copyWith(hour: hour, minute: minute));
 }
 
 /// 이벤트 CRUD / 설정 변경 시 알림을 재동기화하는 서비스

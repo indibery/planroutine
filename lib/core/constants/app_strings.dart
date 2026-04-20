@@ -30,10 +30,19 @@ class AppStrings {
   static const settingsNotificationMonthStart = '월초 알림';
   static const settingsNotificationWeekBefore = '1주 전 알림';
   static const settingsNotificationDayBefore = '1일 전 알림';
+  static const settingsNotificationTime = '알림 시각';
+  static const settingsNotificationTimeDescription =
+      '월초·1주 전·1일 전 알림이 이 시각에 발송됩니다';
   static const settingsNotificationTest = '테스트 알림 보내기';
   static const settingsNotificationTestDescription = '5초 후 알림이 발송됩니다';
   static const settingsNotificationTestScheduled =
       '5초 후 알림이 발송됩니다. 앱을 벗어나 대기해주세요';
+  static const settingsNotificationDebug = '예약된 알림 보기';
+  static const settingsNotificationDebugDescription =
+      '현재 iOS에 예약된 알림 목록을 확인합니다';
+  static const settingsNotificationDebugEmpty = '예약된 알림이 없습니다';
+  static const settingsNotificationDebugTitle = '예약된 알림';
+  static const settingsNotificationDebugCountSuffix = '개';
   static const settingsGoogleSection = '구글 계정';
   static const settingsGoogleSignIn = '구글 캘린더 연결';
   static const settingsGoogleSignInDescription =

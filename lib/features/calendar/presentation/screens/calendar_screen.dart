@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
@@ -203,24 +204,67 @@ class CalendarScreen extends ConsumerWidget {
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
   /// 로그인 안 돼있으면 먼저 로그인 유도, 실패는 스낵바로 안내.
+  ///
+  /// 중복 방지: `event.googleEventId`가 이미 있으면 update API 호출.
+  /// 구글쪽에서 지워져 404면 insert로 재시도(사용자가 의도적으로 재생성).
   Future<void> _onSaveToGoogle(
     BuildContext context,
     WidgetRef ref,
     CalendarEvent event,
   ) async {
     final service = ref.read(googleCalendarServiceProvider);
+    final repository = ref.read(calendarRepositoryProvider);
     try {
       if (service.currentUser == null) {
         final account = await service.signIn();
         if (account == null) return; // 사용자 취소
       }
-      await service.createEvent(
-        title: event.title,
-        description: event.description,
-        startDate: event.eventDateTime,
-        endDate: event.endDate != null ? event.endDateTime : event.eventDateTime,
-        isAllDay: event.isAllDay,
-      );
+
+      final start = event.eventDateTime;
+      final end = event.endDate != null ? event.endDateTime : start;
+
+      String? resultId;
+      final existingId = event.googleEventId;
+      if (existingId != null && existingId.isNotEmpty) {
+        try {
+          final updated = await service.updateEvent(
+            eventId: existingId,
+            title: event.title,
+            description: event.description,
+            startDate: start,
+            endDate: end,
+            isAllDay: event.isAllDay,
+          );
+          resultId = updated.id;
+        } on GoogleEventNotFoundException {
+          // 구글쪽에서 삭제됨 → 새로 생성 (local id는 새 id로 덮어씀)
+          final created = await service.createEvent(
+            title: event.title,
+            description: event.description,
+            startDate: start,
+            endDate: end,
+            isAllDay: event.isAllDay,
+          );
+          resultId = created.id;
+        }
+      } else {
+        final created = await service.createEvent(
+          title: event.title,
+          description: event.description,
+          startDate: start,
+          endDate: end,
+          isAllDay: event.isAllDay,
+        );
+        resultId = created.id;
+      }
+
+      // 받은 id를 로컬에 기록 (다음 저장을 update로 처리하기 위해)
+      final eventId = event.id;
+      if (eventId != null && resultId != null && resultId.isNotEmpty) {
+        await repository.updateGoogleEventId(eventId, resultId);
+        ref.invalidate(selectedMonthEventsProvider);
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()

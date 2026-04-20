@@ -24,7 +24,7 @@
 | 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
 | 라우팅 | GoRouter | ShellRoute + 3탭 (캘린더/일정/설정) |
-| 로컬 DB | sqflite | 스키마 v3 (3 테이블, soft-delete + completed) |
+| 로컬 DB | sqflite | 스키마 v4 (3 테이블, soft-delete + completed + google_event_id) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
@@ -34,7 +34,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 107 유닛 + 10 통합 |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 109 유닛 + 11 통합 |
 
 ## 프로젝트 구조 (2026-04 기준)
 
@@ -48,7 +48,7 @@ planroutine/
 │   │   ├── constants/              # app_strings, app_colors, app_sizes
 │   │   ├── theme/                  # app_theme
 │   │   ├── router/                 # GoRouter (3탭 + /trash 푸시)
-│   │   ├── database/               # DatabaseHelper (v3, forTesting 생성자)
+│   │   ├── database/               # DatabaseHelper (v4, forTesting 생성자)
 │   │   └── utils/                  # date_utils (formatDate)
 │   ├── features/
 │   │   ├── import/                 # CSV 가져오기
@@ -99,7 +99,7 @@ integration_test/
 └── app_test.dart                   # UX E2E 10 시나리오
 ```
 
-## 데이터베이스 스키마 (v3)
+## 데이터베이스 스키마 (v4)
 
 ### schedules
 - `id`, `title`, `description`, `scheduled_date`
@@ -113,12 +113,13 @@ integration_test/
 - `created_at`, `updated_at`
 - **`deleted_at`** (v2): NULL=활성, ISO=휴지통
 - **`completed_at`** (v3): NULL=미완료, ISO=완료 시각
+- **`google_event_id`** (v4): NULL=미저장, 값 있으면 재저장 시 update (중복 방지)
 
 ### imported_schedules
 - 원본 생산문서등록대장 CSV 보관. PlanRoutine export 포맷 임포트는 이 테이블을 건너뛰고 schedules로 직접 삽입.
 
 ### 마이그레이션
-- `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at).
+- `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id).
   기존 사용자도 ALTER TABLE로 데이터 유지한 채 업그레이드.
 
 ## 주요 설계 결정

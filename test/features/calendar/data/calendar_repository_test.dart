@@ -160,6 +160,28 @@ void main() {
     });
   });
 
+  group('updateGoogleEventId', () {
+    test('Google Calendar 저장 후 반환된 id가 이벤트에 기록된다', () async {
+      final id = await repo.createEvent(buildEvent());
+      final before = await repo.getEventsByMonth(2026, 5);
+      expect(before.first.googleEventId, isNull);
+
+      await repo.updateGoogleEventId(id, 'gcal_abc_123');
+
+      final after = await repo.getEventsByMonth(2026, 5);
+      expect(after.first.googleEventId, 'gcal_abc_123');
+    });
+
+    test('같은 이벤트를 재저장하면 googleEventId가 갱신된다', () async {
+      final id = await repo.createEvent(buildEvent());
+      await repo.updateGoogleEventId(id, 'old_id');
+      await repo.updateGoogleEventId(id, 'new_id');
+
+      final after = await repo.getEventsByMonth(2026, 5);
+      expect(after.first.googleEventId, 'new_id');
+    });
+  });
+
   group('purgeOlderThan', () {
     test('cutoff보다 오래 전 soft-delete된 이벤트만 영구 삭제', () async {
       // 오래된 deleted_at 수동 주입
