@@ -109,6 +109,8 @@ class AppStrings {
   static const calendarMarkComplete = '일정 완료';
   static const calendarUndoComplete = '완료 취소';
   static const calendarSwipeGoogleSave = 'Google 저장';
+  static const calendarSwipeHintGoogle = '오른쪽으로 밀기 — Google 저장';
+  static const calendarSwipeHintComplete = '왼쪽으로 밀기 — 완료';
 
   // 휴지통
   static const trashTitle = '휴지통';

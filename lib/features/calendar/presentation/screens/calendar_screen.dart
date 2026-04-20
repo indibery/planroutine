@@ -9,6 +9,7 @@ import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_grid.dart';
+import '../widgets/calendar_slide_hint_bar.dart';
 import '../widgets/event_edit_dialog.dart';
 import '../widgets/event_list_section.dart';
 
@@ -64,6 +65,7 @@ class CalendarScreen extends ConsumerWidget {
             ),
           ),
           const Divider(height: 1),
+          const CalendarSlideHintBar(),
           Expanded(
             child: monthEventsGrouped.when(
               data: (groupedEntries) => groupedEntries.isEmpty
