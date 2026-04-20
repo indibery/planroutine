@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_grid.dart';
@@ -89,8 +90,10 @@ class CalendarScreen extends ConsumerWidget {
                           events: entry.value,
                           onEventTap: (event) =>
                               _onEditEvent(context, ref, event),
-                          onEventDelete: (event) =>
-                              _onDeleteEvent(context, ref, event),
+                          onEventSaveToGoogle: (event) =>
+                              _onSaveToGoogle(context, ref, event),
+                          onEventToggleCompleted: (event) =>
+                              _onToggleCompleted(context, ref, event),
                         );
                       },
                     ),
@@ -196,14 +199,57 @@ class CalendarScreen extends ConsumerWidget {
     }
   }
 
-  /// 캘린더 이벤트 삭제 (즉시 삭제, 스낵바 없음)
-  Future<void> _onDeleteEvent(
+  /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
+  /// 로그인 안 돼있으면 먼저 로그인 유도, 실패는 스낵바로 안내.
+  Future<void> _onSaveToGoogle(
     BuildContext context,
     WidgetRef ref,
     CalendarEvent event,
   ) async {
-    if (event.id case final id?) {
-      await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+    final service = ref.read(googleCalendarServiceProvider);
+    try {
+      if (service.currentUser == null) {
+        final account = await service.signIn();
+        if (account == null) return; // 사용자 취소
+      }
+      await service.createEvent(
+        title: event.title,
+        description: event.description,
+        startDate: event.eventDateTime,
+        endDate: event.endDate != null ? event.endDateTime : event.eventDateTime,
+        isAllDay: event.isAllDay,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text(AppStrings.calendarSaveToGoogleDone),
+            ),
+          );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('${AppStrings.calendarSaveToGoogleFailed}: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+      }
     }
+  }
+
+  /// 왼쪽 스와이프 — 이벤트 완료/완료 취소 토글.
+  Future<void> _onToggleCompleted(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    await ref
+        .read(selectedMonthEventsProvider.notifier)
+        .toggleCompleted(event);
   }
 }
