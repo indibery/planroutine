@@ -130,7 +130,23 @@ class _ExportListTile extends ConsumerStatefulWidget {
 class _ExportListTileState extends ConsumerState<_ExportListTile> {
   bool _exporting = false;
 
+  /// iOS 공유시트가 popup을 띄울 때 쓰는 앵커 Rect.
+  /// ListTile의 화면상 위치를 반환. RenderBox 못 구하면 안전한 fallback 제공.
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      return box.localToGlobal(Offset.zero) & box.size;
+    }
+    // fallback: 화면 중앙 근처 (iOS가 요구하는 "non-zero, within screen" 만족)
+    final size = MediaQuery.of(context).size;
+    return Rect.fromLTWH(size.width / 2, size.height / 2, 1, 1);
+  }
+
   Future<void> _onExport() async {
+    // iOS/iPad에서 Share popup 앵커로 쓸 ListTile의 화면상 위치를 미리 구함
+    // (sharePositionOrigin 미지정 시 iOS에서 PlatformException 발생)
+    final origin = _shareOrigin();
+
     setState(() => _exporting = true);
     try {
       final exporter = ref.read(scheduleCsvExporterProvider);
@@ -147,6 +163,7 @@ class _ExportListTileState extends ConsumerState<_ExportListTile> {
         [XFile(result.filePath)],
         subject: AppStrings.settingsExportShareSubject,
         text: '${result.count}${AppStrings.settingsExportShareCountSuffix}',
+        sharePositionOrigin: origin,
       );
     } catch (e) {
       if (mounted) {
