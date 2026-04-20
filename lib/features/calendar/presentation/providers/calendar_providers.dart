@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/date_utils.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_event.dart';
 
@@ -34,6 +35,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.createEvent(event);
     ref.invalidateSelf();
+    await _syncNotifications();
   }
 
   /// 이벤트 수정
@@ -41,6 +43,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.updateEvent(event);
     ref.invalidateSelf();
+    await _syncNotifications();
   }
 
   /// 이벤트 삭제
@@ -48,6 +51,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.deleteEvent(id);
     ref.invalidateSelf();
+    await _syncNotifications();
   }
 
   /// 완료/완료 취소 토글
@@ -61,6 +65,17 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
       await repository.markCompleted(id);
     }
     ref.invalidateSelf();
+    await _syncNotifications();
+  }
+
+  /// 알림 재예약 — 이벤트 변경이 알림 스케줄에 반영되도록.
+  /// 실패해도 이벤트 변경 자체는 계속 진행.
+  Future<void> _syncNotifications() async {
+    try {
+      await ref.read(notificationSyncerProvider).sync();
+    } catch (_) {
+      // 플랫폼 에러(권한 거부 등)는 조용히 무시
+    }
   }
 }
 

@@ -9,6 +9,8 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../../import/presentation/widgets/import_section.dart';
+import '../../../notifications/domain/notification_settings.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../trash/presentation/providers/trash_providers.dart';
 import '../providers/app_info_provider.dart';
 import '../providers/settings_providers.dart';
@@ -57,6 +59,9 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 1),
           _SectionHeader(title: AppStrings.settingsGoogleSection),
           _GoogleAccountListTile(),
+          const Divider(height: 1),
+          _SectionHeader(title: AppStrings.settingsNotificationSection),
+          _NotificationSettingsTiles(),
           const Divider(height: 1),
           _SectionHeader(title: AppStrings.settingsTrashSection),
           _TrashListTile(),
@@ -193,6 +198,112 @@ class _ExportListTileState extends ConsumerState<_ExportListTile> {
             )
           : const Icon(Icons.chevron_right),
       onTap: _exporting ? null : _onExport,
+    );
+  }
+}
+
+/// 알림 설정 타일 — 마스터 스위치 + 3개 세부 + 테스트 버튼
+class _NotificationSettingsTiles extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(notificationSettingsProvider);
+    final settings = settingsAsync.valueOrNull ?? NotificationSettings.defaults;
+    final notifier = ref.read(notificationSettingsProvider.notifier);
+    final subEnabled = settings.masterEnabled;
+
+    return Column(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.primary,
+          ),
+          title: const Text(AppStrings.settingsNotificationMaster),
+          subtitle: const Text(
+            AppStrings.settingsNotificationMasterDescription,
+          ),
+          value: settings.masterEnabled,
+          onChanged: (v) => notifier.setMaster(v),
+        ),
+        _SubSwitch(
+          label: AppStrings.settingsNotificationMonthStart,
+          value: settings.monthStartEnabled,
+          enabled: subEnabled,
+          onChanged: notifier.setMonthStart,
+        ),
+        _SubSwitch(
+          label: AppStrings.settingsNotificationWeekBefore,
+          value: settings.weekBeforeEnabled,
+          enabled: subEnabled,
+          onChanged: notifier.setWeekBefore,
+        ),
+        _SubSwitch(
+          label: AppStrings.settingsNotificationDayBefore,
+          value: settings.dayBeforeEnabled,
+          enabled: subEnabled,
+          onChanged: notifier.setDayBefore,
+        ),
+        ListTile(
+          leading: const SizedBox(width: 40),
+          title: const Text(
+            AppStrings.settingsNotificationTest,
+            style: TextStyle(fontSize: 14),
+          ),
+          subtitle: const Text(
+            AppStrings.settingsNotificationTestDescription,
+            style: TextStyle(fontSize: 12),
+          ),
+          trailing: const Icon(Icons.alarm_on, color: AppColors.primary),
+          onTap: () async {
+            final service = ref.read(notificationServiceProvider);
+            // 권한 없으면 먼저 요청
+            await service.requestPermission();
+            await service.scheduleQuickTest(
+              title: '테스트 알림',
+              body: '5초 후 발송된 테스트 알림입니다',
+              seconds: 5,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(AppStrings.settingsNotificationTestScheduled),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _SubSwitch extends StatelessWidget {
+  const _SubSwitch({
+    required this.label,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      secondary: const SizedBox(width: 40),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          color: enabled ? AppColors.textPrimary : AppColors.textHint,
+        ),
+      ),
+      value: enabled && value,
+      onChanged: enabled ? onChanged : null,
+      dense: true,
     );
   }
 }
