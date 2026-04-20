@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/date_utils.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_event.dart';
 
@@ -69,7 +70,7 @@ final selectedDateEventsProvider = Provider<AsyncValue<List<CalendarEvent>>>((re
   final monthEvents = ref.watch(selectedMonthEventsProvider);
 
   return monthEvents.whenData((events) {
-    final dateStr = _formatDate(selectedDate);
+    final dateStr = formatDate(selectedDate);
     return events.where((e) => e.eventDate == dateStr).toList();
   });
 });
@@ -96,9 +97,3 @@ final monthEventsGroupedProvider =
   });
 });
 
-String _formatDate(DateTime date) {
-  final y = date.year.toString().padLeft(4, '0');
-  final m = date.month.toString().padLeft(2, '0');
-  final d = date.day.toString().padLeft(2, '0');
-  return '$y-$m-$d';
-}
