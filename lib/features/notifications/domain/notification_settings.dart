@@ -8,7 +8,7 @@ class NotificationSettings {
     this.monthStartEnabled = true,
     this.weekBeforeEnabled = true,
     this.dayBeforeEnabled = true,
-    this.hour = 9,
+    this.hour = 8,
     this.minute = 0,
   });
 
@@ -17,7 +17,7 @@ class NotificationSettings {
   final bool weekBeforeEnabled;
   final bool dayBeforeEnabled;
 
-  /// 알림 발송 시각 (로컬 타임존). 기본 09:00.
+  /// 알림 발송 시각 (로컬 타임존). 기본 08:00 (수업 시작 전 여유).
   final int hour;
   final int minute;
 
@@ -57,7 +57,7 @@ class NotificationSettings {
       monthStartEnabled: json['monthStartEnabled'] as bool? ?? true,
       weekBeforeEnabled: json['weekBeforeEnabled'] as bool? ?? true,
       dayBeforeEnabled: json['dayBeforeEnabled'] as bool? ?? true,
-      hour: json['hour'] as int? ?? 9,
+      hour: json['hour'] as int? ?? 8,
       minute: json['minute'] as int? ?? 0,
     );
   }

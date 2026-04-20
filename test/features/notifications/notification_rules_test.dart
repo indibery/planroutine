@@ -96,13 +96,13 @@ void main() {
       expect(result.length, 2);
       expect(
         result.any((p) =>
-            p.scheduledAt == DateTime(2026, 6, 1, 9) &&
+            p.scheduledAt == DateTime(2026, 6, 1, 8) &&
             p.body.contains('2건')),
         isTrue,
       );
       expect(
         result.any((p) =>
-            p.scheduledAt == DateTime(2026, 7, 1, 9) &&
+            p.scheduledAt == DateTime(2026, 7, 1, 8) &&
             p.body.contains('1건')),
         isTrue,
       );
@@ -145,13 +145,13 @@ void main() {
       // 1주 전 = 5/25 09:00, 1일 전 = 5/31 09:00
       expect(
         result.any((p) =>
-            p.scheduledAt == DateTime(2026, 5, 25, 9) &&
+            p.scheduledAt == DateTime(2026, 5, 25, 8) &&
             p.body.contains('1주 남았')),
         isTrue,
       );
       expect(
         result.any((p) =>
-            p.scheduledAt == DateTime(2026, 5, 31, 9) &&
+            p.scheduledAt == DateTime(2026, 5, 31, 8) &&
             p.body.contains('내일')),
         isTrue,
       );
