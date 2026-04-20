@@ -50,6 +50,13 @@ dependencies:
   share_plus: ^10.1.2
   path_provider: ^2.1.5
 
+  # 구글 계정 로그인 (iOS Info.plist에 GIDClientID + URL scheme 설정 필요)
+  google_sign_in: ^6.2.1
+  # Calendar API + OAuth2 인증 (google_sign_in과 연동)
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
