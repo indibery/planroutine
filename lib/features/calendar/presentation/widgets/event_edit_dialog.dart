@@ -6,7 +6,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
-import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 
@@ -54,7 +53,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   DateTime? _endDate;
   late bool _isAllDay;
   late Color _selectedColor;
-  bool _savingToGoogle = false;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -116,14 +114,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.border,
-            borderRadius: BorderRadius.circular(AppSizes.radius4),
-          ),
-        ),
+        // 좌측은 빈 공간 — 가운데 정렬용 (우측 아이콘 너비만큼)
+        const SizedBox(width: 40),
         const Spacer(),
         Text(
           _isEditing ? AppStrings.calendarEditEvent : AppStrings.calendarAddEvent,
@@ -134,7 +126,22 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           ),
         ),
         const Spacer(),
-        const SizedBox(width: 40),
+        // 편집 시에만 우측에 휴지통 노출 (새 이벤트엔 삭제할 게 없음)
+        SizedBox(
+          width: 40,
+          child: _isEditing
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.error,
+                  ),
+                  tooltip: AppStrings.delete,
+                  onPressed: _onDelete,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                )
+              : null,
+        ),
       ],
     );
   }
@@ -296,82 +303,20 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
   Widget _buildButtons() {
-    final googleAccount = ref.watch(googleAccountProvider).valueOrNull;
-    final isSignedIn = googleAccount != null;
-    final isCompleted = widget.event?.isCompleted ?? false;
-    final canComplete = _isEditing; // 새로 추가하는 이벤트는 먼저 저장해야 완료 가능
-
-    return Column(
+    return Row(
       children: [
-        // Row 1: 취소 / 저장
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed:
-                    _savingToGoogle ? null : () => Navigator.pop(context),
-                child: const Text(AppStrings.cancel),
-              ),
-            ),
-            const SizedBox(width: AppSizes.spacing8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _savingToGoogle ? null : _onSave,
-                child: const Text(AppStrings.save),
-              ),
-            ),
-          ],
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(AppStrings.cancel),
+          ),
         ),
-        const SizedBox(height: AppSizes.spacing8),
-        // Row 2: Google 저장 / 일정 완료(or 완료 취소)
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _savingToGoogle ? null : _onSaveToGoogle,
-                icon: _savingToGoogle
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.calendar_month, size: 16),
-                label: Text(
-                  isSignedIn
-                      ? AppStrings.calendarSaveToGoogleShort
-                      : AppStrings.calendarSaveToGoogleNeedsSignInShort,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSizes.spacing8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: (canComplete && !_savingToGoogle)
-                    ? _onToggleCompleted
-                    : null,
-                icon: Icon(
-                  isCompleted
-                      ? Icons.radio_button_unchecked
-                      : Icons.check_circle,
-                  size: 16,
-                ),
-                label: Text(
-                  isCompleted
-                      ? AppStrings.calendarUndoComplete
-                      : AppStrings.calendarMarkComplete,
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: isCompleted
-                      ? AppColors.textSecondary
-                      : AppColors.statusConfirmed,
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(width: AppSizes.spacing12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _onSave,
+            child: const Text(AppStrings.save),
+          ),
         ),
       ],
     );
@@ -405,61 +350,12 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     Navigator.pop(context, _buildEvent());
   }
 
-  /// 구글 캘린더에 이벤트 생성 + 로컬에도 저장.
-  ///
-  /// 로그인 안 되어있으면 먼저 로그인 유도. 네트워크/권한 에러 시 스낵바로 안내.
-  Future<void> _onSaveToGoogle() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _savingToGoogle = true);
-    try {
-      final service = ref.read(googleCalendarServiceProvider);
-      if (service.currentUser == null) {
-        final account = await service.signIn();
-        if (account == null) {
-          // 사용자가 로그인 취소
-          if (mounted) setState(() => _savingToGoogle = false);
-          return;
-        }
-      }
-      final endDate = _endDate ?? _eventDate;
-      await service.createEvent(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        startDate: _eventDate,
-        endDate: endDate,
-        isAllDay: _isAllDay,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.calendarSaveToGoogleDone)),
-      );
-      Navigator.pop(context, _buildEvent());
-    } catch (e) {
-      if (mounted) {
-        setState(() => _savingToGoogle = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.calendarSaveToGoogleFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  /// 완료/완료 취소 토글: 현재 편집 중인 내용을 먼저 저장 후 상태 변경.
-  Future<void> _onToggleCompleted() async {
-    if (!_formKey.currentState!.validate()) return;
+  /// 휴지통으로 soft-delete. 다이얼로그 닫고 notifier에 위임.
+  Future<void> _onDelete() async {
     final event = widget.event;
-    if (event == null) return;
-
-    // 편집 내용 먼저 반영
-    final edited = _buildEvent();
-    await ref.read(selectedMonthEventsProvider.notifier).updateEvent(edited);
-    // 완료 상태 토글
-    await ref.read(selectedMonthEventsProvider.notifier).toggleCompleted(event);
+    final id = event?.id;
+    if (id == null) return;
+    await ref.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
     if (!mounted) return;
     Navigator.pop(context);
   }
