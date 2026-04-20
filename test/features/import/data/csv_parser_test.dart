@@ -116,5 +116,102 @@ void main() {
       final result = await parser.decodeBytes(bytes);
       expect(result, content);
     });
+
+    test('UTF-8 BOM(EF BB BF)이 붙은 바이트도 투명하게 처리', () async {
+      final content = '제목,등록일자\n교육과정 운영,2025-03-15';
+      final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(content)];
+
+      final result = await parser.decodeBytes(bytes);
+      // BOM이 문자열 앞에 붙지 않아야 함 — 첫 헤더가 "\uFEFF제목" 이면 parser가 실패
+      expect(result.startsWith('제목'), isTrue);
+      expect(result, content);
+    });
+
+    test('BOM이 붙은 CSV를 parse까지 연결했을 때도 첫 헤더 정상 인식', () async {
+      const content = '제목,등록일자\n교육과정 운영,2025-03-15';
+      final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(content)];
+
+      final decoded = await parser.decodeBytes(bytes);
+      final result = parser.parse(decoded);
+
+      expect(result.length, 1);
+      expect(result[0].title, '교육과정 운영');
+    });
+  });
+
+  group('CsvParser.parseWithMetadata', () {
+    test('"상태" 컬럼이 없으면 원본 포맷으로 판정', () {
+      const csv = '제목,등록일자,과제명\n'
+          '회의록,2025-03-20,일과운영관리';
+
+      final result = parser.parseWithMetadata(csv);
+
+      expect(result.isPlanRoutineFormat, isFalse);
+      expect(result.confirmedTitles, isEmpty);
+      expect(result.descriptionsByTitle, isEmpty);
+      expect(result.schedules.length, 1);
+    });
+
+    test('"상태" 컬럼이 있으면 PlanRoutine export 포맷으로 판정', () {
+      const csv = '제목,등록일자,카테고리,설명,상태\n'
+          '교육과정 운영,2025-03-15,교육과정,1학기 계획,confirmed\n'
+          '직원 연수,2025-04-10,일과운영관리,,pending';
+
+      final result = parser.parseWithMetadata(csv);
+
+      expect(result.isPlanRoutineFormat, isTrue);
+      expect(result.schedules.length, 2);
+      // confirmedTitles는 '제목|날짜' key 형태
+      expect(result.confirmedTitles, contains('교육과정 운영|2025-03-15'));
+      expect(result.confirmedTitles, isNot(contains('직원 연수|2025-04-10')));
+      // description 매핑
+      expect(
+        result.descriptionsByTitle['교육과정 운영|2025-03-15'],
+        '1학기 계획',
+      );
+      expect(
+        result.descriptionsByTitle.containsKey('직원 연수|2025-04-10'),
+        isFalse, // 빈 설명은 맵에 추가되지 않음
+      );
+    });
+
+    test('"카테고리" 컬럼이 "과제명" alias로 동작해 category 필드 채움', () {
+      const csv = '제목,등록일자,카테고리,설명,상태\n'
+          '연수,2025-04-10,조직및통계관리,,confirmed';
+
+      final result = parser.parseWithMetadata(csv);
+
+      expect(result.schedules.first.category, '조직및통계관리');
+    });
+
+    test('"과제명"과 "카테고리"가 동시에 있으면 과제명이 우선', () {
+      const csv = '제목,등록일자,과제명,카테고리\n'
+          '연수,2025-04-10,원본값,플랜루틴값';
+
+      final result = parser.parseWithMetadata(csv);
+
+      expect(result.schedules.first.category, '원본값');
+    });
+
+    test('상태가 "confirmed"가 아닌 값(archived/unknown)은 confirmedTitles에 포함 안 됨',
+        () {
+      const csv = '제목,등록일자,상태\n'
+          '일정A,2025-01-01,confirmed\n'
+          '일정B,2025-01-02,archived\n'
+          '일정C,2025-01-03,\n'
+          '일정D,2025-01-04,pending';
+
+      final result = parser.parseWithMetadata(csv);
+
+      expect(result.isPlanRoutineFormat, isTrue);
+      expect(result.confirmedTitles, {'일정A|2025-01-01'});
+    });
+
+    test('빈 CSV도 안전하게 처리 (isPlanRoutineFormat=false)', () {
+      final result = parser.parseWithMetadata('');
+      expect(result.isPlanRoutineFormat, isFalse);
+      expect(result.schedules, isEmpty);
+      expect(result.confirmedTitles, isEmpty);
+    });
   });
 }

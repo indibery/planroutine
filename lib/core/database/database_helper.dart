@@ -1,9 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// SQLite 데이터베이스 관리
 class DatabaseHelper {
-  DatabaseHelper._();
+  DatabaseHelper._() : _customPath = null;
+
+  /// 테스트 전용 — 커스텀 경로(보통 `inMemoryDatabasePath`) + FFI 팩토리와
+  /// 조합해 파일 I/O 없이 in-memory DB로 repository 유닛 테스트.
+  @visibleForTesting
+  DatabaseHelper.forTesting({required String path}) : _customPath = path;
+
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
@@ -14,6 +21,7 @@ class DatabaseHelper {
   static const tableSchedules = 'schedules';
   static const tableCalendarEvents = 'calendar_events';
 
+  final String? _customPath;
   Database? _database;
 
   Future<Database> get database async {
@@ -22,8 +30,8 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName);
+    final path = _customPath ??
+        join(await getDatabasesPath(), _databaseName);
     return openDatabase(
       path,
       version: _databaseVersion,

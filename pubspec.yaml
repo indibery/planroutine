@@ -69,5 +69,8 @@ dev_dependencies:
   freezed: ^3.0.0
   json_serializable: ^6.9.5
 
+  # Repository 유닛 테스트용 — in-memory SQLite (FFI)
+  sqflite_common_ffi: ^2.3.4+4
+
 flutter:
   uses-material-design: true
