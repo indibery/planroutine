@@ -42,6 +42,28 @@ class CalendarRepository {
     );
   }
 
+  /// 이벤트 완료 표시 (completed_at에 현재 시각 기록)
+  Future<int> markCompleted(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableCalendarEvents,
+      {'completed_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 이벤트 완료 취소 (completed_at을 null로)
+  Future<int> markIncomplete(int id) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableCalendarEvents,
+      {'completed_at': null},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// 이벤트 복구
   Future<int> restoreEvent(int id) async {
     final db = await _dbHelper.database;

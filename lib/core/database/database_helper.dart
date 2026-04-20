@@ -7,7 +7,7 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
@@ -36,6 +36,8 @@ class DatabaseHelper {
   ///
   /// v1 → v2: 휴지통(soft-delete) 도입. schedules/calendar_events에
   /// [deleted_at] 컬럼 추가. NULL = 활성, ISO8601 문자열 = 삭제 시각.
+  /// v2 → v3: 캘린더 이벤트 완료 표시. calendar_events에 [completed_at]
+  /// 컬럼 추가. NULL = 미완료, ISO8601 문자열 = 완료 시각.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
@@ -43,6 +45,11 @@ class DatabaseHelper {
       );
       await db.execute(
         'ALTER TABLE $tableCalendarEvents ADD COLUMN deleted_at TEXT',
+      );
+    }
+    if (oldVersion < 3) {
+      await db.execute(
+        'ALTER TABLE $tableCalendarEvents ADD COLUMN completed_at TEXT',
       );
     }
   }
@@ -97,6 +104,7 @@ class DatabaseHelper {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,
+        completed_at TEXT,
         FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
       )
     ''');

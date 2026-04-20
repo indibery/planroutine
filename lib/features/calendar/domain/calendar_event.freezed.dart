@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CalendarEvent {
 
- int? get id; String get title; String? get description;@JsonKey(name: 'event_date') String get eventDate;@JsonKey(name: 'end_date') String? get endDate;@JsonKey(name: 'is_all_day') bool get isAllDay; String? get color;@JsonKey(name: 'schedule_id') int? get scheduleId;@JsonKey(name: 'created_at') String? get createdAt;@JsonKey(name: 'updated_at') String? get updatedAt;@JsonKey(name: 'deleted_at') String? get deletedAt;
+ int? get id; String get title; String? get description;@JsonKey(name: 'event_date') String get eventDate;@JsonKey(name: 'end_date') String? get endDate;@JsonKey(name: 'is_all_day') bool get isAllDay; String? get color;@JsonKey(name: 'schedule_id') int? get scheduleId;@JsonKey(name: 'created_at') String? get createdAt;@JsonKey(name: 'updated_at') String? get updatedAt;@JsonKey(name: 'deleted_at') String? get deletedAt;@JsonKey(name: 'completed_at') String? get completedAt;
 /// Create a copy of CalendarEvent
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $CalendarEventCopyWith<CalendarEvent> get copyWith => _$CalendarEventCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CalendarEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.eventDate, eventDate) || other.eventDate == eventDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.isAllDay, isAllDay) || other.isAllDay == isAllDay)&&(identical(other.color, color) || other.color == color)&&(identical(other.scheduleId, scheduleId) || other.scheduleId == scheduleId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CalendarEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.eventDate, eventDate) || other.eventDate == eventDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.isAllDay, isAllDay) || other.isAllDay == isAllDay)&&(identical(other.color, color) || other.color == color)&&(identical(other.scheduleId, scheduleId) || other.scheduleId == scheduleId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,eventDate,endDate,isAllDay,color,scheduleId,createdAt,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,title,description,eventDate,endDate,isAllDay,color,scheduleId,createdAt,updatedAt,deletedAt,completedAt);
 
 @override
 String toString() {
-  return 'CalendarEvent(id: $id, title: $title, description: $description, eventDate: $eventDate, endDate: $endDate, isAllDay: $isAllDay, color: $color, scheduleId: $scheduleId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'CalendarEvent(id: $id, title: $title, description: $description, eventDate: $eventDate, endDate: $endDate, isAllDay: $isAllDay, color: $color, scheduleId: $scheduleId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, completedAt: $completedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $CalendarEventCopyWith<$Res>  {
   factory $CalendarEventCopyWith(CalendarEvent value, $Res Function(CalendarEvent) _then) = _$CalendarEventCopyWithImpl;
 @useResult
 $Res call({
- int? id, String title, String? description,@JsonKey(name: 'event_date') String eventDate,@JsonKey(name: 'end_date') String? endDate,@JsonKey(name: 'is_all_day') bool isAllDay, String? color,@JsonKey(name: 'schedule_id') int? scheduleId,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'deleted_at') String? deletedAt
+ int? id, String title, String? description,@JsonKey(name: 'event_date') String eventDate,@JsonKey(name: 'end_date') String? endDate,@JsonKey(name: 'is_all_day') bool isAllDay, String? color,@JsonKey(name: 'schedule_id') int? scheduleId,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'deleted_at') String? deletedAt,@JsonKey(name: 'completed_at') String? completedAt
 });
 
 
@@ -65,7 +65,7 @@ class _$CalendarEventCopyWithImpl<$Res>
 
 /// Create a copy of CalendarEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? title = null,Object? description = freezed,Object? eventDate = null,Object? endDate = freezed,Object? isAllDay = null,Object? color = freezed,Object? scheduleId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? title = null,Object? description = freezed,Object? eventDate = null,Object? endDate = freezed,Object? isAllDay = null,Object? color = freezed,Object? scheduleId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? completedAt = freezed,}) {
   return _then(_self.copyWith(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -78,6 +78,7 @@ as String?,scheduleId: freezed == scheduleId ? _self.scheduleId : scheduleId // 
 as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as String?,completedAt: freezed == completedAt ? _self.completedAt : completedAt // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -163,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt, @JsonKey(name: 'completed_at')  String? completedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CalendarEvent() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.completedAt);case _:
   return orElse();
 
 }
@@ -184,10 +185,10 @@ return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.end
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt, @JsonKey(name: 'completed_at')  String? completedAt)  $default,) {final _that = this;
 switch (_that) {
 case _CalendarEvent():
-return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.completedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +205,10 @@ return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.end
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? id,  String title,  String? description, @JsonKey(name: 'event_date')  String eventDate, @JsonKey(name: 'end_date')  String? endDate, @JsonKey(name: 'is_all_day')  bool isAllDay,  String? color, @JsonKey(name: 'schedule_id')  int? scheduleId, @JsonKey(name: 'created_at')  String? createdAt, @JsonKey(name: 'updated_at')  String? updatedAt, @JsonKey(name: 'deleted_at')  String? deletedAt, @JsonKey(name: 'completed_at')  String? completedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _CalendarEvent() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.endDate,_that.isAllDay,_that.color,_that.scheduleId,_that.createdAt,_that.updatedAt,_that.deletedAt,_that.completedAt);case _:
   return null;
 
 }
@@ -219,7 +220,7 @@ return $default(_that.id,_that.title,_that.description,_that.eventDate,_that.end
 @JsonSerializable()
 
 class _CalendarEvent extends CalendarEvent {
-  const _CalendarEvent({this.id, required this.title, this.description, @JsonKey(name: 'event_date') required this.eventDate, @JsonKey(name: 'end_date') this.endDate, @JsonKey(name: 'is_all_day') this.isAllDay = true, this.color, @JsonKey(name: 'schedule_id') this.scheduleId, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'deleted_at') this.deletedAt}): super._();
+  const _CalendarEvent({this.id, required this.title, this.description, @JsonKey(name: 'event_date') required this.eventDate, @JsonKey(name: 'end_date') this.endDate, @JsonKey(name: 'is_all_day') this.isAllDay = true, this.color, @JsonKey(name: 'schedule_id') this.scheduleId, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt, @JsonKey(name: 'deleted_at') this.deletedAt, @JsonKey(name: 'completed_at') this.completedAt}): super._();
   factory _CalendarEvent.fromJson(Map<String, dynamic> json) => _$CalendarEventFromJson(json);
 
 @override final  int? id;
@@ -233,6 +234,7 @@ class _CalendarEvent extends CalendarEvent {
 @override@JsonKey(name: 'created_at') final  String? createdAt;
 @override@JsonKey(name: 'updated_at') final  String? updatedAt;
 @override@JsonKey(name: 'deleted_at') final  String? deletedAt;
+@override@JsonKey(name: 'completed_at') final  String? completedAt;
 
 /// Create a copy of CalendarEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -247,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CalendarEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.eventDate, eventDate) || other.eventDate == eventDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.isAllDay, isAllDay) || other.isAllDay == isAllDay)&&(identical(other.color, color) || other.color == color)&&(identical(other.scheduleId, scheduleId) || other.scheduleId == scheduleId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CalendarEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.eventDate, eventDate) || other.eventDate == eventDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.isAllDay, isAllDay) || other.isAllDay == isAllDay)&&(identical(other.color, color) || other.color == color)&&(identical(other.scheduleId, scheduleId) || other.scheduleId == scheduleId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt)&&(identical(other.completedAt, completedAt) || other.completedAt == completedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,eventDate,endDate,isAllDay,color,scheduleId,createdAt,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,title,description,eventDate,endDate,isAllDay,color,scheduleId,createdAt,updatedAt,deletedAt,completedAt);
 
 @override
 String toString() {
-  return 'CalendarEvent(id: $id, title: $title, description: $description, eventDate: $eventDate, endDate: $endDate, isAllDay: $isAllDay, color: $color, scheduleId: $scheduleId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'CalendarEvent(id: $id, title: $title, description: $description, eventDate: $eventDate, endDate: $endDate, isAllDay: $isAllDay, color: $color, scheduleId: $scheduleId, createdAt: $createdAt, updatedAt: $updatedAt, deletedAt: $deletedAt, completedAt: $completedAt)';
 }
 
 
@@ -267,7 +269,7 @@ abstract mixin class _$CalendarEventCopyWith<$Res> implements $CalendarEventCopy
   factory _$CalendarEventCopyWith(_CalendarEvent value, $Res Function(_CalendarEvent) _then) = __$CalendarEventCopyWithImpl;
 @override @useResult
 $Res call({
- int? id, String title, String? description,@JsonKey(name: 'event_date') String eventDate,@JsonKey(name: 'end_date') String? endDate,@JsonKey(name: 'is_all_day') bool isAllDay, String? color,@JsonKey(name: 'schedule_id') int? scheduleId,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'deleted_at') String? deletedAt
+ int? id, String title, String? description,@JsonKey(name: 'event_date') String eventDate,@JsonKey(name: 'end_date') String? endDate,@JsonKey(name: 'is_all_day') bool isAllDay, String? color,@JsonKey(name: 'schedule_id') int? scheduleId,@JsonKey(name: 'created_at') String? createdAt,@JsonKey(name: 'updated_at') String? updatedAt,@JsonKey(name: 'deleted_at') String? deletedAt,@JsonKey(name: 'completed_at') String? completedAt
 });
 
 
@@ -284,7 +286,7 @@ class __$CalendarEventCopyWithImpl<$Res>
 
 /// Create a copy of CalendarEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? title = null,Object? description = freezed,Object? eventDate = null,Object? endDate = freezed,Object? isAllDay = null,Object? color = freezed,Object? scheduleId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? title = null,Object? description = freezed,Object? eventDate = null,Object? endDate = freezed,Object? isAllDay = null,Object? color = freezed,Object? scheduleId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? deletedAt = freezed,Object? completedAt = freezed,}) {
   return _then(_CalendarEvent(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -297,6 +299,7 @@ as String?,scheduleId: freezed == scheduleId ? _self.scheduleId : scheduleId // 
 as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as String?,completedAt: freezed == completedAt ? _self.completedAt : completedAt // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

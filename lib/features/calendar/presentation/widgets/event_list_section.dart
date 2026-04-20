@@ -111,6 +111,12 @@ class EventListSection extends StatelessWidget {
   }
 
   Widget _buildEventTile(CalendarEvent event) {
+    final isDone = event.isCompleted;
+    final titleColor = isDone ? AppColors.textHint : AppColors.textPrimary;
+    final accentColor = isDone
+        ? AppColors.textHint
+        : event.eventColor;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing16,
@@ -121,7 +127,7 @@ class EventListSection extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSizes.spacing12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: isDone ? AppColors.surfaceVariant : AppColors.surface,
             borderRadius: BorderRadius.circular(AppSizes.radius12),
             border: Border.all(color: AppColors.divider),
           ),
@@ -131,7 +137,7 @@ class EventListSection extends StatelessWidget {
                 width: 4,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: event.eventColor,
+                  color: accentColor,
                   borderRadius: BorderRadius.circular(AppSizes.radius4),
                 ),
               ),
@@ -142,10 +148,15 @@ class EventListSection extends StatelessWidget {
                   children: [
                     Text(
                       event.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: titleColor,
+                        decoration: isDone
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        decorationColor: AppColors.textHint,
+                        decorationThickness: 2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -156,9 +167,12 @@ class EventListSection extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppSizes.spacing4),
                         child: Text(
                           event.description!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
+                            decoration: isDone
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -167,7 +181,16 @@ class EventListSection extends StatelessWidget {
                   ],
                 ),
               ),
-              if (event.isAllDay)
+              if (isDone)
+                const Padding(
+                  padding: EdgeInsets.only(left: AppSizes.spacing4),
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: AppColors.statusConfirmed,
+                  ),
+                )
+              else if (event.isAllDay)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSizes.spacing8,

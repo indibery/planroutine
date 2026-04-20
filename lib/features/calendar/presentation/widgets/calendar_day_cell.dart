@@ -87,14 +87,19 @@ class CalendarDayCell extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(dotCount, (index) {
+          final event = events[index];
+          // 완료된 이벤트는 작고 회색 톤의 점으로 표시해 "지나간 일정" 느낌 전달
+          final isDone = event.isCompleted;
+          final baseColor = isDone ? AppColors.textHint : event.eventColor;
+          final size = isDone ? 4.0 : 5.0;
           return Container(
-            width: 5,
-            height: 5,
+            width: size,
+            height: size,
             margin: const EdgeInsets.symmetric(horizontal: 1),
             decoration: BoxDecoration(
               color: isCurrentMonth
-                  ? events[index].eventColor
-                  : events[index].eventColor.withValues(alpha: 0.3),
+                  ? baseColor
+                  : baseColor.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
           );
