@@ -23,6 +23,13 @@ class AppStrings {
   static const settingsTrashSection = '휴지통';
   static const settingsTrashDescription =
       '삭제한 일정·캘린더 이벤트 (30일 후 자동 영구 삭제)';
+  static const settingsGoogleSection = '구글 계정';
+  static const settingsGoogleSignIn = '구글 캘린더 연결';
+  static const settingsGoogleSignInDescription =
+      '이벤트를 내 구글 캘린더로 내보낼 수 있습니다';
+  static const settingsGoogleSignInFailed = '구글 로그인 실패';
+  static const settingsGoogleSignOut = '로그아웃';
+  static const settingsGoogleSignOutDone = '구글 계정이 연결 해제되었습니다';
   static const settingsDataSection = '데이터 관리';
   static const settingsAboutSection = '앱 정보';
   static const settingsResetAll = '전체 데이터 초기화';
@@ -82,6 +89,10 @@ class AppStrings {
   static const calendarEventAllDay = '종일';
   static const calendarEventColor = '색상';
   static const calendarTitleRequired = '제목을 입력해주세요';
+  static const calendarSaveToGoogle = 'Google 캘린더에도 저장';
+  static const calendarSaveToGoogleNeedsSignIn = 'Google 로그인 후 저장';
+  static const calendarSaveToGoogleDone = '구글 캘린더에 저장했습니다';
+  static const calendarSaveToGoogleFailed = '구글 캘린더 저장 실패';
 
   // 휴지통
   static const trashTitle = '휴지통';

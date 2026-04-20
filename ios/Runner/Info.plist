@@ -70,5 +70,20 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Google Sign-In 구성 -->
+	<key>GIDClientID</key>
+	<string>73700230470-cal0r941so2cvip13ro3qt0c750sqkvu.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- REVERSED_CLIENT_ID: OAuth 콜백 URL scheme -->
+				<string>com.googleusercontent.apps.73700230470-cal0r941so2cvip13ro3qt0c750sqkvu</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

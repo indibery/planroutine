@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 
 /// 이벤트 추가/수정 바텀시트
-class EventEditDialog extends StatefulWidget {
+class EventEditDialog extends ConsumerStatefulWidget {
   const EventEditDialog({
     super.key,
     required this.initialDate,
@@ -39,10 +41,10 @@ class EventEditDialog extends StatefulWidget {
   }
 
   @override
-  State<EventEditDialog> createState() => _EventEditDialogState();
+  ConsumerState<EventEditDialog> createState() => _EventEditDialogState();
 }
 
-class _EventEditDialogState extends State<EventEditDialog> {
+class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
@@ -50,6 +52,7 @@ class _EventEditDialogState extends State<EventEditDialog> {
   DateTime? _endDate;
   late bool _isAllDay;
   late Color _selectedColor;
+  bool _savingToGoogle = false;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -291,19 +294,48 @@ class _EventEditDialogState extends State<EventEditDialog> {
   }
 
   Widget _buildButtons() {
-    return Row(
+    final googleAccount = ref.watch(googleAccountProvider).valueOrNull;
+    final isSignedIn = googleAccount != null;
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.cancel),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed:
+                    _savingToGoogle ? null : () => Navigator.pop(context),
+                child: const Text(AppStrings.cancel),
+              ),
+            ),
+            const SizedBox(width: AppSizes.spacing12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _savingToGoogle ? null : _onSave,
+                child: const Text(AppStrings.save),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: AppSizes.spacing12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _onSave,
-            child: const Text(AppStrings.save),
+        const SizedBox(height: AppSizes.spacing8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _savingToGoogle ? null : _onSaveToGoogle,
+            icon: _savingToGoogle
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.calendar_month, size: 18),
+            label: Text(
+              isSignedIn
+                  ? AppStrings.calendarSaveToGoogle
+                  : AppStrings.calendarSaveToGoogleNeedsSignIn,
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+            ),
           ),
         ),
       ],
@@ -335,13 +367,59 @@ class _EventEditDialogState extends State<EventEditDialog> {
 
   void _onSave() {
     if (!_formKey.currentState!.validate()) return;
+    Navigator.pop(context, _buildEvent());
+  }
 
+  /// 구글 캘린더에 이벤트 생성 + 로컬에도 저장.
+  ///
+  /// 로그인 안 되어있으면 먼저 로그인 유도. 네트워크/권한 에러 시 스낵바로 안내.
+  Future<void> _onSaveToGoogle() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _savingToGoogle = true);
+    try {
+      final service = ref.read(googleCalendarServiceProvider);
+      if (service.currentUser == null) {
+        final account = await service.signIn();
+        if (account == null) {
+          // 사용자가 로그인 취소
+          if (mounted) setState(() => _savingToGoogle = false);
+          return;
+        }
+      }
+      final endDate = _endDate ?? _eventDate;
+      await service.createEvent(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        startDate: _eventDate,
+        endDate: endDate,
+        isAllDay: _isAllDay,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.calendarSaveToGoogleDone)),
+      );
+      Navigator.pop(context, _buildEvent());
+    } catch (e) {
+      if (mounted) {
+        setState(() => _savingToGoogle = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppStrings.calendarSaveToGoogleFailed}: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();
     final dateStr = _formatDate(_eventDate);
     final endDateStr = _endDate != null ? _formatDate(_endDate!) : null;
     final colorHex = CalendarEvent.colorToHex(_selectedColor);
-
-    final result = CalendarEvent(
+    return CalendarEvent(
       id: widget.event?.id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
@@ -355,8 +433,6 @@ class _EventEditDialogState extends State<EventEditDialog> {
       createdAt: widget.event?.createdAt ?? now,
       updatedAt: now,
     );
-
-    Navigator.pop(context, result);
   }
 
   String _formatDate(DateTime date) {
