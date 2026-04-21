@@ -224,6 +224,7 @@ class CalendarScreen extends ConsumerWidget {
       final end = event.endDate != null ? event.endDateTime : start;
 
       String? resultId;
+      var wasNewSave = true; // insert 경로일 때만 true, update 성공 시 false
       final existingId = event.googleEventId;
       if (existingId != null && existingId.isNotEmpty) {
         try {
@@ -236,6 +237,7 @@ class CalendarScreen extends ConsumerWidget {
             isAllDay: event.isAllDay,
           );
           resultId = updated.id;
+          wasNewSave = false;
         } on GoogleEventNotFoundException {
           // 구글쪽에서 삭제됨 → 새로 생성 (local id는 새 id로 덮어씀)
           final created = await service.createEvent(
@@ -266,13 +268,12 @@ class CalendarScreen extends ConsumerWidget {
       }
 
       if (context.mounted) {
+        final msg = wasNewSave
+            ? AppStrings.calendarSaveToGoogleDone
+            : AppStrings.calendarSaveToGoogleAlready;
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(
-              content: Text(AppStrings.calendarSaveToGoogleDone),
-            ),
-          );
+          ..showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
       if (context.mounted) {
