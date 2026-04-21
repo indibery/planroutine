@@ -1,65 +1,72 @@
 import 'package:flutter/material.dart';
 
-/// 앱 전체 색상 팔레트
+/// 앱 전체 색상 팔레트 (다크 네이비 + 골드 디자인 시스템)
 class AppColors {
   AppColors._();
 
-  // 프라이머리 — 차분한 블루 (교사용 앱 톤)
-  static const primary = Color(0xFF4A6FA5);
-  static const primaryLight = Color(0xFF7B9DD4);
-  static const primaryDark = Color(0xFF1B4478);
+  // ── 새 브랜드 토큰 ──────────────────────────────────────────────
+  static const navy = Color(0xFF0A1628);
+  static const navyMid = Color(0xFF142847);
+  static const navySoft = Color(0xFF1E3558);
+  static const gold = Color(0xFFE0B96A);
+  static const goldGlow = Color(0xFFF5D98F);
+  static const goldMuted = Color(0xFF8A7144);
+  static const ink = Color(0xFFF0EAD9);
+  static const sub = Color(0xB3F0EAD9);
+  static const faint = Color(0x59F0EAD9);
+  static const line = Color(0x2DE0B96A);
+  static const lineStrong = Color(0x59E0B96A);
+  static const glass = Color(0x0FFFFFFF);
+  static const inkRed = Color(0xFFE08978);
+  static const inkGreen = Color(0xFF7FD4A5);
 
-  // 세컨더리 — 따뜻한 오렌지 (액센트)
-  static const secondary = Color(0xFFF5A623);
-  static const secondaryLight = Color(0xFFFFCB6B);
-  static const secondaryDark = Color(0xFFC67C00);
+  // ── 기존 이름 유지 (다크 팔레트로 리매핑) ──────────────────────
+  static const primary = gold;
+  static const primaryLight = goldGlow;
+  static const primaryDark = goldMuted;
 
-  // 배경
-  static const background = Color(0xFFF8F9FA);
-  static const surface = Colors.white;
-  static const surfaceVariant = Color(0xFFF0F2F5);
+  static const secondary = gold;
+  static const secondaryLight = goldGlow;
+  static const secondaryDark = goldMuted;
 
-  // 텍스트
-  static const textPrimary = Color(0xFF1A1A2E);
-  static const textSecondary = Color(0xFF6B7280);
-  static const textHint = Color(0xFF9CA3AF);
+  static const background = navy;
+  static const surface = navyMid;
+  static const surfaceVariant = navySoft;
 
-  // 상태
-  static const success = Color(0xFF10B981);
-  static const warning = Color(0xFFF59E0B);
-  static const error = Color(0xFFEF4444);
-  static const info = Color(0xFF3B82F6);
+  static const textPrimary = ink;
+  static const textSecondary = sub;
+  static const textHint = faint;
 
-  // 일정 상태별 색상
-  static const statusPending = Color(0xFFFBBF24);
-  static const statusConfirmed = Color(0xFF34D399);
+  static const success = inkGreen;
+  static const warning = gold;
+  static const error = inkRed;
+  static const info = Color(0xFF5B8FD4);
 
-  // 카테고리별 색상
-  static const categoryDailyOps = Color(0xFF6366F1);
-  static const categoryCurriculum = Color(0xFF8B5CF6);
-  static const categoryOrganization = Color(0xFFEC4899);
-  static const categoryStudentRecord = Color(0xFF14B8A6);
-  static const categoryDefault = Color(0xFF6B7280);
+  static const statusPending = goldMuted;
+  static const statusConfirmed = inkGreen;
 
-  // 캘린더
-  static const calendarToday = Color(0xFF4A6FA5);
-  static const calendarSelected = Color(0xFFE3EDFA);
-  static const calendarWeekend = Color(0xFFEF4444);
-  static const calendarSaturday = Color(0xFF3B82F6);
+  static const categoryDailyOps = Color(0xFF8BA8D4);
+  static const categoryCurriculum = Color(0xFFB89AE0);
+  static const categoryOrganization = inkRed;
+  static const categoryStudentRecord = inkGreen;
+  static const categoryDefault = sub;
 
-  // 이벤트 프리셋 색상
+  static const calendarToday = gold;
+  static const calendarSelected = Color(0x29E0B96A);
+  static const calendarWeekend = inkRed;
+  static const calendarSaturday = goldGlow;
+
   static const eventPresets = [
-    Color(0xFF4A6FA5), // 블루
-    Color(0xFFEF4444), // 레드
-    Color(0xFF10B981), // 그린
-    Color(0xFFF59E0B), // 옐로
-    Color(0xFF8B5CF6), // 퍼플
-    Color(0xFFEC4899), // 핑크
-    Color(0xFF14B8A6), // 틸
-    Color(0xFFF97316), // 오렌지
+    gold,
+    inkGreen,
+    inkRed,
+    goldGlow,
+    Color(0xFF8BA8D4),
+    Color(0xFFB89AE0),
+    Color(0xFF7FC4D4),
+    Color(0xFFD4A87F),
   ];
 
-  // 구분선
-  static const divider = Color(0xFFE5E7EB);
-  static const border = Color(0xFFD1D5DB);
+  static const divider = line;
+  static const border = lineStrong;
 }

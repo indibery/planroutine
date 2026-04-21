@@ -1,0 +1,4 @@
+{"type":"result","session":"20260409-171151","run":1,"total":3,"passed":true,"exit_code":0,"duration_s":33.0,"tests":6,"failures":0,"error_summary":"","file_results":[{"file":"app_test.dart","passed":true,"duration_s":33,"tests":6,"failures":0,"error":""}],"timestamp":"2026-04-09T08:12:24Z"}
+{"type":"result","session":"20260409-171151","run":2,"total":3,"passed":true,"exit_code":0,"duration_s":32.0,"tests":6,"failures":0,"error_summary":"","file_results":[{"file":"app_test.dart","passed":true,"duration_s":32,"tests":6,"failures":0,"error":""}],"timestamp":"2026-04-09T08:12:57Z"}
+{"type":"result","session":"20260409-171151","run":3,"total":3,"passed":true,"exit_code":0,"duration_s":33.0,"tests":6,"failures":0,"error_summary":"","file_results":[{"file":"app_test.dart","passed":true,"duration_s":33,"tests":6,"failures":0,"error":""}],"timestamp":"2026-04-09T08:13:31Z"}
+{"type":"done","session":"20260409-171151"}

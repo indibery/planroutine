@@ -1,0 +1,2 @@
+{"session": "20260409-170613", "timestamp": "2026-04-09T17:09:47.421704", "runs": 3, "pass_rate": 0.0, "avg_duration": 50.3, "total_tests": 3, "coverage_pct": 14.9, "mutation_score": 65.0, "file_durations": {"app_test.dart": 50.3}}
+{"session": "20260409-171151", "timestamp": "2026-04-09T17:14:29.021991", "runs": 3, "pass_rate": 100.0, "avg_duration": 32.7, "total_tests": 6, "coverage_pct": 14.9, "mutation_score": 65.0, "file_durations": {"app_test.dart": 32.7}}
