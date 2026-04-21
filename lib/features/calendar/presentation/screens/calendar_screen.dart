@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
 import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
@@ -20,6 +21,8 @@ import '../widgets/event_list_section.dart';
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
 
+  static final _monthFormatter = DateFormat('yyyy년 M월', 'ko_KR');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
@@ -32,14 +35,9 @@ class CalendarScreen extends ConsumerWidget {
           padding: EdgeInsets.only(left: AppSizes.spacing12),
           child: Center(child: BrandLogo(size: 28)),
         ),
-        title: const Text(
+        title: Text(
           AppStrings.calendarTitle,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink,
-          ),
+          style: AppTextStyles.heading,
         ),
       ),
       body: Column(
@@ -154,7 +152,6 @@ class CalendarScreen extends ConsumerWidget {
     WidgetRef ref,
     DateTime selectedDate,
   ) {
-    final formatter = DateFormat('yyyy년 M월', 'ko_KR');
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing16,
@@ -178,7 +175,7 @@ class CalendarScreen extends ConsumerWidget {
             child: Column(
               children: [
                 Text(
-                  formatter.format(selectedDate),
+                  _monthFormatter.format(selectedDate),
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 20,

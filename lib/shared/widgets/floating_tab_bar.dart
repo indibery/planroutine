@@ -38,29 +38,26 @@ class FloatingTabBar extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => onTap(i),
                       behavior: HitTestBehavior.opaque,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              selected ? tabs[i].activeIcon : tabs[i].icon,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            selected ? tabs[i].activeIcon : tabs[i].icon,
+                            color: selected ? AppColors.gold : AppColors.faint,
+                            size: 22,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            tabs[i].label,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 10,
+                              fontWeight:
+                                  selected ? FontWeight.w600 : FontWeight.w400,
                               color: selected ? AppColors.gold : AppColors.faint,
-                              size: 22,
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              tabs[i].label,
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                fontSize: 10,
-                                fontWeight:
-                                    selected ? FontWeight.w600 : FontWeight.w400,
-                                color: selected ? AppColors.gold : AppColors.faint,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   );

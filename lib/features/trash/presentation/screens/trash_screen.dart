@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../providers/trash_providers.dart';
@@ -22,14 +24,9 @@ class TrashScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           AppStrings.trashTitle,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink,
-          ),
+          style: AppTextStyles.heading,
         ),
       ),
       body: snapshotAsync.when(
@@ -102,18 +99,24 @@ class TrashScreen extends ConsumerWidget {
           ),
         ),
         if (snapshot.schedules.isNotEmpty) ...[
-          _SectionHeader(
-            title: AppStrings.trashSectionSchedules,
-            count: snapshot.schedules.length,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
+            child: SectionHeader(
+              title: AppStrings.trashSectionSchedules,
+              trailing: _SectionCountBadge(count: snapshot.schedules.length),
+            ),
           ),
           ...snapshot.schedules.map(
             (s) => _TrashScheduleTile(schedule: s),
           ),
         ],
         if (snapshot.events.isNotEmpty) ...[
-          _SectionHeader(
-            title: AppStrings.trashSectionEvents,
-            count: snapshot.events.length,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
+            child: SectionHeader(
+              title: AppStrings.trashSectionEvents,
+              trailing: _SectionCountBadge(count: snapshot.events.length),
+            ),
           ),
           ...snapshot.events.map(
             (e) => _TrashEventTile(event: e),
@@ -124,30 +127,21 @@ class TrashScreen extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.count});
+class _SectionCountBadge extends StatelessWidget {
+  const _SectionCountBadge({required this.count});
 
-  final String title;
   final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.spacing16,
-        AppSizes.spacing12,
-        AppSizes.spacing16,
-        AppSizes.spacing8,
-      ),
-      child: Text(
-        '$title ($count)'.toUpperCase(),
-        style: const TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: AppColors.gold,
-          letterSpacing: 2.5,
-        ),
+    return Text(
+      '$count',
+      style: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: AppColors.gold,
+        letterSpacing: 2.5,
       ),
     );
   }

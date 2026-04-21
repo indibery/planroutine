@@ -7,6 +7,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/section_header.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../../import/presentation/widgets/import_section.dart';
 import '../../../notifications/domain/notification_settings.dart';
@@ -48,14 +50,9 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           AppStrings.settingsTitle,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink,
-          ),
+          style: AppTextStyles.heading,
         ),
       ),
       body: ListView(
@@ -63,23 +60,41 @@ class SettingsScreen extends ConsumerWidget {
           bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
         ),
         children: [
-          _SectionHeader(title: AppStrings.settingsImportSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsImportSection),
+          ),
           const ImportSection(),
           const SizedBox(height: AppSizes.spacing8),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsExportSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsExportSection),
+          ),
           _ExportListTile(),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsGoogleSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsGoogleSection),
+          ),
           _GoogleAccountListTile(),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsNotificationSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsNotificationSection),
+          ),
           _NotificationSettingsTiles(),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsTrashSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsTrashSection),
+          ),
           _TrashListTile(),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsDataSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsDataSection),
+          ),
           ListTile(
             leading: const Icon(
               Icons.delete_forever,
@@ -103,7 +118,10 @@ class SettingsScreen extends ConsumerWidget {
             onTap: isResetting ? null : () => _showConfirmDialog(context, ref),
           ),
           const Divider(height: 1),
-          _SectionHeader(title: AppStrings.settingsAboutSection),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+            child: SectionHeader(title: AppStrings.settingsAboutSection),
+          ),
           _AppInfoListTile(),
           const SizedBox(height: AppSizes.spacing24),
         ],
@@ -566,30 +584,3 @@ class _AppInfoListTile extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.pagePadding,
-        AppSizes.sectionGap,
-        AppSizes.pagePadding,
-        AppSizes.spacing8,
-      ),
-      child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: AppColors.gold,
-          letterSpacing: 2.5,
-        ),
-      ),
-    );
-  }
-}

@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
@@ -25,8 +26,8 @@ class ScheduleScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text(
+          children: [
+            const Text(
               'REVIEW',
               style: TextStyle(
                 fontFamily: 'Pretendard',
@@ -36,15 +37,10 @@ class ScheduleScreen extends ConsumerWidget {
                 color: AppColors.gold,
               ),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               AppStrings.scheduleTitle,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
+              style: AppTextStyles.heading,
             ),
           ],
         ),
@@ -106,7 +102,7 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
-  /// 확정/전체 일정 진행도 바 — 얇은 2px gold gradient.
+  /// 확정/전체 일정 진행도 바.
   Widget _buildProgress(AsyncValue<List<Schedule>> schedulesAsync) {
     return schedulesAsync.when(
       data: (list) {
@@ -114,7 +110,7 @@ class ScheduleScreen extends ConsumerWidget {
         final total = list.length;
         final confirmed =
             list.where((s) => s.status == ScheduleStatus.confirmed).length;
-        final ratio = total == 0 ? 0.0 : confirmed / total;
+        final ratio = confirmed / total;
         final percent = (ratio * 100).round();
         return Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -197,7 +193,6 @@ class ScheduleScreen extends ConsumerWidget {
     WidgetRef ref,
     List<Schedule> schedules,
   ) {
-    // 월별 그룹핑
     final grouped = <String, List<Schedule>>{};
     for (final schedule in schedules) {
       final monthKey = _extractMonthKey(schedule.scheduledDate);

@@ -60,7 +60,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 상단: 로고/타이틀 + 건너뛰기 버튼
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.spacing20,
@@ -127,7 +126,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
               ),
             ),
-            // 하단 고정: 페이지 인디케이터 + 시작하기 버튼
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.spacing20,

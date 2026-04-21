@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../shared/widgets/dismissible_background.dart';
 import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
@@ -54,22 +55,22 @@ class EventListSection extends StatelessWidget {
       },
       movementDuration: const Duration(milliseconds: 150),
       // 오른쪽 스와이프 배경: Google 저장 (navySoft + inkGreen 아이콘)
-      background: _buildSwipeBackground(
-        bg: AppColors.navySoft,
+      background: const DismissibleBackground(
         accent: AppColors.inkGreen,
         icon: Icons.cloud_upload,
         label: AppStrings.calendarSwipeGoogleSave,
         alignment: Alignment.centerLeft,
+        verticalMargin: AppSizes.spacing4,
       ),
       // 왼쪽 스와이프 배경: 완료 토글 (navySoft + gold 아이콘)
-      secondaryBackground: _buildSwipeBackground(
-        bg: AppColors.navySoft,
+      secondaryBackground: DismissibleBackground(
         accent: isDone ? AppColors.faint : AppColors.gold,
         icon: isDone ? Icons.radio_button_unchecked : Icons.check_circle,
         label: isDone
             ? AppStrings.calendarUndoComplete
             : AppStrings.calendarMarkComplete,
         alignment: Alignment.centerRight,
+        verticalMargin: AppSizes.spacing4,
       ),
       // 양방향 모두 실제 dismiss는 막고(false), 액션만 실행
       confirmDismiss: (direction) async {
@@ -81,44 +82,6 @@ class EventListSection extends StatelessWidget {
         return false;
       },
       child: _buildEventTile(event),
-    );
-  }
-
-  Widget _buildSwipeBackground({
-    required Color bg,
-    required Color accent,
-    required IconData icon,
-    required String label,
-    required Alignment alignment,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
-        vertical: AppSizes.spacing4,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppSizes.radius14),
-        border: Border.all(color: AppColors.line, width: 0.5),
-      ),
-      alignment: alignment,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: accent),
-          const SizedBox(width: AppSizes.spacing8),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
