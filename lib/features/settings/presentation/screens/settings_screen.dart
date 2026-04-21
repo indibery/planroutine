@@ -57,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.only(
-          bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
+          bottom: AppSizes.spacing24,
         ),
         children: [
           const Padding(

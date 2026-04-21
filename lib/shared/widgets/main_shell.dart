@@ -43,7 +43,6 @@ class MainShell extends StatelessWidget {
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
-      extendBody: true,
       body: child,
       bottomNavigationBar: FloatingTabBar(
         currentIndex: currentIndex,

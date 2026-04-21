@@ -96,7 +96,7 @@ class CalendarScreen extends ConsumerWidget {
                   : ListView.builder(
                       padding: const EdgeInsets.only(
                         top: AppSizes.spacing16,
-                        bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
+                        bottom: AppSizes.fabSize + AppSizes.spacing16,
                       ),
                       itemCount: groupedEntries.length,
                       itemBuilder: (context, index) {

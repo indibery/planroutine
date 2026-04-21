@@ -6,7 +6,6 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_edit_sheet.dart';
@@ -47,7 +46,7 @@ class ScheduleScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _buildProgress(schedulesAsync),
+          _buildProgress(context, ref, schedulesAsync),
           const SlideHintBar(),
           const ScheduleFilterBar(),
           const Divider(height: 1),
@@ -79,37 +78,23 @@ class ScheduleScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: schedulesAsync.whenOrNull(
-        data: (schedules) {
-          final hasPending =
-              schedules.any((s) => s.status == ScheduleStatus.pending);
-          if (!hasPending) return null;
-          return Padding(
-            padding: const EdgeInsets.only(
-              bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
-            ),
-            child: SizedBox(
-              width: 180,
-              child: GoldGradientButton(
-                label: AppStrings.scheduleConfirmAll,
-                icon: Icons.done_all,
-                onPressed: () => _showBulkConfirmDialog(context, ref),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 
-  /// 확정/전체 일정 진행도 바.
-  Widget _buildProgress(AsyncValue<List<Schedule>> schedulesAsync) {
+  /// 확정/전체 일정 진행도 바. 오른쪽에 '전체 확정' pill 버튼을 인라인 배치한다.
+  Widget _buildProgress(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Schedule>> schedulesAsync,
+  ) {
     return schedulesAsync.when(
       data: (list) {
         if (list.isEmpty) return const SizedBox.shrink();
         final total = list.length;
         final confirmed =
             list.where((s) => s.status == ScheduleStatus.confirmed).length;
+        final hasPending =
+            list.any((s) => s.status == ScheduleStatus.pending);
         final ratio = confirmed / total;
         final percent = (ratio * 100).round();
         return Padding(
@@ -122,14 +107,25 @@ class ScheduleScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '$confirmed / $total · $percent% 완료',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.sub,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '$confirmed / $total · $percent% 완료',
+                      style: const TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.sub,
+                      ),
+                    ),
+                  ),
+                  if (hasPending)
+                    _ConfirmAllPill(
+                      onPressed: () => _showBulkConfirmDialog(context, ref),
+                    ),
+                ],
               ),
               const SizedBox(height: AppSizes.spacing8),
               ClipRRect(
@@ -203,7 +199,7 @@ class ScheduleScreen extends ConsumerWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.only(
-        bottom: AppSizes.tabBarHeight + AppSizes.spacing48 + AppSizes.spacing16,
+        bottom: AppSizes.spacing16,
       ),
       itemCount: sortedKeys.length,
       itemBuilder: (context, index) {
@@ -303,5 +299,51 @@ class ScheduleScreen extends ConsumerWidget {
       }
     } catch (_) {}
     return monthKey;
+  }
+}
+
+/// 진행도 행 우측의 소형 골드 pill — '전체 확정' 액션.
+class _ConfirmAllPill extends StatelessWidget {
+  const _ConfirmAllPill({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          gradient: AppGradients.gold,
+          borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.done_all, color: AppColors.navy, size: 14),
+            SizedBox(width: 6),
+            Text(
+              AppStrings.scheduleConfirmAll,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.navy,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
