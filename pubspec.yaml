@@ -1,7 +1,7 @@
 name: planroutine
 description: "공직플랜 — 공직자를 위한 업무 일정 관리 앱"
 publish_to: 'none'
-version: 1.0.0+32
+version: 1.0.0+33
 
 environment:
   sdk: ^3.11.4
