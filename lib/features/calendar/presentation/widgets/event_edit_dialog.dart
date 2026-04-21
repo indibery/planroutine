@@ -30,6 +30,7 @@ class EventEditDialog extends ConsumerStatefulWidget {
     return showModalBottomSheet<CalendarEvent>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: AppColors.navyMid,
       barrierColor: AppColors.navy.withValues(alpha: 0.7),
       shape: const RoundedRectangleBorder(
