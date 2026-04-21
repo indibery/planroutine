@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../shared/widgets/dismissible_background.dart';
 import '../../domain/schedule.dart';
 
 /// 일정 항목 카드
@@ -31,15 +32,13 @@ class ScheduleTile extends StatelessWidget {
         DismissDirection.endToStart: 0.25,
       },
       movementDuration: const Duration(milliseconds: 150),
-      background: _buildSwipeBackground(
-        bg: AppColors.navySoft,
+      background: const DismissibleBackground(
         accent: AppColors.inkGreen,
         icon: Icons.check_circle_outline,
         label: AppStrings.scheduleConfirm,
         alignment: Alignment.centerLeft,
       ),
-      secondaryBackground: _buildSwipeBackground(
-        bg: AppColors.navySoft,
+      secondaryBackground: const DismissibleBackground(
         accent: AppColors.inkRed,
         icon: Icons.delete_outline,
         label: AppStrings.scheduleDelete,
@@ -197,44 +196,6 @@ class ScheduleTile extends StatelessWidget {
           color: _categoryColor(category),
           fontWeight: FontWeight.w500,
         ),
-      ),
-    );
-  }
-
-  Widget _buildSwipeBackground({
-    required Color bg,
-    required Color accent,
-    required IconData icon,
-    required String label,
-    required Alignment alignment,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
-        vertical: AppSizes.spacing8,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppSizes.radius14),
-        border: Border.all(color: AppColors.line, width: 0.5),
-      ),
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: accent),
-          const SizedBox(width: AppSizes.spacing8),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
