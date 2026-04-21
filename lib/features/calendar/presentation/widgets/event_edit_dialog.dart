@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 
@@ -29,9 +30,11 @@ class EventEditDialog extends ConsumerStatefulWidget {
     return showModalBottomSheet<CalendarEvent>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.navyMid,
+      barrierColor: AppColors.navy.withValues(alpha: 0.7),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radius16),
+          top: Radius.circular(AppSizes.radius28),
         ),
       ),
       builder: (_) => EventEditDialog(
@@ -90,6 +93,18 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: AppColors.faint,
+                      borderRadius:
+                          BorderRadius.circular(AppSizes.radiusFull),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSizes.spacing16),
                 _buildHeader(),
                 const SizedBox(height: AppSizes.spacing20),
                 _buildTitleField(),
@@ -120,9 +135,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         Text(
           _isEditing ? AppStrings.calendarEditEvent : AppStrings.calendarAddEvent,
           style: const TextStyle(
+            fontFamily: 'Pretendard',
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: AppColors.ink,
           ),
         ),
         const Spacer(),
@@ -133,7 +149,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               ? IconButton(
                   icon: const Icon(
                     Icons.delete_outline,
-                    color: AppColors.error,
+                    color: AppColors.inkRed,
                   ),
                   tooltip: AppStrings.delete,
                   onPressed: _onDelete,
@@ -287,11 +303,11 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                     color: color,
                     shape: BoxShape.circle,
                     border: isSelected
-                        ? Border.all(color: AppColors.textPrimary, width: 2.5)
+                        ? Border.all(color: AppColors.gold, width: 2.5)
                         : null,
                   ),
                   child: isSelected
-                      ? const Icon(Icons.check, color: Colors.white, size: 16)
+                      ? const Icon(Icons.check, color: AppColors.navy, size: 16)
                       : null,
                 ),
               ),
@@ -313,9 +329,9 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         ),
         const SizedBox(width: AppSizes.spacing12),
         Expanded(
-          child: ElevatedButton(
+          child: GoldGradientButton(
+            label: AppStrings.save,
             onPressed: _onSave,
-            child: const Text(AppStrings.save),
           ),
         ),
       ],

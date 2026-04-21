@@ -57,9 +57,9 @@ class CalendarSlideHintBar extends ConsumerWidget {
         AppSizes.spacing12,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(AppSizes.radius12),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+        border: Border.all(color: AppColors.line, width: 0.5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,14 +70,14 @@ class CalendarSlideHintBar extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _HintRow(
-                  color: AppColors.primary,
+                  color: AppColors.inkGreen,
                   icon: Icons.arrow_forward,
                   actionIcon: Icons.cloud_upload,
                   text: AppStrings.calendarSwipeHintGoogle,
                 ),
                 SizedBox(height: AppSizes.spacing8),
                 _HintRow(
-                  color: AppColors.statusConfirmed,
+                  color: AppColors.gold,
                   icon: Icons.arrow_back,
                   actionIcon: Icons.check_circle,
                   text: AppStrings.calendarSwipeHintComplete,
@@ -94,7 +94,7 @@ class CalendarSlideHintBar extends ConsumerWidget {
               child: Icon(
                 Icons.close,
                 size: AppSizes.iconSmall,
-                color: AppColors.textSecondary,
+                color: AppColors.sub,
               ),
             ),
           ),

@@ -67,14 +67,20 @@ class CalendarDayCell extends StatelessWidget {
               color: AppColors.calendarToday,
               shape: BoxShape.circle,
             )
-          : null,
+          : isSelected
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gold, width: 1),
+                )
+              : null,
       alignment: Alignment.center,
       child: Text(
         '$day',
         style: TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 13,
-          fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
-          color: isToday ? Colors.white : textColor,
+          fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
+          color: isToday ? AppColors.navy : textColor,
         ),
       ),
     );

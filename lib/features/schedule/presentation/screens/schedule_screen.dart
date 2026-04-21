@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/theme/app_gradients.dart';
+import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_edit_sheet.dart';
@@ -20,9 +22,36 @@ class ScheduleScreen extends ConsumerWidget {
     final schedulesAsync = ref.watch(schedulesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.scheduleTitle)),
+      appBar: AppBar(
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'REVIEW',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 2.5,
+                color: AppColors.gold,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              AppStrings.scheduleTitle,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
+          _buildProgress(schedulesAsync),
           const SlideHintBar(),
           const ScheduleFilterBar(),
           const Divider(height: 1),
@@ -59,15 +88,80 @@ class ScheduleScreen extends ConsumerWidget {
           final hasPending =
               schedules.any((s) => s.status == ScheduleStatus.pending);
           if (!hasPending) return null;
-          return FloatingActionButton.extended(
-            onPressed: () => _showBulkConfirmDialog(context, ref),
-            icon: const Icon(Icons.done_all),
-            label: const Text(AppStrings.scheduleConfirmAll),
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+          return Padding(
+            padding: const EdgeInsets.only(
+              bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
+            ),
+            child: SizedBox(
+              width: 180,
+              child: GoldGradientButton(
+                label: AppStrings.scheduleConfirmAll,
+                icon: Icons.done_all,
+                onPressed: () => _showBulkConfirmDialog(context, ref),
+              ),
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// 확정/전체 일정 진행도 바 — 얇은 2px gold gradient.
+  Widget _buildProgress(AsyncValue<List<Schedule>> schedulesAsync) {
+    return schedulesAsync.when(
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        final total = list.length;
+        final confirmed =
+            list.where((s) => s.status == ScheduleStatus.confirmed).length;
+        final ratio = total == 0 ? 0.0 : confirmed / total;
+        final percent = (ratio * 100).round();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.pagePadding,
+            AppSizes.spacing12,
+            AppSizes.pagePadding,
+            AppSizes.spacing4,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$confirmed / $total · $percent% 완료',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.sub,
+                ),
+              ),
+              const SizedBox(height: AppSizes.spacing8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 2,
+                      color: AppColors.navySoft,
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: ratio.clamp(0.0, 1.0),
+                      child: Container(
+                        height: 2,
+                        decoration: const BoxDecoration(
+                          gradient: AppGradients.progress,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -80,7 +174,7 @@ class ScheduleScreen extends ConsumerWidget {
           Icon(
             Icons.event_note,
             size: 64,
-            color: AppColors.textHint,
+            color: AppColors.faint,
           ),
           const SizedBox(height: AppSizes.spacing16),
           Text(
@@ -88,8 +182,9 @@ class ScheduleScreen extends ConsumerWidget {
                 ? AppStrings.scheduleEmptyFiltered
                 : AppStrings.scheduleEmpty,
             style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.sub,
             ),
           ),
         ],
@@ -112,7 +207,9 @@ class ScheduleScreen extends ConsumerWidget {
     final sortedKeys = grouped.keys.toList()..sort();
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80),
+      padding: const EdgeInsets.only(
+        bottom: AppSizes.tabBarHeight + AppSizes.spacing48 + AppSizes.spacing16,
+      ),
       itemCount: sortedKeys.length,
       itemBuilder: (context, index) {
         final monthKey = sortedKeys[index];
@@ -141,9 +238,10 @@ class ScheduleScreen extends ConsumerWidget {
           child: Text(
             _formatMonthKey(monthKey),
             style: const TextStyle(
-              fontSize: 14,
+              fontFamily: 'Pretendard',
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: AppColors.gold,
             ),
           ),
         ),

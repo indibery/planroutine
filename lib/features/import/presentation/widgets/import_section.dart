@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/imported_schedule.dart';
 import '../providers/import_providers.dart';
@@ -44,31 +45,48 @@ class ImportSection extends ConsumerWidget {
   Widget _buildInitialView(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
+        horizontal: AppSizes.pagePadding,
         vertical: AppSizes.spacing8,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            AppStrings.importDescription,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+          const _ImportSteps(activeStep: 0),
+          const SizedBox(height: AppSizes.spacing16),
+          Container(
+            padding: const EdgeInsets.all(AppSizes.cardPadding),
+            decoration: BoxDecoration(
+              color: AppColors.glass,
+              borderRadius: BorderRadius.circular(AppSizes.radius14),
+              border: Border.all(color: AppColors.lineStrong, width: 0.8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.upload_file,
+                  color: AppColors.gold,
+                  size: 32,
                 ),
-          ),
-          const SizedBox(height: AppSizes.spacing12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ref.read(importStateProvider.notifier).pickAndImportCsv();
-              },
-              icon: const Icon(Icons.file_open),
-              label: const Text(AppStrings.importSelectFile),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
+                const SizedBox(height: AppSizes.spacing8),
+                Text(
+                  AppStrings.importDescription,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 13,
+                    height: 1.5,
+                    color: AppColors.sub,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.spacing12),
+                GoldGradientButton(
+                  label: AppStrings.importSelectFile,
+                  icon: Icons.file_open,
+                  onPressed: () {
+                    ref.read(importStateProvider.notifier).pickAndImportCsv();
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -81,13 +99,17 @@ class ImportSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing24),
       child: Column(
         children: [
-          const CircularProgressIndicator(color: AppColors.primary),
+          const _ImportSteps(activeStep: 1),
+          const SizedBox(height: AppSizes.spacing16),
+          const CircularProgressIndicator(color: AppColors.gold),
           const SizedBox(height: AppSizes.spacing12),
-          Text(
+          const Text(
             AppStrings.importParsing,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13,
+              color: AppColors.sub,
+            ),
           ),
         ],
       ),
@@ -118,15 +140,11 @@ class ImportSection extends ConsumerWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: ElevatedButton.icon(
+                child: GoldGradientButton(
+                  label: AppStrings.importRegisterAll,
+                  icon: Icons.playlist_add_check,
                   onPressed: () =>
                       _confirmRegister(context, ref, schedules, sourceYear),
-                  icon: const Icon(Icons.playlist_add_check),
-                  label: const Text(AppStrings.importRegisterAll),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
                 ),
               ),
               const SizedBox(width: AppSizes.spacing8),
@@ -159,31 +177,34 @@ class ImportSection extends ConsumerWidget {
         vertical: AppSizes.spacing8,
       ),
       child: Container(
-        padding: const EdgeInsets.all(AppSizes.spacing16),
+        padding: const EdgeInsets.all(AppSizes.cardPadding),
         decoration: BoxDecoration(
-          color: AppColors.statusConfirmed.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppSizes.radius12),
+          color: AppColors.glass,
+          borderRadius: BorderRadius.circular(AppSizes.radius14),
           border: Border.all(
-            color: AppColors.statusConfirmed.withValues(alpha: 0.3),
-            width: 0.5,
+            color: AppColors.inkGreen.withValues(alpha: 0.35),
+            width: 0.8,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const _ImportSteps(activeStep: 2),
+            const SizedBox(height: AppSizes.spacing12),
             Row(
               children: [
                 const Icon(
                   Icons.check_circle,
-                  color: AppColors.statusConfirmed,
+                  color: AppColors.inkGreen,
                 ),
                 const SizedBox(width: AppSizes.spacing8),
                 Text(
                   '$sourceYear${AppStrings.compareYearFormat} 일정 $created${AppStrings.importRegisterCount}',
                   style: const TextStyle(
+                    fontFamily: 'Pretendard',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: AppColors.ink,
                   ),
                 ),
               ],
@@ -193,8 +214,9 @@ class ImportSection extends ConsumerWidget {
               Text(
                 skippedMessage.trim(),
                 style: const TextStyle(
+                  fontFamily: 'Pretendard',
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: AppColors.sub,
                 ),
               ),
             ],
@@ -217,41 +239,42 @@ class ImportSection extends ConsumerWidget {
   Widget _buildErrorView(BuildContext context, WidgetRef ref, String message) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
+        horizontal: AppSizes.pagePadding,
         vertical: AppSizes.spacing8,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline, color: AppColors.error),
+              const Icon(Icons.error_outline, color: AppColors.inkRed),
               const SizedBox(width: AppSizes.spacing8),
-              Text(
+              const Text(
                 AppStrings.importFailed,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.inkRed,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.spacing8),
           Text(
             message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13,
+              color: AppColors.sub,
+            ),
           ),
           const SizedBox(height: AppSizes.spacing12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () =>
-                  ref.read(importStateProvider.notifier).pickAndImportCsv(),
-              icon: const Icon(Icons.refresh),
-              label: const Text(AppStrings.retry),
-            ),
+          GoldGradientButton(
+            label: AppStrings.retry,
+            icon: Icons.refresh,
+            onPressed: () =>
+                ref.read(importStateProvider.notifier).pickAndImportCsv(),
           ),
         ],
       ),
@@ -270,5 +293,75 @@ class ImportSection extends ConsumerWidget {
         .read(importStateProvider.notifier)
         .registerAllAsSchedules(schedules, sourceYear);
     ref.invalidate(schedulesProvider);
+  }
+}
+
+/// 가져오기 3단계 인디케이터 — ① 파일 선택 · ② 분석 · ③ 등록.
+class _ImportSteps extends StatelessWidget {
+  const _ImportSteps({required this.activeStep});
+
+  final int activeStep;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _StepDot(index: 0, active: activeStep >= 0),
+        _StepLine(active: activeStep >= 1),
+        _StepDot(index: 1, active: activeStep >= 1),
+        _StepLine(active: activeStep >= 2),
+        _StepDot(index: 2, active: activeStep >= 2),
+      ],
+    );
+  }
+}
+
+class _StepDot extends StatelessWidget {
+  const _StepDot({required this.index, required this.active});
+
+  final int index;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? AppColors.gold : Colors.transparent,
+        border: Border.all(
+          color: active ? AppColors.gold : AppColors.faint,
+          width: 1,
+        ),
+      ),
+      child: Text(
+        '${index + 1}',
+        style: TextStyle(
+          fontFamily: 'Space Grotesk',
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: active ? AppColors.navy : AppColors.faint,
+        ),
+      ),
+    );
+  }
+}
+
+class _StepLine extends StatelessWidget {
+  const _StepLine({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 1,
+        margin: const EdgeInsets.symmetric(horizontal: AppSizes.spacing4),
+        color: active ? AppColors.gold : AppColors.faint,
+      ),
+    );
   }
 }

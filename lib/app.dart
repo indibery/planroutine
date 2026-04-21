@@ -7,7 +7,11 @@ import 'core/theme/app_theme.dart';
 
 /// 앱 루트 위젯
 class PlanRoutineApp extends StatelessWidget {
-  const PlanRoutineApp({super.key});
+  const PlanRoutineApp({super.key, this.onboardingDone = true});
+
+  /// 온보딩 완료 여부 — 부팅 시 [OnboardingRepository.isDone]으로 읽어서 주입.
+  /// 테스트/기본값은 true (바로 캘린더 진입).
+  final bool onboardingDone;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +20,7 @@ class PlanRoutineApp extends StatelessWidget {
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      routerConfig: appRouter,
+      routerConfig: createRouter(onboardingDone: onboardingDone),
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

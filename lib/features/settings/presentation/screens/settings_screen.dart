@@ -47,8 +47,21 @@ class SettingsScreen extends ConsumerWidget {
     final isResetting = resetState is ResetInProgress;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.settingsTitle)),
+      appBar: AppBar(
+        title: const Text(
+          AppStrings.settingsTitle,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: ListView(
+        padding: const EdgeInsets.only(
+          bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
+        ),
         children: [
           _SectionHeader(title: AppStrings.settingsImportSection),
           const ImportSection(),
@@ -562,18 +575,19 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.spacing16,
-        AppSizes.spacing16,
-        AppSizes.spacing16,
+        AppSizes.pagePadding,
+        AppSizes.sectionGap,
+        AppSizes.pagePadding,
         AppSizes.spacing8,
       ),
       child: Text(
-        title,
+        title.toUpperCase(),
         style: const TextStyle(
-          fontSize: 12,
+          fontFamily: 'Pretendard',
+          fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
-          letterSpacing: 0.5,
+          color: AppColors.gold,
+          letterSpacing: 2.5,
         ),
       ),
     );

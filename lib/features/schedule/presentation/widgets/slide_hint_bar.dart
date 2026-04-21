@@ -55,9 +55,9 @@ class SlideHintBar extends ConsumerWidget {
         AppSizes.spacing12,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(AppSizes.radius12),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+        border: Border.all(color: AppColors.line, width: 0.5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,14 +68,14 @@ class SlideHintBar extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _HintRow(
-                  color: AppColors.statusConfirmed,
+                  color: AppColors.inkGreen,
                   icon: Icons.arrow_forward,
                   actionIcon: Icons.check_circle,
                   text: AppStrings.scheduleSlideHintConfirm,
                 ),
                 SizedBox(height: AppSizes.spacing8),
                 _HintRow(
-                  color: AppColors.error,
+                  color: AppColors.inkRed,
                   icon: Icons.arrow_back,
                   actionIcon: Icons.delete_outline,
                   text: AppStrings.scheduleSlideHintDelete,
@@ -92,7 +92,7 @@ class SlideHintBar extends ConsumerWidget {
               child: Icon(
                 Icons.close,
                 size: AppSizes.iconSmall,
-                color: AppColors.textSecondary,
+                color: AppColors.sub,
               ),
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'features/notifications/presentation/providers/notification_providers.dart';
+import 'features/onboarding/data/onboarding_repository.dart';
 import 'features/trash/presentation/providers/trash_providers.dart';
 
 void main() async {
@@ -23,10 +24,17 @@ void main() async {
     await container.read(notificationSyncerProvider).sync();
   } catch (_) {}
 
+  // 온보딩 완료 여부를 부팅 시 1회 읽어 router에 주입.
+  // 실패 시에는 "완료된 것으로" 간주해 기본 화면(calendar)로 진입.
+  var onboardingDone = true;
+  try {
+    onboardingDone = await OnboardingRepository().isDone();
+  } catch (_) {}
+
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: const PlanRoutineApp(),
+      child: PlanRoutineApp(onboardingDone: onboardingDone),
     ),
   );
 }
