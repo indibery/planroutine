@@ -3,7 +3,7 @@ class AppStrings {
   AppStrings._();
 
   // 앱 기본
-  static const appName = '플랜루틴';
+  static const appName = '공직플랜';
 
   // 탭/네비게이션
   static const tabCalendar = '캘린더';
@@ -18,7 +18,7 @@ class AppStrings {
       '올해 등록된 일정을 CSV 파일로 저장·공유합니다';
   static const settingsExportEmpty = '내보낼 일정이 없습니다';
   static const settingsExportFailed = '내보내기 중 오류가 발생했습니다';
-  static const settingsExportShareSubject = '플랜루틴 일정';
+  static const settingsExportShareSubject = '공직플랜 일정';
   static const settingsExportShareCountSuffix = '건의 일정을 공유합니다';
   static const settingsTrashSection = '휴지통';
   static const settingsTrashDescription =
