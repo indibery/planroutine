@@ -1,5 +1,5 @@
 name: planroutine
-description: "PlanRoutine (플랜루틴) — 계획과 반복, 교사용 일정 관리 앱"
+description: "공직플랜 — 공직자를 위한 업무 일정 관리 앱"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -60,6 +60,9 @@ dependencies:
   # 로컬 알림 (월초/1주 전/1일 전 리마인더)
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
+
+  # 커스텀 폰트 (디자인 시스템 적용용)
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
