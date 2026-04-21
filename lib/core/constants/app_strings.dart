@@ -114,6 +114,7 @@ class AppStrings {
   static const calendarSaveToGoogleNeedsSignIn = 'Google 로그인 후 저장';
   static const calendarSaveToGoogleNeedsSignInShort = 'Google 로그인';
   static const calendarSaveToGoogleDone = '구글 캘린더에 저장했습니다';
+  static const calendarSaveToGoogleAlready = '이미 저장된 일정입니다';
   static const calendarSaveToGoogleFailed = '구글 캘린더 저장 실패';
   static const calendarMarkComplete = '일정 완료';
   static const calendarUndoComplete = '완료 취소';
