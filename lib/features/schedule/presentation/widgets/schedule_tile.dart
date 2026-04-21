@@ -32,13 +32,15 @@ class ScheduleTile extends StatelessWidget {
       },
       movementDuration: const Duration(milliseconds: 150),
       background: _buildSwipeBackground(
-        color: AppColors.statusConfirmed,
+        bg: AppColors.navySoft,
+        accent: AppColors.inkGreen,
         icon: Icons.check_circle_outline,
         label: AppStrings.scheduleConfirm,
         alignment: Alignment.centerLeft,
       ),
       secondaryBackground: _buildSwipeBackground(
-        color: AppColors.error,
+        bg: AppColors.navySoft,
+        accent: AppColors.inkRed,
         icon: Icons.delete_outline,
         label: AppStrings.scheduleDelete,
         alignment: Alignment.centerRight,
@@ -58,12 +60,21 @@ class ScheduleTile extends StatelessWidget {
           onDelete();
         }
       },
-      child: Card(
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing16,
+          vertical: AppSizes.spacing4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.glass,
+          borderRadius: BorderRadius.circular(AppSizes.radius14),
+          border: Border.all(color: AppColors.line, width: 0.5),
+        ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSizes.radius12),
+          borderRadius: BorderRadius.circular(AppSizes.radius14),
           child: Padding(
-            padding: const EdgeInsets.all(AppSizes.spacing16),
+            padding: const EdgeInsets.all(AppSizes.cardPadding),
             child: Row(
               children: [
                 _buildStatusIndicator(),
@@ -82,9 +93,10 @@ class ScheduleTile extends StatelessWidget {
                             child: Text(
                               schedule.title,
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontFamily: 'Pretendard',
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: AppColors.ink,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -97,15 +109,16 @@ class ScheduleTile extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.calendar_today,
-                            size: AppSizes.iconSmall,
-                            color: AppColors.textSecondary,
+                            size: 14,
+                            color: AppColors.sub,
                           ),
                           const SizedBox(width: AppSizes.spacing4),
                           Text(
                             _formatDate(schedule.scheduledDate),
                             style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                              fontFamily: 'Pretendard',
+                              fontSize: 12,
+                              color: AppColors.sub,
                             ),
                           ),
                         ],
@@ -128,16 +141,16 @@ class ScheduleTile extends StatelessWidget {
   Widget _buildStatusIndicator() {
     final color = _statusColor(schedule.status);
     return Container(
-      width: 4,
+      width: 3,
       height: 48,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(AppSizes.radius4),
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
       ),
     );
   }
 
-  /// 확정된 일정에만 붙는 "확정" 뱃지 (녹색 배경 + 흰 글씨 + 체크 아이콘)
+  /// 확정된 일정에만 붙는 "확정" 뱃지 (inkGreen 배경 + navy 글씨 + 체크 아이콘)
   Widget _buildConfirmedBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -145,19 +158,20 @@ class ScheduleTile extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: AppColors.statusConfirmed,
-        borderRadius: BorderRadius.circular(AppSizes.radius4),
+        color: AppColors.inkGreen,
+        borderRadius: BorderRadius.circular(AppSizes.radiusPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Icon(Icons.check, size: 12, color: Colors.white),
+          Icon(Icons.check, size: 12, color: AppColors.navy),
           SizedBox(width: 3),
           Text(
             AppStrings.scheduleConfirm,
             style: TextStyle(
-              fontSize: 11,
-              color: Colors.white,
+              fontFamily: 'Pretendard',
+              fontSize: 10,
+              color: AppColors.navy,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -188,7 +202,8 @@ class ScheduleTile extends StatelessWidget {
   }
 
   Widget _buildSwipeBackground({
-    required Color color,
+    required Color bg,
+    required Color accent,
     required IconData icon,
     required String label,
     required Alignment alignment,
@@ -199,20 +214,23 @@ class ScheduleTile extends StatelessWidget {
         vertical: AppSizes.spacing8,
       ),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppSizes.radius12),
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+        border: Border.all(color: AppColors.line, width: 0.5),
       ),
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white),
+          Icon(icon, color: accent),
           const SizedBox(width: AppSizes.spacing8),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: accent,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -224,9 +242,9 @@ class ScheduleTile extends StatelessWidget {
   Color _statusColor(ScheduleStatus status) {
     switch (status) {
       case ScheduleStatus.pending:
-        return AppColors.statusPending;
+        return AppColors.gold;
       case ScheduleStatus.confirmed:
-        return AppColors.statusConfirmed;
+        return AppColors.inkGreen;
     }
   }
 

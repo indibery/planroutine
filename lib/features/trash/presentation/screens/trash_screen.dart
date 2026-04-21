@@ -21,7 +21,17 @@ class TrashScreen extends ConsumerWidget {
     final snapshotAsync = ref.watch(trashSnapshotProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.trashTitle)),
+      appBar: AppBar(
+        title: const Text(
+          AppStrings.trashTitle,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: snapshotAsync.when(
         data: (snapshot) => snapshot.isEmpty
             ? _buildEmpty()
@@ -37,16 +47,24 @@ class TrashScreen extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Icon(Icons.delete_outline, size: 64, color: AppColors.textHint),
+          Icon(Icons.delete_outline, size: 64, color: AppColors.faint),
           SizedBox(height: AppSizes.spacing16),
           Text(
             AppStrings.trashEmpty,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.sub,
+            ),
           ),
           SizedBox(height: AppSizes.spacing4),
           Text(
             AppStrings.trashAutoPurgeNotice,
-            style: TextStyle(fontSize: 12, color: AppColors.textHint),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              color: AppColors.faint,
+            ),
           ),
         ],
       ),
@@ -122,12 +140,13 @@ class _SectionHeader extends StatelessWidget {
         AppSizes.spacing8,
       ),
       child: Text(
-        '$title ($count)',
+        '$title ($count)'.toUpperCase(),
         style: const TextStyle(
-          fontSize: 12,
+          fontFamily: 'Pretendard',
+          fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
-          letterSpacing: 0.5,
+          color: AppColors.gold,
+          letterSpacing: 2.5,
         ),
       ),
     );
@@ -211,12 +230,12 @@ class _TrashActions extends StatelessWidget {
       children: [
         IconButton(
           tooltip: AppStrings.trashRestore,
-          icon: const Icon(Icons.restore, color: AppColors.primary),
+          icon: const Icon(Icons.restore, color: AppColors.gold),
           onPressed: onRestore,
         ),
         IconButton(
           tooltip: AppStrings.trashPermanentDelete,
-          icon: const Icon(Icons.delete_forever, color: AppColors.error),
+          icon: const Icon(Icons.delete_forever, color: AppColors.inkRed),
           onPressed: onPermanentDelete,
         ),
       ],

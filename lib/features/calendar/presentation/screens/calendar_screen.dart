@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/theme/app_gradients.dart';
+import '../../../../shared/widgets/brand_logo.dart';
 import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
@@ -25,7 +27,21 @@ class CalendarScreen extends ConsumerWidget {
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.calendarTitle)),
+      appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.only(left: AppSizes.spacing12),
+          child: Center(child: BrandLogo(size: 28)),
+        ),
+        title: const Text(
+          AppStrings.calendarTitle,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           _buildMonthHeader(context, ref, selectedDate),
@@ -82,7 +98,7 @@ class CalendarScreen extends ConsumerWidget {
                   : ListView.builder(
                       padding: const EdgeInsets.only(
                         top: AppSizes.spacing16,
-                        bottom: AppSizes.spacing48,
+                        bottom: AppSizes.tabBarHeight + AppSizes.spacing16,
                       ),
                       itemCount: groupedEntries.length,
                       itemBuilder: (context, index) {
@@ -106,11 +122,29 @@ class CalendarScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _onAddEvent(context, ref, selectedDate),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+      floatingActionButton: Container(
+        width: AppSizes.fabSize,
+        height: AppSizes.fabSize,
+        decoration: BoxDecoration(
+          gradient: AppGradients.gold,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.35),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => _onAddEvent(context, ref, selectedDate),
+            child: const Icon(Icons.add, color: AppColors.navy, size: 26),
+          ),
+        ),
       ),
     );
   }
@@ -130,7 +164,7 @@ class CalendarScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left),
+            icon: const Icon(Icons.chevron_left, color: AppColors.sub),
             onPressed: () {
               final prev = DateTime(selectedDate.year, selectedDate.month - 1, 1);
               ref.read(selectedDateProvider.notifier).state = prev;
@@ -146,23 +180,29 @@ class CalendarScreen extends ConsumerWidget {
                 Text(
                   formatter.format(selectedDate),
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontFamily: 'Pretendard',
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
+                    color: AppColors.ink,
                   ),
                 ),
+                const SizedBox(height: 2),
                 const Text(
                   AppStrings.calendarToday,
                   style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textHint,
+                    fontFamily: 'Pretendard',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2.0,
+                    color: AppColors.goldMuted,
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(Icons.chevron_right, color: AppColors.sub),
             onPressed: () {
               final next = DateTime(selectedDate.year, selectedDate.month + 1, 1);
               ref.read(selectedDateProvider.notifier).state = next;

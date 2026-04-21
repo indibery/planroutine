@@ -53,16 +53,18 @@ class EventListSection extends StatelessWidget {
         DismissDirection.endToStart: 0.25,
       },
       movementDuration: const Duration(milliseconds: 150),
-      // 오른쪽 스와이프 배경: Google 저장 (파랑)
+      // 오른쪽 스와이프 배경: Google 저장 (navySoft + inkGreen 아이콘)
       background: _buildSwipeBackground(
-        color: AppColors.primary,
+        bg: AppColors.navySoft,
+        accent: AppColors.inkGreen,
         icon: Icons.cloud_upload,
         label: AppStrings.calendarSwipeGoogleSave,
         alignment: Alignment.centerLeft,
       ),
-      // 왼쪽 스와이프 배경: 완료 토글 (녹색 또는 회색)
+      // 왼쪽 스와이프 배경: 완료 토글 (navySoft + gold 아이콘)
       secondaryBackground: _buildSwipeBackground(
-        color: isDone ? AppColors.textHint : AppColors.statusConfirmed,
+        bg: AppColors.navySoft,
+        accent: isDone ? AppColors.faint : AppColors.gold,
         icon: isDone ? Icons.radio_button_unchecked : Icons.check_circle,
         label: isDone
             ? AppStrings.calendarUndoComplete
@@ -83,7 +85,8 @@ class EventListSection extends StatelessWidget {
   }
 
   Widget _buildSwipeBackground({
-    required Color color,
+    required Color bg,
+    required Color accent,
     required IconData icon,
     required String label,
     required Alignment alignment,
@@ -95,19 +98,22 @@ class EventListSection extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppSizes.radius12),
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+        border: Border.all(color: AppColors.line, width: 0.5),
       ),
       alignment: alignment,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white),
+          Icon(icon, color: accent),
           const SizedBox(width: AppSizes.spacing8),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: accent,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -123,9 +129,10 @@ class EventListSection extends StatelessWidget {
       child: Text(
         formatter.format(selectedDate),
         style: const TextStyle(
+          fontFamily: 'Pretendard',
           fontSize: 16,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: AppColors.ink,
         ),
       ),
     );
@@ -141,8 +148,9 @@ class EventListSection extends StatelessWidget {
         child: Text(
           AppStrings.calendarNoEvents,
           style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textHint,
+            fontFamily: 'Pretendard',
+            fontSize: 13,
+            color: AppColors.faint,
           ),
         ),
       ),
@@ -151,9 +159,9 @@ class EventListSection extends StatelessWidget {
 
   Widget _buildEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
-    final titleColor = isDone ? AppColors.textHint : AppColors.textPrimary;
+    final titleColor = isDone ? AppColors.sub : AppColors.ink;
     final accentColor = isDone
-        ? AppColors.textHint
+        ? AppColors.faint
         : event.eventColor;
 
     return Padding(
@@ -164,11 +172,11 @@ class EventListSection extends StatelessWidget {
       child: GestureDetector(
         onTap: () => onEventTap(event),
         child: Container(
-          padding: const EdgeInsets.all(AppSizes.spacing12),
+          padding: const EdgeInsets.all(AppSizes.cardPadding),
           decoration: BoxDecoration(
-            color: isDone ? AppColors.surfaceVariant : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSizes.radius12),
-            border: Border.all(color: AppColors.divider),
+            color: AppColors.glass,
+            borderRadius: BorderRadius.circular(AppSizes.radius14),
+            border: Border.all(color: AppColors.line, width: 0.5),
           ),
           child: Row(
             children: [
@@ -188,13 +196,14 @@ class EventListSection extends StatelessWidget {
                     Text(
                       event.title,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontFamily: 'Pretendard',
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: titleColor,
                         decoration: isDone
                             ? TextDecoration.lineThrough
                             : TextDecoration.none,
-                        decorationColor: AppColors.textHint,
+                        decorationColor: AppColors.faint,
                         decorationThickness: 2,
                       ),
                       maxLines: 1,
@@ -205,10 +214,11 @@ class EventListSection extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: AppSizes.spacing4),
                         child: Text(
-                          event.description!,
+                          event.description ?? '',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                            fontFamily: 'Pretendard',
+                            fontSize: 12,
+                            color: AppColors.sub,
                             decoration: isDone
                                 ? TextDecoration.lineThrough
                                 : TextDecoration.none,
@@ -226,7 +236,7 @@ class EventListSection extends StatelessWidget {
                   child: Icon(
                     Icons.check_circle,
                     size: 18,
-                    color: AppColors.statusConfirmed,
+                    color: AppColors.inkGreen,
                   ),
                 )
               else if (event.isAllDay)
@@ -236,14 +246,17 @@ class EventListSection extends StatelessWidget {
                     vertical: AppSizes.spacing4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(AppSizes.radius4),
+                    color: AppColors.navySoft,
+                    borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                    border: Border.all(color: AppColors.line, width: 0.5),
                   ),
                   child: const Text(
                     AppStrings.calendarEventAllDay,
                     style: TextStyle(
+                      fontFamily: 'Pretendard',
                       fontSize: 11,
-                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.sub,
                     ),
                   ),
                 ),
