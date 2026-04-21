@@ -33,4 +33,18 @@ class AppSizes {
 
   // 앱바
   static const appBarHeight = 56.0;
+
+  // ── 디자인 시스템 토큰 ───────────────────────────────────
+  static const pagePadding = 20.0;
+  static const cardPadding = 16.0;
+  static const cardGap = 8.0;
+  static const sectionGap = 24.0;
+
+  static const radius14 = 14.0;
+  static const radius18 = 18.0;
+  static const radius28 = 28.0;
+  static const radiusPill = 999.0;
+
+  static const fabSize = 56.0;
+  static const tabBarHeight = 72.0;
 }

@@ -3,17 +3,33 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/router/app_router.dart';
+import 'floating_tab_bar.dart';
 
-/// 하단 네비게이션바를 감싸는 메인 Shell
+/// 플로팅 탭바를 감싸는 메인 Shell
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.child});
 
   final Widget child;
 
   static const _tabs = [
-    (route: AppRoutes.calendar, icon: Icons.calendar_month, label: AppStrings.tabCalendar),
-    (route: AppRoutes.schedule, icon: Icons.checklist, label: AppStrings.tabSchedule),
-    (route: AppRoutes.settings, icon: Icons.settings, label: AppStrings.settingsTitle),
+    (
+      route: AppRoutes.calendar,
+      icon: Icons.calendar_month_outlined,
+      activeIcon: Icons.calendar_month,
+      label: AppStrings.tabCalendar,
+    ),
+    (
+      route: AppRoutes.schedule,
+      icon: Icons.checklist_rtl_outlined,
+      activeIcon: Icons.checklist_rtl,
+      label: AppStrings.tabSchedule,
+    ),
+    (
+      route: AppRoutes.settings,
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings,
+      label: AppStrings.settingsTitle,
+    ),
   ];
 
   int _currentIndex(BuildContext context) {
@@ -27,13 +43,15 @@ class MainShell extends StatelessWidget {
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: FloatingTabBar(
         currentIndex: currentIndex,
         onTap: (index) => context.go(_tabs[index].route),
-        items: _tabs
-            .map((tab) => BottomNavigationBarItem(
-                  icon: Icon(tab.icon),
+        tabs: _tabs
+            .map((tab) => FloatingTabItem(
+                  icon: tab.icon,
+                  activeIcon: tab.activeIcon,
                   label: tab.label,
                 ))
             .toList(),

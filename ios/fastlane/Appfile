@@ -1,0 +1,7 @@
+app_identifier("com.planroutine.app")
+apple_id("") # Apple ID는 API Key 인증 시 불필요
+
+team_id("3SAVPGG2TF")
+
+# App Store Connect API Key 인증
+json_key_file("") # Android용 (사용 안 함)
