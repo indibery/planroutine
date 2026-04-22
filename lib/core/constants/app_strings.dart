@@ -31,15 +31,11 @@ class AppStrings {
   static const settingsNotificationWeekBefore = '1주 전 알림';
   static const settingsNotificationDayBefore = '1일 전 알림';
   static const settingsNotificationTime = '알림 시각';
-  static const settingsNotificationTimeDescription =
-      '월초·1주 전·1일 전 알림이 이 시각에 발송됩니다';
+  static const settingsNotificationAdvanced = '고급';
   static const settingsNotificationTest = '테스트 알림 보내기';
-  static const settingsNotificationTestDescription = '5초 후 알림이 발송됩니다';
   static const settingsNotificationTestScheduled =
       '5초 후 알림이 발송됩니다. 앱을 벗어나 대기해주세요';
   static const settingsNotificationDebug = '예약된 알림 보기';
-  static const settingsNotificationDebugDescription =
-      '현재 iOS에 예약된 알림 목록을 확인합니다';
   static const settingsNotificationDebugEmpty = '예약된 알림이 없습니다';
   static const settingsNotificationDebugTitle = '예약된 알림';
   static const settingsNotificationDebugCountSuffix = '개';
@@ -53,8 +49,6 @@ class AppStrings {
   static const settingsDataSection = '데이터 관리';
   static const settingsAboutSection = '앱 정보';
   static const settingsResetAll = '전체 데이터 초기화';
-  static const settingsResetAllDescription =
-      '가져온 일정, 확정된 일정, 캘린더 이벤트를 모두 삭제합니다';
   static const settingsResetAllConfirmTitle = '정말 초기화하시겠어요?';
   static const settingsResetAllConfirmMessage =
       '모든 데이터가 영구 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.';
