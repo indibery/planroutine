@@ -134,7 +134,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         const SizedBox(width: 40),
         const Spacer(),
         Text(
-          _isEditing ? AppStrings.calendarEditEvent : AppStrings.calendarAddEvent,
+          _isEditing ? CalendarStrings.editEvent : CalendarStrings.addEvent,
           style: const TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 18,
@@ -167,12 +167,12 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     return TextFormField(
       controller: _titleController,
       decoration: const InputDecoration(
-        labelText: AppStrings.calendarEventTitle,
-        hintText: AppStrings.calendarEventTitleHint,
+        labelText: CalendarStrings.eventTitle,
+        hintText: CalendarStrings.eventTitleHint,
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return AppStrings.calendarTitleRequired;
+          return CalendarStrings.titleRequired;
         }
         return null;
       },
@@ -183,8 +183,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     return TextFormField(
       controller: _descriptionController,
       decoration: const InputDecoration(
-        labelText: AppStrings.calendarEventDescription,
-        hintText: AppStrings.calendarEventDescriptionHint,
+        labelText: CalendarStrings.eventDescription,
+        hintText: CalendarStrings.eventDescriptionHint,
       ),
       maxLines: 2,
     );
@@ -196,13 +196,13 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildDateTile(
-          label: AppStrings.calendarEventDate,
+          label: CalendarStrings.eventDate,
           date: _eventDate,
           onTap: () => _pickDate(isStart: true),
         ),
         const SizedBox(height: AppSizes.spacing8),
         _buildDateTile(
-          label: AppStrings.calendarEventEndDate,
+          label: CalendarStrings.eventEndDate,
           date: _endDate,
           hint: formatter.format(_eventDate),
           onTap: () => _pickDate(isStart: false),
@@ -262,7 +262,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     return Row(
       children: [
         const Text(
-          AppStrings.calendarEventAllDay,
+          CalendarStrings.eventAllDay,
           style: TextStyle(
             fontSize: 14,
             color: AppColors.textPrimary,
@@ -283,7 +283,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          AppStrings.calendarEventColor,
+          CalendarStrings.eventColor,
           style: TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,

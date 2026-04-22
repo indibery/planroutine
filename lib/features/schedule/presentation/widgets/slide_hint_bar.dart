@@ -13,10 +13,10 @@ class SlideHintBar extends StatelessWidget {
     return const shared.SlideHintBar(
       prefKey: 'schedule_slide_hint_dismissed',
       leftIcon: Icons.check_circle,
-      leftText: AppStrings.scheduleSlideHintConfirm,
+      leftText: ScheduleStrings.slideHintConfirm,
       leftColor: AppColors.inkGreen,
       rightIcon: Icons.delete_outline,
-      rightText: AppStrings.scheduleSlideHintDelete,
+      rightText: ScheduleStrings.slideHintDelete,
       rightColor: AppColors.inkRed,
     );
   }

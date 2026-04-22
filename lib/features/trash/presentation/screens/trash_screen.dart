@@ -25,7 +25,7 @@ class TrashScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          AppStrings.trashTitle,
+          TrashStrings.title,
           style: AppTextStyles.heading,
         ),
       ),
@@ -47,7 +47,7 @@ class TrashScreen extends ConsumerWidget {
           Icon(Icons.delete_outline, size: 64, color: AppColors.faint),
           SizedBox(height: AppSizes.spacing16),
           Text(
-            AppStrings.trashEmpty,
+            TrashStrings.empty,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
@@ -56,7 +56,7 @@ class TrashScreen extends ConsumerWidget {
           ),
           SizedBox(height: AppSizes.spacing4),
           Text(
-            AppStrings.trashAutoPurgeNotice,
+            TrashStrings.autoPurgeNotice,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 12,
@@ -88,7 +88,7 @@ class TrashScreen extends ConsumerWidget {
               const SizedBox(width: AppSizes.spacing8),
               Expanded(
                 child: Text(
-                  '${AppStrings.trashAutoPurgeNotice} · 총 ${snapshot.total}건',
+                  '${TrashStrings.autoPurgeNotice} · 총 ${snapshot.total}건',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textHint,
@@ -102,7 +102,7 @@ class TrashScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
             child: SectionHeader(
-              title: AppStrings.trashSectionSchedules,
+              title: TrashStrings.sectionSchedules,
               trailing: _SectionCountBadge(count: snapshot.schedules.length),
             ),
           ),
@@ -114,7 +114,7 @@ class TrashScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
             child: SectionHeader(
-              title: AppStrings.trashSectionEvents,
+              title: TrashStrings.sectionEvents,
               trailing: _SectionCountBadge(count: snapshot.events.length),
             ),
           ),
@@ -223,12 +223,12 @@ class _TrashActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: AppStrings.trashRestore,
+          tooltip: TrashStrings.restore,
           icon: const Icon(Icons.restore, color: AppColors.gold),
           onPressed: onRestore,
         ),
         IconButton(
-          tooltip: AppStrings.trashPermanentDelete,
+          tooltip: TrashStrings.permanentDelete,
           icon: const Icon(Icons.delete_forever, color: AppColors.inkRed),
           onPressed: onPermanentDelete,
         ),
@@ -244,8 +244,8 @@ Future<void> _confirmPermanentDelete(
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text(AppStrings.trashPermanentDeleteTitle),
-      content: const Text(AppStrings.trashPermanentDeleteMessage),
+      title: const Text(TrashStrings.permanentDeleteTitle),
+      content: const Text(TrashStrings.permanentDeleteMessage),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
@@ -254,7 +254,7 @@ Future<void> _confirmPermanentDelete(
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
           child: const Text(
-            AppStrings.trashPermanentDelete,
+            TrashStrings.permanentDelete,
             style: TextStyle(color: AppColors.error),
           ),
         ),
@@ -277,8 +277,8 @@ String _daysAgo(String? iso) {
   try {
     final deleted = DateTime.parse(iso);
     final days = DateTime.now().difference(deleted).inDays;
-    if (days == 0) return '${AppStrings.trashDeletedPrefix}오늘';
-    return '${AppStrings.trashDeletedPrefix}$days일 전';
+    if (days == 0) return '${TrashStrings.deletedPrefix}오늘';
+    return '${TrashStrings.deletedPrefix}$days일 전';
   } catch (_) {
     return '';
   }

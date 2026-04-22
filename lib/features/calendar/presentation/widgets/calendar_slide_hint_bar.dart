@@ -13,10 +13,10 @@ class CalendarSlideHintBar extends StatelessWidget {
     return const shared.SlideHintBar(
       prefKey: 'calendar_slide_hint_dismissed',
       leftIcon: Icons.cloud_upload,
-      leftText: AppStrings.calendarSwipeHintGoogle,
+      leftText: CalendarStrings.swipeHintGoogle,
       leftColor: AppColors.inkGreen,
       rightIcon: Icons.check_circle,
-      rightText: AppStrings.calendarSwipeHintComplete,
+      rightText: CalendarStrings.swipeHintComplete,
       rightColor: AppColors.gold,
     );
   }

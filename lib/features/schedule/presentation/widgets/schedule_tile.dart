@@ -35,13 +35,13 @@ class ScheduleTile extends StatelessWidget {
       background: const DismissibleBackground(
         accent: AppColors.inkGreen,
         icon: Icons.check_circle_outline,
-        label: AppStrings.scheduleConfirm,
+        label: ScheduleStrings.confirm,
         alignment: Alignment.centerLeft,
       ),
       secondaryBackground: const DismissibleBackground(
         accent: AppColors.inkRed,
         icon: Icons.delete_outline,
-        label: AppStrings.scheduleDelete,
+        label: ScheduleStrings.delete,
         alignment: Alignment.centerRight,
       ),
       confirmDismiss: (direction) async {
@@ -166,7 +166,7 @@ class ScheduleTile extends StatelessWidget {
           Icon(Icons.check, size: 12, color: AppColors.navy),
           SizedBox(width: 3),
           Text(
-            AppStrings.scheduleConfirm,
+            ScheduleStrings.confirm,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 10,

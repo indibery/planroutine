@@ -58,7 +58,7 @@ class EventListSection extends StatelessWidget {
       background: const DismissibleBackground(
         accent: AppColors.inkGreen,
         icon: Icons.cloud_upload,
-        label: AppStrings.calendarSwipeGoogleSave,
+        label: CalendarStrings.swipeGoogleSave,
         alignment: Alignment.centerLeft,
         verticalMargin: AppSizes.spacing4,
       ),
@@ -67,8 +67,8 @@ class EventListSection extends StatelessWidget {
         accent: isDone ? AppColors.faint : AppColors.gold,
         icon: isDone ? Icons.radio_button_unchecked : Icons.check_circle,
         label: isDone
-            ? AppStrings.calendarUndoComplete
-            : AppStrings.calendarMarkComplete,
+            ? CalendarStrings.undoComplete
+            : CalendarStrings.markComplete,
         alignment: Alignment.centerRight,
         verticalMargin: AppSizes.spacing4,
       ),
@@ -109,7 +109,7 @@ class EventListSection extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          AppStrings.calendarNoEvents,
+          CalendarStrings.noEvents,
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,
@@ -214,7 +214,7 @@ class EventListSection extends StatelessWidget {
                     border: Border.all(color: AppColors.line, width: 0.5),
                   ),
                   child: const Text(
-                    AppStrings.calendarEventAllDay,
+                    CalendarStrings.eventAllDay,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 11,

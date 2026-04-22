@@ -36,7 +36,7 @@ class CalendarScreen extends ConsumerWidget {
           child: Center(child: BrandLogo(size: 28)),
         ),
         title: Text(
-          AppStrings.calendarTitle,
+          CalendarStrings.title,
           style: AppTextStyles.heading,
         ),
       ),
@@ -86,7 +86,7 @@ class CalendarScreen extends ConsumerWidget {
               data: (groupedEntries) => groupedEntries.isEmpty
                   ? const Center(
                       child: Text(
-                        AppStrings.calendarNoEvents,
+                        CalendarStrings.noEvents,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.textHint,
@@ -186,7 +186,7 @@ class CalendarScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  AppStrings.calendarToday,
+                  CalendarStrings.today,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 10,
@@ -306,8 +306,8 @@ class CalendarScreen extends ConsumerWidget {
 
       if (context.mounted) {
         final msg = wasNewSave
-            ? AppStrings.calendarSaveToGoogleDone
-            : AppStrings.calendarSaveToGoogleAlready;
+            ? CalendarStrings.saveToGoogleDone
+            : CalendarStrings.saveToGoogleAlready;
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(SnackBar(content: Text(msg)));
@@ -318,7 +318,7 @@ class CalendarScreen extends ConsumerWidget {
           ..clearSnackBars()
           ..showSnackBar(
             SnackBar(
-              content: Text('${AppStrings.calendarSaveToGoogleFailed}: $e'),
+              content: Text('${CalendarStrings.saveToGoogleFailed}: $e'),
               backgroundColor: AppColors.error,
             ),
           );

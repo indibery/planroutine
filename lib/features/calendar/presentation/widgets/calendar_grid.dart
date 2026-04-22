@@ -25,13 +25,13 @@ class CalendarGrid extends StatelessWidget {
   final ValueChanged<DateTime> onDateSelected;
 
   static const _weekdays = [
-    AppStrings.weekdaySun,
-    AppStrings.weekdayMon,
-    AppStrings.weekdayTue,
-    AppStrings.weekdayWed,
-    AppStrings.weekdayThu,
-    AppStrings.weekdayFri,
-    AppStrings.weekdaySat,
+    CalendarStrings.weekdaySun,
+    CalendarStrings.weekdayMon,
+    CalendarStrings.weekdayTue,
+    CalendarStrings.weekdayWed,
+    CalendarStrings.weekdayThu,
+    CalendarStrings.weekdayFri,
+    CalendarStrings.weekdaySat,
   ];
 
   @override

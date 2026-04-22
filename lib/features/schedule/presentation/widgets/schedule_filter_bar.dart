@@ -24,7 +24,7 @@ class ScheduleFilterBar extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
-            label: AppStrings.scheduleAll,
+            label: ScheduleStrings.all,
             selected: currentStatus == null,
             onTap: () {
               ref.read(scheduleStatusFilterProvider.notifier).state = null;
@@ -32,7 +32,7 @@ class ScheduleFilterBar extends ConsumerWidget {
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
-            label: AppStrings.schedulePending,
+            label: ScheduleStrings.pending,
             selected: currentStatus == ScheduleStatus.pending,
             onTap: () {
               ref.read(scheduleStatusFilterProvider.notifier).state =
@@ -41,7 +41,7 @@ class ScheduleFilterBar extends ConsumerWidget {
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
-            label: AppStrings.scheduleConfirmed,
+            label: ScheduleStrings.confirmed,
             selected: currentStatus == ScheduleStatus.confirmed,
             onTap: () {
               ref.read(scheduleStatusFilterProvider.notifier).state =

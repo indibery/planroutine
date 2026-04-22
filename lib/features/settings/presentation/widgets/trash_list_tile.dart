@@ -18,7 +18,7 @@ class TrashListTile extends ConsumerWidget {
     final count = snapshotAsync.valueOrNull?.total ?? 0;
     return ListTile(
       leading: const Icon(Icons.delete_outline, color: AppColors.primary),
-      title: const Text(AppStrings.trashTitle),
+      title: const Text(TrashStrings.title),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

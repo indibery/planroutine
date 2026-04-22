@@ -97,7 +97,7 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            AppStrings.scheduleEditTitle,
+            ScheduleStrings.editTitle,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -108,14 +108,14 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
           TextField(
             controller: _titleController,
             decoration: const InputDecoration(
-              labelText: AppStrings.scheduleTitleLabel,
+              labelText: ScheduleStrings.titleLabel,
             ),
           ),
           const SizedBox(height: AppSizes.spacing12),
           TextField(
             controller: _descController,
             decoration: const InputDecoration(
-              labelText: AppStrings.scheduleDescriptionHint,
+              labelText: ScheduleStrings.descriptionHint,
             ),
             maxLines: 2,
           ),
@@ -124,7 +124,7 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
             onTap: _pickDate,
             child: InputDecorator(
               decoration: const InputDecoration(
-                labelText: AppStrings.scheduleDateLabel,
+                labelText: ScheduleStrings.dateLabel,
                 suffixIcon: Icon(Icons.calendar_today),
               ),
               child: Text(
