@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -16,6 +17,7 @@ class AppRoutes {
   static const schedule = '/schedule';
   static const settings = '/settings';
   static const trash = '/trash';
+  static const import = '/import';
 }
 
 /// GoRouter 팩토리 — 부팅 시 onboarding 완료 여부에 따라 initial 라우트 결정.
@@ -52,6 +54,12 @@ GoRouter createRouter({required bool onboardingDone}) => GoRouter(
               path: AppRoutes.trash,
               pageBuilder: (context, state) => const NoTransitionPage(
                 child: TrashScreen(),
+              ),
+            ),
+            GoRoute(
+              path: AppRoutes.import,
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: ImportScreen(),
               ),
             ),
           ],

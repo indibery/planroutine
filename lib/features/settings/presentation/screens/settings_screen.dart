@@ -10,7 +10,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../google/presentation/providers/google_providers.dart';
-import '../../../import/presentation/widgets/import_section.dart';
 import '../../../notifications/domain/notification_settings.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../trash/presentation/providers/trash_providers.dart';
@@ -62,10 +61,12 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsImportSection),
+            child: SectionHeader(
+              title: AppStrings.settingsImportSection,
+              subtitle: AppStrings.importDescription,
+            ),
           ),
-          const ImportSection(),
-          const SizedBox(height: AppSizes.spacing8),
+          _ImportListTile(),
           const Divider(height: 1),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
@@ -252,6 +253,8 @@ class _NotificationSettingsTiles extends ConsumerWidget {
     final notifier = ref.read(notificationSettingsProvider.notifier);
     final subEnabled = settings.masterEnabled;
 
+    final summary = _buildSummary(settings);
+
     return Column(
       children: [
         SwitchListTile(
@@ -260,47 +263,17 @@ class _NotificationSettingsTiles extends ConsumerWidget {
             color: AppColors.primary,
           ),
           title: const Text(AppStrings.settingsNotificationMaster),
+          subtitle: summary == null
+              ? null
+              : Text(
+                  summary,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.sub,
+                  ),
+                ),
           value: settings.masterEnabled,
           onChanged: (v) => notifier.setMaster(v),
-        ),
-        _SubSwitch(
-          label: AppStrings.settingsNotificationMonthStart,
-          value: settings.monthStartEnabled,
-          enabled: subEnabled,
-          onChanged: notifier.setMonthStart,
-        ),
-        _SubSwitch(
-          label: AppStrings.settingsNotificationWeekBefore,
-          value: settings.weekBeforeEnabled,
-          enabled: subEnabled,
-          onChanged: notifier.setWeekBefore,
-        ),
-        _SubSwitch(
-          label: AppStrings.settingsNotificationDayBefore,
-          value: settings.dayBeforeEnabled,
-          enabled: subEnabled,
-          onChanged: notifier.setDayBefore,
-        ),
-        ListTile(
-          leading: const SizedBox(width: 40),
-          title: const Text(
-            AppStrings.settingsNotificationTime,
-            style: TextStyle(fontSize: 14),
-          ),
-          trailing: Text(
-            _formatTime(settings.hour, settings.minute),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: subEnabled
-                  ? AppColors.primary
-                  : AppColors.textHint,
-            ),
-          ),
-          enabled: subEnabled,
-          onTap: subEnabled
-              ? () => _pickTime(context, ref, settings)
-              : null,
         ),
         Theme(
           // ExpansionTile 기본 divider 제거 — 상단 Divider와 중복
@@ -316,6 +289,45 @@ class _NotificationSettingsTiles extends ConsumerWidget {
             iconColor: AppColors.sub,
             collapsedIconColor: AppColors.sub,
             children: [
+              _SubSwitch(
+                label: AppStrings.settingsNotificationMonthStart,
+                value: settings.monthStartEnabled,
+                enabled: subEnabled,
+                onChanged: notifier.setMonthStart,
+              ),
+              _SubSwitch(
+                label: AppStrings.settingsNotificationWeekBefore,
+                value: settings.weekBeforeEnabled,
+                enabled: subEnabled,
+                onChanged: notifier.setWeekBefore,
+              ),
+              _SubSwitch(
+                label: AppStrings.settingsNotificationDayBefore,
+                value: settings.dayBeforeEnabled,
+                enabled: subEnabled,
+                onChanged: notifier.setDayBefore,
+              ),
+              ListTile(
+                leading: const SizedBox(width: 40),
+                title: const Text(
+                  AppStrings.settingsNotificationTime,
+                  style: TextStyle(fontSize: 14),
+                ),
+                trailing: Text(
+                  _formatTime(settings.hour, settings.minute),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: subEnabled
+                        ? AppColors.primary
+                        : AppColors.textHint,
+                  ),
+                ),
+                enabled: subEnabled,
+                onTap: subEnabled
+                    ? () => _pickTime(context, ref, settings)
+                    : null,
+              ),
               ListTile(
                 leading: const SizedBox(width: 40),
                 title: const Text(
@@ -359,6 +371,19 @@ class _NotificationSettingsTiles extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// 마스터 스위치 아래 요약 — 고급을 열지 않아도 현재 알림 설정이 한눈에 보이도록.
+  /// master가 꺼져있으면 null 반환하여 subtitle 자체를 숨긴다.
+  String? _buildSummary(NotificationSettings s) {
+    if (!s.masterEnabled) return null;
+    final kinds = <String>[
+      if (s.monthStartEnabled) '월초',
+      if (s.weekBeforeEnabled) '1주 전',
+      if (s.dayBeforeEnabled) '1일 전',
+    ];
+    if (kinds.isEmpty) return '세부 알림이 모두 꺼져있어요';
+    return '${_formatTime(s.hour, s.minute)} · ${kinds.join('·')}';
   }
 
   String _formatTime(int hour, int minute) {
@@ -575,6 +600,19 @@ class _TrashListTile extends ConsumerWidget {
         ],
       ),
       onTap: () => context.push(AppRoutes.trash),
+    );
+  }
+}
+
+/// 작년 일정 가져오기 — 설정 탭 1줄 진입점. 탭하면 전용 ImportScreen으로 push.
+class _ImportListTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.upload_file, color: AppColors.primary),
+      title: const Text(AppStrings.settingsImportSection),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.import),
     );
   }
 }
