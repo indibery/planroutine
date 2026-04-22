@@ -70,6 +70,25 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- CSV 파일 수신 — 카카오톡/메일/파일 앱에서 "공직플랜으로 열기" 가능하게 함 -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>CSV 파일</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.comma-separated-values-text</string>
+				<string>public.csv</string>
+				<string>public.text</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
 	<!-- Google Sign-In 구성 -->
 	<key>GIDClientID</key>
 	<string>73700230470-cal0r941so2cvip13ro3qt0c750sqkvu.apps.googleusercontent.com</string>
