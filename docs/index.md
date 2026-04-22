@@ -24,9 +24,10 @@ title: 공직플랜
 
 - 이메일: **bery97@gmail.com**
 
-## 개인정보 처리방침
+## 정책
 
-- [개인정보 처리방침 전문](privacy_policy.html)
+- [개인정보 처리방침](privacy_policy.html)
+- [서비스 이용약관](terms.html)
 
 ---
 
