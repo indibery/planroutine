@@ -21,9 +21,24 @@ class AppRoutes {
 }
 
 /// GoRouter 팩토리 — 부팅 시 onboarding 완료 여부에 따라 initial 라우트 결정.
+///
+/// 외부 앱(카카오톡/메일/파일 앱)이 CSV 파일로 앱을 열면 iOS가 file:// URL을
+/// Flutter 초기 라우트로 넘긴다. GoRouter는 해당 URL과 매칭되는 라우트가
+/// 없으므로 Page Not Found를 띄운다. redirect로 이를 가로채 /import로 보내면,
+/// `receive_sharing_intent` 리스너가 별도 스트림으로 전달하는 실제 파일 경로는
+/// app.dart의 _handleSharedFiles가 처리한다.
 GoRouter createRouter({required bool onboardingDone}) => GoRouter(
       initialLocation:
           onboardingDone ? AppRoutes.calendar : AppRoutes.onboarding,
+      redirect: (context, state) {
+        final uri = state.uri;
+        final isExternalFileIntent = uri.scheme == 'file' ||
+            uri.path.toLowerCase().endsWith('.csv');
+        if (isExternalFileIntent) {
+          return AppRoutes.import;
+        }
+        return null;
+      },
       routes: [
         GoRoute(
           path: AppRoutes.onboarding,
