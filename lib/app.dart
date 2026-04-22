@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import 'core/constants/app_strings.dart';
 import 'core/router/app_router.dart';
@@ -13,9 +13,9 @@ import 'features/import/presentation/providers/import_providers.dart';
 
 /// 앱 루트 위젯.
 ///
-/// GoRouter를 state에 보관해, 다른 앱(카카오톡/메일/파일 앱)에서 공유받은 CSV를
-/// 열었을 때 `_router.go(AppRoutes.import)`로 Import 화면으로 직접 전환할 수 있게
-/// 한다. Running/Cold start 양쪽 경로를 모두 처리.
+/// 다른 앱(카카오톡/메일/파일 앱)이 "공직플랜으로 열기"로 넘긴 CSV 파일 URL을
+/// AppDelegate가 method channel(`planroutine/shared_file`)로 전달한다.
+/// 앱 cold-start(`getPending`) + running(`onFileShared` push) 양쪽을 모두 처리.
 class PlanRoutineApp extends ConsumerStatefulWidget {
   const PlanRoutineApp({super.key, this.onboardingDone = true});
 
@@ -27,54 +27,44 @@ class PlanRoutineApp extends ConsumerStatefulWidget {
 }
 
 class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
+  static const _sharedFileChannel = MethodChannel('planroutine/shared_file');
+
   late final GoRouter _router;
-  StreamSubscription<List<SharedMediaFile>>? _sharingSub;
 
   @override
   void initState() {
     super.initState();
     _router = createRouter(onboardingDone: widget.onboardingDone);
-    _setupSharingListener();
+    _setupSharedFileListener();
   }
 
-  Future<void> _setupSharingListener() async {
-    // 앱 실행 중일 때 공유 수신
-    _sharingSub = ReceiveSharingIntent.instance.getMediaStream().listen(
-      _handleSharedFiles,
-      onError: (_) {},
-    );
-
-    // 앱이 공유 인텐트로 cold start된 경우
-    final initial = await ReceiveSharingIntent.instance.getInitialMedia();
-    if (initial.isNotEmpty) {
-      _handleSharedFiles(initial);
-      // 동일 파일이 재처리되지 않도록 리셋
-      ReceiveSharingIntent.instance.reset();
-    }
-  }
-
-  /// CSV 확장자 파일 하나만 취해 Import 화면으로 전환하고 파싱을 시작한다.
-  void _handleSharedFiles(List<SharedMediaFile> files) {
-    String? csvPath;
-    for (final f in files) {
-      if (f.path.toLowerCase().endsWith('.csv')) {
-        csvPath = f.path;
-        break;
+  Future<void> _setupSharedFileListener() async {
+    // Running 상태에서 외부 앱이 파일을 공유하면 native가 push 한다
+    _sharedFileChannel.setMethodCallHandler((call) async {
+      if (call.method == 'onFileShared' && call.arguments is String) {
+        _handleSharedFile(call.arguments as String);
       }
+    });
+
+    // Cold-start로 열린 경우 native가 버퍼에 담아둔 경로를 한 번 꺼낸다
+    try {
+      final initial = await _sharedFileChannel.invokeMethod<String>('getPending');
+      if (initial != null && initial.isNotEmpty) {
+        _handleSharedFile(initial);
+      }
+    } catch (_) {
+      // 채널 아직 준비 안 된 경우 무시 (native가 나중에 onFileShared로 push)
     }
-    if (csvPath == null) return;
+  }
+
+  void _handleSharedFile(String path) {
+    if (!path.toLowerCase().endsWith('.csv')) return;
 
     _router.go(AppRoutes.import);
-    // 다음 프레임에 파싱 시작 — Import 화면이 mount된 뒤 상태가 바뀌도록
+    // Import 화면이 mount된 다음 프레임에 파싱 시작
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(importStateProvider.notifier).importFromPath(csvPath!);
+      ref.read(importStateProvider.notifier).importFromPath(path);
     });
-  }
-
-  @override
-  void dispose() {
-    _sharingSub?.cancel();
-    super.dispose();
   }
 
   @override
