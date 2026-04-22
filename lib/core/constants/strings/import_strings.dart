@@ -10,4 +10,15 @@ class ImportStrings {
   static const failed = '가져오기 실패';
   static const registerAll = '전체 등록';
   static const registerCount = '건 등록됨';
+
+  // 에듀파인에서 CSV 받는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)
+  static const edufineGuideTitle = '에듀파인에서 CSV 받는 방법';
+  static const edufineGuideSteps = <String>[
+    '문서관리 → 문서함 → 문서등록대장(다년도검색) 진입',
+    '가져올 문서 기간 범위 지정 (예: 2024-03-01 ~ 2025-02-28)',
+    '기안(접수)자에 본인 이름 입력',
+    '우측 상단 "조회" 버튼 클릭',
+    '결과 표 상단 저장 메뉴에서 "CSV다운(과제정보추가)" 선택',
+    '다운로드된 파일을 이 화면의 "파일 선택"으로 업로드',
+  ];
 }
