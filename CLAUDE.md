@@ -42,8 +42,8 @@
 planroutine/
 ├── CLAUDE.md
 ├── lib/
-│   ├── main.dart                       # 시작 시 휴지통 purge + 알림 init/sync
-│   ├── app.dart
+│   ├── main.dart                       # 시작 시 휴지통 purge + 알림 init/sync + onboarding 체크
+│   ├── app.dart                        # GoRouter 보관 + planroutine/shared_file 채널 listener
 │   ├── core/
 │   │   ├── constants/
 │   │   │   ├── app_strings.dart        # 공통 상수 + barrel export
@@ -67,8 +67,10 @@ planroutine/
 │   │   │   ├── domain/                 # imported_schedule
 │   │   │   └── presentation/
 │   │   │       ├── screens/import_screen.dart  # 풀스크린 + sticky 스테퍼
-│   │   │       ├── widgets/import_summary_card.dart
-│   │   │       └── providers/
+│   │   │       ├── widgets/
+│   │   │       │   ├── import_summary_card.dart
+│   │   │       │   └── edufine_guide_section.dart  # 2단 접힘 안내 + 팁 박스
+│   │   │       └── providers/                   # importStateProvider (importFromPath API)
 │   │   ├── schedule/                   # 일정 검토/확정
 │   │   │   ├── data/                   # schedule_repository (soft-delete + purge)
 │   │   │   ├── domain/                 # schedule (status: pending/confirmed)
@@ -106,15 +108,21 @@ planroutine/
 │           ├── main_shell.dart         # 하단 탭 Shell
 │           ├── floating_tab_bar.dart   # 이름은 legacy, 현재 화면 폭 불투명 탭바
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
-│           ├── gold_gradient_button.dart
+│           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle
 │           └── confirm_dialog.dart     # 2-버튼 확인 다이얼로그 공통
 ├── ios/
-│   ├── Runner/Info.plist               # GIDClientID, REVERSED_CLIENT_ID URL scheme
-│   ├── fastlane/Fastfile               # beta/release 레인
+│   ├── Runner/
+│   │   ├── Info.plist                  # GIDClientID, REVERSED_CLIENT_ID, CFBundleDocumentTypes(CSV)
+│   │   ├── AppDelegate.swift           # application(_:open:options:) → planroutine/shared_file 채널
+│   │   └── SceneDelegate.swift         # scene URL → AppDelegate 포워딩
+│   ├── fastlane/Fastfile               # beta/release 레인 (IPA glob: Dir.entries)
 │   ├── Gemfile (+ Gemfile.lock)        # fastlane + cocoapods 동일 Ruby 환경
 │   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper
-├── assets/icon/app_icon.png            # 1024x1024 원본 (test/tools/gen_app_icon.dart로 재생성)
+├── assets/
+│   ├── icon/app_icon.png               # 1024x1024 원본 (test/tools/gen_app_icon.dart로 재생성)
+│   ├── images/edufine_csv_guide.png    # Import 가이드 annotation 스크린샷
+│   └── fonts/                          # Pretendard Variable
 ├── data/sample/                        # 테스트용 CSV
 ├── docs/                               # requirements, data-schema
 ├── test/
@@ -198,6 +206,15 @@ planroutine/
 ### Import 플로우
 - 설정 탭에 1줄 ListTile만 놓고, 탭 시 `/import`로 push (ShellRoute 내부라 탭바 유지).
 - `ImportScreen`의 AppBar 바로 아래에 `ImportSteps` 스테퍼가 sticky로 고정돼, Initial/Loading/Success/Registered 모든 상태에서 현재 단계가 보인다.
+- Initial 뷰에 `EdufineGuideSection` 접힘 안내 (① CSV 다운받기: 번호 4단계 + annotation 스크린샷 / ② 아이폰으로 가져오기: A. 공유시트 / B. 파일 앱 택1 + "더 보기" 팁 박스).
+
+### iOS 공유시트 통합 (외부 앱에서 공직플랜으로 열기)
+- 카카오톡/메일/파일 앱에서 CSV 파일 공유 → 공유 목록에 "공직플랜" 노출 → 탭하면 Import 화면으로 자동 이동 + 즉시 파싱. 사용자가 "파일 선택" 탭 불필요.
+- `Info.plist`의 `CFBundleDocumentTypes` + `LSSupportsOpeningDocumentsInPlace`로 CSV UTI(`public.comma-separated-values-text` 등) 수신 선언. Share Extension은 불필요.
+- `AppDelegate.swift`의 `application(_:open:options:)` 표준 iOS hook + 커스텀 `FlutterMethodChannel("planroutine/shared_file")`로 file URL을 Flutter에 전달. `receive_sharing_intent` 플러그인은 Share Extension + App Groups 기반이라 Open-In flow에서 동작 안 함 — native 직접 구현이 더 간결.
+- 타이밍: cold-start로 열린 경우 native `pendingPath` 버퍼, Flutter가 `getPending`으로 꺼냄. running 경우는 `onFileShared` push.
+- `GoRouter.redirect`에서 `scheme=file`/`.csv` 접미사 URL을 가로채 `/import`로 전환 → "Page Not Found" 방지.
+- `SceneDelegate.swift`에서 scene URL 이벤트를 `AppDelegate.application(_:open:options:)`로 포워딩 (iOS 13+ scene lifecycle 대응).
 
 ### 문자열 구조
 - 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings).
