@@ -6,6 +6,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_edit_sheet.dart';
@@ -259,27 +260,18 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
-  void _showBulkConfirmDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+  Future<void> _showBulkConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.scheduleBulkConfirmTitle),
-        content: const Text(AppStrings.scheduleBulkConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(schedulesProvider.notifier).confirmAllPending();
-              Navigator.of(context).pop();
-            },
-            child: const Text(AppStrings.scheduleConfirm),
-          ),
-        ],
-      ),
+      title: AppStrings.scheduleBulkConfirmTitle,
+      message: AppStrings.scheduleBulkConfirmMessage,
+      confirmLabel: AppStrings.scheduleConfirm,
     );
+    if (!confirmed) return;
+    ref.read(schedulesProvider.notifier).confirmAllPending();
   }
 
   String _extractMonthKey(String dateStr) {
