@@ -82,7 +82,7 @@
 ## 10. 연락처
 
 개인정보 처리 관련 문의:
-- 이메일: bery@indischool.org
+- 이메일: bery97@gmail.com
 
 ---
 

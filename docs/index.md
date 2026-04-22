@@ -22,7 +22,7 @@ title: 공직플랜
 
 ## 지원 / 문의
 
-- 이메일: **bery@indischool.org**
+- 이메일: **bery97@gmail.com**
 
 ## 개인정보 처리방침
 
