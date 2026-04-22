@@ -69,25 +69,37 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 1),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsExportSection),
+            child: SectionHeader(
+              title: AppStrings.settingsExportSection,
+              subtitle: AppStrings.settingsExportDescription,
+            ),
           ),
           _ExportListTile(),
           const Divider(height: 1),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsGoogleSection),
+            child: SectionHeader(
+              title: AppStrings.settingsGoogleSection,
+              subtitle: AppStrings.settingsGoogleSignInDescription,
+            ),
           ),
           _GoogleAccountListTile(),
           const Divider(height: 1),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsNotificationSection),
+            child: SectionHeader(
+              title: AppStrings.settingsNotificationSection,
+              subtitle: AppStrings.settingsNotificationMasterDescription,
+            ),
           ),
           _NotificationSettingsTiles(),
           const Divider(height: 1),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsTrashSection),
+            child: SectionHeader(
+              title: AppStrings.settingsTrashSection,
+              subtitle: AppStrings.settingsTrashDescription,
+            ),
           ),
           _TrashListTile(),
           const Divider(height: 1),
@@ -107,7 +119,6 @@ class SettingsScreen extends ConsumerWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            subtitle: const Text(AppStrings.settingsResetAllDescription),
             trailing: isResetting
                 ? const SizedBox(
                     width: 20,
@@ -220,7 +231,6 @@ class _ExportListTileState extends ConsumerState<_ExportListTile> {
     return ListTile(
       leading: const Icon(Icons.ios_share, color: AppColors.primary),
       title: const Text(AppStrings.settingsExportTitle),
-      subtitle: const Text(AppStrings.settingsExportDescription),
       trailing: _exporting
           ? const SizedBox(
               width: 20,
@@ -250,9 +260,6 @@ class _NotificationSettingsTiles extends ConsumerWidget {
             color: AppColors.primary,
           ),
           title: const Text(AppStrings.settingsNotificationMaster),
-          subtitle: const Text(
-            AppStrings.settingsNotificationMasterDescription,
-          ),
           value: settings.masterEnabled,
           onChanged: (v) => notifier.setMaster(v),
         ),
@@ -280,10 +287,6 @@ class _NotificationSettingsTiles extends ConsumerWidget {
             AppStrings.settingsNotificationTime,
             style: TextStyle(fontSize: 14),
           ),
-          subtitle: const Text(
-            AppStrings.settingsNotificationTimeDescription,
-            style: TextStyle(fontSize: 12),
-          ),
           trailing: Text(
             _formatTime(settings.hour, settings.minute),
             style: TextStyle(
@@ -299,47 +302,60 @@ class _NotificationSettingsTiles extends ConsumerWidget {
               ? () => _pickTime(context, ref, settings)
               : null,
         ),
-        ListTile(
-          leading: const SizedBox(width: 40),
-          title: const Text(
-            AppStrings.settingsNotificationDebug,
-            style: TextStyle(fontSize: 14),
-          ),
-          subtitle: const Text(
-            AppStrings.settingsNotificationDebugDescription,
-            style: TextStyle(fontSize: 12),
-          ),
-          trailing: const Icon(Icons.list_alt, color: AppColors.primary),
-          onTap: () => _showPendingDialog(context, ref),
-        ),
-        ListTile(
-          leading: const SizedBox(width: 40),
-          title: const Text(
-            AppStrings.settingsNotificationTest,
-            style: TextStyle(fontSize: 14),
-          ),
-          subtitle: const Text(
-            AppStrings.settingsNotificationTestDescription,
-            style: TextStyle(fontSize: 12),
-          ),
-          trailing: const Icon(Icons.alarm_on, color: AppColors.primary),
-          onTap: () async {
-            final service = ref.read(notificationServiceProvider);
-            // 권한 없으면 먼저 요청
-            await service.requestPermission();
-            await service.scheduleQuickTest(
-              title: '테스트 알림',
-              body: '5초 후 발송된 테스트 알림입니다',
-              seconds: 5,
-            );
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(AppStrings.settingsNotificationTestScheduled),
+        Theme(
+          // ExpansionTile 기본 divider 제거 — 상단 Divider와 중복
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            leading: const SizedBox(width: 40),
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+            childrenPadding: EdgeInsets.zero,
+            title: const Text(
+              AppStrings.settingsNotificationAdvanced,
+              style: TextStyle(fontSize: 14, color: AppColors.sub),
+            ),
+            iconColor: AppColors.sub,
+            collapsedIconColor: AppColors.sub,
+            children: [
+              ListTile(
+                leading: const SizedBox(width: 40),
+                title: const Text(
+                  AppStrings.settingsNotificationDebug,
+                  style: TextStyle(fontSize: 14),
                 ),
-              );
-            }
-          },
+                trailing:
+                    const Icon(Icons.list_alt, color: AppColors.primary),
+                onTap: () => _showPendingDialog(context, ref),
+              ),
+              ListTile(
+                leading: const SizedBox(width: 40),
+                title: const Text(
+                  AppStrings.settingsNotificationTest,
+                  style: TextStyle(fontSize: 14),
+                ),
+                trailing:
+                    const Icon(Icons.alarm_on, color: AppColors.primary),
+                onTap: () async {
+                  final service = ref.read(notificationServiceProvider);
+                  // 권한 없으면 먼저 요청
+                  await service.requestPermission();
+                  await service.scheduleQuickTest(
+                    title: '테스트 알림',
+                    body: '5초 후 발송된 테스트 알림입니다',
+                    seconds: 5,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          AppStrings.settingsNotificationTestScheduled,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -473,7 +489,6 @@ class _GoogleAccountListTile extends ConsumerWidget {
           color: AppColors.primary,
         ),
         title: const Text(AppStrings.settingsGoogleSignIn),
-        subtitle: const Text(AppStrings.settingsGoogleSignInDescription),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _signIn(context, ref),
       );
@@ -533,7 +548,6 @@ class _TrashListTile extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.delete_outline, color: AppColors.primary),
       title: const Text(AppStrings.trashTitle),
-      subtitle: const Text(AppStrings.settingsTrashDescription),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
