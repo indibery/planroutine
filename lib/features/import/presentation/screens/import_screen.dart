@@ -9,6 +9,7 @@ import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/imported_schedule.dart';
 import '../providers/import_providers.dart';
+import '../widgets/edufine_guide_section.dart';
 import '../widgets/import_summary_card.dart';
 
 /// 작년 일정 가져오기 전용 풀스크린.
@@ -133,6 +134,8 @@ class ImportScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSizes.spacing12),
+          const EdufineGuideSection(),
         ],
       ),
     );
