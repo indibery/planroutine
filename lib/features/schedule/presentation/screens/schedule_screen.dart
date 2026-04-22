@@ -39,7 +39,7 @@ class ScheduleScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              AppStrings.scheduleTitle,
+              ScheduleStrings.title,
               style: AppTextStyles.heading,
             ),
           ],
@@ -172,8 +172,8 @@ class ScheduleScreen extends ConsumerWidget {
           const SizedBox(height: AppSizes.spacing16),
           Text(
             hasFilter
-                ? AppStrings.scheduleEmptyFiltered
-                : AppStrings.scheduleEmpty,
+                ? ScheduleStrings.emptyFiltered
+                : ScheduleStrings.empty,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
@@ -266,9 +266,9 @@ class ScheduleScreen extends ConsumerWidget {
   ) async {
     final confirmed = await ConfirmDialog.show(
       context: context,
-      title: AppStrings.scheduleBulkConfirmTitle,
-      message: AppStrings.scheduleBulkConfirmMessage,
-      confirmLabel: AppStrings.scheduleConfirm,
+      title: ScheduleStrings.bulkConfirmTitle,
+      message: ScheduleStrings.bulkConfirmMessage,
+      confirmLabel: ScheduleStrings.confirm,
     );
     if (!confirmed) return;
     ref.read(schedulesProvider.notifier).confirmAllPending();
@@ -325,7 +325,7 @@ class _ConfirmAllPill extends StatelessWidget {
             Icon(Icons.done_all, color: AppColors.navy, size: 14),
             SizedBox(width: 6),
             Text(
-              AppStrings.scheduleConfirmAll,
+              ScheduleStrings.confirmAll,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,

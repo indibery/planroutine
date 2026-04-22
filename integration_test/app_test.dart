@@ -86,25 +86,25 @@ void main() {
       await _startFresh(tester);
 
       // 캘린더 화면이 기본으로 표시 (AppBar + 탭 라벨)
-      expect(find.text(AppStrings.calendarTitle), findsWidgets);
+      expect(find.text(CalendarStrings.title), findsWidgets);
 
       // 플로팅 탭바 + 3탭 라벨 확인
       expect(find.byType(FloatingTabBar), findsOneWidget);
       expect(find.text(AppStrings.tabSchedule), findsOneWidget);
-      expect(find.text(AppStrings.settingsTitle), findsWidgets);
+      expect(find.text(SettingsStrings.title), findsWidgets);
     });
 
     testWidgets('탭 전환: 캘린더 → 일정 → 설정', (tester) async {
       await _startFresh(tester);
 
       await _tapScheduleTab(tester);
-      expect(find.text(AppStrings.scheduleTitle), findsWidgets);
+      expect(find.text(ScheduleStrings.title), findsWidgets);
 
       await _tapSettingsTab(tester);
-      expect(find.text(AppStrings.settingsImportSection), findsOneWidget);
+      expect(find.text(SettingsStrings.importSection), findsOneWidget);
 
       await _tapCalendarTab(tester);
-      expect(find.text(AppStrings.calendarTitle), findsWidgets);
+      expect(find.text(CalendarStrings.title), findsWidgets);
     });
 
     testWidgets('캘린더 월 이동 (화살표 버튼)', (tester) async {
@@ -131,8 +131,8 @@ void main() {
       await _tapAddFab(tester);
 
       // 추가 바텀시트 확인 (showModalBottomSheet)
-      expect(find.text(AppStrings.calendarAddEvent), findsOneWidget);
-      expect(find.text(AppStrings.calendarEventTitleHint), findsOneWidget);
+      expect(find.text(CalendarStrings.addEvent), findsOneWidget);
+      expect(find.text(CalendarStrings.eventTitleHint), findsOneWidget);
 
       // 취소
       await tester.tap(find.text(AppStrings.cancel));
@@ -144,7 +144,7 @@ void main() {
 
       await _tapScheduleTab(tester);
 
-      expect(find.text(AppStrings.scheduleEmpty), findsOneWidget);
+      expect(find.text(ScheduleStrings.empty), findsOneWidget);
     });
 
     testWidgets('설정 탭: 가져오기 인라인 섹션 + 전체 삭제 메뉴 노출', (tester) async {
@@ -153,16 +153,16 @@ void main() {
       await _tapSettingsTab(tester);
 
       // 가져오기 섹션이 인라인으로 표시
-      expect(find.text(AppStrings.settingsImportSection), findsOneWidget);
-      expect(find.text(AppStrings.importSelectFile), findsOneWidget);
+      expect(find.text(SettingsStrings.importSection), findsOneWidget);
+      expect(find.text(ImportStrings.selectFile), findsOneWidget);
 
       // 데이터 관리 섹션 (fold 아래)
       await _scrollToInSettings(
         tester,
-        find.text(AppStrings.settingsResetAll),
+        find.text(SettingsStrings.resetAll),
       );
-      expect(find.text(AppStrings.settingsDataSection), findsOneWidget);
-      expect(find.text(AppStrings.settingsResetAll), findsOneWidget);
+      expect(find.text(SettingsStrings.dataSection), findsOneWidget);
+      expect(find.text(SettingsStrings.resetAll), findsOneWidget);
     });
 
     testWidgets('전체 초기화 플로우: 이벤트 추가 → 초기화 → 사라짐 확인',
@@ -183,23 +183,23 @@ void main() {
       await _tapSettingsTab(tester);
       await _scrollToInSettings(
         tester,
-        find.text(AppStrings.settingsResetAll),
+        find.text(SettingsStrings.resetAll),
       );
-      await tester.tap(find.text(AppStrings.settingsResetAll));
+      await tester.tap(find.text(SettingsStrings.resetAll));
       await tester.pumpAndSettle();
 
       // 확인 다이얼로그
-      expect(find.text(AppStrings.settingsResetAllConfirmTitle), findsOneWidget);
-      await tester.tap(find.text(AppStrings.settingsResetAllConfirm));
+      expect(find.text(SettingsStrings.resetAllConfirmTitle), findsOneWidget);
+      await tester.tap(find.text(SettingsStrings.resetAllConfirm));
       await tester.pumpAndSettle();
 
       // 성공 스낵바
-      expect(find.text(AppStrings.settingsResetAllDone), findsOneWidget);
+      expect(find.text(SettingsStrings.resetAllDone), findsOneWidget);
 
       // 3) 캘린더로 복귀 → 이벤트 사라짐
       await _tapCalendarTab(tester);
       expect(find.text('콜드로드 테스트 이벤트'), findsNothing);
-      expect(find.text(AppStrings.calendarNoEvents), findsOneWidget);
+      expect(find.text(CalendarStrings.noEvents), findsOneWidget);
     });
 
     testWidgets('초기화 취소: 다이얼로그에서 취소 시 데이터 유지', (tester) async {
@@ -218,9 +218,9 @@ void main() {
       await _tapSettingsTab(tester);
       await _scrollToInSettings(
         tester,
-        find.text(AppStrings.settingsResetAll),
+        find.text(SettingsStrings.resetAll),
       );
-      await tester.tap(find.text(AppStrings.settingsResetAll));
+      await tester.tap(find.text(SettingsStrings.resetAll));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.cancel));
       await tester.pumpAndSettle();
@@ -248,7 +248,7 @@ void main() {
       // 2) 이벤트 탭 → 편집 시트 → 우상단 휴지통 아이콘
       await tester.tap(find.text('휴지통 테스트 이벤트'));
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.calendarEditEvent), findsOneWidget);
+      expect(find.text(CalendarStrings.editEvent), findsOneWidget);
       await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
       expect(find.text('휴지통 테스트 이벤트'), findsNothing);
@@ -257,19 +257,19 @@ void main() {
       await _tapSettingsTab(tester);
       await _scrollToInSettings(
         tester,
-        find.text(AppStrings.settingsTrashDescription),
+        find.text(SettingsStrings.trashDescription),
       );
-      await tester.tap(find.text(AppStrings.settingsTrashDescription));
+      await tester.tap(find.text(SettingsStrings.trashDescription));
       await tester.pumpAndSettle();
 
       // 4) 휴지통에 삭제한 이벤트 노출
       expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
-      expect(find.textContaining(AppStrings.trashSectionEvents), findsWidgets);
+      expect(find.textContaining(TrashStrings.sectionEvents), findsWidgets);
 
       // 5) 복구
       await tester.tap(find.byIcon(Icons.restore));
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.trashEmpty), findsOneWidget);
+      expect(find.text(TrashStrings.empty), findsOneWidget);
 
       // 6) 캘린더 복귀 → 이벤트 복원됨
       await _tapCalendarTab(tester);
@@ -317,22 +317,22 @@ void main() {
       await _tapSettingsTab(tester);
 
       // 섹션 헤더 / 마스터 스위치는 상단이라 스크롤 전에 확인
-      expect(find.text(AppStrings.settingsNotificationSection), findsOneWidget);
-      expect(find.text(AppStrings.settingsNotificationMaster), findsOneWidget);
+      expect(find.text(NotificationStrings.section), findsOneWidget);
+      expect(find.text(NotificationStrings.master), findsOneWidget);
 
       // 세부 항목/테스트 버튼까지 스크롤
       await _scrollToInSettings(
         tester,
-        find.text(AppStrings.settingsNotificationTest),
+        find.text(NotificationStrings.test),
       );
 
-      expect(find.text(AppStrings.settingsNotificationMonthStart),
+      expect(find.text(NotificationStrings.monthStart),
           findsOneWidget);
-      expect(find.text(AppStrings.settingsNotificationWeekBefore),
+      expect(find.text(NotificationStrings.weekBefore),
           findsOneWidget);
-      expect(find.text(AppStrings.settingsNotificationDayBefore),
+      expect(find.text(NotificationStrings.dayBefore),
           findsOneWidget);
-      expect(find.text(AppStrings.settingsNotificationTest), findsOneWidget);
+      expect(find.text(NotificationStrings.test), findsOneWidget);
     });
   });
 }

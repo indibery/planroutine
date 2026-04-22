@@ -28,7 +28,7 @@ class MainShell extends StatelessWidget {
       route: AppRoutes.settings,
       icon: Icons.settings_outlined,
       activeIcon: Icons.settings,
-      label: AppStrings.settingsTitle,
+      label: SettingsStrings.title,
     ),
   ];
 

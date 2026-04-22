@@ -19,7 +19,7 @@ class ResetListTile extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.delete_forever, color: AppColors.error),
       title: const Text(
-        AppStrings.settingsResetAll,
+        SettingsStrings.resetAll,
         style: TextStyle(
           color: AppColors.error,
           fontWeight: FontWeight.w600,
@@ -39,9 +39,9 @@ class ResetListTile extends ConsumerWidget {
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
     final confirmed = await ConfirmDialog.show(
       context: context,
-      title: AppStrings.settingsResetAllConfirmTitle,
-      message: AppStrings.settingsResetAllConfirmMessage,
-      confirmLabel: AppStrings.settingsResetAllConfirm,
+      title: SettingsStrings.resetAllConfirmTitle,
+      message: SettingsStrings.resetAllConfirmMessage,
+      confirmLabel: SettingsStrings.resetAllConfirm,
       confirmColor: AppColors.error,
     );
     if (!confirmed) return;

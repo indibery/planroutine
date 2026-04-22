@@ -40,22 +40,22 @@ class _ExportListTileState extends ConsumerState<ExportListTile> {
       if (result.count == 0) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(AppStrings.settingsExportEmpty)),
+            const SnackBar(content: Text(SettingsStrings.exportEmpty)),
           );
         }
         return;
       }
       await Share.shareXFiles(
         [XFile(result.filePath)],
-        subject: AppStrings.settingsExportShareSubject,
-        text: '${result.count}${AppStrings.settingsExportShareCountSuffix}',
+        subject: SettingsStrings.exportShareSubject,
+        text: '${result.count}${SettingsStrings.exportShareCountSuffix}',
         sharePositionOrigin: origin,
       );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${AppStrings.settingsExportFailed}: $e'),
+            content: Text('${SettingsStrings.exportFailed}: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -69,7 +69,7 @@ class _ExportListTileState extends ConsumerState<ExportListTile> {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.ios_share, color: AppColors.primary),
-      title: const Text(AppStrings.settingsExportTitle),
+      title: const Text(SettingsStrings.exportTitle),
       trailing: _exporting
           ? const SizedBox(
               width: 20,

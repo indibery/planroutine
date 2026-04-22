@@ -26,7 +26,7 @@ class ImportScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          AppStrings.settingsImportSection,
+          SettingsStrings.importSection,
           style: AppTextStyles.heading,
         ),
       ),
@@ -112,7 +112,7 @@ class ImportScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSizes.spacing8),
                 Text(
-                  AppStrings.importDescription,
+                  ImportStrings.description,
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 13,
@@ -122,7 +122,7 @@ class ImportScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSizes.spacing16),
                 GoldGradientButton(
-                  label: AppStrings.importSelectFile,
+                  label: ImportStrings.selectFile,
                   icon: Icons.file_open,
                   onPressed: () {
                     ref
@@ -146,7 +146,7 @@ class ImportScreen extends ConsumerWidget {
           CircularProgressIndicator(color: AppColors.gold),
           SizedBox(height: AppSizes.spacing12),
           Text(
-            AppStrings.importParsing,
+            ImportStrings.parsing,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
@@ -183,7 +183,7 @@ class ImportScreen extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: GoldGradientButton(
-                  label: AppStrings.importRegisterAll,
+                  label: ImportStrings.registerAll,
                   icon: Icons.playlist_add_check,
                   onPressed: () =>
                       _confirmRegister(context, ref, schedules, sourceYear),
@@ -238,7 +238,7 @@ class ImportScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppSizes.spacing8),
                 Text(
-                  '$sourceYear${AppStrings.compareYearFormat} 일정 $created${AppStrings.importRegisterCount}',
+                  '$sourceYear${AppStrings.compareYearFormat} 일정 $created${ImportStrings.registerCount}',
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 14,
@@ -266,7 +266,7 @@ class ImportScreen extends ConsumerWidget {
                 onPressed: () =>
                     ref.read(importStateProvider.notifier).reset(),
                 icon: const Icon(Icons.file_open, size: 16),
-                label: const Text(AppStrings.importSelectFileAgain),
+                label: const Text(ImportStrings.selectFileAgain),
               ),
             ),
           ],
@@ -293,7 +293,7 @@ class ImportScreen extends ConsumerWidget {
               const Icon(Icons.error_outline, color: AppColors.inkRed),
               const SizedBox(width: AppSizes.spacing8),
               const Text(
-                AppStrings.importFailed,
+                ImportStrings.failed,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 14,

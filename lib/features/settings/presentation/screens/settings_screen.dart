@@ -31,14 +31,14 @@ class SettingsScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
-              const SnackBar(content: Text(AppStrings.settingsResetAllDone)),
+              const SnackBar(content: Text(SettingsStrings.resetAllDone)),
             );
         case ResetFailure(message: final msg):
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
               SnackBar(
-                content: Text('${AppStrings.settingsResetAllFailed}: $msg'),
+                content: Text('${SettingsStrings.resetAllFailed}: $msg'),
                 backgroundColor: AppColors.error,
               ),
             );
@@ -50,7 +50,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          AppStrings.settingsTitle,
+          SettingsStrings.title,
           style: AppTextStyles.heading,
         ),
       ),
@@ -58,36 +58,36 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
         children: const [
           SettingsSection(
-            title: AppStrings.settingsImportSection,
-            subtitle: AppStrings.importDescription,
+            title: SettingsStrings.importSection,
+            subtitle: ImportStrings.description,
             child: ImportListTile(),
           ),
           SettingsSection(
-            title: AppStrings.settingsExportSection,
-            subtitle: AppStrings.settingsExportDescription,
+            title: SettingsStrings.exportSection,
+            subtitle: SettingsStrings.exportDescription,
             child: ExportListTile(),
           ),
           SettingsSection(
-            title: AppStrings.settingsGoogleSection,
-            subtitle: AppStrings.settingsGoogleSignInDescription,
+            title: GoogleStrings.section,
+            subtitle: GoogleStrings.signInDescription,
             child: GoogleAccountListTile(),
           ),
           SettingsSection(
-            title: AppStrings.settingsNotificationSection,
-            subtitle: AppStrings.settingsNotificationMasterDescription,
+            title: NotificationStrings.section,
+            subtitle: NotificationStrings.masterDescription,
             child: NotificationSettingsTiles(),
           ),
           SettingsSection(
-            title: AppStrings.settingsTrashSection,
-            subtitle: AppStrings.settingsTrashDescription,
+            title: SettingsStrings.trashSection,
+            subtitle: SettingsStrings.trashDescription,
             child: TrashListTile(),
           ),
           SettingsSection(
-            title: AppStrings.settingsDataSection,
+            title: SettingsStrings.dataSection,
             child: ResetListTile(),
           ),
           SettingsSection(
-            title: AppStrings.settingsAboutSection,
+            title: SettingsStrings.aboutSection,
             showDivider: false,
             child: AppInfoListTile(),
           ),

@@ -20,7 +20,7 @@ class GoogleAccountListTile extends ConsumerWidget {
           Icons.account_circle_outlined,
           color: AppColors.primary,
         ),
-        title: const Text(AppStrings.settingsGoogleSignIn),
+        title: const Text(GoogleStrings.signIn),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _signIn(context, ref),
       );
@@ -40,7 +40,7 @@ class GoogleAccountListTile extends ConsumerWidget {
       subtitle: Text(account.email),
       trailing: TextButton(
         onPressed: () => _signOut(context, ref),
-        child: const Text(AppStrings.settingsGoogleSignOut),
+        child: const Text(GoogleStrings.signOut),
       ),
     );
   }
@@ -53,7 +53,7 @@ class GoogleAccountListTile extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${AppStrings.settingsGoogleSignInFailed}: $e'),
+            content: Text('${GoogleStrings.signInFailed}: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -65,7 +65,7 @@ class GoogleAccountListTile extends ConsumerWidget {
     await ref.read(googleCalendarServiceProvider).signOut();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.settingsGoogleSignOutDone)),
+        const SnackBar(content: Text(GoogleStrings.signOutDone)),
       );
     }
   }

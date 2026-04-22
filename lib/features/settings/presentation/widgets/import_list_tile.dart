@@ -13,7 +13,7 @@ class ImportListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.upload_file, color: AppColors.primary),
-      title: const Text(AppStrings.settingsImportSection),
+      title: const Text(SettingsStrings.importSection),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(AppRoutes.import),
     );

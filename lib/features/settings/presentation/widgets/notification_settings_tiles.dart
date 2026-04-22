@@ -27,7 +27,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
             Icons.notifications_outlined,
             color: AppColors.primary,
           ),
-          title: const Text(AppStrings.settingsNotificationMaster),
+          title: const Text(NotificationStrings.master),
           subtitle: summary == null
               ? null
               : Text(
@@ -48,26 +48,26 @@ class NotificationSettingsTiles extends ConsumerWidget {
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             childrenPadding: EdgeInsets.zero,
             title: const Text(
-              AppStrings.settingsNotificationAdvanced,
+              NotificationStrings.advanced,
               style: TextStyle(fontSize: 14, color: AppColors.sub),
             ),
             iconColor: AppColors.sub,
             collapsedIconColor: AppColors.sub,
             children: [
               _SubSwitch(
-                label: AppStrings.settingsNotificationMonthStart,
+                label: NotificationStrings.monthStart,
                 value: settings.monthStartEnabled,
                 enabled: subEnabled,
                 onChanged: notifier.setMonthStart,
               ),
               _SubSwitch(
-                label: AppStrings.settingsNotificationWeekBefore,
+                label: NotificationStrings.weekBefore,
                 value: settings.weekBeforeEnabled,
                 enabled: subEnabled,
                 onChanged: notifier.setWeekBefore,
               ),
               _SubSwitch(
-                label: AppStrings.settingsNotificationDayBefore,
+                label: NotificationStrings.dayBefore,
                 value: settings.dayBeforeEnabled,
                 enabled: subEnabled,
                 onChanged: notifier.setDayBefore,
@@ -75,7 +75,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
               ListTile(
                 leading: const SizedBox(width: 40),
                 title: const Text(
-                  AppStrings.settingsNotificationTime,
+                  NotificationStrings.time,
                   style: TextStyle(fontSize: 14),
                 ),
                 trailing: Text(
@@ -96,7 +96,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
               ListTile(
                 leading: const SizedBox(width: 40),
                 title: const Text(
-                  AppStrings.settingsNotificationDebug,
+                  NotificationStrings.debug,
                   style: TextStyle(fontSize: 14),
                 ),
                 trailing:
@@ -106,7 +106,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
               ListTile(
                 leading: const SizedBox(width: 40),
                 title: const Text(
-                  AppStrings.settingsNotificationTest,
+                  NotificationStrings.test,
                   style: TextStyle(fontSize: 14),
                 ),
                 trailing:
@@ -174,7 +174,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(AppStrings.settingsNotificationTestScheduled),
+          content: Text(NotificationStrings.testScheduled),
         ),
       );
     }
@@ -191,13 +191,13 @@ class NotificationSettingsTiles extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          '${AppStrings.settingsNotificationDebugTitle} '
-          '${list.length}${AppStrings.settingsNotificationDebugCountSuffix}',
+          '${NotificationStrings.debugTitle} '
+          '${list.length}${NotificationStrings.debugCountSuffix}',
         ),
         content: SizedBox(
           width: double.maxFinite,
           child: list.isEmpty
-              ? const Text(AppStrings.settingsNotificationDebugEmpty)
+              ? const Text(NotificationStrings.debugEmpty)
               : ListView.separated(
                   shrinkWrap: true,
                   itemCount: list.length,
