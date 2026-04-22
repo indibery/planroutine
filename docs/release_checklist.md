@@ -3,25 +3,17 @@
 현재 상태: TestFlight v47 배포. **외부 공개를 위해서는 아래 항목을 순서대로**
 진행해야 합니다. 각 관문은 앞 단계가 끝나야 다음 단계가 열리는 의존 구조.
 
-## 🔐 관문 1. 개인정보 처리방침 웹 호스팅
+## 🔐 관문 1. 개인정보 처리방침 웹 호스팅 ✅ 완료
 
-Google OAuth verification과 App Store 심사 둘 다 **공개된 URL**의 개인정보
-처리방침을 요구합니다. 문서 자체는 `docs/privacy_policy.md`에 있으니 이를
-웹에 띄우면 됩니다.
+GitHub Pages(main/docs)로 활성화 완료. Jekyll 자동 빌드.
 
-추천 호스팅 방법 (무료·빠름·충분):
-
-| 방법 | 특징 | 설정 난이도 |
-|---|---|---|
-| **GitHub Pages** (`indibery.github.io/planroutine/privacy`) | 저장소 Settings → Pages만 활성화하면 바로 서빙. Markdown 자동 렌더 | ★ |
-| **Vercel / Netlify** | 사용자화 레이아웃 필요 시 | ★★ |
-| **Notion 공개 페이지** | 복사-붙여넣기만으로 즉시 URL 발급 | ★ |
-
-체크 포인트:
-- [ ] `docs/privacy_policy.md` 초안을 리뷰·오탈자 확인
-- [ ] 웹 호스팅 선택 (권장: GitHub Pages — 저장소에 이미 커밋됨)
-- [ ] 공개 URL 획득 (예: `https://indibery.github.io/planroutine/privacy.html`)
-- [ ] 앱 설정 탭 "앱 정보" 아래 또는 "개인정보 처리방침" 외부 링크 타일 추가(선택)
+- [x] `docs/privacy_policy.md` 초안 작성
+- [x] 저장소 public 전환 (`gh repo edit --visibility public`)
+- [x] GitHub Pages 활성화 (main branch + /docs path)
+- [x] 공개 URL 확인 (HTTP 200):
+  - 메인: <https://indibery.github.io/planroutine/>
+  - **개인정보 처리방침: <https://indibery.github.io/planroutine/privacy_policy>**
+- [ ] 앱 설정 탭 "앱 정보" 아래 "개인정보 처리방침" 외부 링크 타일 추가(선택)
 
 ## 🛡 관문 2. Google OAuth 동의 화면 verification
 
@@ -34,10 +26,10 @@ GCP Console → API 및 서비스 → OAuth 동의 화면:
 - [ ] **앱 정보**: 앱 이름 `공직플랜`, 사용자 지원 이메일, 개발자 연락처
 - [ ] **로고**: 120×120 PNG 업로드 (LogoHybrid navy 배경 버전 재사용 가능)
 - [ ] **앱 도메인**:
-  - 홈페이지: 호스팅된 개인정보 처리방침 도메인 루트 (예: `https://indibery.github.io/planroutine/`)
-  - 개인정보 처리방침 링크: 관문 1 URL
+  - 홈페이지: `https://indibery.github.io/planroutine/`
+  - 개인정보 처리방침 링크: `https://indibery.github.io/planroutine/privacy_policy`
   - 서비스 약관: 선택사항 (지금은 생략 가능, 요청되면 동일 도메인에 `terms.html`)
-- [ ] **승인된 도메인**: 위 호스팅 도메인
+- [ ] **승인된 도메인**: `indibery.github.io`
 - [ ] **범위(Scopes)**: `.../auth/calendar.events` 하나만 유지
   - **sensitive scope**이므로 **"범위 정당화 비디오"** 또는 스크린샷 요구됨
   - 정당화 예시: "사용자가 공직플랜 앱에서 생성한 일정을 본인의 Google
