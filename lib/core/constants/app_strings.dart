@@ -57,7 +57,7 @@ class AppStrings {
   static const settingsResetAllFailed = '초기화 중 오류가 발생했습니다';
 
   // 가져오기 기능
-  static const importDescription = 'CSV 파일을 업로드하여\n작년 업무 일정을 불러옵니다';
+  static const importDescription = 'CSV 파일을 업로드해 작년 업무 일정을 불러옵니다';
   static const importSelectFile = '파일 선택';
   static const importSelectFileAgain = '새 파일 가져오기';
   static const importParsing = '파일 분석 중...';

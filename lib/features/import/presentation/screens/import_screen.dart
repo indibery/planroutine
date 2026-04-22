@@ -4,55 +4,97 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/imported_schedule.dart';
 import '../providers/import_providers.dart';
-import 'import_summary_card.dart';
+import '../widgets/import_summary_card.dart';
 
-/// 설정 화면 등에 인라인으로 임베드되는 가져오기 섹션.
+/// 작년 일정 가져오기 전용 풀스크린.
 ///
-/// 기존 ImportScreen의 body 로직을 Scaffold 바깥에서 재사용 가능하게 한 버전.
-class ImportSection extends ConsumerWidget {
-  const ImportSection({super.key});
+/// 상단에 1-2-3 스테퍼가 항상 노출되어 어느 단계인지 한눈에 보이고,
+/// 그 아래 state별 본문이 바뀐다.
+class ImportScreen extends ConsumerWidget {
+  const ImportScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final importState = ref.watch(importStateProvider);
+    final activeStep = _stepFor(importState);
 
-    return switch (importState) {
-      ImportInitial() => _buildInitialView(context, ref),
-      ImportLoading() => _buildLoadingView(context),
-      ImportSuccess(:final schedules, :final categorySummary, :final sourceYear) =>
-        _buildSuccessView(
-          context,
-          ref,
-          schedules,
-          categorySummary,
-          sourceYear,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          AppStrings.settingsImportSection,
+          style: AppTextStyles.heading,
         ),
-      ImportRegistered(
-        :final created,
-        :final skipped,
-        :final sourceYear,
-      ) =>
-        _buildRegisteredView(context, ref, created, skipped, sourceYear),
-      ImportError(:final message) => _buildErrorView(context, ref, message),
-    };
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.pagePadding,
+              AppSizes.spacing16,
+              AppSizes.pagePadding,
+              AppSizes.spacing8,
+            ),
+            child: ImportSteps(activeStep: activeStep),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: switch (importState) {
+                ImportInitial() => _buildInitialView(context, ref),
+                ImportLoading() => _buildLoadingView(context),
+                ImportSuccess(
+                  :final schedules,
+                  :final categorySummary,
+                  :final sourceYear
+                ) =>
+                  _buildSuccessView(
+                    context,
+                    ref,
+                    schedules,
+                    categorySummary,
+                    sourceYear,
+                  ),
+                ImportRegistered(
+                  :final created,
+                  :final skipped,
+                  :final sourceYear,
+                ) =>
+                  _buildRegisteredView(
+                    context,
+                    ref,
+                    created,
+                    skipped,
+                    sourceYear,
+                  ),
+                ImportError(:final message) =>
+                  _buildErrorView(context, ref, message),
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 초기: CSV 파일 선택 버튼
+  int _stepFor(ImportState state) => switch (state) {
+        ImportInitial() || ImportError() => 0,
+        ImportLoading() || ImportSuccess() => 1,
+        ImportRegistered() => 2,
+      };
+
   Widget _buildInitialView(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.pagePadding,
-        vertical: AppSizes.spacing8,
+        vertical: AppSizes.spacing16,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _ImportSteps(activeStep: 0),
-          const SizedBox(height: AppSizes.spacing16),
           Container(
             padding: const EdgeInsets.all(AppSizes.cardPadding),
             decoration: BoxDecoration(
@@ -78,12 +120,14 @@ class ImportSection extends ConsumerWidget {
                     color: AppColors.sub,
                   ),
                 ),
-                const SizedBox(height: AppSizes.spacing12),
+                const SizedBox(height: AppSizes.spacing16),
                 GoldGradientButton(
                   label: AppStrings.importSelectFile,
                   icon: Icons.file_open,
                   onPressed: () {
-                    ref.read(importStateProvider.notifier).pickAndImportCsv();
+                    ref
+                        .read(importStateProvider.notifier)
+                        .pickAndImportCsv();
                   },
                 ),
               ],
@@ -95,15 +139,13 @@ class ImportSection extends ConsumerWidget {
   }
 
   Widget _buildLoadingView(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing24),
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSizes.spacing32),
       child: Column(
         children: [
-          const _ImportSteps(activeStep: 1),
-          const SizedBox(height: AppSizes.spacing16),
-          const CircularProgressIndicator(color: AppColors.gold),
-          const SizedBox(height: AppSizes.spacing12),
-          const Text(
+          CircularProgressIndicator(color: AppColors.gold),
+          SizedBox(height: AppSizes.spacing12),
+          Text(
             AppStrings.importParsing,
             style: TextStyle(
               fontFamily: 'Pretendard',
@@ -162,7 +204,6 @@ class ImportSection extends ConsumerWidget {
     );
   }
 
-  /// 등록 완료 상태 — 사용자가 결과를 명시적으로 확인 가능
   Widget _buildRegisteredView(
     BuildContext context,
     WidgetRef ref,
@@ -189,8 +230,6 @@ class ImportSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _ImportSteps(activeStep: 2),
-            const SizedBox(height: AppSizes.spacing12),
             Row(
               children: [
                 const Icon(
@@ -236,11 +275,15 @@ class ImportSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorView(BuildContext context, WidgetRef ref, String message) {
+  Widget _buildErrorView(
+    BuildContext context,
+    WidgetRef ref,
+    String message,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.pagePadding,
-        vertical: AppSizes.spacing8,
+        vertical: AppSizes.spacing16,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -281,8 +324,6 @@ class ImportSection extends ConsumerWidget {
     );
   }
 
-  /// 확인 버튼 → 등록 수행 후 notifier가 ImportRegistered 상태로 전환,
-  /// 그 상태에서 결과가 화면에 인라인 표시됨(스낵바 사용 없음).
   Future<void> _confirmRegister(
     BuildContext context,
     WidgetRef ref,
@@ -297,8 +338,8 @@ class ImportSection extends ConsumerWidget {
 }
 
 /// 가져오기 3단계 인디케이터 — ① 파일 선택 · ② 분석 · ③ 등록.
-class _ImportSteps extends StatelessWidget {
-  const _ImportSteps({required this.activeStep});
+class ImportSteps extends StatelessWidget {
+  const ImportSteps({super.key, required this.activeStep});
 
   final int activeStep;
 
