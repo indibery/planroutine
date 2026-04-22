@@ -32,9 +32,17 @@ platform :ios do
       )
     end
 
-    # TestFlight 업로드
+    # IPA 파일명이 한글(공직플랜.ipa)이라 Ruby Dir[] glob이 매치 못함. Dir.entries로
+    # 직접 순회해 찾는다. 파일명이 또 바뀌어도 깨지지 않는다.
+    # __dir__ = ios/fastlane → 두 단계 올라가 프로젝트 루트.
+    project_root = File.expand_path("../..", __dir__)
+    ipa_dir = File.join(project_root, "build/ios/ipa")
+    ipa_name = Dir.entries(ipa_dir).find { |f| f.end_with?(".ipa") }
+    UI.user_error!("빌드된 IPA를 찾을 수 없습니다 (#{ipa_dir})") unless ipa_name
+    ipa_path = File.join(ipa_dir, ipa_name)
+
     upload_to_testflight(
-      ipa: "../build/ios/ipa/planroutine.ipa",
+      ipa: ipa_path,
       skip_waiting_for_build_processing: true,
     )
 
@@ -58,8 +66,15 @@ platform :ios do
       )
     end
 
+    # __dir__ = ios/fastlane → 두 단계 올라가 프로젝트 루트.
+    project_root = File.expand_path("../..", __dir__)
+    ipa_dir = File.join(project_root, "build/ios/ipa")
+    ipa_name = Dir.entries(ipa_dir).find { |f| f.end_with?(".ipa") }
+    UI.user_error!("빌드된 IPA를 찾을 수 없습니다 (#{ipa_dir})") unless ipa_name
+    ipa_path = File.join(ipa_dir, ipa_name)
+
     upload_to_app_store(
-      ipa: "../build/ios/ipa/planroutine.ipa",
+      ipa: ipa_path,
       skip_metadata: true,
       skip_screenshots: true,
       submit_for_review: false,
