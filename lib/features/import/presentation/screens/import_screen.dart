@@ -122,14 +122,16 @@ class ImportScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSizes.spacing16),
-                GoldGradientButton(
-                  label: ImportStrings.selectFile,
-                  icon: Icons.file_open,
-                  onPressed: () {
-                    ref
-                        .read(importStateProvider.notifier)
-                        .pickAndImportCsv();
-                  },
+                Center(
+                  child: GoldGradientButton(
+                    label: ImportStrings.selectFile,
+                    icon: Icons.file_open,
+                    onPressed: () {
+                      ref
+                          .read(importStateProvider.notifier)
+                          .pickAndImportCsv();
+                    },
+                  ),
                 ),
               ],
             ),
