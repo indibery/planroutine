@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../google/presentation/providers/google_providers.dart';
-import '../../../notifications/domain/notification_settings.dart';
-import '../../../notifications/presentation/providers/notification_providers.dart';
-import '../../../trash/presentation/providers/trash_providers.dart';
-import '../providers/app_info_provider.dart';
 import '../providers/settings_providers.dart';
+import '../widgets/app_info_list_tile.dart';
+import '../widgets/export_list_tile.dart';
+import '../widgets/google_account_list_tile.dart';
+import '../widgets/import_list_tile.dart';
+import '../widgets/notification_settings_tiles.dart';
+import '../widgets/reset_list_tile.dart';
+import '../widgets/settings_section.dart';
+import '../widgets/trash_list_tile.dart';
 
-/// 설정 화면 (하단 탭)
+/// 설정 화면 (하단 탭).
+///
+/// 각 섹션은 `features/settings/presentation/widgets/` 하위의 개별 위젯으로
+/// 분리돼 있다. 이 화면은 섹션을 조합하고 reset 완료/실패 시 스낵바를 띄우는
+/// 역할만 맡는다.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -44,9 +47,6 @@ class SettingsScreen extends ConsumerWidget {
       }
     });
 
-    final resetState = ref.watch(appResetProvider);
-    final isResetting = resetState is ResetInProgress;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -55,584 +55,45 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.only(
-          bottom: AppSizes.spacing24,
-        ),
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(
-              title: AppStrings.settingsImportSection,
-              subtitle: AppStrings.importDescription,
-            ),
+        padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
+        children: const [
+          SettingsSection(
+            title: AppStrings.settingsImportSection,
+            subtitle: AppStrings.importDescription,
+            child: ImportListTile(),
           ),
-          _ImportListTile(),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(
-              title: AppStrings.settingsExportSection,
-              subtitle: AppStrings.settingsExportDescription,
-            ),
+          SettingsSection(
+            title: AppStrings.settingsExportSection,
+            subtitle: AppStrings.settingsExportDescription,
+            child: ExportListTile(),
           ),
-          _ExportListTile(),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(
-              title: AppStrings.settingsGoogleSection,
-              subtitle: AppStrings.settingsGoogleSignInDescription,
-            ),
+          SettingsSection(
+            title: AppStrings.settingsGoogleSection,
+            subtitle: AppStrings.settingsGoogleSignInDescription,
+            child: GoogleAccountListTile(),
           ),
-          _GoogleAccountListTile(),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(
-              title: AppStrings.settingsNotificationSection,
-              subtitle: AppStrings.settingsNotificationMasterDescription,
-            ),
+          SettingsSection(
+            title: AppStrings.settingsNotificationSection,
+            subtitle: AppStrings.settingsNotificationMasterDescription,
+            child: NotificationSettingsTiles(),
           ),
-          _NotificationSettingsTiles(),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(
-              title: AppStrings.settingsTrashSection,
-              subtitle: AppStrings.settingsTrashDescription,
-            ),
+          SettingsSection(
+            title: AppStrings.settingsTrashSection,
+            subtitle: AppStrings.settingsTrashDescription,
+            child: TrashListTile(),
           ),
-          _TrashListTile(),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsDataSection),
+          SettingsSection(
+            title: AppStrings.settingsDataSection,
+            child: ResetListTile(),
           ),
-          ListTile(
-            leading: const Icon(
-              Icons.delete_forever,
-              color: AppColors.error,
-            ),
-            title: const Text(
-              AppStrings.settingsResetAll,
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            trailing: isResetting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : null,
-            onTap: isResetting ? null : () => _showConfirmDialog(context, ref),
+          SettingsSection(
+            title: AppStrings.settingsAboutSection,
+            showDivider: false,
+            child: AppInfoListTile(),
           ),
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-            child: SectionHeader(title: AppStrings.settingsAboutSection),
-          ),
-          _AppInfoListTile(),
-          const SizedBox(height: AppSizes.spacing24),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showConfirmDialog(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(AppStrings.settingsResetAllConfirmTitle),
-        content: const Text(AppStrings.settingsResetAllConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(AppStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              AppStrings.settingsResetAllConfirm,
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await ref.read(appResetProvider.notifier).resetAll();
-    }
-  }
-}
-
-/// 현재 일정 CSV로 내보내기 (공유시트)
-class _ExportListTile extends ConsumerStatefulWidget {
-  @override
-  ConsumerState<_ExportListTile> createState() => _ExportListTileState();
-}
-
-class _ExportListTileState extends ConsumerState<_ExportListTile> {
-  bool _exporting = false;
-
-  /// iOS 공유시트가 popup을 띄울 때 쓰는 앵커 Rect.
-  /// ListTile의 화면상 위치를 반환. RenderBox 못 구하면 안전한 fallback 제공.
-  Rect? _shareOrigin() {
-    final box = context.findRenderObject() as RenderBox?;
-    if (box != null && box.hasSize) {
-      return box.localToGlobal(Offset.zero) & box.size;
-    }
-    // fallback: 화면 중앙 근처 (iOS가 요구하는 "non-zero, within screen" 만족)
-    final size = MediaQuery.of(context).size;
-    return Rect.fromLTWH(size.width / 2, size.height / 2, 1, 1);
-  }
-
-  Future<void> _onExport() async {
-    // iOS/iPad에서 Share popup 앵커로 쓸 ListTile의 화면상 위치를 미리 구함
-    // (sharePositionOrigin 미지정 시 iOS에서 PlatformException 발생)
-    final origin = _shareOrigin();
-
-    setState(() => _exporting = true);
-    try {
-      final exporter = ref.read(scheduleCsvExporterProvider);
-      final result = await exporter.exportActiveSchedules();
-      if (result.count == 0) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(AppStrings.settingsExportEmpty)),
-          );
-        }
-        return;
-      }
-      await Share.shareXFiles(
-        [XFile(result.filePath)],
-        subject: AppStrings.settingsExportShareSubject,
-        text: '${result.count}${AppStrings.settingsExportShareCountSuffix}',
-        sharePositionOrigin: origin,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.settingsExportFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.ios_share, color: AppColors.primary),
-      title: const Text(AppStrings.settingsExportTitle),
-      trailing: _exporting
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.chevron_right),
-      onTap: _exporting ? null : _onExport,
-    );
-  }
-}
-
-/// 알림 설정 타일 — 마스터 스위치 + 3개 세부 + 테스트 버튼
-class _NotificationSettingsTiles extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settingsAsync = ref.watch(notificationSettingsProvider);
-    final settings = settingsAsync.valueOrNull ?? NotificationSettings.defaults;
-    final notifier = ref.read(notificationSettingsProvider.notifier);
-    final subEnabled = settings.masterEnabled;
-
-    final summary = _buildSummary(settings);
-
-    return Column(
-      children: [
-        SwitchListTile(
-          secondary: const Icon(
-            Icons.notifications_outlined,
-            color: AppColors.primary,
-          ),
-          title: const Text(AppStrings.settingsNotificationMaster),
-          subtitle: summary == null
-              ? null
-              : Text(
-                  summary,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.sub,
-                  ),
-                ),
-          value: settings.masterEnabled,
-          onChanged: (v) => notifier.setMaster(v),
-        ),
-        Theme(
-          // ExpansionTile 기본 divider 제거 — 상단 Divider와 중복
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            leading: const SizedBox(width: 40),
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: EdgeInsets.zero,
-            title: const Text(
-              AppStrings.settingsNotificationAdvanced,
-              style: TextStyle(fontSize: 14, color: AppColors.sub),
-            ),
-            iconColor: AppColors.sub,
-            collapsedIconColor: AppColors.sub,
-            children: [
-              _SubSwitch(
-                label: AppStrings.settingsNotificationMonthStart,
-                value: settings.monthStartEnabled,
-                enabled: subEnabled,
-                onChanged: notifier.setMonthStart,
-              ),
-              _SubSwitch(
-                label: AppStrings.settingsNotificationWeekBefore,
-                value: settings.weekBeforeEnabled,
-                enabled: subEnabled,
-                onChanged: notifier.setWeekBefore,
-              ),
-              _SubSwitch(
-                label: AppStrings.settingsNotificationDayBefore,
-                value: settings.dayBeforeEnabled,
-                enabled: subEnabled,
-                onChanged: notifier.setDayBefore,
-              ),
-              ListTile(
-                leading: const SizedBox(width: 40),
-                title: const Text(
-                  AppStrings.settingsNotificationTime,
-                  style: TextStyle(fontSize: 14),
-                ),
-                trailing: Text(
-                  _formatTime(settings.hour, settings.minute),
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: subEnabled
-                        ? AppColors.primary
-                        : AppColors.textHint,
-                  ),
-                ),
-                enabled: subEnabled,
-                onTap: subEnabled
-                    ? () => _pickTime(context, ref, settings)
-                    : null,
-              ),
-              ListTile(
-                leading: const SizedBox(width: 40),
-                title: const Text(
-                  AppStrings.settingsNotificationDebug,
-                  style: TextStyle(fontSize: 14),
-                ),
-                trailing:
-                    const Icon(Icons.list_alt, color: AppColors.primary),
-                onTap: () => _showPendingDialog(context, ref),
-              ),
-              ListTile(
-                leading: const SizedBox(width: 40),
-                title: const Text(
-                  AppStrings.settingsNotificationTest,
-                  style: TextStyle(fontSize: 14),
-                ),
-                trailing:
-                    const Icon(Icons.alarm_on, color: AppColors.primary),
-                onTap: () async {
-                  final service = ref.read(notificationServiceProvider);
-                  // 권한 없으면 먼저 요청
-                  await service.requestPermission();
-                  await service.scheduleQuickTest(
-                    title: '테스트 알림',
-                    body: '5초 후 발송된 테스트 알림입니다',
-                    seconds: 5,
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          AppStrings.settingsNotificationTestScheduled,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 마스터 스위치 아래 요약 — 고급을 열지 않아도 현재 알림 설정이 한눈에 보이도록.
-  /// master가 꺼져있으면 null 반환하여 subtitle 자체를 숨긴다.
-  String? _buildSummary(NotificationSettings s) {
-    if (!s.masterEnabled) return null;
-    final kinds = <String>[
-      if (s.monthStartEnabled) '월초',
-      if (s.weekBeforeEnabled) '1주 전',
-      if (s.dayBeforeEnabled) '1일 전',
-    ];
-    if (kinds.isEmpty) return '세부 알림이 모두 꺼져있어요';
-    return '${_formatTime(s.hour, s.minute)} · ${kinds.join('·')}';
-  }
-
-  String _formatTime(int hour, int minute) {
-    final h = hour.toString().padLeft(2, '0');
-    final m = minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
-  Future<void> _pickTime(
-    BuildContext context,
-    WidgetRef ref,
-    NotificationSettings settings,
-  ) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: settings.hour, minute: settings.minute),
-      // iOS 느낌 유지 위해 다이얼 고정 (입력 모드는 터치 실수 유발)
-      initialEntryMode: TimePickerEntryMode.dial,
-    );
-    if (picked == null) return;
-    if (picked.hour == settings.hour && picked.minute == settings.minute) {
-      return;
-    }
-    await ref.read(notificationSettingsProvider.notifier).setTime(
-          hour: picked.hour,
-          minute: picked.minute,
-        );
-  }
-
-  Future<void> _showPendingDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final service = ref.read(notificationServiceProvider);
-    final list = await service.listPending();
-    if (!context.mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          '${AppStrings.settingsNotificationDebugTitle} '
-          '${list.length}${AppStrings.settingsNotificationDebugCountSuffix}',
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: list.isEmpty
-              ? const Text(AppStrings.settingsNotificationDebugEmpty)
-              : ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: list.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final p = list[i];
-                    return ListTile(
-                      dense: true,
-                      title: Text(
-                        p.title,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        p.body,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      trailing: Text(
-                        '#${p.id}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(AppStrings.cancel),
-          ),
+          SizedBox(height: AppSizes.spacing24),
         ],
       ),
     );
   }
 }
-
-class _SubSwitch extends StatelessWidget {
-  const _SubSwitch({
-    required this.label,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final String label;
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile(
-      secondary: const SizedBox(width: 40),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          color: enabled ? AppColors.textPrimary : AppColors.textHint,
-        ),
-      ),
-      value: enabled && value,
-      onChanged: enabled ? onChanged : null,
-      dense: true,
-    );
-  }
-}
-
-/// 구글 계정 연결 섹션 — 로그인 상태에 따라 다른 UI 노출.
-class _GoogleAccountListTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accountAsync = ref.watch(googleAccountProvider);
-    final account = accountAsync.valueOrNull;
-
-    if (account == null) {
-      return ListTile(
-        leading: const Icon(
-          Icons.account_circle_outlined,
-          color: AppColors.primary,
-        ),
-        title: const Text(AppStrings.settingsGoogleSignIn),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => _signIn(context, ref),
-      );
-    }
-
-    return ListTile(
-      leading: account.photoUrl != null
-          ? CircleAvatar(
-              backgroundImage: NetworkImage(account.photoUrl!),
-              backgroundColor: AppColors.surfaceVariant,
-            )
-          : const Icon(
-              Icons.account_circle,
-              color: AppColors.primary,
-            ),
-      title: Text(account.displayName ?? account.email),
-      subtitle: Text(account.email),
-      trailing: TextButton(
-        onPressed: () => _signOut(context, ref),
-        child: const Text(AppStrings.settingsGoogleSignOut),
-      ),
-    );
-  }
-
-  Future<void> _signIn(BuildContext context, WidgetRef ref) async {
-    try {
-      final service = ref.read(googleCalendarServiceProvider);
-      await service.signIn();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.settingsGoogleSignInFailed}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    await ref.read(googleCalendarServiceProvider).signOut();
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.settingsGoogleSignOutDone)),
-      );
-    }
-  }
-}
-
-/// 휴지통 ListTile — 건수 배지 포함
-class _TrashListTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final snapshotAsync = ref.watch(trashSnapshotProvider);
-    final count = snapshotAsync.valueOrNull?.total ?? 0;
-    return ListTile(
-      leading: const Icon(Icons.delete_outline, color: AppColors.primary),
-      title: const Text(AppStrings.trashTitle),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (count > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.spacing8,
-                vertical: AppSizes.spacing4,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-              ),
-              child: Text(
-                '$count',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          const SizedBox(width: AppSizes.spacing4),
-          const Icon(Icons.chevron_right),
-        ],
-      ),
-      onTap: () => context.push(AppRoutes.trash),
-    );
-  }
-}
-
-/// 작년 일정 가져오기 — 설정 탭 1줄 진입점. 탭하면 전용 ImportScreen으로 push.
-class _ImportListTile extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.upload_file, color: AppColors.primary),
-      title: const Text(AppStrings.settingsImportSection),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push(AppRoutes.import),
-    );
-  }
-}
-
-/// 앱 정보 — 앱 이름 + 버전/빌드 번호 표시 (정보성, 탭 비활성)
-class _AppInfoListTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final infoAsync = ref.watch(appInfoProvider);
-    return ListTile(
-      leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
-      title: Text(infoAsync.valueOrNull?.appName ?? AppStrings.appName),
-      subtitle: Text(
-        infoAsync.when(
-          data: (info) => info.displayVersion,
-          loading: () => AppStrings.loading,
-          error: (_, _) => AppStrings.error,
-        ),
-      ),
-    );
-  }
-}
-
