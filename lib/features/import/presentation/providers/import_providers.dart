@@ -74,31 +74,32 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
   final ScheduleRepository _scheduleRepository;
   final CalendarRepository _calendarRepository;
 
-  /// 파일 선택 후 CSV 가져오기.
-  ///
-  /// 플랜루틴 자체 export CSV(헤더에 "상태" 포함)는 바로 확정 일정으로 저장하고
-  /// 캘린더 이벤트까지 자동 생성 → `ImportRegistered` 상태로 전환.
-  /// 원본 생산문서등록대장 CSV는 기존 흐름대로 `ImportSuccess` → 사용자가
-  /// "전체 등록" 버튼 탭.
+  /// 파일 피커로 CSV 선택 후 가져오기. 내부적으로 [importFromPath] 위임.
   Future<void> pickAndImportCsv() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+    if (result == null || result.files.isEmpty) return;
+    final path = result.files.first.path;
+    if (path == null) {
+      state = const ImportError('파일 경로를 읽을 수 없습니다');
+      return;
+    }
+    await importFromPath(path);
+  }
+
+  /// 경로가 이미 주어진 상태에서 CSV 가져오기.
+  ///
+  /// 다른 앱(카카오톡/메일/파일 앱)에서 공유받은 파일과 file_picker 결과를 같은
+  /// 파싱 파이프라인으로 처리하기 위해 분리했다.
+  ///
+  /// 플랜루틴 자체 export CSV(헤더에 "상태" 포함)는 바로 확정 일정 + 캘린더
+  /// 이벤트로 복원 → `ImportRegistered`. 원본 생산문서등록대장 CSV는
+  /// `ImportSuccess` → 사용자가 "전체 등록" 버튼 탭.
+  Future<void> importFromPath(String path) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        return;
-      }
-
       state = const ImportLoading();
-
-      final file = result.files.first;
-      final path = file.path;
-      if (path == null) {
-        state = const ImportError('파일 경로를 읽을 수 없습니다');
-        return;
-      }
 
       final bytes = await File(path).readAsBytes();
       final csvParser = const CsvParser();
@@ -115,7 +116,6 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
         return;
       }
 
-      // 원본 생산문서등록대장 CSV: imported_schedules에 저장 후 사용자 확인
       final schedules = await _repository.importFromCsv(csvContent);
       if (schedules.isEmpty) {
         state = const ImportError('가져올 일정이 없습니다');
