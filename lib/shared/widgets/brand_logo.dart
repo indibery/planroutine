@@ -15,13 +15,13 @@ class BrandLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size(size, size),
-      painter: const _LogoHybridPainter(),
+      painter: const LogoHybridPainter(),
     );
   }
 }
 
-class _LogoHybridPainter extends CustomPainter {
-  const _LogoHybridPainter();
+class LogoHybridPainter extends CustomPainter {
+  const LogoHybridPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
