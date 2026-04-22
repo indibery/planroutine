@@ -28,6 +28,7 @@ class GoldGradientButton extends StatelessWidget {
         duration: const Duration(milliseconds: 120),
         child: Container(
           height: height,
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
           decoration: BoxDecoration(
             gradient: enabled ? AppGradients.gold : null,
             color: enabled ? null : AppColors.goldMuted,
