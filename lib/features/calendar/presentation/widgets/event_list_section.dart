@@ -49,6 +49,18 @@ class EventListSection extends StatelessWidget {
   Widget _buildDismissibleEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
     final googleSave = onEventSaveToGoogle;
+
+    // 완료 토글 배경 — 왼쪽 스와이프 시 노출.
+    final completeBackground = DismissibleBackground(
+      accent: isDone ? AppColors.faint : AppColors.gold,
+      icon: isDone ? Icons.radio_button_unchecked : Icons.check_circle,
+      label: isDone
+          ? CalendarStrings.undoComplete
+          : CalendarStrings.markComplete,
+      alignment: Alignment.centerRight,
+      verticalMargin: AppSizes.spacing4,
+    );
+
     return Dismissible(
       key: Key('event_${event.id}'),
       direction: googleSave != null
@@ -59,7 +71,10 @@ class EventListSection extends StatelessWidget {
         DismissDirection.endToStart: 0.25,
       },
       movementDuration: const Duration(milliseconds: 150),
-      // 오른쪽 스와이프 배경: Google 저장 (Google 기능 off일 땐 미사용)
+      // Dismissible assertion(secondaryBackground 있으면 background 필수) 회피:
+      // Google 저장이 활성일 땐 오른쪽 스와이프에 Google 배경, 왼쪽엔 완료 배경.
+      // Google이 꺼지면 endToStart 전용이므로 background 슬롯에 완료 배경을 넣고
+      // secondaryBackground는 null.
       background: googleSave != null
           ? const DismissibleBackground(
               accent: AppColors.inkGreen,
@@ -68,22 +83,14 @@ class EventListSection extends StatelessWidget {
               alignment: Alignment.centerLeft,
               verticalMargin: AppSizes.spacing4,
             )
-          : null,
-      // 왼쪽 스와이프 배경: 완료 토글 (navySoft + gold 아이콘)
-      secondaryBackground: DismissibleBackground(
-        accent: isDone ? AppColors.faint : AppColors.gold,
-        icon: isDone ? Icons.radio_button_unchecked : Icons.check_circle,
-        label: isDone
-            ? CalendarStrings.undoComplete
-            : CalendarStrings.markComplete,
-        alignment: Alignment.centerRight,
-        verticalMargin: AppSizes.spacing4,
-      ),
+          : completeBackground,
+      secondaryBackground: googleSave != null ? completeBackground : null,
       // 실제 dismiss는 막고(false), 액션만 실행
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd && googleSave != null) {
           googleSave(event);
-        } else if (direction == DismissDirection.endToStart) {
+        } else {
+          // horizontal의 endToStart, 또는 endToStart 전용 모두 완료 토글
           onEventToggleCompleted(event);
         }
         return false;
