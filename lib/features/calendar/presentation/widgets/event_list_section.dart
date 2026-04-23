@@ -9,9 +9,9 @@ import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
 ///
-/// 각 이벤트는 양방향 스와이프 지원:
-///   - 오른쪽 스와이프: Google 캘린더 저장 (파랑)
-///   - 왼쪽 스와이프: 완료/완료 취소 토글 (녹색·회색)
+/// 각 이벤트는 스와이프 지원:
+///   - 오른쪽 스와이프: Google 캘린더 저장 (옵션) — [onEventSaveToGoogle]가 null이면 비활성
+///   - 왼쪽 스와이프: 완료/완료 취소 토글
 /// 삭제는 탭 → 편집 시트의 우측 휴지통 아이콘으로 이동했음.
 class EventListSection extends StatelessWidget {
   const EventListSection({
@@ -26,7 +26,9 @@ class EventListSection extends StatelessWidget {
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onEventTap;
-  final ValueChanged<CalendarEvent> onEventSaveToGoogle;
+
+  /// Google 저장 콜백. null이면 오른쪽 스와이프가 비활성화돼 왼쪽 스와이프(완료 토글)만 동작.
+  final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
 
   @override
@@ -46,22 +48,27 @@ class EventListSection extends StatelessWidget {
 
   Widget _buildDismissibleEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
+    final googleSave = onEventSaveToGoogle;
     return Dismissible(
       key: Key('event_${event.id}'),
-      direction: DismissDirection.horizontal,
+      direction: googleSave != null
+          ? DismissDirection.horizontal
+          : DismissDirection.endToStart,
       dismissThresholds: const {
         DismissDirection.startToEnd: 0.25,
         DismissDirection.endToStart: 0.25,
       },
       movementDuration: const Duration(milliseconds: 150),
-      // 오른쪽 스와이프 배경: Google 저장 (navySoft + inkGreen 아이콘)
-      background: const DismissibleBackground(
-        accent: AppColors.inkGreen,
-        icon: Icons.cloud_upload,
-        label: CalendarStrings.swipeGoogleSave,
-        alignment: Alignment.centerLeft,
-        verticalMargin: AppSizes.spacing4,
-      ),
+      // 오른쪽 스와이프 배경: Google 저장 (Google 기능 off일 땐 미사용)
+      background: googleSave != null
+          ? const DismissibleBackground(
+              accent: AppColors.inkGreen,
+              icon: Icons.cloud_upload,
+              label: CalendarStrings.swipeGoogleSave,
+              alignment: Alignment.centerLeft,
+              verticalMargin: AppSizes.spacing4,
+            )
+          : null,
       // 왼쪽 스와이프 배경: 완료 토글 (navySoft + gold 아이콘)
       secondaryBackground: DismissibleBackground(
         accent: isDone ? AppColors.faint : AppColors.gold,
@@ -72,11 +79,11 @@ class EventListSection extends StatelessWidget {
         alignment: Alignment.centerRight,
         verticalMargin: AppSizes.spacing4,
       ),
-      // 양방향 모두 실제 dismiss는 막고(false), 액션만 실행
+      // 실제 dismiss는 막고(false), 액션만 실행
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          onEventSaveToGoogle(event);
-        } else {
+        if (direction == DismissDirection.startToEnd && googleSave != null) {
+          googleSave(event);
+        } else if (direction == DismissDirection.endToStart) {
           onEventToggleCompleted(event);
         }
         return false;

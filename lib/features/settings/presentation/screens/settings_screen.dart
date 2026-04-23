@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -56,42 +57,43 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
-        children: const [
-          SettingsSection(
+        children: [
+          const SettingsSection(
             title: SettingsStrings.importSection,
             subtitle: ImportStrings.description,
             child: ImportListTile(),
           ),
-          SettingsSection(
+          const SettingsSection(
             title: SettingsStrings.exportSection,
             subtitle: SettingsStrings.exportDescription,
             child: ExportListTile(),
           ),
-          SettingsSection(
-            title: GoogleStrings.section,
-            subtitle: GoogleStrings.signInDescription,
-            child: GoogleAccountListTile(),
-          ),
-          SettingsSection(
+          if (AppFeatures.googleCalendarEnabled)
+            const SettingsSection(
+              title: GoogleStrings.section,
+              subtitle: GoogleStrings.signInDescription,
+              child: GoogleAccountListTile(),
+            ),
+          const SettingsSection(
             title: NotificationStrings.section,
             subtitle: NotificationStrings.masterDescription,
             child: NotificationSettingsTiles(),
           ),
-          SettingsSection(
+          const SettingsSection(
             title: SettingsStrings.trashSection,
             subtitle: SettingsStrings.trashDescription,
             child: TrashListTile(),
           ),
-          SettingsSection(
+          const SettingsSection(
             title: SettingsStrings.dataSection,
             child: ResetListTile(),
           ),
-          SettingsSection(
+          const SettingsSection(
             title: SettingsStrings.aboutSection,
             showDivider: false,
             child: AppInfoListTile(),
           ),
-          SizedBox(height: AppSizes.spacing24),
+          const SizedBox(height: AppSizes.spacing24),
         ],
       ),
     );
