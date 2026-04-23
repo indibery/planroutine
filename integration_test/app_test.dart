@@ -9,7 +9,7 @@ import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/shared/widgets/floating_tab_bar.dart';
 
 /// 설정 탭 내부에서 target이 화면에 보일 때까지 스크롤한 뒤 다음 액션을 허용한다.
-/// 설정 ListView가 알림/Google/휴지통/데이터관리/앱정보로 길어져 fold 아래 항목이
+/// 설정 ListView가 알림/휴지통/데이터관리/앱정보로 길어져 fold 아래 항목이
 /// 기본 viewport에 없기 때문. 탭바는 Scaffold bottomNavigationBar로 body 바깥에
 /// 있지만, scrollUntilVisible의 기본 drag 시작점이 항목 위에 걸치는 경우가 있어
 /// 상단 근처에서 수동 drag 로 스크롤한다.

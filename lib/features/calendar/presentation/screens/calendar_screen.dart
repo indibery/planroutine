@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -107,8 +108,9 @@ class CalendarScreen extends ConsumerWidget {
                           events: entry.value,
                           onEventTap: (event) =>
                               _onEditEvent(context, ref, event),
-                          onEventSaveToGoogle: (event) =>
-                              _onSaveToGoogle(context, ref, event),
+                          onEventSaveToGoogle: AppFeatures.googleCalendarEnabled
+                              ? (event) => _onSaveToGoogle(context, ref, event)
+                              : null,
                           onEventToggleCompleted: (event) =>
                               _onToggleCompleted(context, ref, event),
                         );
