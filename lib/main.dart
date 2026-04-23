@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'core/dev/screenshot_seed.dart';
 import 'features/notifications/presentation/providers/notification_providers.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
 import 'features/trash/presentation/providers/trash_providers.dart';
+
+/// `--dart-define=SCREENSHOT_MODE=true` 로 실행되면 앱 시작 시 seed 데이터를
+/// 주입해 App Store 스크린샷 촬영을 자연스럽게 만든다. 일반/릴리즈 빌드에선 false.
+const bool kScreenshotMode =
+    bool.fromEnvironment('SCREENSHOT_MODE');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +36,13 @@ void main() async {
   try {
     onboardingDone = await OnboardingRepository().isDone();
   } catch (_) {}
+
+  // 스크린샷 모드면 seed 데이터 주입. 일반 실행에선 skip.
+  if (kScreenshotMode) {
+    try {
+      await seedScreenshotData(container);
+    } catch (_) {}
+  }
 
   runApp(
     UncontrolledProviderScope(
