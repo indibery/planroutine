@@ -18,7 +18,7 @@ title: 공직플랜
 
 ## 다운로드
 
-[App Store](#) · (심사 중) TestFlight 참여 문의는 이메일로.
+[App Store에서 받기](https://apps.apple.com/kr/app/공직플랜/id6761813798)
 
 ## 지원 / 문의
 
