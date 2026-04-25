@@ -1,7 +1,9 @@
 # 공직플랜 출시 체크리스트
 
-현재 상태: TestFlight v47 배포. **외부 공개를 위해서는 아래 항목을 순서대로**
-진행해야 합니다. 각 관문은 앞 단계가 끝나야 다음 단계가 열리는 의존 구조.
+현재 상태: **App Store 1.0.0 출시 완료** (2026-04, build 50).
+- 다운로드: <https://apps.apple.com/kr/app/공직플랜/id6761813798>
+
+다음 마일스톤은 **1.0.1에서 Google 캘린더 기능 활성화** — `AppFeatures.googleCalendarEnabled` 플래그로 1.0에서는 진입점이 차단되어 있고, OAuth Verification 통과 후 한 줄 변경 + 버전 bump로 켤 수 있다.
 
 ## 🔐 관문 1. 개인정보 처리방침 웹 호스팅 ✅ 완료
 
@@ -15,11 +17,13 @@ GitHub Pages(main/docs)로 활성화 완료. Jekyll 자동 빌드.
   - **개인정보 처리방침: <https://indibery.github.io/planroutine/privacy_policy>**
 - [ ] 앱 설정 탭 "앱 정보" 아래 "개인정보 처리방침" 외부 링크 타일 추가(선택)
 
-## 🛡 관문 2. Google OAuth 동의 화면 verification
+## 🛡 관문 2. Google OAuth 동의 화면 verification (1.0.1 마일스톤, **Data access 보류 중**)
 
-현재 GCP OAuth 동의 화면이 **"테스트 모드"**라 `bery97@gmail.com`만 로그인
-가능합니다. 외부 교사들이 Google 캘린더 연동을 쓰려면 "프로덕션" 전환 + 검수
-제출이 필요합니다.
+진척 상태:
+- **Branding status ✅ 통과** (2026-04-25). Search Console URL 접두어 검증으로 도메인 소유권 인증. 검증 파일 두 개(`docs/google446f6f0a04b9d3c6.html`, `docs/googlecbbb44e5a4493447.html`)는 **영구 보존 필수** — 지우면 OAuth 브랜딩 재차 깨짐.
+- **Data access status ⚠️ 보류**. Demo 영상에 영어 자막 추가가 어려워 1.0.1 시점으로 미룸. 그동안 1.0에서는 `AppFeatures.googleCalendarEnabled = false`로 진입점 차단해 일반 유저에게 Google 로그인 화면 노출 없음.
+
+GCP 프로젝트 owner: `bery97@gmail.com` (학교 계정 아님). OAuth 동의 화면은 "테스트" 모드 유지 — 등록된 테스트 사용자만 로그인 가능. 외부 교사들이 Google 캘린더 연동을 쓰려면 "프로덕션" 전환 + 검수 제출이 필요.
 
 GCP Console → API 및 서비스 → OAuth 동의 화면:
 
@@ -37,7 +41,10 @@ GCP Console → API 및 서비스 → OAuth 동의 화면:
 - [ ] **테스트 사용자** → 프로덕션 전환 후 검수 신청
 - [ ] 심사 기간 보통 2~6주. 기간 중에도 테스트 사용자로 제한 운영 가능
 
-## 🍎 관문 3. App Store 심사 제출
+## 🍎 관문 3. App Store 심사 제출 ✅ 완료 (2026-04, 1.0.0 출시)
+
+아래는 1.0 제출 시 사용한 자료 명세 — 1.0.1 업데이트 제출에도 동일 골격 활용.
+
 
 모든 자료가 App Store Connect의 "App Information" + "iOS App" 버전 탭에
 채워져야 합니다.
