@@ -88,6 +88,54 @@ views), not in an app-owned secondary calendar. There is no
 "events.create-only" or "events.write" variant available.
 ```
 
+## YouTube 메타데이터 (Unlisted 업로드 시 그대로 사용)
+
+reviewer가 영상 시청 전 description부터 읽고 컨텍스트를 잡습니다. 영어 통일.
+
+### Title
+
+```
+OAuth Verification Demo — 공직플랜 (PlanRoutine) — calendar.events scope
+```
+
+### Description
+
+```
+This video is submitted as part of the Google OAuth verification process for the iOS app "공직플랜" (PlanRoutine), demonstrating use of the sensitive scope `https://www.googleapis.com/auth/calendar.events`.
+
+App information
+- App name: 공직플랜 (PlanRoutine)
+- Platform: iOS (App Store: https://apps.apple.com/kr/app/공직플랜/id6761813798)
+- Homepage: https://indibery.github.io/planroutine/
+- Privacy policy: https://indibery.github.io/planroutine/privacy_policy.html
+- Terms of service: https://indibery.github.io/planroutine/terms.html
+- Audience: Korean elementary school teachers managing yearly work schedules
+
+OAuth client
+- Client ID: 73700230470-cal0r941so2cvip13ro3qt0c750sqkvu.apps.googleusercontent.com
+- Requested scope: https://www.googleapis.com/auth/calendar.events
+- Direction: one-way only (app → Google). The app writes user-created events to the user's primary Google Calendar. It never reads, modifies, or deletes events.
+
+Video contents
+1. App identity and branding (App Store name and icon match this app)
+2. User taps "Connect Google Account" in Settings
+3. Google account chooser
+4. OAuth consent screen with English language toggle, displaying the app name, logo, requested scope, and the client_id in the request URL
+5. User grants access
+6. User saves a single in-app event to Google Calendar via right-swipe gesture
+7. Verification that the event appears in the user's Google Calendar
+
+Note: Because iOS uses ASWebAuthenticationSession, the URL bar visually displays the domain (accounts.google.com) only; the full request URL including client_id is shown as a text overlay in the consent screen segment for clarity.
+
+Submission reference: [OAuth verification request ID — to be filled in at submission]
+```
+
+### 업로드 설정
+- **Visibility**: Unlisted (공개 X, 비공개 X)
+- **Audience**: "No, it's not made for kids" (만 13세 미만 대상 아님)
+- **Comments**: Off (검수자만 보는 영상이라 댓글 불필요)
+- **Category**: People & Blogs 또는 Science & Technology (어느 쪽이든 verification에 영향 없음)
+
 ## 촬영 후 / 신청 전 체크리스트
 
 - [ ] 영상 편집기에서 위 표의 overlay 텍스트를 시간대에 맞춰 추가 (iMovie / CapCut / DaVinci Resolve 등)
