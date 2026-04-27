@@ -36,13 +36,24 @@ class DeviceCalendarService {
       throw const DeviceCalendarException('writable 캘린더가 없습니다');
     }
 
+    // allDay 이벤트는 startDate/endDate를 그 날의 정오(12:00)로 정규화한다.
+    // DateTime.parse("YYYY-MM-DD")는 local 자정이라 timezone 변환 시 전날로
+    // 밀리는 케이스가 있다. 정오로 옮기면 ±12시간 오차도 같은 달력 날짜를 유지.
+    // end가 start와 같으면 EventKit이 0초 이벤트로 처리해 표시 위치가
+    // 이상해지는 사례가 있어 +1분 차이를 둔다.
+    DateTime noon(DateTime d) => DateTime(d.year, d.month, d.day, 12);
+    final start = noon(startDate);
+    final end = endDate != null
+        ? noon(endDate).add(const Duration(minutes: 1))
+        : start.add(const Duration(minutes: 1));
+
     final event = Event(
       calendarId,
       eventId: existingId,
       title: title,
       description: description,
-      start: TZDateTime.from(startDate, local),
-      end: TZDateTime.from(endDate ?? startDate, local),
+      start: TZDateTime.from(start, local),
+      end: TZDateTime.from(end, local),
       allDay: true,
     );
 
