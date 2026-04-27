@@ -33,9 +33,8 @@ class CalendarDayCell extends StatelessWidget {
       onTap: onTap,
       child: Container(
         // 셀 높이를 명시해 dot 유무에 따라 행 높이가 흔들리지 않게 한다.
-        // (dayNumber 28 + dot 5 + padding 약간) → 36pt면 dot 있어도 안 잘리고
-        // dot 없을 때도 동일한 행 높이를 유지.
-        height: 36,
+        // dayNumber 28 + dot 4 + padding 1 = 33pt → 34pt(1pt 마진).
+        height: 34,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.calendarSelected : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSizes.radius8),
@@ -93,7 +92,7 @@ class CalendarDayCell extends StatelessWidget {
   Widget _buildEventDots() {
     final dotCount = events.length > 3 ? 3 : events.length;
     return Padding(
-      padding: const EdgeInsets.only(top: AppSizes.spacing4 / 2),
+      padding: const EdgeInsets.only(top: 1),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(dotCount, (index) {
@@ -101,7 +100,7 @@ class CalendarDayCell extends StatelessWidget {
           // 완료된 이벤트는 작고 회색 톤의 점으로 표시해 "지나간 일정" 느낌 전달
           final isDone = event.isCompleted;
           final baseColor = isDone ? AppColors.textHint : event.eventColor;
-          final size = isDone ? 4.0 : 5.0;
+          final size = isDone ? 3.0 : 4.0;
           return Container(
             width: size,
             height: size,

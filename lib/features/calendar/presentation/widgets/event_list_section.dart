@@ -174,7 +174,7 @@ class EventListSection extends StatelessWidget {
                       event.title,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: titleColor,
                         decoration: isDone
@@ -194,7 +194,7 @@ class EventListSection extends StatelessWidget {
                           event.description ?? '',
                           style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontSize: 12,
+                            fontSize: 13,
                             color: AppColors.sub,
                             decoration: isDone
                                 ? TextDecoration.lineThrough
