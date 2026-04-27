@@ -25,6 +25,15 @@ final schedulesProvider =
   SchedulesNotifier.new,
 );
 
+/// 현재 활성 일정에서 사용 중인 카테고리 목록 (빈도순).
+/// schedulesProvider 변경에 반응해 갱신된다.
+final availableCategoriesProvider = FutureProvider<List<String>>((ref) async {
+  // schedulesProvider invalidate 시 같이 갱신되도록 의존
+  await ref.watch(schedulesProvider.future);
+  final repository = ref.watch(scheduleRepositoryProvider);
+  return repository.getDistinctCategories();
+});
+
 /// 일정 목록 관리 Notifier
 class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
   @override
@@ -74,16 +83,19 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
-  /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성)
+  /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성).
+  /// 카테고리 필터가 켜져 있으면 그 카테고리만 대상.
   Future<void> confirmAllPending() async {
     final repository = ref.read(scheduleRepositoryProvider);
+    final category = ref.read(scheduleCategoryFilterProvider);
 
-    // 확정 전에 pending 일정 ID를 미리 조회
+    // 확정 전에 대상 pending 일정 ID를 미리 조회
     final pendingSchedules = await repository.getSchedules(
       status: ScheduleStatus.pending,
+      category: category,
     );
 
-    await repository.confirmAllPending();
+    await repository.confirmAllPending(category: category);
 
     // 각 확정된 일정에 대해 캘린더 이벤트 생성
     final calendarRepo = ref.read(calendarRepositoryProvider);
