@@ -21,6 +21,14 @@ final selectedMonthEventsProvider =
   SelectedMonthEventsNotifier.new,
 );
 
+/// (year, month) → 그 월의 이벤트 (PageView 페이지마다 사용).
+/// selectedMonthEventsProvider와 별도 캐시이므로 CRUD 시 둘 다 invalidate.
+final monthEventsByYearMonthProvider = FutureProvider.family<
+    List<CalendarEvent>, ({int year, int month})>((ref, key) async {
+  final repository = ref.watch(calendarRepositoryProvider);
+  return repository.getEventsByMonth(key.year, key.month);
+});
+
 /// 월 이벤트 관리 노티파이어
 class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   @override
@@ -34,6 +42,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   Future<void> addEvent(CalendarEvent event) async {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.createEvent(event);
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
     await _syncNotifications();
   }
@@ -42,6 +51,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   Future<void> updateEvent(CalendarEvent event) async {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.updateEvent(event);
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
     await _syncNotifications();
   }
@@ -50,6 +60,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   Future<void> deleteEvent(int id) async {
     final repository = ref.read(calendarRepositoryProvider);
     await repository.deleteEvent(id);
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
     await _syncNotifications();
   }
@@ -64,6 +75,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     } else {
       await repository.markCompleted(id);
     }
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
     await _syncNotifications();
   }
