@@ -15,15 +15,12 @@ class CalendarIntegrationStrings {
   static const allowPermission = '권한 허용하기';
   static const openSettings = '설정에서 켜기';
 
-  // 슬라이드 라벨/힌트 — target에 따라 분기
-  static const swipeSaveGoogle = 'Google 저장';
+  // 슬라이드 라벨/힌트 — device 전용. Google 라벨은 CalendarStrings 재사용.
   static const swipeSaveDevice = '기기 저장';
-  static const swipeHintGoogle = '오른쪽으로 밀기 — Google 저장';
   static const swipeHintDevice = '오른쪽으로 밀기 — 기기 저장';
 
   // SnackBar
   static const setupNeeded = '캘린더 연동을 먼저 설정해주세요';
-  static const savedGoogle = 'Google 캘린더에 저장했습니다';
   static const savedDevice = '기기 캘린더에 저장했습니다';
   static const alreadySaved = '이미 저장된 일정입니다';
   static const saveFailed = '저장 실패';

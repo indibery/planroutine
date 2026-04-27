@@ -21,15 +21,17 @@ class CalendarSlideHintBar extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final target =
-        ref.watch(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
+    final target = ref.watch(
+      calendarTargetProvider
+          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+    );
     if (target == CalendarTarget.none) {
       return const SizedBox.shrink();
     }
 
     final leftText = target == CalendarTarget.device
         ? CalendarIntegrationStrings.swipeHintDevice
-        : CalendarIntegrationStrings.swipeHintGoogle;
+        : CalendarStrings.swipeHintGoogle;
 
     return shared.SlideHintBar(
       prefKey: 'calendar_slide_hint_dismissed',
