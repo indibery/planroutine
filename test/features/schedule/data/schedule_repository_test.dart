@@ -276,6 +276,66 @@ void main() {
     });
   });
 
+  group('getDistinctCategories', () {
+    test('활성 일정의 카테고리만 빈도 내림차순으로 반환', () async {
+      final id1 = await seedImportedSchedule(title: 'A1', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'A2', category: '일과운영관리');
+      final id3 = await seedImportedSchedule(title: 'A3', category: '일과운영관리');
+      final id4 = await seedImportedSchedule(title: 'B1', category: '학생학적관리');
+      final id5 =
+          await seedImportedSchedule(title: 'C1', category: '교육과정계획수립운영');
+      final id6 =
+          await seedImportedSchedule(title: 'C2', category: '교육과정계획수립운영');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 1, 2));
+      await repo.createFromImported(id3, DateTime(2026, 1, 3));
+      await repo.createFromImported(id4, DateTime(2026, 2, 1));
+      await repo.createFromImported(id5, DateTime(2026, 3, 1));
+      await repo.createFromImported(id6, DateTime(2026, 3, 2));
+
+      final categories = await repo.getDistinctCategories();
+      expect(categories, [
+        '일과운영관리',
+        '교육과정계획수립운영',
+        '학생학적관리',
+      ]);
+    });
+
+    test('NULL/빈 문자열 카테고리는 제외', () async {
+      final database = await db.database;
+      final now = DateTime.now().toIso8601String();
+      await database.insert(DatabaseHelper.tableSchedules, {
+        'title': 'no-cat',
+        'scheduled_date': '2026-01-01',
+        'category': null,
+        'status': 'pending',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.insert(DatabaseHelper.tableSchedules, {
+        'title': 'empty-cat',
+        'scheduled_date': '2026-01-02',
+        'category': '',
+        'status': 'pending',
+        'created_at': now,
+        'updated_at': now,
+      });
+      final id = await seedImportedSchedule(category: '학생학적관리');
+      await repo.createFromImported(id, DateTime(2026, 1, 3));
+
+      final categories = await repo.getDistinctCategories();
+      expect(categories, ['학생학적관리']);
+    });
+
+    test('soft-delete된 일정은 제외', () async {
+      final id = await seedImportedSchedule(category: '일과운영관리');
+      final sid = await repo.createFromImported(id, DateTime(2026, 1, 1));
+      await repo.deleteSchedule(sid);
+
+      expect(await repo.getDistinctCategories(), isEmpty);
+    });
+  });
+
   group('getSchedulesByMonth', () {
     test('해당 월의 활성 일정만 반환', () async {
       final id1 = await seedImportedSchedule(title: 'Jan');
