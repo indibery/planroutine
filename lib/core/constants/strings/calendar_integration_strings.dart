@@ -12,6 +12,7 @@ class CalendarIntegrationStrings {
   // 권한 안내
   static const permissionGranted = '캘린더 권한 허용됨';
   static const permissionDenied = '캘린더 권한이 필요합니다';
+  static const allowPermission = '권한 허용하기';
   static const openSettings = '설정에서 켜기';
 
   // 슬라이드 라벨/힌트 — target에 따라 분기
