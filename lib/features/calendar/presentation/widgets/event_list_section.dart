@@ -21,15 +21,19 @@ class EventListSection extends StatelessWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
+    required this.saveLabel,
   });
 
   final DateTime selectedDate;
   final List<CalendarEvent> events;
   final ValueChanged<CalendarEvent> onEventTap;
 
-  /// Google 저장 콜백. null이면 오른쪽 스와이프가 비활성화돼 왼쪽 스와이프(완료 토글)만 동작.
+  /// 외부 캘린더 저장 콜백. null이면 오른쪽 스와이프가 비활성화돼 왼쪽 스와이프(완료 토글)만 동작.
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
+
+  /// 우측 스와이프 background 라벨 (target에 따라 'Google 저장' 또는 '기기 저장').
+  final String saveLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -76,10 +80,10 @@ class EventListSection extends StatelessWidget {
       // Google이 꺼지면 endToStart 전용이므로 background 슬롯에 완료 배경을 넣고
       // secondaryBackground는 null.
       background: googleSave != null
-          ? const DismissibleBackground(
+          ? DismissibleBackground(
               accent: AppColors.inkGreen,
               icon: Icons.cloud_upload,
-              label: CalendarStrings.swipeGoogleSave,
+              label: saveLabel,
               alignment: Alignment.centerLeft,
               verticalMargin: AppSizes.spacing4,
             )
