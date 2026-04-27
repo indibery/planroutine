@@ -50,6 +50,7 @@ class TrashNotifier extends AsyncNotifier<TrashSnapshot> {
   Future<void> restoreEvent(int id) async {
     final repo = ref.read(calendarRepositoryProvider);
     await repo.restoreEvent(id);
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidate(selectedMonthEventsProvider);
     ref.invalidateSelf();
   }

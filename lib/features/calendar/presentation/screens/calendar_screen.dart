@@ -303,6 +303,7 @@ class CalendarScreen extends ConsumerWidget {
       final eventId = event.id;
       if (eventId != null && resultId != null && resultId.isNotEmpty) {
         await repository.updateGoogleEventId(eventId, resultId);
+        ref.invalidate(monthEventsByYearMonthProvider);
         ref.invalidate(selectedMonthEventsProvider);
       }
 

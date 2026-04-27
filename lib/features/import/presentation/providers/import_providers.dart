@@ -170,6 +170,7 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
 
     // 일정 탭 + 캘린더 즉시 반영
     _ref.invalidate(schedulesProvider);
+    _ref.invalidate(monthEventsByYearMonthProvider);
     _ref.invalidate(selectedMonthEventsProvider);
 
     state = ImportRegistered(
