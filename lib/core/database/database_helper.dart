@@ -14,7 +14,7 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
@@ -48,6 +48,8 @@ class DatabaseHelper {
   /// 컬럼 추가. NULL = 미완료, ISO8601 문자열 = 완료 시각.
   /// v3 → v4: 구글 캘린더 중복 방지. calendar_events에 [google_event_id]
   /// 컬럼 추가. NULL = 미저장, 값 있으면 재저장 시 update로 처리.
+  /// v4 → v5: 기기 캘린더(device_calendar) 중복 방지. calendar_events에
+  /// [device_event_id] 컬럼 추가. 동일 패턴.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
@@ -65,6 +67,11 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       await db.execute(
         'ALTER TABLE $tableCalendarEvents ADD COLUMN google_event_id TEXT',
+      );
+    }
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE $tableCalendarEvents ADD COLUMN device_event_id TEXT',
       );
     }
   }
@@ -121,6 +128,7 @@ class DatabaseHelper {
         deleted_at TEXT,
         completed_at TEXT,
         google_event_id TEXT,
+        device_event_id TEXT,
         FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
       )
     ''');
