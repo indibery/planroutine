@@ -183,4 +183,36 @@ void main() {
       });
     });
   });
+
+  group('deviceEventId 라운드트립', () {
+    test('toMap → fromMap에서 deviceEventId 보존', () {
+      final event = CalendarEvent(
+        id: 1,
+        title: '테스트',
+        eventDate: '2026-05-15',
+        deviceEventId: 'EKE-12345',
+        createdAt: '2026-04-27T10:00:00.000',
+        updatedAt: '2026-04-27T10:00:00.000',
+      );
+      final map = event.toMap();
+      expect(map['device_event_id'], 'EKE-12345');
+
+      // 직렬화 시 is_all_day가 0/1로 들어가므로 fromMap을 위해 is_all_day 추가
+      final restored = CalendarEvent.fromMap(map);
+      expect(restored.deviceEventId, 'EKE-12345');
+    });
+
+    test('device_event_id가 NULL이면 fromMap에서 null', () {
+      final map = {
+        'title': '테스트',
+        'event_date': '2026-05-15',
+        'is_all_day': 1,
+        'device_event_id': null,
+        'created_at': '2026-04-27T10:00:00.000',
+        'updated_at': '2026-04-27T10:00:00.000',
+      };
+      final event = CalendarEvent.fromMap(map);
+      expect(event.deviceEventId, isNull);
+    });
+  });
 }
