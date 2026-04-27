@@ -125,7 +125,7 @@ class CalendarScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing16,
-        vertical: AppSizes.spacing12,
+        vertical: AppSizes.spacing8,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
