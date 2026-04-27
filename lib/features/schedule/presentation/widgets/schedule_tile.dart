@@ -94,7 +94,7 @@ class ScheduleTile extends StatelessWidget {
                               schedule.title,
                               style: const TextStyle(
                                 fontFamily: 'Pretendard',
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.ink,
                               ),
@@ -117,7 +117,7 @@ class ScheduleTile extends StatelessWidget {
                             _formatDate(schedule.scheduledDate),
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
-                              fontSize: 12,
+                              fontSize: 13,
                               color: AppColors.sub,
                             ),
                           ),
