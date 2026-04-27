@@ -22,6 +22,6 @@ class ScheduleStrings {
   static const dateLabel = '일정 날짜';
 
   // 스와이프 힌트
-  static const slideHintConfirm = '오른쪽으로 밀기 — 확정';
+  static const slideHintConfirm = '오른쪽으로 밀기 — 확정되어 캘린더 적용';
   static const slideHintDelete = '왼쪽으로 밀기 — 삭제';
 }
