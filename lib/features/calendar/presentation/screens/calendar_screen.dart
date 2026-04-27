@@ -83,6 +83,7 @@ class CalendarScreen extends ConsumerWidget {
                           onEventSaveToGoogle: _resolveSaveCallback(context, ref),
                           onEventToggleCompleted: (event) =>
                               _onToggleCompleted(context, ref, event),
+                          saveLabel: _resolveSaveLabel(ref),
                         );
                       },
                     ),
@@ -197,6 +198,15 @@ class CalendarScreen extends ConsumerWidget {
   }
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
+  /// 우측 스와이프 background 라벨 — target에 따라.
+  String _resolveSaveLabel(WidgetRef ref) {
+    final target =
+        ref.watch(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
+    return target == CalendarTarget.device
+        ? CalendarIntegrationStrings.swipeSaveDevice
+        : CalendarIntegrationStrings.swipeSaveGoogle;
+  }
+
   /// 우측 스와이프 콜백 결정 — target에 따라 활성/비활성.
   /// AppFeatures.googleCalendarEnabled 꺼져 있거나 target=none이면 null 반환
   /// → EventListSection이 우측 스와이프 자체를 비활성화.
