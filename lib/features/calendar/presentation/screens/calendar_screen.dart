@@ -83,7 +83,6 @@ class CalendarScreen extends ConsumerWidget {
                           onEventSaveToGoogle: _resolveSaveCallback(context, ref),
                           onEventToggleCompleted: (event) =>
                               _onToggleCompleted(context, ref, event),
-                          saveLabel: _resolveSaveLabel(ref),
                         );
                       },
                     ),
@@ -198,15 +197,6 @@ class CalendarScreen extends ConsumerWidget {
   }
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
-  /// 우측 스와이프 background 라벨 — target에 따라.
-  String _resolveSaveLabel(WidgetRef ref) {
-    final target =
-        ref.watch(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
-    return target == CalendarTarget.device
-        ? CalendarIntegrationStrings.swipeSaveDevice
-        : CalendarIntegrationStrings.swipeSaveGoogle;
-  }
-
   /// 우측 스와이프 콜백 결정 — target에 따라 활성/비활성.
   /// AppFeatures.googleCalendarEnabled 꺼져 있거나 target=none이면 null 반환
   /// → EventListSection이 우측 스와이프 자체를 비활성화.
@@ -215,8 +205,10 @@ class CalendarScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     if (!AppFeatures.googleCalendarEnabled) return null;
-    final target =
-        ref.watch(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
+    final target = ref.watch(
+      calendarTargetProvider
+          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+    );
     if (target == CalendarTarget.none) return null;
     return (event) => _onSaveToCalendar(context, ref, event);
   }
@@ -255,7 +247,6 @@ class CalendarScreen extends ConsumerWidget {
     // 권한 상태가 변했으면 설정 화면의 row가 즉시 갱신되도록 두 provider 모두 invalidate
     if (granted != hadPermission) {
       ref.invalidate(calendarPermissionStatusProvider);
-      ref.invalidate(devicePermissionProvider);
     }
     if (!granted) {
       if (!context.mounted) return;
@@ -265,8 +256,7 @@ class CalendarScreen extends ConsumerWidget {
           label: CalendarIntegrationStrings.openSettings,
           onPressed: () async {
             await openAppSettings();
-            ref.invalidate(devicePermissionProvider);
-          },
+                },
         ),
       ));
       return;
@@ -278,9 +268,8 @@ class CalendarScreen extends ConsumerWidget {
         existingId: event.deviceEventId,
         title: event.title,
         description: event.description,
-        startDate: DateTime.parse(event.eventDate),
-        endDate:
-            event.endDate != null ? DateTime.parse(event.endDate!) : null,
+        startDate: event.eventDateTime,
+        endDate: event.endDate != null ? event.endDateTime : null,
       );
 
       final eventId = event.id;

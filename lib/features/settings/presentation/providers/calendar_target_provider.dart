@@ -35,7 +35,9 @@ class CalendarTargetNotifier extends AsyncNotifier<CalendarTarget> {
   }
 
   /// 사용자 선택 변경 → SharedPreferences에 저장 + 상태 갱신.
+  /// 동일 값이면 no-op (중복 SharedPreferences write 방지).
   Future<void> setTarget(CalendarTarget target) async {
+    if (state.valueOrNull == target) return;
     state = AsyncData(target);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, target.prefValue);

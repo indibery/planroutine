@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
+import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
 ///
 /// 각 이벤트는 스와이프 지원:
-///   - 오른쪽 스와이프: Google 캘린더 저장 (옵션) — [onEventSaveToGoogle]가 null이면 비활성
+///   - 오른쪽 스와이프: 외부 캘린더 저장 (옵션) — [onEventSaveToGoogle]가 null이면 비활성
 ///   - 왼쪽 스와이프: 완료/완료 취소 토글
 /// 삭제는 탭 → 편집 시트의 우측 휴지통 아이콘으로 이동했음.
-class EventListSection extends StatelessWidget {
+class EventListSection extends ConsumerWidget {
   const EventListSection({
     super.key,
     required this.selectedDate,
@@ -21,7 +23,6 @@ class EventListSection extends StatelessWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
-    required this.saveLabel,
   });
 
   final DateTime selectedDate;
@@ -32,11 +33,16 @@ class EventListSection extends StatelessWidget {
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
 
-  /// 우측 스와이프 background 라벨 (target에 따라 'Google 저장' 또는 '기기 저장').
-  final String saveLabel;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final target = ref.watch(
+      calendarTargetProvider
+          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+    );
+    final saveLabel = target == CalendarTarget.device
+        ? CalendarIntegrationStrings.swipeSaveDevice
+        : CalendarStrings.swipeGoogleSave;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -45,12 +51,12 @@ class EventListSection extends StatelessWidget {
         if (events.isEmpty)
           _buildEmptyState()
         else
-          ...events.map(_buildDismissibleEventTile),
+          ...events.map((e) => _buildDismissibleEventTile(e, saveLabel)),
       ],
     );
   }
 
-  Widget _buildDismissibleEventTile(CalendarEvent event) {
+  Widget _buildDismissibleEventTile(CalendarEvent event, String saveLabel) {
     final isDone = event.isCompleted;
     final googleSave = onEventSaveToGoogle;
 

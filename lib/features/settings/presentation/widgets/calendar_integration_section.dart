@@ -17,8 +17,10 @@ class CalendarIntegrationSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final targetAsync = ref.watch(calendarTargetProvider);
-    final target = targetAsync.valueOrNull ?? CalendarTarget.none;
+    final target = ref.watch(
+      calendarTargetProvider
+          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+    );
 
     return SettingsSection(
       title: CalendarIntegrationStrings.sectionTitle,
@@ -190,7 +192,6 @@ class _DevicePermissionRow extends ConsumerWidget {
           onPressed: () async {
             await Permission.calendarFullAccess.request();
             ref.invalidate(calendarPermissionStatusProvider);
-            ref.invalidate(devicePermissionProvider);
           },
           child: const Text(CalendarIntegrationStrings.allowPermission),
         ),
@@ -205,7 +206,6 @@ class _DevicePermissionRow extends ConsumerWidget {
         onPressed: () async {
           await openAppSettings();
           ref.invalidate(calendarPermissionStatusProvider);
-          ref.invalidate(devicePermissionProvider);
         },
         child: const Text(CalendarIntegrationStrings.openSettings),
       ),

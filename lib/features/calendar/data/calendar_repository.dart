@@ -65,35 +65,27 @@ class CalendarRepository {
     );
   }
 
-  /// Google Calendar에 저장된 이벤트의 [googleEventId]를 기록.
-  /// 다음 "Google 저장" 스와이프에서 update로 처리해 중복 생성 방지.
-  Future<int> updateGoogleEventId(int id, String googleEventId) async {
+  /// 외부 캘린더(Google/기기) 저장 후 받은 id를 해당 컬럼에 기록.
+  /// 재저장 스와이프에서 update로 처리해 중복 생성 방지.
+  Future<int> _updateExternalEventId(
+    int id,
+    String column,
+    String externalId,
+  ) async {
     final db = await _dbHelper.database;
     return db.update(
       DatabaseHelper.tableCalendarEvents,
-      {
-        'google_event_id': googleEventId,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
+      {column: externalId, 'updated_at': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  /// 기기 캘린더에 저장된 이벤트의 [deviceEventId]를 기록.
-  /// 다음 "기기 저장" 스와이프에서 update로 처리해 중복 생성 방지.
-  Future<int> updateDeviceEventId(int id, String deviceEventId) async {
-    final db = await _dbHelper.database;
-    return db.update(
-      DatabaseHelper.tableCalendarEvents,
-      {
-        'device_event_id': deviceEventId,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
+  Future<int> updateGoogleEventId(int id, String googleEventId) =>
+      _updateExternalEventId(id, 'google_event_id', googleEventId);
+
+  Future<int> updateDeviceEventId(int id, String deviceEventId) =>
+      _updateExternalEventId(id, 'device_event_id', deviceEventId);
 
   /// 이벤트 복구
   Future<int> restoreEvent(int id) async {

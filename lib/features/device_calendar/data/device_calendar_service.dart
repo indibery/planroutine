@@ -9,6 +9,11 @@ class DeviceCalendarService {
 
   final DeviceCalendarPlugin _plugin;
 
+  /// 기본 쓰기 가능 캘린더 id 캐시. 사용자가 OS 설정에서 캘린더 추가/삭제하기
+  /// 전엔 변하지 않으므로 lifetime 동안 한 번만 조회. 저장 실패 시
+  /// 무효화돼 다음 호출에서 재조회.
+  String? _cachedCalendarId;
+
   /// 캘린더 권한 보유 여부.
   Future<bool> hasPermissions() async {
     final result = await _plugin.hasPermissions();
@@ -69,6 +74,8 @@ class DeviceCalendarService {
           endDate: endDate,
         );
       }
+      // 캐시된 캘린더 id가 stale일 수 있으므로 무효화 → 다음 호출에서 재조회
+      _cachedCalendarId = null;
       throw DeviceCalendarException(
         result?.errors.map((e) => e.errorMessage).join(', ') ??
             '이벤트 저장 실패',
@@ -78,7 +85,11 @@ class DeviceCalendarService {
   }
 
   /// 기본 쓰기 가능 캘린더 id. isDefault==true 우선, 없으면 첫 번째 writable.
+  /// 캐시된 id가 있으면 재사용해 매 saveEvent마다 platform channel round-trip 회피.
   Future<String?> _resolveDefaultCalendarId() async {
+    final cached = _cachedCalendarId;
+    if (cached != null) return cached;
+
     final result = await _plugin.retrieveCalendars();
     final calendars = result.data;
     if (calendars == null || calendars.isEmpty) return null;
@@ -86,7 +97,7 @@ class DeviceCalendarService {
     final writable = calendars.where((c) => c.isReadOnly == false).toList();
     if (writable.isEmpty) return null;
 
-    return writable.firstWhere(
+    return _cachedCalendarId = writable.firstWhere(
       (c) => c.isDefault == true,
       orElse: () => writable.first,
     ).id;
