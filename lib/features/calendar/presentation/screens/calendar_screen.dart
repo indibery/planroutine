@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -9,8 +10,11 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
+import '../../../device_calendar/data/device_calendar_service.dart';
+import '../../../device_calendar/presentation/providers/device_calendar_providers.dart';
 import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
+import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_month_pager.dart';
@@ -76,9 +80,7 @@ class CalendarScreen extends ConsumerWidget {
                           events: entry.value,
                           onEventTap: (event) =>
                               _onEditEvent(context, ref, event),
-                          onEventSaveToGoogle: AppFeatures.googleCalendarEnabled
-                              ? (event) => _onSaveToGoogle(context, ref, event)
-                              : null,
+                          onEventSaveToGoogle: _resolveSaveCallback(context, ref),
                           onEventToggleCompleted: (event) =>
                               _onToggleCompleted(context, ref, event),
                         );
@@ -195,6 +197,98 @@ class CalendarScreen extends ConsumerWidget {
   }
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
+  /// 우측 스와이프 콜백 결정 — target에 따라 활성/비활성.
+  /// AppFeatures.googleCalendarEnabled 꺼져 있거나 target=none이면 null 반환
+  /// → EventListSection이 우측 스와이프 자체를 비활성화.
+  ValueChanged<CalendarEvent>? _resolveSaveCallback(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    if (!AppFeatures.googleCalendarEnabled) return null;
+    final target =
+        ref.watch(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
+    if (target == CalendarTarget.none) return null;
+    return (event) => _onSaveToCalendar(context, ref, event);
+  }
+
+  /// 우측 스와이프 — target에 따라 Google/기기 분기.
+  Future<void> _onSaveToCalendar(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    final target =
+        ref.read(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
+    switch (target) {
+      case CalendarTarget.none:
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(CalendarIntegrationStrings.setupNeeded),
+        ));
+      case CalendarTarget.google:
+        await _onSaveToGoogle(context, ref, event);
+      case CalendarTarget.device:
+        await _onSaveToDevice(context, ref, event);
+    }
+  }
+
+  /// 기기 캘린더 저장 — 권한 확인 → save → device_event_id 보관.
+  Future<void> _onSaveToDevice(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    final service = ref.read(deviceCalendarServiceProvider);
+
+    var granted = await service.hasPermissions();
+    if (!granted) granted = await service.requestPermissions();
+    if (!granted) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text(CalendarIntegrationStrings.permissionDenied),
+        action: SnackBarAction(
+          label: CalendarIntegrationStrings.openSettings,
+          onPressed: () async {
+            await openAppSettings();
+            ref.invalidate(devicePermissionProvider);
+          },
+        ),
+      ));
+      return;
+    }
+
+    final wasAlreadySaved = event.deviceEventId != null;
+    try {
+      final id = await service.saveEvent(
+        existingId: event.deviceEventId,
+        title: event.title,
+        description: event.description,
+        startDate: DateTime.parse(event.eventDate),
+        endDate:
+            event.endDate != null ? DateTime.parse(event.endDate!) : null,
+      );
+
+      final eventId = event.id;
+      if (eventId != null) {
+        final repository = ref.read(calendarRepositoryProvider);
+        await repository.updateDeviceEventId(eventId, id);
+        ref.invalidate(monthEventsByYearMonthProvider);
+        ref.invalidate(selectedMonthEventsProvider);
+      }
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(wasAlreadySaved
+            ? CalendarIntegrationStrings.alreadySaved
+            : CalendarIntegrationStrings.savedDevice),
+      ));
+    } on DeviceCalendarException catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(CalendarIntegrationStrings.saveFailed),
+      ));
+    }
+  }
+
   /// 로그인 안 돼있으면 먼저 로그인 유도, 실패는 스낵바로 안내.
   ///
   /// 중복 방지: `event.googleEventId`가 이미 있으면 update API 호출.
