@@ -4,7 +4,7 @@ class ScheduleStrings {
 
   static const title = '일정 검토';
   static const confirm = '확정';
-  static const confirmAll = '전체 확정';
+  static const confirmAll = '이 목록 확정';
   static const delete = '삭제';
   static const pending = '검토 대기';
   static const confirmed = '확정됨';
@@ -13,7 +13,7 @@ class ScheduleStrings {
   static const emptyFiltered = '해당 조건의 일정이 없습니다';
 
   static const bulkConfirmTitle = '일괄 확정';
-  static const bulkConfirmMessage = '검토 대기 중인 일정을 모두 확정하시겠습니까?';
+  static const bulkConfirmMessage = '현재 목록의 검토 대기 일정을 확정하시겠습니까?';
 
   // 수정 시트
   static const editTitle = '일정 수정';
