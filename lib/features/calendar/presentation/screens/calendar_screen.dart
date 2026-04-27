@@ -13,7 +13,7 @@ import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
-import '../widgets/calendar_grid.dart';
+import '../widgets/calendar_month_pager.dart';
 import '../widgets/calendar_slide_hint_bar.dart';
 import '../widgets/event_edit_dialog.dart';
 import '../widgets/event_list_section.dart';
@@ -27,7 +27,6 @@ class CalendarScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
-    final monthEventsMap = ref.watch(monthEventsMapProvider);
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
 
     return Scaffold(
@@ -44,41 +43,10 @@ class CalendarScreen extends ConsumerWidget {
       body: Column(
         children: [
           _buildMonthHeader(context, ref, selectedDate),
-          GestureDetector(
-            onHorizontalDragEnd: (details) {
-              if (details.primaryVelocity == null) return;
-              if (details.primaryVelocity! < 0) {
-                // 왼쪽 스와이프 → 다음 달
-                final next = DateTime(selectedDate.year, selectedDate.month + 1, 1);
-                ref.read(selectedDateProvider.notifier).state = next;
-              } else if (details.primaryVelocity! > 0) {
-                // 오른쪽 스와이프 → 이전 달
-                final prev = DateTime(selectedDate.year, selectedDate.month - 1, 1);
-                ref.read(selectedDateProvider.notifier).state = prev;
-              }
+          CalendarMonthPager(
+            onDateSelected: (date) {
+              ref.read(selectedDateProvider.notifier).state = date;
             },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
-              child: monthEventsMap.when(
-                data: (eventsMap) => CalendarGrid(
-                  year: selectedDate.year,
-                  month: selectedDate.month,
-                  selectedDate: selectedDate,
-                  eventsMap: eventsMap,
-                  onDateSelected: (date) {
-                    ref.read(selectedDateProvider.notifier).state = date;
-                  },
-                ),
-                loading: () => const SizedBox(
-                  height: 280,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, _) => const SizedBox(
-                  height: 280,
-                  child: Center(child: Text(AppStrings.error)),
-                ),
-              ),
-            ),
           ),
           const Divider(height: 1),
           const CalendarSlideHintBar(),
@@ -174,30 +142,15 @@ class CalendarScreen extends ConsumerWidget {
               final today = DateTime.now();
               ref.read(selectedDateProvider.notifier).state = today;
             },
-            child: Column(
-              children: [
-                Text(
-                  _monthFormatter.format(selectedDate),
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  CalendarStrings.today,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 2.0,
-                    color: AppColors.goldMuted,
-                  ),
-                ),
-              ],
+            child: Text(
+              _monthFormatter.format(selectedDate),
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+                color: AppColors.ink,
+              ),
             ),
           ),
           IconButton(
