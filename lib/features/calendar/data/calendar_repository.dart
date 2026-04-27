@@ -80,6 +80,21 @@ class CalendarRepository {
     );
   }
 
+  /// 기기 캘린더에 저장된 이벤트의 [deviceEventId]를 기록.
+  /// 다음 "기기 저장" 스와이프에서 update로 처리해 중복 생성 방지.
+  Future<int> updateDeviceEventId(int id, String deviceEventId) async {
+    final db = await _dbHelper.database;
+    return db.update(
+      DatabaseHelper.tableCalendarEvents,
+      {
+        'device_event_id': deviceEventId,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// 이벤트 복구
   Future<int> restoreEvent(int id) async {
     final db = await _dbHelper.database;

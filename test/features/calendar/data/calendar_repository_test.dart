@@ -212,4 +212,16 @@ void main() {
       expect(purged, 0);
     });
   });
+
+  group('updateDeviceEventId', () {
+    test('지정한 이벤트의 device_event_id 갱신', () async {
+      final eventId = await repo.createEvent(buildEvent());
+
+      await repo.updateDeviceEventId(eventId, 'EKE-99999');
+
+      final events = await repo.getEventsByMonth(2026, 5);
+      final event = events.firstWhere((e) => e.id == eventId);
+      expect(event.deviceEventId, 'EKE-99999');
+    });
+  });
 }
