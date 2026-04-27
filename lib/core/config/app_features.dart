@@ -17,5 +17,5 @@ class AppFeatures {
   /// - 설정 탭 "구글 계정" 섹션
   /// - 캘린더 이벤트 오른쪽 스와이프(→ Google 저장)
   /// - 캘린더 상단 스와이프 힌트 바
-  static const bool googleCalendarEnabled = false;
+  static const bool googleCalendarEnabled = true;
 }
