@@ -249,8 +249,14 @@ class CalendarScreen extends ConsumerWidget {
   ) async {
     final service = ref.read(deviceCalendarServiceProvider);
 
-    var granted = await service.hasPermissions();
+    final hadPermission = await service.hasPermissions();
+    var granted = hadPermission;
     if (!granted) granted = await service.requestPermissions();
+    // 권한 상태가 변했으면 설정 화면의 row가 즉시 갱신되도록 두 provider 모두 invalidate
+    if (granted != hadPermission) {
+      ref.invalidate(calendarPermissionStatusProvider);
+      ref.invalidate(devicePermissionProvider);
+    }
     if (!granted) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
