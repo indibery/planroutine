@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/calendar_event.dart';
@@ -87,6 +86,35 @@ class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
 
   @override
   Widget build(BuildContext context) {
+    // 현재 보고 있는 월의 events fetch가 실패하면 별도 AlertDialog로 알림.
+    // 그리드 영역(SizedBox 250) 안에는 어떤 에러 위젯도 넣지 않는다.
+    final selectedDate = ref.watch(selectedDateProvider);
+    ref.listen<AsyncValue<List<CalendarEvent>>>(
+      monthEventsByYearMonthProvider(
+        (year: selectedDate.year, month: selectedDate.month),
+      ),
+      (prev, next) {
+        if (next.hasError && (prev == null || !prev.hasError)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('오류'),
+                content: const Text(AppStrings.error),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+            );
+          });
+        }
+      },
+    );
+
     return SizedBox(
       // 그리드 영역 고정 높이.
       // 6행 월 자연 높이 ≈ 231pt(헤더 17 + spacing 4 + 6×35). 250은 안전 마진 포함.
@@ -148,12 +176,8 @@ class _CalendarPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(
-          child: Text(
-            AppStrings.error,
-            style: TextStyle(color: AppColors.error),
-          ),
-        ),
+        // 에러 시 그리드 자리를 비움(별도 AlertDialog는 CalendarMonthPager에서 처리).
+        error: (_, _) => const SizedBox.shrink(),
       ),
     );
   }
