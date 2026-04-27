@@ -117,9 +117,9 @@ class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
 
     return SizedBox(
       // 그리드 영역 고정 높이.
-      // 6행 월 자연 높이 ≈ 231pt(헤더 17 + spacing 4 + 6×35). 250은 안전 마진 포함.
-      // 일정 목록 영역 확보를 위해 320 → 250으로 줄임.
-      height: 250,
+      // 셀 명시 height(36) × 6행 + header(17) + spacing(4) = 237pt.
+      // 폰트 메트릭 변동 대비 8pt 마진 포함 → 245pt.
+      height: 245,
       child: PageView.builder(
         controller: _controller,
         onPageChanged: _onPageChanged,

@@ -32,6 +32,10 @@ class CalendarDayCell extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        // 셀 높이를 명시해 dot 유무에 따라 행 높이가 흔들리지 않게 한다.
+        // (dayNumber 28 + dot 5 + padding 약간) → 36pt면 dot 있어도 안 잘리고
+        // dot 없을 때도 동일한 행 높이를 유지.
+        height: 36,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.calendarSelected : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSizes.radius8),
