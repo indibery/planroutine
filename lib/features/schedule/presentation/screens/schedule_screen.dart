@@ -159,7 +159,8 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(WidgetRef ref) {
-    final hasFilter = ref.watch(scheduleStatusFilterProvider) != null;
+    final hasFilter = ref.watch(scheduleStatusFilterProvider) != null
+        || ref.watch(scheduleCategoryFilterProvider) != null;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
