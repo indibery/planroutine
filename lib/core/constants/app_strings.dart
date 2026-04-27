@@ -7,6 +7,7 @@
 /// 이 파일 하나만 import 하면 모든 Strings 클래스를 쓸 수 있다.
 library;
 
+export 'strings/calendar_integration_strings.dart';
 export 'strings/calendar_strings.dart';
 export 'strings/google_strings.dart';
 export 'strings/import_strings.dart';
