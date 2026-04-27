@@ -9,7 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/export_list_tile.dart';
-import '../widgets/google_account_list_tile.dart';
+import '../widgets/calendar_integration_section.dart';
 import '../widgets/import_list_tile.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/reset_list_tile.dart';
@@ -69,11 +69,7 @@ class SettingsScreen extends ConsumerWidget {
             child: ExportListTile(),
           ),
           if (AppFeatures.googleCalendarEnabled)
-            const SettingsSection(
-              title: GoogleStrings.section,
-              subtitle: GoogleStrings.signInDescription,
-              child: GoogleAccountListTile(),
-            ),
+            const CalendarIntegrationSection(),
           const SettingsSection(
             title: NotificationStrings.section,
             subtitle: NotificationStrings.masterDescription,
