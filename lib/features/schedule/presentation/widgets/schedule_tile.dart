@@ -6,6 +6,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../domain/schedule.dart';
+import 'category_label.dart';
 
 /// 일정 항목 카드
 class ScheduleTile extends StatelessWidget {
@@ -180,20 +181,21 @@ class ScheduleTile extends StatelessWidget {
   }
 
   Widget _buildCategoryBadge(String category) {
+    final color = categoryColor(category);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing8,
         vertical: AppSizes.spacing4,
       ),
       decoration: BoxDecoration(
-        color: _categoryColor(category).withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppSizes.radius8),
       ),
       child: Text(
-        _shortenCategory(category),
+        shortenCategory(category),
         style: TextStyle(
           fontSize: 11,
-          color: _categoryColor(category),
+          color: color,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -207,24 +209,6 @@ class ScheduleTile extends StatelessWidget {
       case ScheduleStatus.confirmed:
         return AppColors.inkGreen;
     }
-  }
-
-  Color _categoryColor(String category) {
-    if (category.contains('일과운영')) return AppColors.categoryDailyOps;
-    if (category.contains('교육과정')) return AppColors.categoryCurriculum;
-    if (category.contains('조직') || category.contains('통계')) {
-      return AppColors.categoryOrganization;
-    }
-    if (category.contains('학적')) return AppColors.categoryStudentRecord;
-    return AppColors.categoryDefault;
-  }
-
-  String _shortenCategory(String category) {
-    if (category.contains('일과운영')) return '일과운영';
-    if (category.contains('교육과정')) return '교육과정';
-    if (category.contains('조직') || category.contains('통계')) return '조직통계';
-    if (category.contains('학적')) return '학생학적';
-    return category.length > 4 ? '${category.substring(0, 4)}...' : category;
   }
 
   String _formatDate(String dateStr) {
