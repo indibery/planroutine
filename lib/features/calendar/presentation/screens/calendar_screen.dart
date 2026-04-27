@@ -256,7 +256,8 @@ class CalendarScreen extends ConsumerWidget {
           label: CalendarIntegrationStrings.openSettings,
           onPressed: () async {
             await openAppSettings();
-                },
+            ref.invalidate(calendarPermissionStatusProvider);
+          },
         ),
       ));
       return;
