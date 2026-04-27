@@ -3,7 +3,6 @@ class CalendarStrings {
   CalendarStrings._();
 
   static const title = '캘린더';
-  static const today = '오늘';
   static const addEvent = '일정 추가';
   static const editEvent = '일정 수정';
   static const noEvents = '일정이 없습니다';
