@@ -215,27 +215,6 @@ class EventListSection extends StatelessWidget {
                     size: 18,
                     color: AppColors.inkGreen,
                   ),
-                )
-              else if (event.isAllDay)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing8,
-                    vertical: AppSizes.spacing4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.navySoft,
-                    borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                    border: Border.all(color: AppColors.line, width: 0.5),
-                  ),
-                  child: const Text(
-                    CalendarStrings.eventAllDay,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.sub,
-                    ),
-                  ),
                 ),
             ],
           ),

@@ -55,7 +55,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
   DateTime? _endDate;
-  late bool _isAllDay;
   late Color _selectedColor;
   bool get _isEditing => widget.event != null;
 
@@ -68,7 +67,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
     _endDate = event?.endDate != null ? event?.endDateTime : null;
-    _isAllDay = event?.isAllDay ?? true;
     _selectedColor = event?.eventColor ?? AppColors.eventPresets[0];
   }
 
@@ -113,8 +111,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
-                const SizedBox(height: AppSizes.spacing16),
-                _buildAllDayToggle(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildColorPicker(),
                 const SizedBox(height: AppSizes.spacing24),
@@ -258,25 +254,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-  Widget _buildAllDayToggle() {
-    return Row(
-      children: [
-        const Text(
-          CalendarStrings.eventAllDay,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const Spacer(),
-        Switch(
-          value: _isAllDay,
-          onChanged: (value) => setState(() => _isAllDay = value),
-          activeThumbColor: AppColors.primary,
-        ),
-      ],
-    );
-  }
 
   Widget _buildColorPicker() {
     return Column(
@@ -390,7 +367,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           : _descriptionController.text.trim(),
       eventDate: dateStr,
       endDate: endDateStr,
-      isAllDay: _isAllDay,
+      isAllDay: true,
       color: colorHex,
       scheduleId: widget.event?.scheduleId,
       createdAt: widget.event?.createdAt ?? now,

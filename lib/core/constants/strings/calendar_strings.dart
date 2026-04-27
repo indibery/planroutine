@@ -14,7 +14,6 @@ class CalendarStrings {
   static const eventDescriptionHint = '설명을 입력하세요 (선택)';
   static const eventDate = '날짜';
   static const eventEndDate = '종료 날짜';
-  static const eventAllDay = '종일';
   static const eventColor = '색상';
   static const titleRequired = '제목을 입력해주세요';
 
