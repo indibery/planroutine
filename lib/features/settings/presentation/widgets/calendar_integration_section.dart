@@ -149,27 +149,62 @@ class _GoogleAccountRow extends ConsumerWidget {
   }
 }
 
-/// 기기 캘린더 선택 시: 권한 상태 표시 + 거부 시 설정 버튼.
+/// 기기 캘린더 선택 시: 권한 상태 표시.
+///
+/// 3가지 상태:
+/// - granted: 체크 아이콘 + "권한 허용됨"
+/// - denied (한 번도 요청 안 함): "권한 허용하기" — request 다이얼로그 직접 호출
+/// - permanentlyDenied (이미 거부됨): "설정에서 켜기" — 시스템 설정 앱으로 이동
 class _DevicePermissionRow extends ConsumerWidget {
   const _DevicePermissionRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final permAsync = ref.watch(devicePermissionProvider);
-    final granted = permAsync.valueOrNull ?? false;
+    final statusAsync = ref.watch(calendarPermissionStatusProvider);
+    final status = statusAsync.valueOrNull;
 
-    if (granted) {
+    if (status == null) {
+      return const ListTile(
+        leading: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        title: Text(CalendarIntegrationStrings.permissionDenied),
+      );
+    }
+
+    if (status.isGranted) {
       return const ListTile(
         leading: Icon(Icons.check_circle, color: AppColors.inkGreen),
         title: Text(CalendarIntegrationStrings.permissionGranted),
       );
     }
+
+    // 한 번도 요청 안 했거나 사용자 응답 전: request 다이얼로그 직접 호출 가능
+    if (status.isDenied) {
+      return ListTile(
+        leading: const Icon(Icons.warning_amber, color: AppColors.gold),
+        title: const Text(CalendarIntegrationStrings.permissionDenied),
+        trailing: TextButton(
+          onPressed: () async {
+            await Permission.calendarFullAccess.request();
+            ref.invalidate(calendarPermissionStatusProvider);
+            ref.invalidate(devicePermissionProvider);
+          },
+          child: const Text(CalendarIntegrationStrings.allowPermission),
+        ),
+      );
+    }
+
+    // permanentlyDenied / restricted — 시스템 설정 앱으로 이동
     return ListTile(
       leading: const Icon(Icons.warning_amber, color: AppColors.gold),
       title: const Text(CalendarIntegrationStrings.permissionDenied),
       trailing: TextButton(
         onPressed: () async {
           await openAppSettings();
+          ref.invalidate(calendarPermissionStatusProvider);
           ref.invalidate(devicePermissionProvider);
         },
         child: const Text(CalendarIntegrationStrings.openSettings),
