@@ -252,6 +252,37 @@ void main() {
       final deleted = await repo.getDeletedSchedules();
       expect(deleted.first.status, ScheduleStatus.pending);
     });
+
+    test('confirmAllPending(category:)는 그 카테고리의 pending만 확정', () async {
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B', category: '일과운영관리');
+      final id3 = await seedImportedSchedule(title: 'C', category: '학생학적관리');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 1, 2));
+      await repo.createFromImported(id3, DateTime(2026, 2, 1));
+
+      await repo.confirmAllPending(category: '일과운영관리');
+
+      final dailyOps = await repo.getSchedules(category: '일과운영관리');
+      expect(
+        dailyOps.every((s) => s.status == ScheduleStatus.confirmed),
+        isTrue,
+      );
+      final studentRec = await repo.getSchedules(category: '학생학적관리');
+      expect(studentRec.first.status, ScheduleStatus.pending);
+    });
+
+    test('confirmAllPending(category: null)은 모든 pending 확정 (기존 동작)', () async {
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+
+      await repo.confirmAllPending();
+
+      final all = await repo.getSchedules(status: ScheduleStatus.confirmed);
+      expect(all.length, 2);
+    });
   });
 
   group('purgeOlderThan', () {

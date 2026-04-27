@@ -275,17 +275,27 @@ class ScheduleRepository {
     return db.delete(DatabaseHelper.tableSchedules);
   }
 
-  /// 검토 대기 상태 일정 일괄 확정
-  Future<int> confirmAllPending() async {
+  /// 검토 대기 상태 일정 일괄 확정.
+  /// [category]가 null이면 전체, 값이 있으면 그 카테고리에 한정.
+  Future<int> confirmAllPending({String? category}) async {
     final db = await _dbHelper.database;
+    final where = <String>[
+      'status = ?',
+      'deleted_at IS NULL',
+    ];
+    final whereArgs = <dynamic>[ScheduleStatus.pending.value];
+    if (category != null) {
+      where.add('category = ?');
+      whereArgs.add(category);
+    }
     return db.update(
       DatabaseHelper.tableSchedules,
       {
         'status': ScheduleStatus.confirmed.value,
         'updated_at': DateTime.now().toIso8601String(),
       },
-      where: 'status = ? AND deleted_at IS NULL',
-      whereArgs: [ScheduleStatus.pending.value],
+      where: where.join(' AND '),
+      whereArgs: whereArgs,
     );
   }
 
