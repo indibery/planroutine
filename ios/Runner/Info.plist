@@ -104,5 +104,7 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCalendarsUsageDescription</key>
+	<string>일정을 iOS 캘린더 앱에 저장하기 위해 캘린더 접근 권한이 필요합니다.</string>
 </dict>
 </plist>
