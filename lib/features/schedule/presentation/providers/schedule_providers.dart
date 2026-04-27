@@ -53,6 +53,7 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     if (status == ScheduleStatus.confirmed) {
       final calendarRepo = ref.read(calendarRepositoryProvider);
       await calendarRepo.createFromSchedule(id);
+      ref.invalidate(monthEventsByYearMonthProvider);
       ref.invalidate(selectedMonthEventsProvider);
     }
 
@@ -104,6 +105,7 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
         await calendarRepo.createFromSchedule(schedule.id!);
       }
     }
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidate(selectedMonthEventsProvider);
 
     ref.invalidateSelf();
@@ -113,6 +115,7 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
   Future<void> deleteAll() async {
     final repository = ref.read(scheduleRepositoryProvider);
     await repository.deleteAll();
+    ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidate(selectedMonthEventsProvider);
     ref.invalidateSelf();
   }

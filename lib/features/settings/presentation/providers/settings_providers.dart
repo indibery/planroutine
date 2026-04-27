@@ -46,6 +46,7 @@ class AppResetNotifier extends StateNotifier<ResetState> {
 
       // DB가 비워졌으므로 캐시된 목록/상태를 모두 갱신한다.
       _ref.invalidate(schedulesProvider);
+      _ref.invalidate(monthEventsByYearMonthProvider);
       _ref.invalidate(selectedMonthEventsProvider);
       _ref.read(importStateProvider.notifier).reset();
 
