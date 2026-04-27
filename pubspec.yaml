@@ -57,6 +57,11 @@ dependencies:
   googleapis_auth: ^1.6.0
   http: ^1.2.2
 
+  # 시스템 캘린더(iOS EventKit / Android CalendarContract) 통합
+  device_calendar: ^4.3.3
+  # OS 캘린더 권한 요청 + 거부 시 설정 앱 직접 이동
+  permission_handler: ^11.3.1
+
   # 로컬 알림 (월초/1주 전/1일 전 리마인더)
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
