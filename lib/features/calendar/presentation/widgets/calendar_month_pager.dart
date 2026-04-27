@@ -88,9 +88,10 @@ class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      // 그리드 영역 고정 높이. 기존 calendar_screen.dart의 280을 따름 (loading
-      // placeholder와 동일).
-      height: 320,
+      // 그리드 영역 고정 높이.
+      // 6행 월 자연 높이 ≈ 231pt(헤더 17 + spacing 4 + 6×35). 250은 안전 마진 포함.
+      // 일정 목록 영역 확보를 위해 320 → 250으로 줄임.
+      height: 250,
       child: PageView.builder(
         controller: _controller,
         onPageChanged: _onPageChanged,
@@ -146,17 +147,11 @@ class _CalendarPage extends ConsumerWidget {
             onDateSelected: onDateSelected,
           );
         },
-        loading: () => const SizedBox(
-          height: 280,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        error: (_, _) => const SizedBox(
-          height: 280,
-          child: Center(
-            child: Text(
-              AppStrings.error,
-              style: TextStyle(color: AppColors.error),
-            ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const Center(
+          child: Text(
+            AppStrings.error,
+            style: TextStyle(color: AppColors.error),
           ),
         ),
       ),
