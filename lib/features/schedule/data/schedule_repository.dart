@@ -136,6 +136,19 @@ class ScheduleRepository {
     return result.map(Schedule.fromMap).toList();
   }
 
+  /// 활성 일정에서 사용 중인 카테고리를 빈도 내림차순으로 반환.
+  /// NULL/빈 문자열은 제외. 휴지통 항목은 제외.
+  Future<List<String>> getDistinctCategories() async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery(
+      'SELECT category, COUNT(*) AS cnt FROM ${DatabaseHelper.tableSchedules} '
+      "WHERE deleted_at IS NULL AND category IS NOT NULL AND category != '' "
+      'GROUP BY category '
+      'ORDER BY cnt DESC, category ASC',
+    );
+    return result.map((row) => row['category'] as String).toList();
+  }
+
   /// 일정 상태 변경
   Future<int> updateStatus(int id, ScheduleStatus status) async {
     final db = await _dbHelper.database;
