@@ -13,6 +13,7 @@ class ParsedCsv {
     required this.isPlanRoutineFormat,
     required this.confirmedTitles,
     required this.descriptionsByTitle,
+    this.nonProductionSkipped = 0,
   });
 
   final List<ImportedSchedule> schedules;
@@ -25,6 +26,11 @@ class ParsedCsv {
 
   /// 제목+날짜 → 설명 맵 (원본 CSV엔 설명 필드가 없음)
   final Map<String, String> descriptionsByTitle;
+
+  /// 결재유형이 "생산"이 아니어서 자동 제외된 행 수.
+  /// 생산문서등록대장에서 접수 등 비생산 문서를 일정에서 제외할 때 카운트.
+  /// PlanRoutine 자체 포맷은 결재유형 컬럼이 없어 항상 0.
+  final int nonProductionSkipped;
 }
 
 /// CSV 문자열을 ImportedSchedule 목록으로 변환
@@ -84,10 +90,12 @@ class CsvParser {
 
     final headers = rows.first.map((e) => e.toString().trim()).toList();
     final hasStatus = headers.contains('상태');
+    final hasApprovalType = headers.contains('결재유형');
 
     final schedules = <ImportedSchedule>[];
     final confirmedTitles = <String>{};
     final descriptionsByTitle = <String, String>{};
+    var nonProductionSkipped = 0;
 
     for (var i = 1; i < rows.length; i++) {
       final row = rows[i];
@@ -104,6 +112,17 @@ class CsvParser {
       final title = (rowMap['제목'] as String? ?? '').trim();
       final date = (rowMap['등록일자'] as String? ?? '').trim();
       if (title.isEmpty || date.isEmpty) continue;
+
+      // 결재유형 컬럼이 있는 외부 CSV(생산문서등록대장)는 "생산"인 행만 임포트.
+      // 접수 등 비생산 문서는 일정 관리 대상이 아니므로 자동 제외.
+      // PlanRoutine 자체 포맷은 결재유형 컬럼이 없어 이 분기를 통과한다.
+      if (hasApprovalType) {
+        final approval = (rowMap['결재유형'] as String? ?? '').trim();
+        if (approval != '생산') {
+          nonProductionSkipped++;
+          continue;
+        }
+      }
 
       // 플랜루틴 export는 "카테고리" 컬럼을 쓰므로 "과제명"으로 alias
       // (과제명 미존재 + 카테고리 존재일 때만 복사해 원본 테스트 호환 유지)
@@ -125,6 +144,7 @@ class CsvParser {
       isPlanRoutineFormat: hasStatus,
       confirmedTitles: confirmedTitles,
       descriptionsByTitle: descriptionsByTitle,
+      nonProductionSkipped: nonProductionSkipped,
     );
   }
 }

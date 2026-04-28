@@ -34,11 +34,15 @@ class ImportSuccess extends ImportState {
     required this.schedules,
     required this.categorySummary,
     required this.sourceYear,
+    this.nonProductionSkipped = 0,
   });
 
   final List<ImportedSchedule> schedules;
   final Map<String, int> categorySummary;
   final int sourceYear;
+
+  /// 결재유형이 "생산"이 아니어서 자동 제외된 행 수 (외부 CSV 한정).
+  final int nonProductionSkipped;
 }
 
 class ImportError extends ImportState {
@@ -127,6 +131,7 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
         schedules: schedules,
         categorySummary: categorySummary,
         sourceYear: sourceYear,
+        nonProductionSkipped: parsed.nonProductionSkipped,
       );
     } catch (e) {
       state = ImportError('가져오기 중 오류: $e');

@@ -50,7 +50,8 @@ class ImportScreen extends ConsumerWidget {
                 ImportSuccess(
                   :final schedules,
                   :final categorySummary,
-                  :final sourceYear
+                  :final sourceYear,
+                  :final nonProductionSkipped,
                 ) =>
                   _buildSuccessView(
                     context,
@@ -58,6 +59,7 @@ class ImportScreen extends ConsumerWidget {
                     schedules,
                     categorySummary,
                     sourceYear,
+                    nonProductionSkipped,
                   ),
                 ImportRegistered(
                   :final created,
@@ -169,6 +171,7 @@ class ImportScreen extends ConsumerWidget {
     List<ImportedSchedule> schedules,
     Map<String, int> categorySummary,
     int sourceYear,
+    int nonProductionSkipped,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -177,6 +180,7 @@ class ImportScreen extends ConsumerWidget {
           totalCount: schedules.length,
           categorySummary: categorySummary,
           sourceYear: sourceYear,
+          nonProductionSkipped: nonProductionSkipped,
         ),
         Padding(
           padding: const EdgeInsets.symmetric(
