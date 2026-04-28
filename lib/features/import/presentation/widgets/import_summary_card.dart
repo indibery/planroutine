@@ -11,11 +11,15 @@ class ImportSummaryCard extends StatelessWidget {
     required this.totalCount,
     required this.categorySummary,
     required this.sourceYear,
+    this.nonProductionSkipped = 0,
   });
 
   final int totalCount;
   final Map<String, int> categorySummary;
   final int sourceYear;
+
+  /// 결재유형이 "생산"이 아니어서 자동 제외된 행 수.
+  final int nonProductionSkipped;
 
   /// 카테고리명에 따른 색상 반환
   Color _categoryColor(String category) {
@@ -68,6 +72,16 @@ class ImportSummaryCard extends StatelessWidget {
                               color: AppColors.textSecondary,
                             ),
                       ),
+                      if (nonProductionSkipped > 0) ...[
+                        const SizedBox(height: AppSizes.spacing4),
+                        Text(
+                          '접수 등 비생산 문서 $nonProductionSkipped건은 자동 제외',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textHint,
+                                  ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
