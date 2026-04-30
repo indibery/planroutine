@@ -3,6 +3,12 @@
 공직플랜 v1.0.1에서 Google 캘린더 기능을 활성화하기 위한 OAuth Verification
 신청용 데모 영상 촬영 스크립트. **음성 없이 영어 텍스트 overlay만** 사용.
 
+> **2026-04-30 거절 사유 반영**: Google Trust & Safety의 1차 거절 메일에서
+> "Demo video does not show the OAuth consent screen workflow" + "Click '# services'
+> to reveal the scopes your application is requesting from your users" 명시.
+> → 동의 화면에서 **'# services' 링크를 탭해 scope 목록을 펼친 상태**가
+> 5초 이상 명확히 보이도록 0:28~0:50 구간 강화 (아래 [중요 변경사항] 참조).
+
 ## 영상 사양
 
 | 항목 | 값 |
@@ -35,8 +41,8 @@
 - [ ] **앱 로고** 업로드 (App Store 아이콘과 동일 디자인 권장 — `assets/icon/app_icon.png` 활용)
 - [ ] **사용자 지원 이메일** 입력
 - [ ] **앱 도메인 → 홈페이지 URL**: `https://indibery.github.io/planroutine/`
-- [ ] **개인정보 처리방침 URL**: `https://indibery.github.io/planroutine/privacy_policy.html`
-- [ ] **서비스 약관 URL**: `https://indibery.github.io/planroutine/terms.html`
+- [ ] **개인정보 처리방침 URL**: `https://indibery.github.io/planroutine/privacy_policy` (GitHub Pages가 .html 없는 pretty URL도 자동 매핑)
+- [ ] **서비스 약관 URL**: `https://indibery.github.io/planroutine/terms`
 - [ ] **승인된 도메인**: `indibery.github.io`
 - [ ] 모든 URL이 실제로 200 응답하는지 브라우저로 확인
 
@@ -45,6 +51,7 @@
 - [ ] OAuth 동의 화면 등장 시 **반드시 좌측 하단 언어 토글을 "English"로 변경하는 동작이 영상에 찍히도록**
 - [ ] iPhone 전체 언어를 영어로 바꿀 필요는 없음 (consent screen만 영어면 됨)
 - [ ] **OAuth 동의 화면 주소창(URL bar)이 화면에 잘리지 않게 녹화** — `client_id=73700230470-...` 파라미터가 reviewer에게 읽힐 수 있어야 함
+- [ ] **'# services' 링크(또는 "이 앱이 액세스하려는 서비스") 탭 → scope 목록을 펼친 상태**가 영상에 명확히 잡혀야 함. 펼침 후 최소 5초 정지 (Google T&S 1차 거절 핵심 사유)
 - [ ] 마지막 검증 단계에서는 **다른 기기에서 calendar.google.com을 열어** 이벤트가 실제로 생성됐는지 보여주기 (앱 내부 캘린더와 혼동되지 않게)
 
 ## 장면별 스크립트
@@ -55,7 +62,8 @@
 | **0:06–0:14** | 일정 탭에서 카드 두세 개 보여주기 | `Users save in-app events to their personal Google Calendar` <br/> `One-way only: app → Google. Read or delete is never requested.` |
 | **0:14–0:20** | 설정 탭 → "구글 계정" 섹션 → "Google 계정 연결" 탭 | `Step 1: User taps "Connect Google Account" in Settings` |
 | **0:20–0:28** | **Google 계정 선택 화면(account chooser)** 등장 → 테스트 계정 선택 | `Step 2: Google account chooser` <br/> `User selects the account to grant access from` |
-| **0:28–0:50** | OAuth 동의 화면 등장 → **좌측 하단 언어 토글을 English로 변경** → URL 주소창의 `client_id` 파라미터가 보이도록 **4~5초 정지** → 화면에 표시되는 모든 요소(로고/scope/링크) 차례로 강조 | `Step 3: OAuth consent screen` <br/> `App name: "공직플랜"` <br/> `App logo: same as the App Store icon` <br/> `OAuth Client ID (visible in URL bar): 73700230470-...apps.googleusercontent.com` <br/> `Privacy policy & Terms of service links visible at bottom` <br/> `Scope shown: See, edit, share, and permanently delete events on Google Calendar` <br/> `All elements match the OAuth client submitted for verification` |
+| **0:28–0:36** | OAuth 동의 화면 등장 → **좌측 하단 언어 토글을 English로 변경** | `Step 3: OAuth consent screen appears` <br/> `Switching consent screen language to English` |
+| **0:36–0:50** | **"X services" 링크(예: "1 service", "이 앱이 액세스하려는 서비스") 탭 → scope 목록 펼침** → 펼친 상태에서 5초 이상 정지 → URL 주소창의 `client_id` 파라미터가 보이도록 4초 추가 정지 → 모든 요소(로고/scope/링크) 차례로 강조 | `Step 4: Tap the "# services" link to reveal the scope list` <br/> `Requested scope (now visible): https://www.googleapis.com/auth/calendar.events` <br/> `Description: See, edit, share, and permanently delete events on Google Calendar` <br/> `App name: "공직플랜"` <br/> `App logo: same as the App Store icon` <br/> `OAuth Client ID (visible in URL bar): 73700230470-...apps.googleusercontent.com` <br/> `Privacy policy & Terms of service links visible at bottom` <br/> `All elements match the OAuth client submitted for verification` |
 | **0:50–0:58** | "Allow" 탭 → 앱 복귀 → 설정 탭에 연결된 이메일 표시 | `Step 4: User grants access. Account is now linked.` |
 | **0:58–1:20** | 캘린더 탭 → 이벤트 카드 오른쪽 스와이프 → "Google에 저장" 액션 → 토스트 확인 | `Step 5: User swipes an event right to save it to Google Calendar` <br/> `Only this single event is created. The app does not read, modify, or delete any other calendar data.` |
 | **1:20–1:36** | 다른 기기 또는 Safari에서 calendar.google.com → 방금 생성된 이벤트 확인 | `Step 6: Verify the event appears in user's Google Calendar` <br/> `Created by 공직플랜 via calendar.events scope` |
@@ -107,8 +115,8 @@ App information
 - App name: 공직플랜 (PlanRoutine)
 - Platform: iOS (App Store: https://apps.apple.com/kr/app/공직플랜/id6761813798)
 - Homepage: https://indibery.github.io/planroutine/
-- Privacy policy: https://indibery.github.io/planroutine/privacy_policy.html
-- Terms of service: https://indibery.github.io/planroutine/terms.html
+- Privacy policy: https://indibery.github.io/planroutine/privacy_policy
+- Terms of service: https://indibery.github.io/planroutine/terms
 - Audience: Korean elementary school teachers managing yearly work schedules
 
 OAuth client
@@ -120,10 +128,11 @@ Video contents
 1. App identity and branding (App Store name and icon match this app)
 2. User taps "Connect Google Account" in Settings
 3. Google account chooser
-4. OAuth consent screen with English language toggle, displaying the app name, logo, requested scope, and the client_id in the request URL
-5. User grants access
-6. User saves a single in-app event to Google Calendar via right-swipe gesture
-7. Verification that the event appears in the user's Google Calendar
+4. OAuth consent screen with English language toggle, displaying the app name, logo, and the client_id in the request URL
+5. User taps the "# services" link to expand the requested scope list, revealing the full scope description (calendar.events) on screen
+6. User grants access
+7. User saves a single in-app event to Google Calendar via right-swipe gesture
+8. Verification that the event appears in the user's Google Calendar
 
 Note: Because iOS uses ASWebAuthenticationSession, the URL bar visually displays the domain (accounts.google.com) only; the full request URL including client_id is shown as a text overlay in the consent screen segment for clarity.
 
