@@ -31,4 +31,4 @@ title: 공직플랜
 
 ---
 
-_© 2026 공직플랜 · Made with Flutter_
+_© 2026 indibery (공직플랜 / PlanRoutine). All rights reserved._
