@@ -48,6 +48,33 @@
 선택한 범위에서 **Google(Google Calendar API)** 에게 이벤트 정보가 전송됩니다.
 이 전송은 사용자가 스와이프 또는 명시적 토글로 승인한 개별 이벤트에 한합니다.
 
+### 5-1. Google API Services User Data Policy — Limited Use 준수
+
+본 앱이 Google Calendar API를 통해 접근하는 데이터(scope:
+`https://www.googleapis.com/auth/calendar.events`)는 [Google API Services
+User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)의
+**Limited Use** 요구사항을 준수하여 처리됩니다:
+
+1. **사용 목적 한정**: 본 앱은 사용자가 명시적으로 승인한 단일 이벤트를 사용자
+   본인의 Google Calendar에 **생성·갱신**하는 목적으로만 데이터를 사용합니다.
+   다른 목적(광고, 분석, 머신러닝 학습 등)으로 사용하지 않습니다.
+2. **전송 한정**: 사용자 데이터는 사용자 본인의 Google 계정 외 **제3자에게
+   전송되지 않습니다**. 본 앱은 자체 서버나 외부 분석 서비스를 운영하지 않으며,
+   Google Calendar API와의 통신은 사용자 기기와 Google 서버 사이에서만 직접
+   이뤄집니다.
+3. **인간 검토 없음**: 본 앱 개발자는 사용자의 Google Calendar 데이터를
+   **읽거나 수동으로 검토하지 않습니다**. 권한 범위 자체가 단방향 쓰기로
+   제한돼 있어 기존 이벤트를 읽는 행위가 기술적으로 불가능합니다.
+4. **양도 금지**: Google 사용자 데이터를 다른 앱·서비스·개인에게 양도하거나
+   판매하지 않습니다.
+
+### 5-2. Google 이벤트 ID 로컬 보관
+
+본 앱은 사용자가 Google Calendar에 저장한 이벤트의 **고유 ID(google_event_id)**
+를 기기 내 로컬 SQLite DB에 보관합니다. 이는 동일 일정을 사용자가 다시
+"Google 저장"으로 슬라이드했을 때 **중복 생성을 방지하고 기존 이벤트를 갱신**
+하기 위한 용도이며, 이 ID는 **개발자 서버나 외부 어디로도 전송되지 않습니다**.
+
 ## 6. 개인정보 안전성 확보 조치
 
 - **OAuth 토큰**: iOS Keychain(`kSecClass = kSecClassGenericPassword`)에 저장돼
@@ -78,6 +105,8 @@
 ## 9. 개정 이력
 
 - 2026-04-22: 초안 작성
+- 2026-05-04: Google API Services User Data Policy의 Limited Use 준수 항목(§5-1)
+  + 이벤트 ID 로컬 보관(§5-2) 명시 추가
 
 ## 10. 연락처
 
