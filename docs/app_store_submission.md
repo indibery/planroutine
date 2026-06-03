@@ -74,13 +74,13 @@ bery97@gmail.com
 ### Support URL
 
 ```
-https://indibery.github.io/planroutine/
+https://planroutine.indibery.dev/
 ```
 
 ### Marketing URL (선택)
 
 ```
-https://indibery.github.io/planroutine/
+https://planroutine.indibery.dev/
 ```
 
 ### Copyright
@@ -106,7 +106,7 @@ App Store Connect → App Privacy → "Data Types":
 ## 5. Privacy Policy URL (필수)
 
 ```
-https://indibery.github.io/planroutine/privacy_policy
+https://planroutine.indibery.dev/privacy_policy
 ```
 
 ## 6. Age Rating

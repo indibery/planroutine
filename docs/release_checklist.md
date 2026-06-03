@@ -13,8 +13,8 @@ GitHub Pages(main/docs)로 활성화 완료. Jekyll 자동 빌드.
 - [x] 저장소 public 전환 (`gh repo edit --visibility public`)
 - [x] GitHub Pages 활성화 (main branch + /docs path)
 - [x] 공개 URL 확인 (HTTP 200):
-  - 메인: <https://indibery.github.io/planroutine/>
-  - **개인정보 처리방침: <https://indibery.github.io/planroutine/privacy_policy>**
+  - 메인: <https://planroutine.indibery.dev/>
+  - **개인정보 처리방침: <https://planroutine.indibery.dev/privacy_policy>**
 - [ ] 앱 설정 탭 "앱 정보" 아래 "개인정보 처리방침" 외부 링크 타일 추가(선택)
 
 ## 🛡 관문 2. Google OAuth 동의 화면 verification (1.0.1 마일스톤, **Data access 보류 중**)
@@ -30,10 +30,10 @@ GCP Console → API 및 서비스 → OAuth 동의 화면:
 - [ ] **앱 정보**: 앱 이름 `공직플랜`, 사용자 지원 이메일, 개발자 연락처
 - [ ] **로고**: 120×120 PNG 업로드 (LogoHybrid navy 배경 버전 재사용 가능)
 - [ ] **앱 도메인**:
-  - 홈페이지: `https://indibery.github.io/planroutine/`
-  - 개인정보 처리방침 링크: `https://indibery.github.io/planroutine/privacy_policy`
+  - 홈페이지: `https://planroutine.indibery.dev/`
+  - 개인정보 처리방침 링크: `https://planroutine.indibery.dev/privacy_policy`
   - 서비스 약관: 선택사항 (지금은 생략 가능, 요청되면 동일 도메인에 `terms.html`)
-- [ ] **승인된 도메인**: `indibery.github.io`
+- [ ] **승인된 도메인**: `indibery.dev`
 - [ ] **범위(Scopes)**: `.../auth/calendar.events` 하나만 유지
   - **sensitive scope**이므로 **"범위 정당화 비디오"** 또는 스크린샷 요구됨
   - 정당화 예시: "사용자가 공직플랜 앱에서 생성한 일정을 본인의 Google

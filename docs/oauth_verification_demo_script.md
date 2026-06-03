@@ -40,10 +40,10 @@
 - [ ] **앱 이름** = `공직플랜` (App Store 등록명과 정확히 동일)
 - [ ] **앱 로고** 업로드 (App Store 아이콘과 동일 디자인 권장 — `assets/icon/app_icon.png` 활용)
 - [ ] **사용자 지원 이메일** 입력
-- [ ] **앱 도메인 → 홈페이지 URL**: `https://indibery.github.io/planroutine/`
-- [ ] **개인정보 처리방침 URL**: `https://indibery.github.io/planroutine/privacy_policy` (GitHub Pages가 .html 없는 pretty URL도 자동 매핑)
-- [ ] **서비스 약관 URL**: `https://indibery.github.io/planroutine/terms`
-- [ ] **승인된 도메인**: `indibery.github.io`
+- [ ] **앱 도메인 → 홈페이지 URL**: `https://planroutine.indibery.dev/`
+- [ ] **개인정보 처리방침 URL**: `https://planroutine.indibery.dev/privacy_policy` (GitHub Pages가 .html 없는 pretty URL도 자동 매핑)
+- [ ] **서비스 약관 URL**: `https://planroutine.indibery.dev/terms`
+- [ ] **승인된 도메인**: `indibery.dev`
 - [ ] 모든 URL이 실제로 200 응답하는지 브라우저로 확인
 
 ### 3. 녹화 환경
@@ -114,9 +114,9 @@ This video is submitted as part of the Google OAuth verification process for the
 App information
 - App name: 공직플랜 (PlanRoutine)
 - Platform: iOS (App Store: https://apps.apple.com/kr/app/공직플랜/id6761813798)
-- Homepage: https://indibery.github.io/planroutine/
-- Privacy policy: https://indibery.github.io/planroutine/privacy_policy
-- Terms of service: https://indibery.github.io/planroutine/terms
+- Homepage: https://planroutine.indibery.dev/
+- Privacy policy: https://planroutine.indibery.dev/privacy_policy
+- Terms of service: https://planroutine.indibery.dev/terms
 - Audience: Korean elementary school teachers managing yearly work schedules
 
 OAuth client
