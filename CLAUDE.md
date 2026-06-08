@@ -251,9 +251,10 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - `test/tools/gen_app_icon.dart`는 파일명에 `_test`가 없어 `flutter test` 자동 스캔에서 제외됨. 명시 지정 시에만 실행.
 
 ### App Store Connect API key
-- 경로: `~/.appstoreconnect/private_keys/AuthKey_D8W86CLKHY.p8`
+- key_id / issuer_id / `.p8` 경로는 `ios/fastlane/Fastfile`의 `load_asc_api_key` 레인에 정의 (식별자 문서 평문 노출 금지).
+- 개인키(`.p8`)는 리포 밖 `~/.appstoreconnect/private_keys/`에 보관.
 - Bundle ID: `com.planroutine.app`
-- 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey D8W86CLKHY --apiIssuer 69a6de72-97eb-47e3-e053-5b8c7c11a4d1`
+- 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
 
 ### 알려진 빌드 이슈
 - 통합 테스트(simulator 빌드) 직후 바로 release 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169).
