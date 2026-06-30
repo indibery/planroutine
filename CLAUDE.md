@@ -233,12 +233,14 @@ planroutine/
 
 ### 명령
 ```
-./ios/bin/fastlane.sh beta     # TestFlight
-./ios/bin/fastlane.sh release  # App Store
+./ios/bin/fastlane.sh beta          # TestFlight
+./ios/bin/fastlane.sh release       # App Store
+./ios/bin/fastlane.sh check_builds  # 최근 빌드 processing_state 조회 (post-deploy)
 ```
 - Wrapper가 Homebrew Ruby(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입해 `bundle exec fastlane`을 돌린다. 사용자 shell 설정은 건드리지 않는다.
 - `ios/Gemfile`에 fastlane + cocoapods 고정. 최초 실행 시 wrapper가 자동으로 `bundle install`.
 - build_number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산.
+- beta/release 레인은 시작 시 `reset_ios_caches`(flutter clean + Pods/build 제거)를 자동 실행 — 시뮬 슬라이스 함정(#6) 차단. 매 배포가 clean 때문에 수 분 더 걸린다.
 
 ### 배포 플로우 정책 (메모리에 기록됨)
 `flutter analyze` + `flutter test` 통과 시 사용자 승인 없이 바로 `./ios/bin/fastlane.sh beta` 실행 후 push까지 진행. 배포 실패 시에만 멈춰서 보고.
@@ -257,8 +259,7 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
 
 ### 알려진 빌드 이슈
-- 통합 테스트(simulator 빌드) 직후 바로 release 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169).
-  → `flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build && flutter pub get && (cd ios && pod install) && flutter build ipa`
+- 통합 테스트(simulator 빌드) 직후 바로 release 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → beta/release 레인의 `reset_ios_caches`가 자동 차단. 레인 밖 수동 빌드 시에는 `flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build && flutter build ipa`.
 
 ## 샘플 데이터
 - `data/sample/2025_생산문서등록대장.csv` — 실제 2025년 생산문서 65건
