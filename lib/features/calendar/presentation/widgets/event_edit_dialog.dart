@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../../core/utils/title_year_utils.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
@@ -107,6 +108,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildHeader(),
                 const SizedBox(height: AppSizes.spacing20),
                 _buildTitleField(),
+                _buildYearBumpChip(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
@@ -171,6 +173,48 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           return CalendarStrings.titleRequired;
         }
         return null;
+      },
+    );
+  }
+
+  /// 제목에 올해 이전 연도가 있을 때만 나타나는 "연도 올해로" 원탭 칩.
+  ///
+  /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 이전
+  /// 연도만 올해로 치환하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
+  Widget _buildYearBumpChip() {
+    final currentYear = DateTime.now().year;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _titleController,
+      builder: (context, value, _) {
+        final result = bumpTitleYear(value.text, currentYear);
+        if (result.from == null) return const SizedBox.shrink();
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSizes.spacing8),
+            child: ActionChip(
+              avatar: const Icon(
+                Icons.event_repeat,
+                size: 18,
+                color: AppColors.gold,
+              ),
+              label: Text('${result.from} → $currentYear'),
+              labelStyle: const TextStyle(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w600,
+              ),
+              backgroundColor: AppColors.navy,
+              side: const BorderSide(color: AppColors.gold),
+              onPressed: () {
+                _titleController.value = TextEditingValue(
+                  text: result.title,
+                  selection:
+                      TextSelection.collapsed(offset: result.title.length),
+                );
+              },
+            ),
+          ),
+        );
       },
     );
   }
