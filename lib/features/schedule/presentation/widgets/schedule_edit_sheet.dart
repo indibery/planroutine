@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/title_year_utils.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 
@@ -111,6 +112,7 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
               labelText: ScheduleStrings.titleLabel,
             ),
           ),
+          _YearBumpChip(controller: _titleController),
           const SizedBox(height: AppSizes.spacing12),
           TextField(
             controller: _descController,
@@ -152,6 +154,45 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 제목에 올해 이전 연도가 있을 때만 나타나는 "연도 올해로" 원탭 칩.
+///
+/// 컨트롤러 변경을 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의
+/// 이전 연도만 올해로 치환하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
+class _YearBumpChip extends StatelessWidget {
+  const _YearBumpChip({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentYear = DateTime.now().year;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final result = bumpTitleYear(value.text, currentYear);
+        if (result.from == null) return const SizedBox.shrink();
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSizes.spacing8),
+            child: ActionChip(
+              avatar: const Icon(Icons.event_repeat, size: 18),
+              label: Text('${result.from} → $currentYear'),
+              onPressed: () {
+                controller.value = TextEditingValue(
+                  text: result.title,
+                  selection:
+                      TextSelection.collapsed(offset: result.title.length),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
