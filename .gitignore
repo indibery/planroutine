@@ -32,3 +32,6 @@ ios/fastlane/test_output/
 
 # Misc
 *.log
+
+# 로컬 실험 기록 (experiment 스킬)
+.local/
