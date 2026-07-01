@@ -56,17 +56,6 @@ class AppColors {
   static const calendarWeekend = inkRed;
   static const calendarSaturday = goldGlow;
 
-  static const eventPresets = [
-    gold,
-    inkGreen,
-    inkRed,
-    goldGlow,
-    Color(0xFF8BA8D4),
-    Color(0xFFB89AE0),
-    Color(0xFF7FC4D4),
-    Color(0xFFD4A87F),
-  ];
-
   static const divider = line;
   static const border = lineStrong;
 }

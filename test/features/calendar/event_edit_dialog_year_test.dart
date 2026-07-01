@@ -58,4 +58,11 @@ void main() {
       expect(find.text('$oldYear → $currentYear'), findsNothing);
     });
   });
+
+  group('캘린더 이벤트 편집 — 색상 피커 제거', () {
+    testWidgets('색상 선택 UI가 없다', (tester) async {
+      await pumpDialog(tester);
+      expect(find.text('색상'), findsNothing);
+    });
+  });
 }

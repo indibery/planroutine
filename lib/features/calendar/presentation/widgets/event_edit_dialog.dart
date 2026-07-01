@@ -56,7 +56,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
   DateTime? _endDate;
-  late Color _selectedColor;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -68,7 +67,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
     _endDate = event?.endDate != null ? event?.endDateTime : null;
-    _selectedColor = event?.eventColor ?? AppColors.eventPresets[0];
   }
 
   @override
@@ -113,8 +111,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
-                const SizedBox(height: AppSizes.spacing16),
-                _buildColorPicker(),
                 const SizedBox(height: AppSizes.spacing24),
                 _buildButtons(),
               ],
@@ -299,47 +295,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
 
-  Widget _buildColorPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          CalendarStrings.eventColor,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: AppSizes.spacing8),
-        Row(
-          children: AppColors.eventPresets.map((color) {
-            final isSelected = _selectedColor.toARGB32() == color.toARGB32();
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedColor = color),
-                child: Container(
-                  height: 32,
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: AppSizes.spacing4 / 2),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: isSelected
-                        ? Border.all(color: AppColors.gold, width: 2.5)
-                        : null,
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check, color: AppColors.navy, size: 16)
-                      : null,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
   Widget _buildButtons() {
     return Row(
       children: [
@@ -402,7 +357,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     final now = DateTime.now().toIso8601String();
     final dateStr = formatDate(_eventDate);
     final endDateStr = _endDate != null ? formatDate(_endDate!) : null;
-    final colorHex = CalendarEvent.colorToHex(_selectedColor);
     return CalendarEvent(
       id: widget.event?.id,
       title: _titleController.text.trim(),
@@ -412,7 +366,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       eventDate: dateStr,
       endDate: endDateStr,
       isAllDay: true,
-      color: colorHex,
+      // 색상 피커 제거 — 기존 색은 보존, 신규는 미지정(eventColor가 기본색으로 폴백)
+      color: widget.event?.color,
       scheduleId: widget.event?.scheduleId,
       createdAt: widget.event?.createdAt ?? now,
       updatedAt: now,
