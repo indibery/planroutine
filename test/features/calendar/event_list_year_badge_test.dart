@@ -73,5 +73,33 @@ void main() {
 
       expect(tapped?.id, 7);
     });
+
+    testWidgets('완료된 이벤트는 옛 연도가 있어도 배지가 없다', (tester) async {
+      final event = CalendarEvent(
+        id: 1,
+        title: '$oldYear학년도 겨울방학 계획',
+        eventDate: '$currentYear-01-03',
+        completedAt: '$currentYear-01-01T00:00:00',
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventListSection(
+                selectedDate: DateTime(currentYear, 1, 3),
+                events: [event],
+                onEventTap: (_) {},
+                onEventSaveToGoogle: null,
+                onEventToggleCompleted: (_) {},
+                onEventBumpYear: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('year_bump_badge_1')), findsNothing);
+    });
   });
 }
