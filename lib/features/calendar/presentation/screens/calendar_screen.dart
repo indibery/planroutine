@@ -199,32 +199,23 @@ class CalendarScreen extends ConsumerWidget {
     }
   }
 
-  /// "이전 연도 자료" 배지 탭 — 제목 연도를 올해로 바로 고치고 실행취소 스낵바 노출.
+  /// "이전 연도 자료" 배지 탭 — 제목 연도를 올해로 고친 뒤 편집 화면으로 진입해
+  /// 날짜 등 나머지를 마저 수정하게 한다. (저장 시 updateEvent)
   Future<void> _onBumpYear(
     BuildContext context,
     WidgetRef ref,
     CalendarEvent event,
   ) async {
-    final currentYear = DateTime.now().year;
-    final result = bumpTitleYear(event.title, currentYear);
+    final result = bumpTitleYear(event.title, DateTime.now().year);
     if (result.from == null) return;
-
-    final oldTitle = event.title;
-    await ref
-        .read(selectedMonthEventsProvider.notifier)
-        .updateEvent(event.copyWith(title: result.title));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: Text(CalendarStrings.yearBumped(currentYear)),
-        action: SnackBarAction(
-          label: CalendarStrings.undoAction,
-          onPressed: () => ref
-              .read(selectedMonthEventsProvider.notifier)
-              .updateEvent(event.copyWith(title: oldTitle)),
-        ),
-      ));
+    final edited = await EventEditDialog.show(
+      context,
+      initialDate: event.eventDateTime,
+      event: event.copyWith(title: result.title),
+    );
+    if (edited != null) {
+      await ref.read(selectedMonthEventsProvider.notifier).updateEvent(edited);
+    }
   }
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.
