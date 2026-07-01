@@ -152,9 +152,8 @@ class EventListSection extends ConsumerWidget {
   Widget _buildEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
     final titleColor = isDone ? AppColors.sub : AppColors.ink;
-    final accentColor = isDone
-        ? AppColors.faint
-        : event.eventColor;
+    // 색상 피커 제거 후 이벤트 색은 통일 — 저장된 color 무시, 공통 액센트 사용.
+    final accentColor = isDone ? AppColors.faint : AppColors.eventAccent;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -173,6 +172,7 @@ class EventListSection extends ConsumerWidget {
           child: Row(
             children: [
               Container(
+                key: Key('event_accent_bar_${event.id}'),
                 width: 4,
                 height: 40,
                 decoration: BoxDecoration(

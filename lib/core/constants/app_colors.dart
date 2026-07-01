@@ -56,6 +56,9 @@ class AppColors {
   static const calendarWeekend = inkRed;
   static const calendarSaturday = goldGlow;
 
+  /// 이벤트 점·막대 공통 액센트색. (색상 피커 제거 후 모든 이벤트가 이 색으로 통일)
+  static const eventAccent = Color(0xFF4A6FA5);
+
   static const divider = line;
   static const border = lineStrong;
 }

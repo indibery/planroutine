@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/event_list_section.dart';
 
@@ -34,6 +35,40 @@ void main() {
     );
     await tester.pump();
   }
+
+  group('캘린더 리스트 — 색상 통일', () {
+    testWidgets('저장된 색과 무관하게 막대는 기본 액센트색으로 렌더', (tester) async {
+      final event = CalendarEvent(
+        id: 3,
+        title: '행사 계획',
+        eventDate: '$currentYear-01-03',
+        color: '#EF4444', // 빨강이 저장돼 있어도 렌더는 기본색이어야 함
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventListSection(
+                selectedDate: DateTime(currentYear, 1, 3),
+                events: [event],
+                onEventTap: (_) {},
+                onEventSaveToGoogle: null,
+                onEventToggleCompleted: (_) {},
+                onEventBumpYear: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final bar = tester.widget<Container>(
+        find.byKey(const Key('event_accent_bar_3')),
+      );
+      final deco = bar.decoration as BoxDecoration;
+      expect(deco.color, AppColors.eventAccent);
+    });
+  });
 
   group('캘린더 리스트 — 이전 연도 자료 배지', () {
     testWidgets('제목에 이전 연도가 있으면 배지가 보인다', (tester) async {

@@ -98,8 +98,9 @@ class CalendarDayCell extends StatelessWidget {
         children: List.generate(dotCount, (index) {
           final event = events[index];
           // 완료된 이벤트는 작고 회색 톤의 점으로 표시해 "지나간 일정" 느낌 전달
+          // (색상 피커 제거 후 미완료 점은 공통 액센트로 통일 — 저장된 color 무시)
           final isDone = event.isCompleted;
-          final baseColor = isDone ? AppColors.textHint : event.eventColor;
+          final baseColor = isDone ? AppColors.textHint : AppColors.eventAccent;
           final size = isDone ? 3.0 : 4.0;
           return Container(
             width: size,
