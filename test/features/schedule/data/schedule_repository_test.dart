@@ -99,6 +99,47 @@ void main() {
       expect(second.created, 0);
       expect(second.skipped, 2);
     });
+
+    test('재임포트(새 source_id, 같은 title+date)는 내용 중복으로 스킵', () async {
+      final id1 = await seedImportedSchedule(title: 'C', date: '2025-05-05');
+      final first = await repo.createBulkFromImported([
+        (importedId: id1, date: DateTime(2026, 5, 5)),
+      ]);
+      expect(first.created, 1);
+
+      // 같은 CSV 재임포트 → imported_schedules에 새 행(다른 id), 내용은 동일
+      final id2 = await seedImportedSchedule(title: 'C', date: '2025-05-05');
+      final second = await repo.createBulkFromImported([
+        (importedId: id2, date: DateTime(2026, 5, 5)),
+      ]);
+      expect(second.created, 0, reason: '내용(title+date) 중복이므로 미생성');
+      expect(second.skipped, 1);
+
+      final schedules = await repo.getSchedules();
+      expect(schedules.where((s) => s.title == 'C').length, 1);
+    });
+
+    test('1차분을 확정한 뒤 재임포트해도 확정+대기 중복이 안 생김', () async {
+      final id1 = await seedImportedSchedule(title: 'D', date: '2025-06-06');
+      await repo.createBulkFromImported([
+        (importedId: id1, date: DateTime(2026, 6, 6)),
+      ]);
+      final sched =
+          (await repo.getSchedules()).firstWhere((s) => s.title == 'D');
+      await repo.updateStatus(sched.id!, ScheduleStatus.confirmed);
+
+      // 재임포트
+      final id2 = await seedImportedSchedule(title: 'D', date: '2025-06-06');
+      final second = await repo.createBulkFromImported([
+        (importedId: id2, date: DateTime(2026, 6, 6)),
+      ]);
+      expect(second.created, 0);
+
+      final ds =
+          (await repo.getSchedules()).where((s) => s.title == 'D').toList();
+      expect(ds.length, 1, reason: '확정+대기 중복 없음');
+      expect(ds.first.status, ScheduleStatus.confirmed, reason: '확정본 유지');
+    });
   });
 
   group('insertConfirmedOrPending (PlanRoutine 재임포트용)', () {

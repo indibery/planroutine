@@ -85,10 +85,27 @@ class ScheduleRepository {
         if (imported.isEmpty) continue;
 
         final row = imported.first;
+        final title = row['title'] as String;
+        final scheduledDate = item.date.toIso8601String().split('T').first;
+
+        // 내용(title+date) 중복 확인 — 같은 CSV 재임포트 시 imported_schedules가
+        // 새 id로 쌓여 source_id 검사만으론 못 잡는 중복을 차단. 상태 무관(확정본과도
+        // 중복 방지). export 재임포트 경로(insertConfirmedOrPending)와 동일 기준.
+        final dupByContent = await txn.query(
+          DatabaseHelper.tableSchedules,
+          where: 'title = ? AND scheduled_date = ? AND deleted_at IS NULL',
+          whereArgs: [title, scheduledDate],
+          limit: 1,
+        );
+        if (dupByContent.isNotEmpty) {
+          skipped++;
+          continue;
+        }
+
         final now = DateTime.now().toIso8601String();
         final schedule = Schedule(
-          title: row['title'] as String,
-          scheduledDate: item.date.toIso8601String().split('T').first,
+          title: title,
+          scheduledDate: scheduledDate,
           category: row['category'] as String?,
           subCategory: row['sub_category'] as String?,
           sourceId: item.importedId,
