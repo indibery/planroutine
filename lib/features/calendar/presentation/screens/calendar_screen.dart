@@ -7,6 +7,7 @@ import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/title_year_utils.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
@@ -83,6 +84,8 @@ class CalendarScreen extends ConsumerWidget {
                           onEventSaveToGoogle: _resolveSaveCallback(context, ref),
                           onEventToggleCompleted: (event) =>
                               _onToggleCompleted(context, ref, event),
+                          onEventBumpYear: (event) =>
+                              _onBumpYear(context, ref, event),
                         );
                       },
                     ),
@@ -194,6 +197,34 @@ class CalendarScreen extends ConsumerWidget {
     if (result != null) {
       await ref.read(selectedMonthEventsProvider.notifier).updateEvent(result);
     }
+  }
+
+  /// "이전 연도 자료" 배지 탭 — 제목 연도를 올해로 바로 고치고 실행취소 스낵바 노출.
+  Future<void> _onBumpYear(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    final currentYear = DateTime.now().year;
+    final result = bumpTitleYear(event.title, currentYear);
+    if (result.from == null) return;
+
+    final oldTitle = event.title;
+    await ref
+        .read(selectedMonthEventsProvider.notifier)
+        .updateEvent(event.copyWith(title: result.title));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(CalendarStrings.yearBumped(currentYear)),
+        action: SnackBarAction(
+          label: CalendarStrings.undoAction,
+          onPressed: () => ref
+              .read(selectedMonthEventsProvider.notifier)
+              .updateEvent(event.copyWith(title: oldTitle)),
+        ),
+      ));
   }
 
   /// 오른쪽 스와이프 — 구글 캘린더에 이벤트 저장.

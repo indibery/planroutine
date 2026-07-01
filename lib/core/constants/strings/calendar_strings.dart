@@ -30,6 +30,10 @@ class CalendarStrings {
   static const markComplete = '일정 완료';
   static const undoComplete = '완료 취소';
 
+  // 연도 바꾸기 (이전 연도 자료 배지)
+  static const undoAction = '실행취소';
+  static String yearBumped(int year) => '제목 연도를 $year년으로 바꿨어요';
+
   // 스와이프
   static const swipeGoogleSave = 'Google 저장';
   static const swipeHintGoogle = '오른쪽으로 밀기 — Google 저장';

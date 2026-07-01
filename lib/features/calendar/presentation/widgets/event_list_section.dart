@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/title_year_utils.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../domain/calendar_event.dart';
@@ -23,6 +24,7 @@ class EventListSection extends ConsumerWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
+    required this.onEventBumpYear,
   });
 
   final DateTime selectedDate;
@@ -32,6 +34,9 @@ class EventListSection extends ConsumerWidget {
   /// 외부 캘린더 저장 콜백. null이면 오른쪽 스와이프가 비활성화돼 왼쪽 스와이프(완료 토글)만 동작.
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
+
+  /// 제목에 이전 연도가 있는 이벤트의 "연도 올해로" 배지 탭 콜백.
+  final ValueChanged<CalendarEvent> onEventBumpYear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -217,6 +222,7 @@ class EventListSection extends ConsumerWidget {
                   ],
                 ),
               ),
+              _buildYearBadge(event),
               if (isDone)
                 const Padding(
                   padding: EdgeInsets.only(left: AppSizes.spacing4),
@@ -226,6 +232,47 @@ class EventListSection extends ConsumerWidget {
                     color: AppColors.inkGreen,
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 제목에 올해 이전 연도가 있으면 노출되는 골드 배지. 탭하면 바로 올해로 고친다
+  /// (실행취소는 호출부 스낵바). 이전 연도가 없으면 자리를 차지하지 않는다.
+  Widget _buildYearBadge(CalendarEvent event) {
+    final currentYear = DateTime.now().year;
+    final result = bumpTitleYear(event.title, currentYear);
+    if (result.from == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSizes.spacing8),
+      child: GestureDetector(
+        key: Key('year_bump_badge_${event.id}'),
+        onTap: () => onEventBumpYear(event),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing8,
+            vertical: AppSizes.spacing4,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.gold,
+            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.event_repeat, size: 14, color: AppColors.navy),
+              const SizedBox(width: AppSizes.spacing4),
+              Text(
+                '${result.from}→$currentYear',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.navy,
+                ),
+              ),
             ],
           ),
         ),
