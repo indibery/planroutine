@@ -239,8 +239,8 @@ class EventListSection extends ConsumerWidget {
     );
   }
 
-  /// 제목에 올해 이전 연도가 있으면 노출되는 골드 배지. 탭하면 바로 올해로 고친다
-  /// (실행취소는 호출부 스낵바). 이전 연도가 없으면 자리를 차지하지 않는다.
+  /// 제목에 올해 이전 연도가 있으면 노출되는 골드 배지. 탭하면 호출부(_onBumpYear)가
+  /// 연도 고친 제목으로 편집 화면에 진입시킨다. 이전 연도가 없으면 자리를 차지하지 않는다.
   Widget _buildYearBadge(CalendarEvent event) {
     final currentYear = DateTime.now().year;
     final result = bumpTitleYear(event.title, currentYear);
