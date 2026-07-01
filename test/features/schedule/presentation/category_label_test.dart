@@ -30,6 +30,21 @@ void main() {
     });
   });
 
+  group('confirmAllPillLabel', () {
+    test('카테고리 없으면(전체) 스코프 생략, 건수 포함', () {
+      expect(confirmAllPillLabel(null, 64), '대기 64건 확정');
+    });
+
+    test('빈 카테고리도 전체로 취급', () {
+      expect(confirmAllPillLabel('', 5), '대기 5건 확정');
+    });
+
+    test('카테고리 있으면 짧은 이름을 접두로', () {
+      expect(confirmAllPillLabel('교육과정계획수립운영', 12), '교육과정 대기 12건 확정');
+      expect(confirmAllPillLabel('일과운영관리', 1), '일과운영 대기 1건 확정');
+    });
+  });
+
   group('categoryColor', () {
     test('주요 4개 카테고리는 전용 색상', () {
       expect(categoryColor('일과운영관리'), AppColors.categoryDailyOps);

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
+import '../widgets/category_label.dart';
 import '../widgets/schedule_edit_sheet.dart';
 import '../widgets/schedule_filter_bar.dart';
 import '../widgets/schedule_tile.dart';
@@ -94,8 +95,10 @@ class ScheduleScreen extends ConsumerWidget {
         final total = list.length;
         final confirmed =
             list.where((s) => s.status == ScheduleStatus.confirmed).length;
-        final hasPending =
-            list.any((s) => s.status == ScheduleStatus.pending);
+        final pendingCount =
+            list.where((s) => s.status == ScheduleStatus.pending).length;
+        final hasPending = pendingCount > 0;
+        final category = ref.watch(scheduleCategoryFilterProvider);
         final ratio = confirmed / total;
         final percent = (ratio * 100).round();
         return Padding(
@@ -124,7 +127,13 @@ class ScheduleScreen extends ConsumerWidget {
                   ),
                   if (hasPending)
                     _ConfirmAllPill(
-                      onPressed: () => _showBulkConfirmDialog(context, ref),
+                      label: confirmAllPillLabel(category, pendingCount),
+                      onPressed: () => _showBulkConfirmDialog(
+                        context,
+                        ref,
+                        category: category,
+                        pendingCount: pendingCount,
+                      ),
                     ),
                 ],
               ),
@@ -251,7 +260,17 @@ class ScheduleScreen extends ConsumerWidget {
             },
             onDelete: () {
               if (schedule.id case final id?) {
-                ref.read(schedulesProvider.notifier).deleteSchedule(id);
+                final notifier = ref.read(schedulesProvider.notifier);
+                notifier.deleteSchedule(id);
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(SnackBar(
+                    content: const Text(ScheduleStrings.deletedSnack),
+                    action: SnackBarAction(
+                      label: ScheduleStrings.undoAction,
+                      onPressed: () => notifier.restoreSchedule(id),
+                    ),
+                  ));
               }
             },
             onTap: () => ScheduleEditSheet.show(context, schedule),
@@ -263,12 +282,16 @@ class ScheduleScreen extends ConsumerWidget {
 
   Future<void> _showBulkConfirmDialog(
     BuildContext context,
-    WidgetRef ref,
-  ) async {
+    WidgetRef ref, {
+    required String? category,
+    required int pendingCount,
+  }) async {
+    final scope =
+        (category == null || category.isEmpty) ? ScheduleStrings.all : shortenCategory(category);
     final confirmed = await ConfirmDialog.show(
       context: context,
       title: ScheduleStrings.bulkConfirmTitle,
-      message: ScheduleStrings.bulkConfirmMessage,
+      message: ScheduleStrings.bulkConfirmMessageFor(scope, pendingCount),
       confirmLabel: ScheduleStrings.confirm,
     );
     if (!confirmed) return;
@@ -297,8 +320,9 @@ class ScheduleScreen extends ConsumerWidget {
 
 /// 진행도 행 우측의 소형 골드 pill — '전체 확정' 액션.
 class _ConfirmAllPill extends StatelessWidget {
-  const _ConfirmAllPill({required this.onPressed});
+  const _ConfirmAllPill({required this.label, required this.onPressed});
 
+  final String label;
   final VoidCallback onPressed;
 
   @override
@@ -320,14 +344,14 @@ class _ConfirmAllPill extends StatelessWidget {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.done_all, color: AppColors.navy, size: 14),
-            SizedBox(width: 6),
+            const Icon(Icons.done_all, color: AppColors.navy, size: 14),
+            const SizedBox(width: 6),
             Text(
-              ScheduleStrings.confirmAll,
-              style: TextStyle(
+              label,
+              style: const TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

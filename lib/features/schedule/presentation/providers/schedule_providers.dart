@@ -67,6 +67,13 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
+  /// 삭제한 일정 복구 (스와이프 삭제 Undo용)
+  Future<void> restoreSchedule(int id) async {
+    final repository = ref.read(scheduleRepositoryProvider);
+    await repository.restoreSchedule(id);
+    ref.invalidateSelf();
+  }
+
   /// 일정 수정
   Future<void> updateSchedule(
     int id, {

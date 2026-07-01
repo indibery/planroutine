@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/strings/schedule_strings.dart';
 
 /// 카테고리 원본 → 표시용 짧은 라벨.
 ///
@@ -20,6 +21,15 @@ String shortenCategory(String raw) {
   if (raw.contains('인사') || raw.contains('징계')) return '인사징계';
   if (raw.length <= 4) return raw;
   return '${raw.substring(0, 4)}…';
+}
+
+/// 일괄 확정 pill 라벨. 카테고리 필터가 없으면(전체) 스코프 생략, 있으면 짧은 이름 접두.
+/// 건수는 실제 확정될 검토 대기 일정 수.
+String confirmAllPillLabel(String? category, int pendingCount) {
+  if (category == null || category.isEmpty) {
+    return ScheduleStrings.confirmPending(pendingCount);
+  }
+  return ScheduleStrings.confirmPendingIn(shortenCategory(category), pendingCount);
 }
 
 /// 카테고리 원본 → pill/뱃지 색상.
