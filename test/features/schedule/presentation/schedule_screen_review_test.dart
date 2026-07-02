@@ -110,6 +110,25 @@ void main() {
       expect(find.text('대기 행사'), findsNothing);
     });
 
+    testWidgets('AppBar에 가져오기 아이콘 상시 노출', (tester) async {
+      await pumpScreen(tester);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.file_download_outlined),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('완료 상태에 일정 가져오기 골드 CTA 노출', (tester) async {
+      await tester.runAsync(() async {
+        await seed('확정된 행사', '2026-03-03', ScheduleStatus.confirmed);
+      });
+      await pumpScreen(tester);
+      expect(find.text(ScheduleStrings.goImport), findsOneWidget);
+    });
+
     testWidgets('모두 확정이면 완료 상태 + 확정됨 보기 CTA', (tester) async {
       await tester.runAsync(() async {
         await seed('확정된 행사', '2026-03-03', ScheduleStatus.confirmed);

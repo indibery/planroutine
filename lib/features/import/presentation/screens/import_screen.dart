@@ -99,6 +99,28 @@ class ImportScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 수시로 쓰는 AI 사진 변환이 맨 위, 연 1회 CSV는 "또는" 아래 — 순서 = 빈도.
+          const AiPhotoImportSection(),
+          const SizedBox(height: AppSizes.spacing16),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: AppColors.line)),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spacing12),
+                child: Text(
+                  ImportStrings.csvDivider,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    color: AppColors.faint,
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: AppColors.line)),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spacing16),
           Container(
             padding: const EdgeInsets.all(AppSizes.cardPadding),
             decoration: BoxDecoration(
@@ -109,12 +131,16 @@ class ImportScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.upload_file,
-                  color: AppColors.gold,
-                  size: 32,
+                const Text(
+                  ImportStrings.csvTitle,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
                 ),
-                const SizedBox(height: AppSizes.spacing8),
+                const SizedBox(height: AppSizes.spacing4),
                 Text(
                   ImportStrings.description,
                   style: const TextStyle(
@@ -139,27 +165,6 @@ class ImportScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSizes.spacing16),
-          Row(
-            children: [
-              const Expanded(child: Divider(color: AppColors.line)),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing12),
-                child: Text(
-                  ImportStrings.aiDivider,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                    color: AppColors.faint,
-                  ),
-                ),
-              ),
-              const Expanded(child: Divider(color: AppColors.line)),
-            ],
-          ),
-          const SizedBox(height: AppSizes.spacing16),
-          const AiPhotoImportSection(),
           const SizedBox(height: AppSizes.spacing12),
           const EdufineGuideSection(),
         ],

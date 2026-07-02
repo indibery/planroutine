@@ -12,7 +12,9 @@ class ImportStrings {
   static const registerCount = '건 등록됨';
 
   // AI 사진 변환 (붙여넣기 가져오기)
-  static const aiDivider = '또는 · AI 사진 변환';
+  static const aiDivider = '또는 · AI 사진 변환'; // (구) — 순서 교체 후 csvDivider 사용
+  static const csvDivider = '또는 · CSV 파일 가져오기';
+  static const csvTitle = '작년 CSV 업로드';
   static const aiTitle = '행사표를 사진으로';
   static const aiDescription =
       '연간 행사 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';

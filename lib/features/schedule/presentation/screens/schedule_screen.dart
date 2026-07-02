@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
@@ -45,6 +48,15 @@ class ScheduleScreen extends ConsumerWidget {
             ),
           ],
         ),
+        actions: [
+          // 가져오기 상시 진입점 — 검토할 일정의 공급 문은 검토 탭에 둔다.
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined,
+                color: AppColors.gold),
+            tooltip: ScheduleStrings.goImport,
+            onPressed: () => context.push(AppRoutes.import),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -208,6 +220,16 @@ class ScheduleScreen extends ConsumerWidget {
               color: AppColors.sub,
             ),
           ),
+          if (!hasFilter) ...[
+            const SizedBox(height: AppSizes.spacing16),
+            Builder(
+              builder: (context) => GoldGradientButton(
+                label: ScheduleStrings.goImport,
+                icon: Icons.file_download_outlined,
+                onPressed: () => context.push(AppRoutes.import),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -251,6 +273,15 @@ class ScheduleScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSizes.spacing16),
+          // 주 행동 = 다음 공급(가져오기). 확정 기록 보기는 고스트로.
+          Builder(
+            builder: (context) => GoldGradientButton(
+              label: ScheduleStrings.goImport,
+              icon: Icons.file_download_outlined,
+              onPressed: () => context.push(AppRoutes.import),
+            ),
+          ),
+          const SizedBox(height: AppSizes.spacing8),
           OutlinedButton(
             onPressed: () =>
                 ref.read(scheduleStatusFilterProvider.notifier).state =

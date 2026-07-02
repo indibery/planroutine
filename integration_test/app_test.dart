@@ -340,10 +340,12 @@ void main() {
         (tester) async {
       await _startFresh(tester);
 
-      // 설정 → 가져오기 화면 push (섹션 헤더와 타일 제목이 같은 문자열이라 ListTile로 한정)
-      await _tapSettingsTab(tester);
-      await tester
-          .tap(find.widgetWithText(ListTile, SettingsStrings.importSection));
+      // 일정 탭 AppBar 가져오기 아이콘으로 진입 (신규 진입점 검증)
+      await _tapScheduleTab(tester);
+      await tester.tap(find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.file_download_outlined),
+      ));
       await tester.pumpAndSettle();
 
       // AI 섹션 노출 확인 (필요 시 스크롤)

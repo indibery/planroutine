@@ -24,6 +24,7 @@ class ScheduleStrings {
   static String reviewDoneBody(int n) =>
       '확정한 $n건은 캘린더에 반영됐습니다.\n새 일정은 가져오기에서 추가하세요.';
   static String viewConfirmed(int n) => '확정됨 $n건 보기';
+  static const goImport = '일정 가져오기';
 
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>
