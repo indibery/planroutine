@@ -267,9 +267,10 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 통합 테스트(simulator 빌드) 직후 바로 release 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → beta/release 레인의 `reset_ios_caches`가 자동 차단. 레인 밖 수동 빌드 시에는 `flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build && flutter build ipa`.
 
 ## 샘플 데이터
-- `data/sample/2025_생산문서등록대장.csv` — 실제 2025년 생산문서 65건
+- `data/sample/2025_생산문서등록대장.csv` — **합성** 생산문서등록대장 20건 (가상 학교·가명, 실제 PII 없음)
   - 핵심 컬럼: 등록일자, 제목, 과제명, 과제카드명, 결재유형
-  - 업무 분류: 일과운영관리(28), 교육과정계획(10), 조직통계(7), 학생학적(4)
+  - 업무 분류·공개구분(공개/부분공개/비공개) 다양성을 갖춰 파서·필터 테스트용 커버리지 유지
+  - ⚠️ 실제 학교 데이터 절대 커밋 금지 — 이 파일은 포맷 예시일 뿐(과거 실데이터는 히스토리에서 제거됨, 2026-07)
 
 ## 코딩 규칙
 - Feature-first 구조: `lib/features/{기능}/data|domain|presentation/`
