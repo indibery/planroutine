@@ -305,6 +305,17 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
 
+  /// iOS/iPad 공유시트 팝오버 앵커 Rect. 미지정 시 iPad에서 PlatformException으로
+  /// 시트가 안 뜬다(내보내기 타일과 동일 대응).
+  Rect? _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      return box.localToGlobal(Offset.zero) & box.size;
+    }
+    final size = MediaQuery.of(context).size;
+    return Rect.fromLTWH(size.width / 2, size.height / 2, 1, 1);
+  }
+
   /// 고급 기능: 이 이벤트를 외부 AI로 보내 자동화(하이브리드 지시문+JSON 공유시트).
   Widget _buildAiShareAction() {
     return SizedBox(
@@ -313,7 +324,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         onPressed: () {
           final event = widget.event;
           if (event == null) return;
-          Share.share(buildAiTaskExport(event));
+          Share.share(
+            buildAiTaskExport(event),
+            sharePositionOrigin: _shareOrigin(),
+          );
         },
         icon: const Icon(Icons.auto_awesome, size: 18, color: AppColors.gold),
         label: const Text('AI로 보내기'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -43,6 +44,32 @@ void main() {
       SharedPreferences.setMockInitialValues({'ai_task_share_enabled': true});
       await pumpEditDialog(tester);
       expect(find.text('AI로 보내기'), findsOneWidget);
+    });
+
+    testWidgets('탭하면 sharePositionOrigin과 함께 공유 호출(iPad 팝오버 앵커 필수)',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'ai_task_share_enabled': true});
+      const channel = MethodChannel('dev.fluttercommunity.plus/share');
+      MethodCall? shareCall;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async {
+          shareCall = call;
+          return null;
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null));
+
+      await pumpEditDialog(tester);
+      await tester.tap(find.text('AI로 보내기'));
+      await tester.pump();
+
+      expect(shareCall?.method, 'share');
+      final args = shareCall!.arguments as Map;
+      expect(args['text'], contains('```json'));
+      expect(args['originWidth'], isNotNull,
+          reason: 'sharePositionOrigin 없으면 iPad에서 공유시트가 안 뜸');
     });
   });
 }
