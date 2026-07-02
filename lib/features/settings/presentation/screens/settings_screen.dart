@@ -61,7 +61,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           const SettingsSection(
             title: SettingsStrings.importSection,
-            subtitle: ImportStrings.description,
+            subtitle: SettingsStrings.importDescription,
             child: ImportListTile(),
           ),
           const SettingsSection(

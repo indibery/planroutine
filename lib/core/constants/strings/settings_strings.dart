@@ -5,7 +5,8 @@ class SettingsStrings {
   static const title = '설정';
 
   // 섹션 헤더
-  static const importSection = '작년 일정 가져오기';
+  static const importSection = '일정 가져오기';
+  static const importDescription = 'CSV 업로드 또는 행사표 사진(AI 변환)으로 일정을 불러옵니다';
   static const exportSection = '현재 일정 내보내기';
   static const trashSection = '휴지통';
   static const dataSection = '데이터 관리';
