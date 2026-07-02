@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
@@ -334,6 +335,31 @@ void main() {
       expect(find.text(NotificationStrings.dayBefore),
           findsOneWidget);
       expect(find.text(NotificationStrings.test), findsOneWidget);
+    });
+
+    testWidgets('AI로 보내기: 실제 share 호출이 예외 없이 네이티브 시트를 띄운다',
+        (tester) async {
+      // 고급 토글 ON (실제 SharedPreferences)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('ai_task_share_enabled', true);
+      await _startFresh(tester);
+
+      // 이벤트 하나 추가
+      await _tapAddFab(tester);
+      await tester.enterText(
+          find.byType(TextFormField).first, 'AI 공유 테스트');
+      await tester.tap(find.text(AppStrings.save));
+      await tester.pumpAndSettle();
+
+      // 편집 다이얼로그 → AI로 보내기 (mock 없이 실제 share_plus 채널)
+      await tester.tap(find.text('AI 공유 테스트'));
+      await tester.pumpAndSettle();
+      expect(find.text('AI로 보내기'), findsOneWidget);
+
+      await tester.tap(find.text('AI로 보내기'));
+      // 네이티브 시트 표시 대기 — 여기서 PlatformException이 나면 테스트가 실패한다
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('AI 사진 가져오기: 붙여넣기 → 미리보기 → 등록 → 검토 대기 노출',
