@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -333,6 +334,45 @@ void main() {
       expect(find.text(NotificationStrings.dayBefore),
           findsOneWidget);
       expect(find.text(NotificationStrings.test), findsOneWidget);
+    });
+
+    testWidgets('AI 사진 가져오기: 붙여넣기 → 미리보기 → 등록 → 검토 대기 노출',
+        (tester) async {
+      await _startFresh(tester);
+
+      // 설정 → 가져오기 화면 push (섹션 헤더와 타일 제목이 같은 문자열이라 ListTile로 한정)
+      await _tapSettingsTab(tester);
+      await tester
+          .tap(find.widgetWithText(ListTile, SettingsStrings.importSection));
+      await tester.pumpAndSettle();
+
+      // AI 섹션 노출 확인 (필요 시 스크롤)
+      final aiPaste = find.text(ImportStrings.aiPaste);
+      await _scrollToInSettings(tester, aiPaste);
+      expect(find.text(ImportStrings.aiCopyPrompt), findsOneWidget);
+
+      // AI 응답을 클립보드에 준비 (실기기/시뮬 실제 클립보드)
+      await Clipboard.setData(const ClipboardData(
+        text: '결과입니다.\n```json\n'
+            '[{"title":"입학식","date":"2026-03-02"},'
+            '{"title":"봄 현장체험학습","date":"2026-04-24","description":"4-6학년"}]'
+            '\n```',
+      ));
+
+      // 붙여넣기 → 미리보기 시트
+      await tester.tap(aiPaste);
+      await tester.pumpAndSettle();
+      expect(find.text(ImportStrings.aiPreviewTitle), findsOneWidget);
+      expect(find.text('입학식'), findsOneWidget);
+
+      // 등록 → 시트 닫힘
+      await tester.tap(find.text(ImportStrings.aiRegisterButton(2)));
+      await tester.pumpAndSettle();
+
+      // 일정 탭에서 검토 대기로 보이는지 (/import는 ShellRoute 안이라 탭바 유지)
+      await _tapScheduleTab(tester);
+      expect(find.text('입학식'), findsOneWidget);
+      expect(find.text('봄 현장체험학습'), findsOneWidget);
     });
   });
 }

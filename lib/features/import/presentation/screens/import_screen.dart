@@ -9,6 +9,7 @@ import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/imported_schedule.dart';
 import '../providers/import_providers.dart';
+import '../widgets/ai_photo_import_section.dart';
 import '../widgets/edufine_guide_section.dart';
 import '../widgets/import_summary_card.dart';
 
@@ -138,6 +139,27 @@ class ImportScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSizes.spacing16),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: AppColors.line)),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spacing12),
+                child: Text(
+                  ImportStrings.aiDivider,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    color: AppColors.faint,
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: AppColors.line)),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spacing16),
+          const AiPhotoImportSection(),
           const SizedBox(height: AppSizes.spacing12),
           const EdufineGuideSection(),
         ],
