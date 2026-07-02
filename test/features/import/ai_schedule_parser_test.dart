@@ -41,6 +41,26 @@ void main() {
       expect(r.invalidCount, 3);
     });
 
+    test('날짜를 YYYY-MM-DD로 정규화 (ISO datetime·구분자 없는 형식도)', () {
+      final r = parseAiScheduleJson(
+        '[{"title":"A","date":"2026-03-01T09:00:00Z"},'
+        '{"title":"B","date":"20260302"}]',
+      );
+      expect(r.items.length, 2);
+      expect(r.items[0].date, '2026-03-01', reason: 'T-suffix 잘라내 정규화');
+      expect(r.items[1].date, '2026-03-02', reason: '구분자 없는 형식도 정규화');
+    });
+
+    test('제목의 제어문자·개행 제거 + 길이 상한', () {
+      final rlo = String.fromCharCode(0x202E);
+      final r = parseAiScheduleJson(
+        '[{"title":"입학$rlo-식\\n둘째줄","date":"2026-03-02"}]',
+      );
+      expect(r.items.length, 1);
+      expect(r.items[0].title.contains(rlo), false, reason: 'RLO 제거');
+      expect(r.items[0].title.contains('\n'), false, reason: '개행 제거');
+    });
+
     test('JSON 배열이 없으면 빈 결과', () {
       final r = parseAiScheduleJson('사진이 잘 안 보여요. 다시 찍어주세요.');
       expect(r.items, isEmpty);

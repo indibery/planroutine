@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../core/utils/date_utils.dart' as du;
+
 /// AI가 사진에서 뽑아준 행사 한 건.
 class AiScheduleItem {
   const AiScheduleItem({required this.title, required this.date, this.description});
@@ -42,27 +44,40 @@ ParsedAiSchedules parseAiScheduleJson(String text) {
       invalid++;
       continue;
     }
-    final title = entry['title'];
-    final date = entry['date'];
-    if (title is! String || title.trim().isEmpty || date is! String) {
+    final rawTitle = entry['title'];
+    final rawDate = entry['date'];
+    if (rawTitle is! String || rawDate is! String) {
       invalid++;
       continue;
     }
-    final parsedDate = DateTime.tryParse(date);
-    if (parsedDate == null) {
+    final title = _sanitize(rawTitle);
+    final parsedDate = DateTime.tryParse(rawDate);
+    if (title.isEmpty || parsedDate == null) {
       invalid++;
       continue;
     }
-    final description = entry['description'];
+    final rawDesc = entry['description'];
+    final desc = rawDesc is String ? _sanitize(rawDesc) : '';
     items.add(AiScheduleItem(
-      title: title.trim(),
-      date: date,
-      description: description is String && description.trim().isNotEmpty
-          ? description.trim()
-          : null,
+      title: title,
+      // 다른 삽입 경로와 동일하게 YYYY-MM-DD로 정규화 — 월별조회·중복체크 불변식 유지.
+      date: du.formatDate(parsedDate),
+      description: desc.isEmpty ? null : desc,
     ));
   }
   return ParsedAiSchedules(items: items, invalidCount: invalid);
+}
+
+/// AI 문자열 무해화 — 제어문자·개행 제거, 양방향/제로폭 문자 제거, 공백 정리, 길이 상한.
+String _sanitize(String raw) {
+  final s = raw
+      .replaceAll(RegExp('[\u0000-\u001F\u007F]'), ' ') // control chars
+      .replaceAll(
+          RegExp('[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]'),
+          '') // bidi override / zero-width
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  return s.length > 200 ? s.substring(0, 200) : s;
 }
 
 /// 텍스트에서 첫 번째 균형 잡힌 `[...]` 블록을 찾아 JSON 배열로 디코드.

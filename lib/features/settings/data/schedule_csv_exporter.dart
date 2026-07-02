@@ -5,6 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../core/database/database_helper.dart';
+import '../../../core/utils/csv_formula_guard.dart';
 import '../../schedule/domain/schedule.dart';
 
 /// 올해 확정 일정(`schedules`)을 자체 포맷 CSV로 내보낸다.
@@ -35,10 +36,11 @@ class ScheduleCsvExporter {
       const ['제목', '등록일자', '카테고리', '설명', '상태'],
       for (final s in schedules)
         [
-          s.title,
+          // 텍스트 컬럼은 CSV 수식 인젝션 무해화(Excel에서 =/+/-/@ 실행 방지)
+          escapeCsvFormula(s.title),
           s.scheduledDate,
-          s.category ?? '',
-          s.description ?? '',
+          escapeCsvFormula(s.category ?? ''),
+          escapeCsvFormula(s.description ?? ''),
           s.status.value,
         ],
     ];

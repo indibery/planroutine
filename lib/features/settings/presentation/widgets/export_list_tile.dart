@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -45,12 +47,20 @@ class _ExportListTileState extends ConsumerState<ExportListTile> {
         }
         return;
       }
-      await Share.shareXFiles(
-        [XFile(result.filePath)],
-        subject: SettingsStrings.exportShareSubject,
-        text: '${result.count}${SettingsStrings.exportShareCountSuffix}',
-        sharePositionOrigin: origin,
-      );
+      try {
+        await Share.shareXFiles(
+          [XFile(result.filePath)],
+          subject: SettingsStrings.exportShareSubject,
+          text: '${result.count}${SettingsStrings.exportShareCountSuffix}',
+          sharePositionOrigin: origin,
+        );
+      } finally {
+        // 공유(취소 포함) 후 임시 CSV 삭제 — 초기화 후에도 tmp에 스냅샷이
+        // 남지 않도록. 일정 내용이 담긴 파일이라 잔존시키지 않는다.
+        try {
+          await File(result.filePath).delete();
+        } catch (_) {}
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
