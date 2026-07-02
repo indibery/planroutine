@@ -9,9 +9,23 @@ final scheduleRepositoryProvider = Provider<ScheduleRepository>((ref) {
   return ScheduleRepository();
 });
 
-/// 일정 상태 필터
+/// 일정 상태 필터. 기본 = 검토 대기 — 확정된 일정은 기본 리스트에서 빠지고
+/// '확정됨' 칩으로만 본다(검토 탭의 주인공은 아직 결정 안 된 일정).
 final scheduleStatusFilterProvider = StateProvider<ScheduleStatus?>((ref) {
-  return null; // null = 전체
+  return ScheduleStatus.pending;
+});
+
+/// 상태별 전역 건수(카테고리 무관) — 칩 라벨·진행도·확정 요약에 사용.
+/// schedulesProvider 변경(확정/삭제/등록)에 반응해 갱신.
+final scheduleCountsProvider =
+    FutureProvider<({int pending, int confirmed})>((ref) async {
+  await ref.watch(schedulesProvider.future);
+  final repository = ref.watch(scheduleRepositoryProvider);
+  final pending =
+      await repository.getSchedules(status: ScheduleStatus.pending);
+  final confirmed =
+      await repository.getSchedules(status: ScheduleStatus.confirmed);
+  return (pending: pending.length, confirmed: confirmed.length);
 });
 
 /// 일정 카테고리 필터

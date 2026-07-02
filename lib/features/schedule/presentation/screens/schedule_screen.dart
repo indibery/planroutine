@@ -49,7 +49,9 @@ class ScheduleScreen extends ConsumerWidget {
       body: Column(
         children: [
           _buildProgress(context, ref, schedulesAsync),
-          const SlideHintBar(),
+          // 스와이프 안내는 스와이프할 목록이 있을 때만
+          if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
+            const SlideHintBar(),
           const ScheduleFilterBar(),
           const Divider(height: 1),
           Expanded(
@@ -89,12 +91,15 @@ class ScheduleScreen extends ConsumerWidget {
     WidgetRef ref,
     AsyncValue<List<Schedule>> schedulesAsync,
   ) {
+    // 진행도는 전역 건수(카테고리·상태 필터 무관) — 기본 뷰가 대기만 보여줘도
+    // "전체 중 몇 건 확정"이 유지되도록.
+    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
     return schedulesAsync.when(
       data: (list) {
-        if (list.isEmpty) return const SizedBox.shrink();
-        final total = list.length;
-        final confirmed =
-            list.where((s) => s.status == ScheduleStatus.confirmed).length;
+        final total = (counts?.pending ?? 0) + (counts?.confirmed ?? 0);
+        if (counts == null || total == 0) return const SizedBox.shrink();
+        final confirmed = counts.confirmed;
+        // 일괄 확정 pill은 현재 뷰(카테고리 필터 반영)의 대기 건수 기준
         final pendingCount =
             list.where((s) => s.status == ScheduleStatus.pending).length;
         final hasPending = pendingCount > 0;
@@ -168,8 +173,21 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(WidgetRef ref) {
-    final hasFilter = ref.watch(scheduleStatusFilterProvider) != null
-        || ref.watch(scheduleCategoryFilterProvider) != null;
+    final status = ref.watch(scheduleStatusFilterProvider);
+    final hasCategoryFilter =
+        ref.watch(scheduleCategoryFilterProvider) != null;
+    final confirmedCount =
+        ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
+
+    // 대기 0 + 확정 있음 + 카테고리 필터 없음 = 검토 완료 상태.
+    if (status == ScheduleStatus.pending &&
+        confirmedCount > 0 &&
+        !hasCategoryFilter) {
+      return _buildReviewDoneState(ref, confirmedCount);
+    }
+
+    final hasFilter =
+        status == ScheduleStatus.confirmed || hasCategoryFilter;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -195,6 +213,55 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
+  /// 모두 확정된 뒤의 조용한 완료 화면 — 리스트 대신 절제된 마무리.
+  Widget _buildReviewDoneState(WidgetRef ref, int confirmedCount) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.inkGreen.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check,
+                size: 28, color: AppColors.inkGreen),
+          ),
+          const SizedBox(height: AppSizes.spacing16),
+          Text(
+            ScheduleStrings.reviewDoneTitle,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: AppSizes.spacing8),
+          Text(
+            ScheduleStrings.reviewDoneBody(confirmedCount),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              height: 1.6,
+              color: AppColors.sub,
+            ),
+          ),
+          const SizedBox(height: AppSizes.spacing16),
+          OutlinedButton(
+            onPressed: () =>
+                ref.read(scheduleStatusFilterProvider.notifier).state =
+                    ScheduleStatus.confirmed,
+            child: Text(ScheduleStrings.viewConfirmed(confirmedCount)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildScheduleList(
     BuildContext context,
     WidgetRef ref,
@@ -208,16 +275,76 @@ class ScheduleScreen extends ConsumerWidget {
 
     final sortedKeys = grouped.keys.toList()..sort();
 
+    // 대기 뷰 하단에 "확정 N건은 캘린더에 반영됨" 요약 — 확정분이 사라진 게
+    // 아니라 반영됐음을 상기. 탭하면 확정됨 뷰로 전환.
+    final confirmedCount =
+        ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
+    final showDoneSummary =
+        ref.watch(scheduleStatusFilterProvider) == ScheduleStatus.pending &&
+            confirmedCount > 0;
+
     return ListView.builder(
       padding: const EdgeInsets.only(
         bottom: AppSizes.spacing16,
       ),
-      itemCount: sortedKeys.length,
+      itemCount: sortedKeys.length + (showDoneSummary ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == sortedKeys.length) {
+          return _buildDoneSummary(ref, confirmedCount);
+        }
         final monthKey = sortedKeys[index];
         final items = grouped[monthKey] ?? [];
         return _buildMonthGroup(context, ref, monthKey, items);
       },
+    );
+  }
+
+  /// 대기 목록 아래 초록 요약 한 줄 — 탭하면 확정됨 뷰로.
+  Widget _buildDoneSummary(WidgetRef ref, int confirmedCount) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.spacing16,
+        AppSizes.spacing8,
+        AppSizes.spacing16,
+        AppSizes.spacing4,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSizes.radius12),
+        onTap: () => ref.read(scheduleStatusFilterProvider.notifier).state =
+            ScheduleStatus.confirmed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing12,
+            vertical: AppSizes.spacing12,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.inkGreen.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(AppSizes.radius12),
+            border: Border.all(
+              color: AppColors.inkGreen.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle,
+                  size: 16, color: AppColors.inkGreen),
+              const SizedBox(width: AppSizes.spacing8),
+              Expanded(
+                child: Text(
+                  ScheduleStrings.doneSummary(confirmedCount),
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    color: AppColors.sub,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right,
+                  size: 16, color: AppColors.faint),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

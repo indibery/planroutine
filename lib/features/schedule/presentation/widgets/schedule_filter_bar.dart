@@ -27,13 +27,15 @@ class ScheduleFilterBar extends ConsumerWidget {
   }
 }
 
-/// 상태 필터 1줄 (기존 동작 그대로)
+/// 상태 필터 1줄 — 검토 대기/확정됨 2칩(건수 표기). '전체'는 없다:
+/// 할 일(대기)과 기록(확정)은 목적이 달라 한 화면에 섞지 않는다.
 class _StatusRow extends ConsumerWidget {
   const _StatusRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentStatus = ref.watch(scheduleStatusFilterProvider);
+    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -44,15 +46,9 @@ class _StatusRow extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
-            label: ScheduleStrings.all,
-            selected: currentStatus == null,
-            onTap: () {
-              ref.read(scheduleStatusFilterProvider.notifier).state = null;
-            },
-          ),
-          const SizedBox(width: AppSizes.spacing8),
-          PillChip(
-            label: ScheduleStrings.pending,
+            label: counts == null
+                ? ScheduleStrings.pending
+                : ScheduleStrings.chipPending(counts.pending),
             selected: currentStatus == ScheduleStatus.pending,
             onTap: () {
               ref.read(scheduleStatusFilterProvider.notifier).state =
@@ -61,7 +57,9 @@ class _StatusRow extends ConsumerWidget {
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
-            label: ScheduleStrings.confirmed,
+            label: counts == null
+                ? ScheduleStrings.confirmed
+                : ScheduleStrings.chipConfirmed(counts.confirmed),
             selected: currentStatus == ScheduleStatus.confirmed,
             onTap: () {
               ref.read(scheduleStatusFilterProvider.notifier).state =

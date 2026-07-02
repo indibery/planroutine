@@ -16,6 +16,15 @@ class ScheduleStrings {
   static const empty = '등록된 일정이 없습니다';
   static const emptyFiltered = '해당 조건의 일정이 없습니다';
 
+  // 대기 중심 뷰 — 상태 칩 건수 / 확정 요약 / 완료 상태
+  static String chipPending(int n) => '검토 대기 $n';
+  static String chipConfirmed(int n) => '확정됨 $n';
+  static String doneSummary(int n) => '확정 $n건은 캘린더에 반영됨';
+  static const reviewDoneTitle = '검토가 끝났어요';
+  static String reviewDoneBody(int n) =>
+      '확정한 $n건은 캘린더에 반영됐습니다.\n새 일정은 가져오기에서 추가하세요.';
+  static String viewConfirmed(int n) => '확정됨 $n건 보기';
+
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>
       '$scope 검토 대기 $count건을 확정하고 캘린더에 반영합니다.';
