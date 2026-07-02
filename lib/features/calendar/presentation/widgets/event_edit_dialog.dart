@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
+import '../../../../features/settings/presentation/providers/ai_task_share_provider.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
+import '../../data/ai_task_exporter.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 
@@ -79,6 +82,9 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // 고급 기능: AI 자동화 공유 토글이 ON이고 기존 이벤트 편집일 때만 노출(기본 OFF).
+    final aiEnabled =
+        ref.watch(aiTaskShareEnabledProvider).valueOrNull ?? false;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -111,6 +117,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
+                if (_isEditing && aiEnabled) ...[
+                  const SizedBox(height: AppSizes.spacing16),
+                  _buildAiShareAction(),
+                ],
                 const SizedBox(height: AppSizes.spacing24),
                 _buildButtons(),
               ],
@@ -294,6 +304,22 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
+
+  /// 고급 기능: 이 이벤트를 외부 AI로 보내 자동화(하이브리드 지시문+JSON 공유시트).
+  Widget _buildAiShareAction() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          final event = widget.event;
+          if (event == null) return;
+          Share.share(buildAiTaskExport(event));
+        },
+        icon: const Icon(Icons.auto_awesome, size: 18, color: AppColors.gold),
+        label: const Text('AI로 보내기'),
+      ),
+    );
+  }
 
   Widget _buildButtons() {
     return Row(

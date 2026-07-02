@@ -10,6 +10,12 @@ class SettingsStrings {
   static const trashSection = '휴지통';
   static const dataSection = '데이터 관리';
   static const aboutSection = '앱 정보';
+  static const aiShareSection = 'AI 자동화 (고급)';
+
+  // AI 자동화 공유 (고급)
+  static const aiShareDescription = '캘린더 일정을 외부 AI로 보내 문서 초안·준비 정리 등을 맡깁니다';
+  static const aiShareToggleTitle = 'AI로 보내기 활성화';
+  static const aiShareToggleSubtitle = '켜면 캘린더 일정 편집에 "AI로 보내기"가 나타납니다 (기본 꺼짐)';
 
   // 내보내기
   static const exportTitle = 'CSV로 내보내기';
