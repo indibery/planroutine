@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../../core/utils/korean_holidays.dart';
 import '../../domain/calendar_event.dart';
 import 'calendar_day_cell.dart';
 
@@ -110,6 +111,7 @@ class CalendarGrid extends StatelessWidget {
         isSelected: false,
         isWeekend: i == 0,
         isSaturday: i == 6,
+        isHoliday: isKoreanHoliday(date),
         isCurrentMonth: false,
         events: eventsMap[dateStr] ?? [],
         onTap: () => onDateSelected(date),
@@ -132,6 +134,7 @@ class CalendarGrid extends StatelessWidget {
             date.day == selectedDate.day,
         isWeekend: weekday == 0,
         isSaturday: weekday == 6,
+        isHoliday: isKoreanHoliday(date),
         isCurrentMonth: true,
         events: eventsMap[dateStr] ?? [],
         onTap: () => onDateSelected(date),
@@ -156,6 +159,7 @@ class CalendarGrid extends StatelessWidget {
         isSelected: false,
         isWeekend: weekday == 0,
         isSaturday: weekday == 6,
+        isHoliday: isKoreanHoliday(date),
         isCurrentMonth: false,
         events: eventsMap[dateStr] ?? [],
         onTap: () => onDateSelected(date),

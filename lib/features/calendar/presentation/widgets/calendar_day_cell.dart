@@ -15,6 +15,7 @@ class CalendarDayCell extends StatelessWidget {
     required this.isCurrentMonth,
     required this.isSaturday,
     required this.onTap,
+    this.isHoliday = false,
     this.events = const [],
   });
 
@@ -24,6 +25,9 @@ class CalendarDayCell extends StatelessWidget {
   final bool isWeekend;
   final bool isCurrentMonth;
   final bool isSaturday;
+
+  /// 대한민국 공휴일 — 일요일과 같은 빨강으로 표시(토요일 골드보다 우선).
+  final bool isHoliday;
   final VoidCallback onTap;
   final List<CalendarEvent> events;
 
@@ -54,7 +58,8 @@ class CalendarDayCell extends StatelessWidget {
     Color textColor;
     if (!isCurrentMonth) {
       textColor = AppColors.textHint.withValues(alpha: 0.4);
-    } else if (isWeekend && !isSaturday) {
+    } else if (isHoliday || (isWeekend && !isSaturday)) {
+      // 공휴일은 일요일과 같은 빨강 — 토요일과 겹쳐도 빨강 우선
       textColor = AppColors.calendarWeekend;
     } else if (isSaturday) {
       textColor = AppColors.calendarSaturday;
