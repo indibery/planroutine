@@ -47,6 +47,26 @@ void main() {
       expect(r.invalidCount, 0);
     });
 
+    test('스마트 따옴표(“ ”) JSON도 파싱 — 실제 ChatGPT 복사 출력', () {
+      // 2026-07-02 실기기 검증에서 GPT 응답이 스마트 따옴표로 복사돼 파싱 실패했던 케이스.
+      final r = parseAiScheduleJson('''
+[
+{
+“title”: “시업식 및 입학식”,
+“date”: “2026-03-03”
+},
+{
+“title”: “진단주간”,
+“date”: “2026-03-04”,
+“description”: “기간: 2026-03-04~2026-03-13”
+}
+]
+''');
+      expect(r.items.length, 2);
+      expect(r.items[0].title, '시업식 및 입학식');
+      expect(r.items[1].description, '기간: 2026-03-04~2026-03-13');
+    });
+
     test('title 안의 대괄호에 속지 않고 전체 배열을 파싱', () {
       final r = parseAiScheduleJson(
         '결과: [{"title":"[중요] 입학식","date":"2026-03-02"},'

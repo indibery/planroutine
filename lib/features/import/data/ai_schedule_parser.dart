@@ -20,10 +20,17 @@ class ParsedAiSchedules {
 }
 
 /// AI 응답 텍스트에서 행사 JSON 배열을 관대하게 추출한다.
-/// 코드펜스(```json)·인사말이 섞여 있어도 첫 번째 유효한 JSON 배열을 찾는다.
+/// 코드펜스(```json)·인사말이 섞여 있어도 첫 번째 유효한 JSON 배열을 찾고,
+/// iOS/ChatGPT 복사 과정에서 생기는 스마트 따옴표(“ ” ‘ ’)는 표준 따옴표로
+/// 정규화한다(실기기 검증에서 GPT 출력이 이걸로 파싱 실패했던 실사례).
 /// 순수 함수 — 플랫폼/DB 무관.
 ParsedAiSchedules parseAiScheduleJson(String text) {
-  final decoded = _extractFirstJsonArray(text);
+  final normalized = text
+      .replaceAll('“', '"') // “
+      .replaceAll('”', '"') // ”
+      .replaceAll('‘', "'") // ‘
+      .replaceAll('’', "'"); // ’
+  final decoded = _extractFirstJsonArray(normalized);
   if (decoded == null) {
     return const ParsedAiSchedules(items: [], invalidCount: 0);
   }

@@ -351,11 +351,12 @@ void main() {
       await _scrollToInSettings(tester, aiPaste);
       expect(find.text(ImportStrings.aiCopyPrompt), findsOneWidget);
 
-      // AI 응답을 클립보드에 준비 (실기기/시뮬 실제 클립보드)
+      // AI 응답을 클립보드에 준비 (실기기/시뮬 실제 클립보드).
+      // 실기기 검증에서 GPT 출력이 스마트 따옴표로 복사돼 실패했던 형태 그대로 사용.
       await Clipboard.setData(const ClipboardData(
         text: '결과입니다.\n```json\n'
-            '[{"title":"입학식","date":"2026-03-02"},'
-            '{"title":"봄 현장체험학습","date":"2026-04-24","description":"4-6학년"}]'
+            '[{“title”:“입학식”,“date”:“2026-03-02”},'
+            '{“title”:“봄 현장체험학습”,“date”:“2026-04-24”,“description”:“4-6학년”}]'
             '\n```',
       ));
 
