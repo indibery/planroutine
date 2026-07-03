@@ -33,9 +33,14 @@ final monthEventsByYearMonthProvider = FutureProvider.family<
 class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   @override
   Future<List<CalendarEvent>> build() async {
-    final selectedDate = ref.watch(selectedDateProvider);
+    // 월만 구독 — 같은 달 안에서 날짜만 바뀔 때(날짜 탭) 재조회/loading 깜빡임을
+    // 피한다. 재조회가 loading을 거치면 목록 위젯이 dispose→재생성되며 스크롤 위치가
+    // 초기화돼 '날짜 점프'가 동작하지 않는다.
+    final ym = ref.watch(
+      selectedDateProvider.select((d) => (d.year, d.month)),
+    );
     final repository = ref.watch(calendarRepositoryProvider);
-    return repository.getEventsByMonth(selectedDate.year, selectedDate.month);
+    return repository.getEventsByMonth(ym.$1, ym.$2);
   }
 
   /// 이벤트 추가

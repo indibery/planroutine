@@ -40,6 +40,15 @@ class _MonthEventListState extends State<MonthEventList> {
   String? _flashKey;
 
   @override
+  void initState() {
+    super.initState();
+    // State 재생성(월 변경 등으로 목록이 loading을 거쳐 재빌드될 때) 대비:
+    // 첫 프레임 후 선택 날짜로 스크롤한다. didUpdateWidget만으론 새 State가
+    // 초기 스크롤 0에 머물러 뒤쪽 날짜가 안 보이는 문제(실기기 재현)를 막는다.
+    _jumpToDate(widget.selectedDate);
+  }
+
+  @override
   void didUpdateWidget(covariant MonthEventList oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_sameDay(oldWidget.selectedDate, widget.selectedDate)) {
@@ -66,6 +75,7 @@ class _MonthEventListState extends State<MonthEventList> {
     final targetKey = keys[index];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final ctx = _sectionKeys[targetKey]?.currentContext;
       if (ctx == null) return;
       Scrollable.ensureVisible(

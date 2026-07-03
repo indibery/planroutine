@@ -8,6 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
+import 'package:planroutine/core/utils/date_utils.dart';
+import 'package:planroutine/features/calendar/data/calendar_repository.dart';
+import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/shared/widgets/floating_tab_bar.dart';
 
 /// 설정 탭 내부에서 target이 화면에 보일 때까지 스크롤한 뒤 다음 액션을 허용한다.
@@ -346,6 +349,49 @@ void main() {
 
       // 목록에 ★ 중요 배지 노출
       expect(find.text(CalendarStrings.importantBadge), findsOneWidget);
+    });
+
+    testWidgets('날짜 점프: 이번 달 말일 근처 셀을 탭하면 그 이벤트가 목록에 보인다',
+        (tester) async {
+      // 실기기 재현: 캘린더가 위를 차지해 목록 뷰포트가 좁을 때, 뒤쪽 날짜(말일)를
+      // 탭해도 목록이 그 날짜로 스크롤되는지 검증.
+      await DatabaseHelper.instance.resetAllData();
+      final repo = CalendarRepository(dbHelper: DatabaseHelper.instance);
+      final now = DateTime.now();
+      // 이번 달 1일부터 28일까지 여러 날짜에 이벤트를 심어 목록을 길게 만든다.
+      for (final day in [1, 4, 8, 12, 16, 20, 24, 28]) {
+        final date = DateTime(now.year, now.month, day);
+        await repo.createEvent(CalendarEvent(
+          title: '점프테스트 $day일',
+          eventDate: formatDate(date),
+        ));
+      }
+
+      await tester.pumpWidget(const ProviderScope(child: PlanRoutineApp()));
+      await tester.pumpAndSettle();
+      if (find.byType(FloatingTabBar).evaluate().isNotEmpty) {
+        await _tapCalendarTab(tester);
+      }
+
+      // 그리드엔 이전 달 흐린 28(첫 줄)과 이번 달 28이 함께 있다. 아래쪽(y 큰)이
+      // 이번 달 28이므로 그것을 탭한다.
+      final cells = find.text('28').evaluate().toList()
+        ..sort((a, b) => tester
+            .getCenter(find.byWidget(a.widget))
+            .dy
+            .compareTo(tester.getCenter(find.byWidget(b.widget)).dy));
+      await tester.tap(find.byWidget(cells.last.widget));
+      await tester.pumpAndSettle();
+
+      // 28일 이벤트가 목록 뷰포트 안으로 스크롤되어 보여야 한다.
+      final finder = find.text('점프테스트 28일');
+      expect(finder, findsOneWidget);
+      final screenH =
+          tester.view.physicalSize.height / tester.view.devicePixelRatio;
+      final top = tester.getTopLeft(finder).dy;
+      expect(top, greaterThanOrEqualTo(0));
+      expect(top, lessThan(screenH),
+          reason: '28일 이벤트가 화면 밖(아래)에 있음 → 스크롤 안 됨. top=$top, screenH=$screenH');
     });
 
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
