@@ -25,7 +25,7 @@ class AppStrings {
 
   // 탭/네비게이션
   static const tabCalendar = '캘린더';
-  static const tabSchedule = '일정';
+  static const tabSchedule = '검토';
 
   // 공통 액션
   static const save = '저장';
