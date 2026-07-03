@@ -79,7 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.sub,
                             ),
-                            child: const Text(
+                            child: Text(
                               '건너뛰기',
                               style: TextStyle(
                                 fontFamily: 'Pretendard',
@@ -96,7 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: AppSizes.spacing16),
             const BrandLogo(size: 80),
             const SizedBox(height: AppSizes.spacing16),
-            const Text(
+            Text(
               '공직플랜',
               style: TextStyle(
                 fontFamily: 'Pretendard',
@@ -107,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             const SizedBox(height: AppSizes.spacing4),
-            const Text(
+            Text(
               'GONGJIKPLAN · 2026',
               style: TextStyle(
                 fontFamily: 'Space Grotesk',
@@ -202,7 +202,7 @@ class _OnboardingPage extends StatelessWidget {
           Text(
             data.heading,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -213,7 +213,7 @@ class _OnboardingPage extends StatelessWidget {
           Text(
             data.body,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
               fontWeight: FontWeight.w500,

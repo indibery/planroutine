@@ -27,7 +27,7 @@ class LogoHybridPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // LogoHybrid는 120×120 viewBox 기준으로 설계됨.
     final u = size.width / 120;
-    const gold = AppColors.gold;
+    final gold = AppColors.gold;
 
     final goldFill = Paint()..color = gold;
 

@@ -37,12 +37,12 @@ class EdufineGuideSection extends StatelessWidget {
             ),
             iconColor: AppColors.sub,
             collapsedIconColor: AppColors.sub,
-            leading: const Icon(
+            leading: Icon(
               Icons.help_outline,
               color: AppColors.gold,
               size: 20,
             ),
-            title: const Text(
+            title: Text(
               ImportStrings.edufineGuideTitle,
               style: TextStyle(
                 fontFamily: 'Pretendard',
@@ -91,7 +91,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Pretendard',
         fontSize: 13,
         fontWeight: FontWeight.w700,
@@ -109,7 +109,7 @@ class _HintText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Pretendard',
         fontSize: 12,
         color: AppColors.sub,
@@ -176,7 +176,7 @@ class _StepRow extends StatelessWidget {
           ),
           child: Text(
             '$number',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Space Grotesk',
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -190,7 +190,7 @@ class _StepRow extends StatelessWidget {
             padding: const EdgeInsets.only(top: 1),
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 height: 1.45,
@@ -223,7 +223,7 @@ class _MethodBlock extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -254,8 +254,8 @@ class _BulletRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 7, right: AppSizes.spacing8),
+        Padding(
+          padding: const EdgeInsets.only(top: 7, right: AppSizes.spacing8),
           child: SizedBox(
             width: 4,
             height: 4,
@@ -270,7 +270,7 @@ class _BulletRow extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
               height: 1.45,
@@ -302,7 +302,7 @@ class _TipBox extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.lightbulb_outline,
             color: AppColors.gold,
             size: 14,
@@ -311,7 +311,7 @@ class _TipBox extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 12,
                 height: 1.45,

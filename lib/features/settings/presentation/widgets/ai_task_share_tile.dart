@@ -16,9 +16,9 @@ class AiTaskShareTile extends ConsumerWidget {
         ref.watch(aiTaskShareEnabledProvider).valueOrNull ?? false;
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      secondary: const Icon(Icons.auto_awesome, color: AppColors.gold),
+      secondary: Icon(Icons.auto_awesome, color: AppColors.gold),
       title: const Text(SettingsStrings.aiShareToggleTitle),
-      subtitle: const Text(
+      subtitle: Text(
         SettingsStrings.aiShareToggleSubtitle,
         style: TextStyle(fontSize: 12, color: AppColors.sub),
       ),

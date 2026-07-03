@@ -13,7 +13,7 @@ class DismissibleBackground extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.alignment,
-    this.bg = AppColors.navySoft,
+    this.bg,
     this.verticalMargin = AppSizes.spacing8,
   });
 
@@ -21,7 +21,7 @@ class DismissibleBackground extends StatelessWidget {
   final IconData icon;
   final String label;
   final AlignmentGeometry alignment;
-  final Color bg;
+  final Color? bg;
   final double verticalMargin;
 
   @override
@@ -33,7 +33,7 @@ class DismissibleBackground extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
       decoration: BoxDecoration(
-        color: bg,
+        color: bg ?? AppColors.navySoft,
         borderRadius: BorderRadius.circular(AppSizes.radius14),
         border: Border.all(color: AppColors.line, width: 0.5),
       ),

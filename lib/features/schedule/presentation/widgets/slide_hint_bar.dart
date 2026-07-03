@@ -10,7 +10,7 @@ class SlideHintBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const shared.SlideHintBar(
+    return shared.SlideHintBar(
       prefKey: 'schedule_slide_hint_dismissed',
       leftIcon: Icons.check_circle,
       leftText: ScheduleStrings.slideHintConfirm,

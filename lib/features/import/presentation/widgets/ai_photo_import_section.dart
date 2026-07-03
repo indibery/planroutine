@@ -28,7 +28,7 @@ class AiPhotoImportSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             ImportStrings.aiTitle,
             style: TextStyle(
               fontFamily: 'Pretendard',
@@ -38,7 +38,7 @@ class AiPhotoImportSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSizes.spacing4),
-          const Text(
+          Text(
             ImportStrings.aiDescription,
             style: TextStyle(fontSize: 12, color: AppColors.sub),
           ),
@@ -61,7 +61,7 @@ class AiPhotoImportSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSizes.spacing8),
-          const Text(
+          Text(
             ImportStrings.aiHint,
             style: TextStyle(fontSize: 11, color: AppColors.faint),
           ),
@@ -171,7 +171,7 @@ class _AiPreviewSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               ImportStrings.aiPreviewTitle,
               style: TextStyle(
                 fontFamily: 'Pretendard',
@@ -185,7 +185,7 @@ class _AiPreviewSheet extends StatelessWidget {
               dupCount > 0
                   ? '${ImportStrings.aiPreviewCount(items.length)} · ${ImportStrings.aiPreviewDup(dupCount)}'
                   : ImportStrings.aiPreviewCount(items.length),
-              style: const TextStyle(fontSize: 12, color: AppColors.sub),
+              style: TextStyle(fontSize: 12, color: AppColors.sub),
             ),
             const SizedBox(height: AppSizes.spacing12),
             Flexible(
@@ -217,7 +217,7 @@ class _AiPreviewSheet extends StatelessWidget {
                                 item.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.ink,
@@ -225,7 +225,7 @@ class _AiPreviewSheet extends StatelessWidget {
                               ),
                               Text(
                                 du.formatDate(DateTime.parse(item.date)),
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 11, color: AppColors.faint),
                               ),
                             ],

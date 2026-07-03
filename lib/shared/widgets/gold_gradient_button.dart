@@ -53,7 +53,7 @@ class GoldGradientButton extends StatelessWidget {
               ],
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

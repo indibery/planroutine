@@ -104,20 +104,20 @@ class ImportScreen extends ConsumerWidget {
           const SizedBox(height: AppSizes.spacing16),
           Row(
             children: [
-              const Expanded(child: Divider(color: AppColors.line)),
+              Expanded(child: Divider(color: AppColors.line)),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSizes.spacing12),
                 child: Text(
                   ImportStrings.csvDivider,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     letterSpacing: 1.2,
                     color: AppColors.faint,
                   ),
                 ),
               ),
-              const Expanded(child: Divider(color: AppColors.line)),
+              Expanded(child: Divider(color: AppColors.line)),
             ],
           ),
           const SizedBox(height: AppSizes.spacing16),
@@ -131,7 +131,7 @@ class ImportScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   ImportStrings.csvTitle,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
@@ -143,7 +143,7 @@ class ImportScreen extends ConsumerWidget {
                 const SizedBox(height: AppSizes.spacing4),
                 Text(
                   ImportStrings.description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 13,
                     height: 1.5,
@@ -173,12 +173,12 @@ class ImportScreen extends ConsumerWidget {
   }
 
   Widget _buildLoadingView(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSizes.spacing32),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing32),
       child: Column(
         children: [
           CircularProgressIndicator(color: AppColors.gold),
-          SizedBox(height: AppSizes.spacing12),
+          const SizedBox(height: AppSizes.spacing12),
           Text(
             ImportStrings.parsing,
             style: TextStyle(
@@ -268,14 +268,14 @@ class ImportScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle,
                   color: AppColors.inkGreen,
                 ),
                 const SizedBox(width: AppSizes.spacing8),
                 Text(
                   '$sourceYear${AppStrings.compareYearFormat} 일정 $created${ImportStrings.registerCount}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -288,7 +288,7 @@ class ImportScreen extends ConsumerWidget {
               const SizedBox(height: AppSizes.spacing4),
               Text(
                 skippedMessage.trim(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 12,
                   color: AppColors.sub,
@@ -326,9 +326,9 @@ class ImportScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline, color: AppColors.inkRed),
+              Icon(Icons.error_outline, color: AppColors.inkRed),
               const SizedBox(width: AppSizes.spacing8),
-              const Text(
+              Text(
                 ImportStrings.failed,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
@@ -342,7 +342,7 @@ class ImportScreen extends ConsumerWidget {
           const SizedBox(height: AppSizes.spacing8),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
               color: AppColors.sub,

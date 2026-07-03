@@ -28,7 +28,7 @@ class SectionHeader extends StatelessWidget {
             children: [
               Text(
                 title.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -44,7 +44,7 @@ class SectionHeader extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               sub,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 12,
                 height: 1.35,

@@ -96,7 +96,7 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             ScheduleStrings.editTitle,
             style: TextStyle(
               fontSize: 18,

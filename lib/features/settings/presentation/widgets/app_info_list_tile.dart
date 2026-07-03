@@ -13,7 +13,7 @@ class AppInfoListTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final infoAsync = ref.watch(appInfoProvider);
     return ListTile(
-      leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
+      leading: Icon(Icons.info_outline, color: AppColors.textSecondary),
       title: Text(infoAsync.valueOrNull?.appName ?? AppStrings.appName),
       subtitle: Text(
         infoAsync.when(

@@ -143,7 +143,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         const Spacer(),
         Text(
           _isEditing ? CalendarStrings.editEvent : CalendarStrings.addEvent,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -156,7 +156,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           width: 40,
           child: _isEditing
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
                     color: AppColors.inkRed,
                   ),
@@ -203,18 +203,18 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           child: Padding(
             padding: const EdgeInsets.only(top: AppSizes.spacing8),
             child: ActionChip(
-              avatar: const Icon(
+              avatar: Icon(
                 Icons.event_repeat,
                 size: 18,
                 color: AppColors.gold,
               ),
               label: Text('${result.from} → $currentYear'),
-              labelStyle: const TextStyle(
+              labelStyle: TextStyle(
                 color: AppColors.ink,
                 fontWeight: FontWeight.w600,
               ),
               backgroundColor: AppColors.navy,
-              side: const BorderSide(color: AppColors.gold),
+              side: BorderSide(color: AppColors.gold),
               onPressed: () {
                 _titleController.value = TextEditingValue(
                   text: result.title,
@@ -283,7 +283,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
@@ -297,7 +297,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               ),
             ),
             const SizedBox(width: AppSizes.spacing8),
-            const Icon(
+            Icon(
               Icons.calendar_today,
               size: AppSizes.iconSmall,
               color: AppColors.textHint,
@@ -324,8 +324,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSizes.spacing16,
         ),
-        secondary: const Icon(Icons.star_rounded, color: AppColors.gold),
-        title: const Text(
+        secondary: Icon(Icons.star_rounded, color: AppColors.gold),
+        title: Text(
           CalendarStrings.importantLabel,
           style: TextStyle(
             fontSize: 15,
@@ -361,7 +361,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             sharePositionOrigin: _shareOrigin(),
           );
         },
-        icon: const Icon(Icons.auto_awesome, size: 18, color: AppColors.gold),
+        icon: Icon(Icons.auto_awesome, size: 18, color: AppColors.gold),
         label: const Text('AI로 보내기'),
       ),
     );

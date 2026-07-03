@@ -21,7 +21,7 @@ class FloatingTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.navyMid,
         border: Border(
           top: BorderSide(color: AppColors.line, width: 0.5),

@@ -58,7 +58,7 @@ class CalendarScreen extends ConsumerWidget {
           Expanded(
             child: monthEventsGrouped.when(
               data: (groupedEntries) => groupedEntries.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         CalendarStrings.noEvents,
                         style: TextStyle(
@@ -103,7 +103,7 @@ class CalendarScreen extends ConsumerWidget {
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: () => _onAddEvent(context, ref, selectedDate),
-            child: const Icon(Icons.add, color: AppColors.navy, size: 26),
+            child: Icon(Icons.add, color: AppColors.navy, size: 26),
           ),
         ),
       ),
@@ -124,7 +124,7 @@ class CalendarScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: AppColors.sub),
+            icon: Icon(Icons.chevron_left, color: AppColors.sub),
             onPressed: () {
               final prev = DateTime(selectedDate.year, selectedDate.month - 1, 1);
               ref.read(selectedDateProvider.notifier).state = prev;
@@ -137,7 +137,7 @@ class CalendarScreen extends ConsumerWidget {
             },
             child: Text(
               _monthFormatter.format(selectedDate),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -147,7 +147,7 @@ class CalendarScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: AppColors.sub),
+            icon: Icon(Icons.chevron_right, color: AppColors.sub),
             onPressed: () {
               final next = DateTime(selectedDate.year, selectedDate.month + 1, 1);
               ref.read(selectedDateProvider.notifier).state = next;

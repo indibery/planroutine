@@ -33,13 +33,13 @@ class ScheduleTile extends StatelessWidget {
         DismissDirection.endToStart: 0.25,
       },
       movementDuration: const Duration(milliseconds: 150),
-      background: const DismissibleBackground(
+      background: DismissibleBackground(
         accent: AppColors.inkGreen,
         icon: Icons.check_circle_outline,
         label: ScheduleStrings.confirm,
         alignment: Alignment.centerLeft,
       ),
-      secondaryBackground: const DismissibleBackground(
+      secondaryBackground: DismissibleBackground(
         accent: AppColors.inkRed,
         icon: Icons.delete_outline,
         label: ScheduleStrings.delete,
@@ -92,7 +92,7 @@ class ScheduleTile extends StatelessWidget {
                           Expanded(
                             child: Text(
                               schedule.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Pretendard',
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -115,7 +115,7 @@ class ScheduleTile extends StatelessWidget {
                           const SizedBox(width: AppSizes.spacing4),
                           Text(
                             _formatDate(schedule.scheduledDate),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontSize: 14,
                               color: AppColors.sub,
@@ -163,9 +163,9 @@ class ScheduleTile extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(Icons.check, size: 12, color: AppColors.navy),
-          SizedBox(width: 3),
+          const SizedBox(width: 3),
           Text(
             ScheduleStrings.confirm,
             style: TextStyle(

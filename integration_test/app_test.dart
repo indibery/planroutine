@@ -394,6 +394,31 @@ void main() {
           reason: '28일 이벤트가 화면 밖(아래)에 있음 → 스크롤 안 됨. top=$top, screenH=$screenH');
     });
 
+    testWidgets('화면 테마: 밝게 선택 시 앱이 크림 배경으로 전환', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await _startFresh(tester);
+      await _tapSettingsTab(tester);
+
+      // '화면' 섹션의 밝게 세그먼트 탭
+      expect(find.text(SettingsStrings.themeLabel), findsOneWidget);
+      await tester.tap(find.text(SettingsStrings.themeLight));
+      await tester.pumpAndSettle();
+
+      // Scaffold 배경이 라이트 팔레트(크림 #F4EFE3)로 바뀌어야 한다.
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+      final ctx = tester.element(find.byType(Scaffold).first);
+      final bg = scaffold.backgroundColor ??
+          Theme.of(ctx).scaffoldBackgroundColor;
+      expect(bg, const Color(0xFFF4EFE3), reason: '라이트 크림 배경');
+
+      // 다시 어둡게 → 네이비 복귀
+      await tester.tap(find.text(SettingsStrings.themeDark));
+      await tester.pumpAndSettle();
+      final ctx2 = tester.element(find.byType(Scaffold).first);
+      expect(Theme.of(ctx2).scaffoldBackgroundColor, const Color(0xFF0A1628),
+          reason: '다크 네이비 배경');
+    });
+
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
       await _startFresh(tester);
 

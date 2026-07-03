@@ -81,8 +81,8 @@ class SlideHintBar extends ConsumerWidget {
           InkWell(
             onTap: () => ref.read(provider.notifier).dismiss(),
             borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-            child: const Padding(
-              padding: EdgeInsets.all(AppSizes.spacing8),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSizes.spacing8),
               child: Icon(
                 Icons.close,
                 size: AppSizes.iconSmall,

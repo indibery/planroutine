@@ -6,10 +6,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/import/presentation/providers/import_providers.dart';
+import 'features/settings/presentation/providers/theme_mode_provider.dart';
 
 /// 앱 루트 위젯.
 ///
@@ -69,11 +71,22 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
 
   @override
   Widget build(BuildContext context) {
+    // 선택된 테마 모드(기본 시스템) + 기기 밝기 → effective brightness.
+    // 팔레트가 전역 단일이라 MaterialApp에 theme 하나만 주고, effective에 맞춰
+    // AppColors 팔레트를 동기화한다. 시스템 모드는 기기 밝기 변경 시 rebuild로 반영.
+    final mode =
+        ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
+    final platformBrightness = MediaQuery.platformBrightnessOf(context);
+    final effective = switch (mode) {
+      ThemeMode.light => Brightness.light,
+      ThemeMode.dark => Brightness.dark,
+      ThemeMode.system => platformBrightness,
+    };
+    AppColors.applyBrightness(effective);
+
     return MaterialApp.router(
       title: AppStrings.appName,
-      theme: AppTheme.dark,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
+      theme: AppTheme.of(effective),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

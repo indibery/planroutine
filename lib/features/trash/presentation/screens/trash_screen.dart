@@ -43,9 +43,9 @@ class TrashScreen extends ConsumerWidget {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(Icons.delete_outline, size: 64, color: AppColors.faint),
-          SizedBox(height: AppSizes.spacing16),
+          const SizedBox(height: AppSizes.spacing16),
           Text(
             TrashStrings.empty,
             style: TextStyle(
@@ -54,7 +54,7 @@ class TrashScreen extends ConsumerWidget {
               color: AppColors.sub,
             ),
           ),
-          SizedBox(height: AppSizes.spacing4),
+          const SizedBox(height: AppSizes.spacing4),
           Text(
             TrashStrings.autoPurgeNotice,
             style: TextStyle(
@@ -80,7 +80,7 @@ class TrashScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSizes.spacing16),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.info_outline,
                 size: AppSizes.iconSmall,
                 color: AppColors.textHint,
@@ -89,7 +89,7 @@ class TrashScreen extends ConsumerWidget {
               Expanded(
                 child: Text(
                   '${TrashStrings.autoPurgeNotice} · 총 ${snapshot.total}건',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textHint,
                   ),
@@ -136,7 +136,7 @@ class _SectionCountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       '$count',
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Pretendard',
         fontSize: 10,
         fontWeight: FontWeight.w600,
@@ -224,12 +224,12 @@ class _TrashActions extends StatelessWidget {
       children: [
         IconButton(
           tooltip: TrashStrings.restore,
-          icon: const Icon(Icons.restore, color: AppColors.gold),
+          icon: Icon(Icons.restore, color: AppColors.gold),
           onPressed: onRestore,
         ),
         IconButton(
           tooltip: TrashStrings.permanentDelete,
-          icon: const Icon(Icons.delete_forever, color: AppColors.inkRed),
+          icon: Icon(Icons.delete_forever, color: AppColors.inkRed),
           onPressed: onPermanentDelete,
         ),
       ],
@@ -253,7 +253,7 @@ Future<void> _confirmPermanentDelete(
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text(
+          child: Text(
             TrashStrings.permanentDelete,
             style: TextStyle(color: AppColors.error),
           ),

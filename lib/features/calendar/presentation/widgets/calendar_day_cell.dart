@@ -71,7 +71,7 @@ class CalendarDayCell extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: isToday
-          ? const BoxDecoration(
+          ? BoxDecoration(
               color: AppColors.calendarToday,
               shape: BoxShape.circle,
             )

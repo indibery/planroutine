@@ -17,8 +17,8 @@ class ResetListTile extends ConsumerWidget {
     final isResetting = resetState is ResetInProgress;
 
     return ListTile(
-      leading: const Icon(Icons.delete_forever, color: AppColors.error),
-      title: const Text(
+      leading: Icon(Icons.delete_forever, color: AppColors.error),
+      title: Text(
         SettingsStrings.resetAll,
         style: TextStyle(
           color: AppColors.error,

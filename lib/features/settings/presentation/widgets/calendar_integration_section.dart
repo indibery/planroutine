@@ -27,7 +27,7 @@ class CalendarIntegrationSection extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.event_note_outlined,
               color: AppColors.primary,
             ),
@@ -100,7 +100,7 @@ class _GoogleAccountRow extends ConsumerWidget {
 
     if (account == null) {
       return ListTile(
-        leading: const Icon(
+        leading: Icon(
           Icons.account_circle_outlined,
           color: AppColors.primary,
         ),
@@ -115,7 +115,7 @@ class _GoogleAccountRow extends ConsumerWidget {
               backgroundImage: NetworkImage(account.photoUrl!),
               backgroundColor: AppColors.surfaceVariant,
             )
-          : const Icon(Icons.account_circle, color: AppColors.primary),
+          : Icon(Icons.account_circle, color: AppColors.primary),
       title: Text(account.displayName ?? account.email),
       subtitle: Text(account.email),
       trailing: TextButton(
@@ -177,16 +177,16 @@ class _DevicePermissionRow extends ConsumerWidget {
     }
 
     if (status.isGranted) {
-      return const ListTile(
+      return ListTile(
         leading: Icon(Icons.check_circle, color: AppColors.inkGreen),
-        title: Text(CalendarIntegrationStrings.permissionGranted),
+        title: const Text(CalendarIntegrationStrings.permissionGranted),
       );
     }
 
     // 한 번도 요청 안 했거나 사용자 응답 전: request 다이얼로그 직접 호출 가능
     if (status.isDenied) {
       return ListTile(
-        leading: const Icon(Icons.warning_amber, color: AppColors.gold),
+        leading: Icon(Icons.warning_amber, color: AppColors.gold),
         title: const Text(CalendarIntegrationStrings.permissionDenied),
         trailing: TextButton(
           onPressed: () async {
@@ -200,7 +200,7 @@ class _DevicePermissionRow extends ConsumerWidget {
 
     // permanentlyDenied / restricted — 시스템 설정 앱으로 이동
     return ListTile(
-      leading: const Icon(Icons.warning_amber, color: AppColors.gold),
+      leading: Icon(Icons.warning_amber, color: AppColors.gold),
       title: const Text(CalendarIntegrationStrings.permissionDenied),
       trailing: TextButton(
         onPressed: () async {

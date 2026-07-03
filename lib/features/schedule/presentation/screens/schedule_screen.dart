@@ -31,7 +31,7 @@ class ScheduleScreen extends ConsumerWidget {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'REVIEW',
               style: TextStyle(
                 fontFamily: 'Pretendard',
@@ -51,7 +51,7 @@ class ScheduleScreen extends ConsumerWidget {
         actions: [
           // 가져오기 상시 진입점 — 검토할 일정의 공급 문은 검토 탭에 둔다.
           IconButton(
-            icon: const Icon(Icons.file_download_outlined,
+            icon: Icon(Icons.file_download_outlined,
                 color: AppColors.gold),
             tooltip: ScheduleStrings.goImport,
             onPressed: () => context.push(AppRoutes.import),
@@ -83,7 +83,7 @@ class ScheduleScreen extends ConsumerWidget {
                   children: [
                     Text(
                       AppStrings.error,
-                      style: const TextStyle(color: AppColors.error),
+                      style: TextStyle(color: AppColors.error),
                     ),
                     const SizedBox(height: AppSizes.spacing8),
                     TextButton(
@@ -137,7 +137,7 @@ class ScheduleScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       '$confirmed / $total · $percent% 완료',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Space Grotesk',
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -170,7 +170,7 @@ class ScheduleScreen extends ConsumerWidget {
                       widthFactor: ratio.clamp(0.0, 1.0),
                       child: Container(
                         height: 2,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: AppGradients.progress,
                         ),
                       ),
@@ -228,7 +228,7 @@ class ScheduleScreen extends ConsumerWidget {
             hasFilter
                 ? ScheduleStrings.emptyFiltered
                 : ScheduleStrings.empty,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
               color: AppColors.sub,
@@ -262,13 +262,13 @@ class ScheduleScreen extends ConsumerWidget {
               color: AppColors.inkGreen.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check,
+            child: Icon(Icons.check,
                 size: 34, color: AppColors.inkGreen),
           ),
           const SizedBox(height: AppSizes.spacing16),
           Text(
             ScheduleStrings.reviewDoneTitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -279,7 +279,7 @@ class ScheduleScreen extends ConsumerWidget {
           Text(
             ScheduleStrings.reviewDoneBody(confirmedCount),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
               height: 1.65,
@@ -372,20 +372,20 @@ class ScheduleScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle,
+              Icon(Icons.check_circle,
                   size: 16, color: AppColors.inkGreen),
               const SizedBox(width: AppSizes.spacing8),
               Expanded(
                 child: Text(
                   ScheduleStrings.doneSummary(confirmedCount),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 12,
                     color: AppColors.sub,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right,
+              Icon(Icons.chevron_right,
                   size: 16, color: AppColors.faint),
             ],
           ),
@@ -412,7 +412,7 @@ class ScheduleScreen extends ConsumerWidget {
           ),
           child: Text(
             _formatMonthKey(monthKey),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -520,11 +520,11 @@ class _ConfirmAllPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.done_all, color: AppColors.navy, size: 14),
+            Icon(Icons.done_all, color: AppColors.navy, size: 14),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

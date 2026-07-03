@@ -134,7 +134,7 @@ class EventListSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
       child: Text(
         formatter.format(selectedDate),
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 16,
           fontWeight: FontWeight.w700,
@@ -145,8 +145,8 @@ class EventListSection extends ConsumerWidget {
   }
 
   Widget _buildEmptyState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing16,
         vertical: AppSizes.spacing32,
       ),
@@ -251,8 +251,8 @@ class EventListSection extends ConsumerWidget {
               ),
               _buildYearBadge(event),
               if (isDone)
-                const Padding(
-                  padding: EdgeInsets.only(left: AppSizes.spacing4),
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSizes.spacing4),
                   child: Icon(
                     Icons.check_circle,
                     size: 18,
@@ -280,11 +280,11 @@ class EventListSection extends ConsumerWidget {
           color: AppColors.gold,
           borderRadius: BorderRadius.circular(AppSizes.radiusFull),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.star_rounded, size: 12, color: AppColors.navy),
-            SizedBox(width: 3),
+            const SizedBox(width: 3),
             Text(
               CalendarStrings.importantBadge,
               style: TextStyle(
@@ -325,11 +325,11 @@ class EventListSection extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.event_repeat, size: 14, color: AppColors.navy),
+              Icon(Icons.event_repeat, size: 14, color: AppColors.navy),
               const SizedBox(width: AppSizes.spacing4),
               Text(
                 '${result.from}→$currentYear',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

@@ -4,6 +4,13 @@ class SettingsStrings {
 
   static const title = '설정';
 
+  // 화면 테마
+  static const appearanceSection = '화면';
+  static const themeLabel = '화면 테마';
+  static const themeSystem = '시스템';
+  static const themeLight = '밝게';
+  static const themeDark = '어둡게';
+
   // 섹션 헤더
   static const importSection = '일정 가져오기';
   static const importDescription = 'CSV 업로드 또는 행사표 사진(AI 변환)으로 일정을 불러옵니다';

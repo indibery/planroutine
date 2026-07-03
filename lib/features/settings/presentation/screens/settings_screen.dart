@@ -15,6 +15,7 @@ import '../widgets/import_list_tile.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/reset_list_tile.dart';
 import '../widgets/settings_section.dart';
+import '../widgets/theme_mode_tile.dart';
 import '../widgets/trash_list_tile.dart';
 
 /// 설정 화면 (하단 탭).
@@ -59,6 +60,10 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
         children: [
+          const SettingsSection(
+            title: SettingsStrings.appearanceSection,
+            child: ThemeModeTile(),
+          ),
           const SettingsSection(
             title: SettingsStrings.importSection,
             subtitle: SettingsStrings.importDescription,

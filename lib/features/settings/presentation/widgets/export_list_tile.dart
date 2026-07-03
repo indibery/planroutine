@@ -78,7 +78,7 @@ class _ExportListTileState extends ConsumerState<ExportListTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.ios_share, color: AppColors.primary),
+      leading: Icon(Icons.ios_share, color: AppColors.primary),
       title: const Text(SettingsStrings.exportTitle),
       trailing: _exporting
           ? const SizedBox(

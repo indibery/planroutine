@@ -23,7 +23,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
     return Column(
       children: [
         SwitchListTile(
-          secondary: const Icon(
+          secondary: Icon(
             Icons.notifications_outlined,
             color: AppColors.primary,
           ),
@@ -32,7 +32,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
               ? null
               : Text(
                   summary,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.sub,
                   ),
@@ -47,7 +47,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
             leading: const SizedBox(width: 40),
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             childrenPadding: EdgeInsets.zero,
-            title: const Text(
+            title: Text(
               NotificationStrings.advanced,
               style: TextStyle(fontSize: 14, color: AppColors.sub),
             ),
@@ -100,7 +100,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                   style: TextStyle(fontSize: 14),
                 ),
                 trailing:
-                    const Icon(Icons.list_alt, color: AppColors.primary),
+                    Icon(Icons.list_alt, color: AppColors.primary),
                 onTap: () => _showPendingDialog(context, ref),
               ),
               ListTile(
@@ -110,7 +110,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                   style: TextStyle(fontSize: 14),
                 ),
                 trailing:
-                    const Icon(Icons.alarm_on, color: AppColors.primary),
+                    Icon(Icons.alarm_on, color: AppColors.primary),
                 onTap: () => _sendTestNotification(context, ref),
               ),
             ],
@@ -216,7 +216,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                       ),
                       trailing: Text(
                         '#${p.id}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.textHint,
                         ),

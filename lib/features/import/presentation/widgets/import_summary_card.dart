@@ -48,7 +48,7 @@ class ImportSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle,
                   color: AppColors.success,
                   size: AppSizes.iconLarge,
