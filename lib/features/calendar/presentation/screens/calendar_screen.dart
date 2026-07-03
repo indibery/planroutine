@@ -103,7 +103,7 @@ class CalendarScreen extends ConsumerWidget {
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: () => _onAddEvent(context, ref, selectedDate),
-            child: Icon(Icons.add, color: AppColors.navy, size: 26),
+            child: Icon(Icons.add, color: AppColors.onGold, size: 26),
           ),
         ),
       ),

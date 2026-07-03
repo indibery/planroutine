@@ -88,7 +88,7 @@ class CalendarDayCell extends StatelessWidget {
           fontFamily: 'Pretendard',
           fontSize: 14,
           fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
-          color: isToday ? AppColors.navy : textColor,
+          color: isToday ? AppColors.onGold : textColor,
         ),
       ),
     );

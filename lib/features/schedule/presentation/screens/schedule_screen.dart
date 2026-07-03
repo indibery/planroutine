@@ -520,7 +520,7 @@ class _ConfirmAllPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.done_all, color: AppColors.navy, size: 14),
+            Icon(Icons.done_all, color: AppColors.onGold, size: 14),
             const SizedBox(width: 6),
             Text(
               label,
@@ -528,7 +528,7 @@ class _ConfirmAllPill extends StatelessWidget {
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.navy,
+                color: AppColors.onGold,
               ),
             ),
           ],

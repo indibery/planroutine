@@ -43,12 +43,15 @@ void main() {
   group('AppColors.applyBrightness — 팔레트 전환', () {
     tearDown(() => AppColors.applyBrightness(Brightness.dark));
 
-    test('light 적용 시 배경이 크림, 본문이 네이비', () {
+    test('light(쿨 미스트) 적용 시 배경 화이트블루, 본문 네이비, 딥골드 액센트', () {
       AppColors.applyBrightness(Brightness.light);
-      expect(AppColors.background, const Color(0xFFF4EFE3));
-      expect(AppColors.textPrimary, const Color(0xFF182A44));
-      // 딥골드 액센트
-      expect(AppColors.gold, const Color(0xFF8A6210));
+      expect(AppColors.background, const Color(0xFFF6F8FB));
+      expect(AppColors.textPrimary, const Color(0xFF17253D));
+      // 배경 위 딥골드 액센트(텍스트/아이콘/토요일)
+      expect(AppColors.gold, const Color(0xFF9A7415));
+      // 채움은 밝은 골드 + 그 위 네이비
+      expect(AppColors.goldFill, const Color(0xFFE6B95C));
+      expect(AppColors.onGold, const Color(0xFF17253D));
     });
 
     test('dark 적용 시 배경이 네이비, 본문이 크림빛', () {
@@ -56,6 +59,9 @@ void main() {
       expect(AppColors.background, const Color(0xFF0A1628));
       expect(AppColors.textPrimary, const Color(0xFFF0EAD9));
       expect(AppColors.gold, const Color(0xFFE0B96A));
+      // 다크는 채움=액센트 골드, 위에 네이비
+      expect(AppColors.goldFill, const Color(0xFFE0B96A));
+      expect(AppColors.onGold, const Color(0xFF0A1628));
     });
   });
 }

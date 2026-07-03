@@ -150,7 +150,9 @@ class ScheduleTile extends StatelessWidget {
     );
   }
 
-  /// 확정된 일정에만 붙는 "확정" 뱃지 (inkGreen 배경 + navy 글씨 + 체크 아이콘)
+  /// 확정된 일정에만 붙는 "확정" 뱃지 — 옅은 초록 배경 + 진초록 글씨/체크.
+  /// (채움+대비색 방식은 다크/라이트 한쪽에서 대비가 무너져, 양 테마 모두
+  /// 안정적인 옅은배경+진한글씨 outline 형으로 통일)
   Widget _buildConfirmedBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -158,20 +160,20 @@ class ScheduleTile extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: AppColors.inkGreen,
+        color: AppColors.inkGreen.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppSizes.radiusPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check, size: 12, color: AppColors.navy),
+          Icon(Icons.check, size: 12, color: AppColors.inkGreen),
           const SizedBox(width: 3),
           Text(
             ScheduleStrings.confirm,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 10,
-              color: AppColors.navy,
+              color: AppColors.inkGreen,
               fontWeight: FontWeight.w700,
             ),
           ),

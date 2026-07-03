@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final isLast = _page == _pages.length - 1;
     return Scaffold(
-      backgroundColor: AppColors.navy,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [

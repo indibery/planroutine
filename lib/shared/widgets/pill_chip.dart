@@ -23,7 +23,7 @@ class PillChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.gold.withValues(alpha: 0.12)
+              ? AppColors.goldFill.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSizes.radiusPill),
           border: Border.all(

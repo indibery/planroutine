@@ -48,7 +48,7 @@ class GoldGradientButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: AppColors.navy, size: 18),
+                Icon(icon, color: AppColors.onGold, size: 18),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -57,7 +57,7 @@ class GoldGradientButton extends StatelessWidget {
                   fontFamily: 'Pretendard',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.navy,
+                  color: AppColors.onGold,
                 ),
               ),
             ],

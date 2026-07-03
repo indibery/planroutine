@@ -172,7 +172,7 @@ class EventListSection extends ConsumerWidget {
     // 중요는 색이 아닌 형태(★)로 구분하되 레일만 골드로 살짝 강조.
     final accentColor = isDone
         ? AppColors.faint
-        : (showImportant ? AppColors.gold : AppColors.eventAccent);
+        : (showImportant ? AppColors.goldFill : AppColors.eventAccent);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -185,12 +185,12 @@ class EventListSection extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSizes.cardPadding),
           decoration: BoxDecoration(
             color: showImportant
-                ? AppColors.gold.withValues(alpha: 0.06)
+                ? AppColors.goldFill.withValues(alpha: 0.14)
                 : AppColors.glass,
             borderRadius: BorderRadius.circular(AppSizes.radius14),
             border: Border.all(
               color: showImportant
-                  ? AppColors.gold.withValues(alpha: 0.35)
+                  ? AppColors.goldFill.withValues(alpha: 0.5)
                   : AppColors.line,
               width: 0.5,
             ),
@@ -266,36 +266,52 @@ class EventListSection extends ConsumerWidget {
     );
   }
 
+  /// 골드 채움 pill 공용 위젯 — 중요 배지·연도 배지가 공유.
+  /// 채움은 [AppColors.goldFill], 위 글씨·아이콘은 [AppColors.onGold].
+  Widget _goldPill({
+    Key? key,
+    required IconData icon,
+    required double iconSize,
+    required String label,
+  }) {
+    return Container(
+      key: key,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing8,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.goldFill,
+        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: iconSize, color: AppColors.onGold),
+          const SizedBox(width: AppSizes.spacing4),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onGold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 중요 이벤트에 붙는 "★ 중요" 골드 배지. 제목 위 한 줄.
   Widget _buildImportantBadge(CalendarEvent event) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.spacing4),
-      child: Container(
+      child: _goldPill(
         key: Key('event_important_badge_${event.id}'),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacing8,
-          vertical: 2,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.gold,
-          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_rounded, size: 12, color: AppColors.navy),
-            const SizedBox(width: 3),
-            Text(
-              CalendarStrings.importantBadge,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.navy,
-              ),
-            ),
-          ],
-        ),
+        icon: Icons.star_rounded,
+        iconSize: 12,
+        label: CalendarStrings.importantBadge,
       ),
     );
   }
@@ -313,31 +329,10 @@ class EventListSection extends ConsumerWidget {
       child: GestureDetector(
         key: Key('year_bump_badge_${event.id}'),
         onTap: () => onEventBumpYear(event),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.spacing8,
-            vertical: AppSizes.spacing4,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.gold,
-            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.event_repeat, size: 14, color: AppColors.navy),
-              const SizedBox(width: AppSizes.spacing4),
-              Text(
-                '${result.from}→$currentYear',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.navy,
-                ),
-              ),
-            ],
-          ),
+        child: _goldPill(
+          icon: Icons.event_repeat,
+          iconSize: 14,
+          label: '${result.from}→$currentYear',
         ),
       ),
     );

@@ -213,7 +213,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 color: AppColors.ink,
                 fontWeight: FontWeight.w600,
               ),
-              backgroundColor: AppColors.navy,
+              backgroundColor: AppColors.surfaceVariant,
               side: BorderSide(color: AppColors.gold),
               onPressed: () {
                 _titleController.value = TextEditingValue(

@@ -409,7 +409,7 @@ void main() {
       final ctx = tester.element(find.byType(Scaffold).first);
       final bg = scaffold.backgroundColor ??
           Theme.of(ctx).scaffoldBackgroundColor;
-      expect(bg, const Color(0xFFF4EFE3), reason: '라이트 크림 배경');
+      expect(bg, const Color(0xFFF6F8FB), reason: '라이트 쿨 미스트 배경');
 
       // 다시 어둡게 → 네이비 복귀
       await tester.tap(find.text(SettingsStrings.themeDark));

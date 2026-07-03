@@ -15,6 +15,8 @@ class _Palette {
     required this.goldMuted,
     required this.goldCtaStart,
     required this.goldCtaEnd,
+    required this.goldFill,
+    required this.onGold,
     required this.ink,
     required this.sub,
     required this.faint,
@@ -38,11 +40,13 @@ class _Palette {
   final Color navyMid; // surface
   final Color navySoft; // surfaceVariant
   final Color background; // scaffold/appBar 면
-  final Color gold; // 액센트: 아이콘/텍스트/보더 (라이트에선 딥골드)
+  final Color gold; // 액센트: 배경 위 아이콘/텍스트/보더/토요일 (라이트에선 딥골드)
   final Color goldGlow; // 밝은 골드
   final Color goldMuted;
   final Color goldCtaStart; // 골드 CTA 그라디언트 시작(밝은 채움)
   final Color goldCtaEnd;
+  final Color goldFill; // 골드 채움 면(배지/pill/버튼/오늘 셀) — 밝은 골드
+  final Color onGold; // goldFill 채움 위의 텍스트·아이콘 (네이비)
   final Color ink; // 본문 텍스트
   final Color sub;
   final Color faint;
@@ -70,6 +74,8 @@ const _dark = _Palette(
   goldMuted: Color(0xFF8A7144),
   goldCtaStart: Color(0xFFE0B96A),
   goldCtaEnd: Color(0xFFF5D98F),
+  goldFill: Color(0xFFE0B96A),
+  onGold: Color(0xFF0A1628),
   ink: Color(0xFFF0EAD9),
   sub: Color(0xB3F0EAD9),
   faint: Color(0x59F0EAD9),
@@ -87,32 +93,34 @@ const _dark = _Palette(
   categoryCurriculum: Color(0xFFB89AE0),
 );
 
-/// 라이트 팔레트 — 공문서 아이보리(크림 종이 + 네이비 잉크 + 딥골드 인장).
-/// 울트라코드 4컨셉 판정 1위 + WCAG AA 전 토큰 통과.
+/// 라이트 팔레트 — 쿨 미스트 화이트(옅은 블루톤 화이트 + 네이비 잉크 + 골드 포인트).
+/// 산뜻하고 밝은 사무 톤. 골드 채움(goldFill)은 밝게, 배경 위 골드 텍스트는 딥골드.
 const _light = _Palette(
-  navy: Color(0xFF182A44), // 골드/밝은 면 위 전경 네이비
-  navyMid: Color(0xFFFBF7EE), // surface
-  navySoft: Color(0xFFEDE6D5), // surfaceVariant
-  background: Color(0xFFF4EFE3), // 크림 종이 배경
-  gold: Color(0xFF8A6210), // 딥골드 — 아이콘/텍스트/보더 (bg 4.77:1)
-  goldGlow: Color(0xFFE0B96A), // 밝은 브랜드골드
+  navy: Color(0xFF17253D), // goldFill 채움 위 전경 네이비(= onGold)
+  navyMid: Color(0xFFFFFFFF), // surface (흰 카드)
+  navySoft: Color(0xFFEBEFF5), // surfaceVariant (옅은 블루그레이)
+  background: Color(0xFFF6F8FB), // 쿨 미스트 배경
+  gold: Color(0xFF9A7415), // 딥골드 — 배경 위 아이콘/텍스트/보더/토요일
+  goldGlow: Color(0xFFE6B95C), // 밝은 골드
   goldMuted: Color(0xFFA8925C),
-  goldCtaStart: Color(0xFFE0B96A), // CTA는 밝은 골드 채움 + 네이비 텍스트
-  goldCtaEnd: Color(0xFFEFCE8A),
-  ink: Color(0xFF182A44), // 네이비 잉크 본문 (12.6:1)
-  sub: Color(0xFF41506A), // 7.1:1
-  faint: Color(0xFF6E6A57), // 4.7:1
-  line: Color(0x238A6210),
-  lineStrong: Color(0x598A6210),
-  glass: Color(0x0A182A44),
-  inkRed: Color(0xFFB23A2E), // 5.2:1
-  inkGreen: Color(0xFF22764A), // 4.9:1
-  info: Color(0xFF3A5C8A),
-  eventAccent: Color(0xFF3A5C8A), // 6.0:1
-  calendarToday: Color(0xFFE0B96A), // 밝은 골드 원 + 네이비 텍스트
-  calendarSelected: Color(0x248A6210),
-  calendarSaturday: Color(0xFF8A6210), // 크림 위 딥골드(밝은 골드는 안 보임)
-  categoryDailyOps: Color(0xFF3F5F94), // 크림 위 대비 위해 진하게
+  goldCtaStart: Color(0xFFE6B95C), // CTA 밝은 골드 채움 + 네이비 텍스트
+  goldCtaEnd: Color(0xFFF0CE7E),
+  goldFill: Color(0xFFE6B95C), // 배지/pill/버튼/오늘 셀 채움
+  onGold: Color(0xFF17253D), // 채움 위 네이비 텍스트 (goldFill 위 7:1+)
+  ink: Color(0xFF17253D), // 네이비 잉크 본문
+  sub: Color(0xFF48566E),
+  faint: Color(0xFF7E8696),
+  line: Color(0xFFE4E9F0), // 옅은 블루그레이 hairline
+  lineStrong: Color(0xFFD4DBE6),
+  glass: Color(0xFFFFFFFF), // 흰 카드 면 (배경보다 밝게 떠보임)
+  inkRed: Color(0xFFC0392B),
+  inkGreen: Color(0xFF1E9E63),
+  info: Color(0xFF3E6BB0),
+  eventAccent: Color(0xFF3E6BB0), // 이벤트 레일(밝은 블루)
+  calendarToday: Color(0xFFE6B95C), // 밝은 골드 원 + 네이비 텍스트
+  calendarSelected: Color(0x1FE6B95C),
+  calendarSaturday: Color(0xFF9A7415), // 배경 위 딥골드
+  categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
 );
 
@@ -139,6 +147,13 @@ class AppColors {
   static Color get goldMuted => _current.goldMuted;
   static Color get goldCtaStart => _current.goldCtaStart;
   static Color get goldCtaEnd => _current.goldCtaEnd;
+
+  /// 골드 채움 면(배지·pill·버튼·오늘 셀 배경). 위 텍스트는 [onGold].
+  static Color get goldFill => _current.goldFill;
+
+  /// [goldFill] 채움 위의 텍스트·아이콘 색(네이비).
+  static Color get onGold => _current.onGold;
+
   static Color get ink => _current.ink;
   static Color get sub => _current.sub;
   static Color get faint => _current.faint;
