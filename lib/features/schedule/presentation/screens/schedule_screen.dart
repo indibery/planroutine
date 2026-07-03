@@ -64,8 +64,11 @@ class ScheduleScreen extends ConsumerWidget {
           // 스와이프 안내는 스와이프할 목록이 있을 때만
           if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
             const SlideHintBar(),
-          const ScheduleFilterBar(),
-          const Divider(height: 1),
+          // 검토가 모두 끝난 완료 상태에선 필터할 게 없으므로 필터 줄을 숨긴다.
+          if (!_reviewComplete(ref)) ...[
+            const ScheduleFilterBar(),
+            const Divider(height: 1),
+          ],
           Expanded(
             child: schedulesAsync.when(
               data: (schedules) => schedules.isEmpty
@@ -184,6 +187,20 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
+  /// 검토 완료 상태 판정 — 대기 0 + 확정 있음 + 카테고리 필터 없음 + 대기 뷰.
+  /// body의 필터 줄 숨김과 _buildEmptyState의 완료 화면 분기가 같은 기준을 쓴다.
+  bool _reviewComplete(WidgetRef ref) {
+    final status = ref.watch(scheduleStatusFilterProvider);
+    final hasCategoryFilter =
+        ref.watch(scheduleCategoryFilterProvider) != null;
+    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
+    if (counts == null) return false;
+    return status == ScheduleStatus.pending &&
+        !hasCategoryFilter &&
+        counts.confirmed > 0 &&
+        counts.pending == 0;
+  }
+
   Widget _buildEmptyState(WidgetRef ref) {
     final status = ref.watch(scheduleStatusFilterProvider);
     final hasCategoryFilter =
@@ -191,10 +208,7 @@ class ScheduleScreen extends ConsumerWidget {
     final confirmedCount =
         ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
 
-    // 대기 0 + 확정 있음 + 카테고리 필터 없음 = 검토 완료 상태.
-    if (status == ScheduleStatus.pending &&
-        confirmedCount > 0 &&
-        !hasCategoryFilter) {
+    if (_reviewComplete(ref)) {
       return _buildReviewDoneState(ref, confirmedCount);
     }
 
@@ -242,22 +256,22 @@ class ScheduleScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 68,
+            height: 68,
             decoration: BoxDecoration(
               color: AppColors.inkGreen.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check,
-                size: 28, color: AppColors.inkGreen),
+                size: 34, color: AppColors.inkGreen),
           ),
           const SizedBox(height: AppSizes.spacing16),
           Text(
             ScheduleStrings.reviewDoneTitle,
             style: const TextStyle(
               fontFamily: 'Pretendard',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
               color: AppColors.ink,
             ),
           ),
@@ -267,13 +281,13 @@ class ScheduleScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Pretendard',
-              fontSize: 12,
-              height: 1.6,
+              fontSize: 14,
+              height: 1.65,
               color: AppColors.sub,
             ),
           ),
-          const SizedBox(height: AppSizes.spacing16),
-          // 주 행동 = 다음 공급(가져오기). 확정 기록 보기는 고스트로.
+          const SizedBox(height: AppSizes.spacing20),
+          // 주 행동 = 다음 공급(가져오기) 골드 pill. 확정 기록 보기는 약한 텍스트 링크로.
           Builder(
             builder: (context) => GoldGradientButton(
               label: ScheduleStrings.goImport,
@@ -281,11 +295,12 @@ class ScheduleScreen extends ConsumerWidget {
               onPressed: () => context.push(AppRoutes.import),
             ),
           ),
-          const SizedBox(height: AppSizes.spacing8),
-          OutlinedButton(
+          const SizedBox(height: AppSizes.spacing4),
+          TextButton(
             onPressed: () =>
                 ref.read(scheduleStatusFilterProvider.notifier).state =
                     ScheduleStatus.confirmed,
+            style: TextButton.styleFrom(foregroundColor: AppColors.sub),
             child: Text(ScheduleStrings.viewConfirmed(confirmedCount)),
           ),
         ],

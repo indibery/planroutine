@@ -9,6 +9,7 @@ import 'package:planroutine/features/schedule/data/schedule_repository.dart';
 import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
+import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
 
 import '../../../helpers/test_database.dart';
 
@@ -150,6 +151,41 @@ void main() {
       await tester.pump();
 
       expect(find.text('확정된 행사'), findsOneWidget);
+    });
+
+    testWidgets('완료 상태에선 필터 줄(ScheduleFilterBar)을 숨긴다', (tester) async {
+      await tester.runAsync(() async {
+        await seed('확정된 행사', '2026-03-03', ScheduleStatus.confirmed);
+      });
+      await pumpScreen(tester);
+
+      // 완료 화면이 맞고, 그 위 상태 필터 칩(검토 대기/확정됨)은 숨겨져야 한다.
+      expect(find.text(ScheduleStrings.reviewDoneTitle), findsOneWidget);
+      expect(find.byType(ScheduleFilterBar), findsNothing);
+      expect(find.textContaining('검토 대기 '), findsNothing);
+    });
+
+    testWidgets('대기가 남아 있으면 필터 줄을 보여준다', (tester) async {
+      await tester.runAsync(() async {
+        await seed('대기 행사', '2026-03-02', ScheduleStatus.pending);
+        await seed('확정된 행사', '2026-03-03', ScheduleStatus.confirmed);
+      });
+      await pumpScreen(tester);
+
+      expect(find.byType(ScheduleFilterBar), findsOneWidget);
+    });
+
+    testWidgets('완료 화면의 확정됨 보기는 약한 텍스트 버튼(TextButton)', (tester) async {
+      await tester.runAsync(() async {
+        await seed('확정된 행사', '2026-03-03', ScheduleStatus.confirmed);
+      });
+      await pumpScreen(tester);
+
+      final viewConfirmed = find.widgetWithText(
+        TextButton,
+        ScheduleStrings.viewConfirmed(1),
+      );
+      expect(viewConfirmed, findsOneWidget);
     });
   });
 }
