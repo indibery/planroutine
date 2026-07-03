@@ -67,6 +67,20 @@ Future<void> _tapAddFab(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Dismissible 왼쪽(endToStart) 스와이프를 결정적으로 수행한다.
+/// tester.drag는 rebuild 직후 두 번째 스와이프가 임계값을 못 넘겨 누락되는 경우가
+/// 있어, 명시적 gesture(down→move→pump→up)로 임계값을 확실히 넘긴다.
+Future<void> _swipeLeft(WidgetTester tester, Finder finder) async {
+  final gesture = await tester.startGesture(tester.getCenter(finder));
+  // 실제 드래그처럼 점진적으로 이동해야 Dismissible 임계값이 안정적으로 넘어간다.
+  for (var i = 0; i < 10; i++) {
+    await gesture.moveBy(const Offset(-45, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  await gesture.up();
+  await tester.pumpAndSettle();
+}
+
 /// 각 테스트를 깨끗한 상태(캘린더 탭 + 빈 DB)에서 시작시킨다.
 /// appRouter / DatabaseHelper가 싱글톤이라 테스트 간 상태가 누적된다.
 Future<void> _startFresh(WidgetTester tester) async {
@@ -103,7 +117,8 @@ void main() {
       expect(find.text(ScheduleStrings.title), findsWidgets);
 
       await _tapSettingsTab(tester);
-      expect(find.text(SettingsStrings.importSection), findsOneWidget);
+      // '일정 가져오기'는 섹션 헤더 + 진입 타일 양쪽에 나타나므로 findsWidgets.
+      expect(find.text(SettingsStrings.importSection), findsWidgets);
 
       await _tapCalendarTab(tester);
       expect(find.text(CalendarStrings.title), findsWidgets);
@@ -154,9 +169,10 @@ void main() {
 
       await _tapSettingsTab(tester);
 
-      // 가져오기 섹션이 인라인으로 표시
-      expect(find.text(SettingsStrings.importSection), findsOneWidget);
-      expect(find.text(ImportStrings.selectFile), findsOneWidget);
+      // 가져오기 섹션 노출 — 헤더 + /import로 진입하는 업로드 타일.
+      // (파일 선택 UI는 이제 push된 ImportScreen 안에 있어 설정 탭엔 없다)
+      expect(find.text(SettingsStrings.importSection), findsWidgets);
+      expect(find.byIcon(Icons.upload_file), findsOneWidget);
 
       // 데이터 관리 섹션 (fold 아래)
       await _scrollToInSettings(
@@ -256,12 +272,11 @@ void main() {
       expect(find.text('휴지통 테스트 이벤트'), findsNothing);
 
       // 3) 설정 탭 → 휴지통 진입
+      // 섹션 subtitle은 탭 대상이 아니므로, 실제 진입 타일(ListTile)을 탭한다.
       await _tapSettingsTab(tester);
-      await _scrollToInSettings(
-        tester,
-        find.text(SettingsStrings.trashDescription),
-      );
-      await tester.tap(find.text(SettingsStrings.trashDescription));
+      final trashTile = find.widgetWithText(ListTile, TrashStrings.title);
+      await _scrollToInSettings(tester, trashTile);
+      await tester.tap(trashTile);
       await tester.pumpAndSettle();
 
       // 4) 휴지통에 삭제한 이벤트 노출
@@ -291,26 +306,46 @@ void main() {
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
-      // 힌트 바에도 check_circle이 있을 수 있으므로 count로 판정
-      int checkCount() => find.byIcon(Icons.check_circle).evaluate().length;
-      final initial = checkCount();
+      // 완료 표시는 이벤트 카드 안 trailing 아이콘(check_circle, size 18)뿐.
+      // 힌트바/스와이프 배경의 check_circle과 섞이지 않도록 size로 정밀 판정.
+      Finder doneMark() => find.byWidgetPredicate(
+            (w) => w is Icon && w.icon == Icons.check_circle && w.size == 18,
+          );
+      expect(doneMark(), findsNothing);
 
       // 왼쪽 스와이프 → 완료 토글
-      await tester.drag(
-        find.text('완료 테스트 이벤트'),
-        const Offset(-400, 0),
-      );
-      await tester.pumpAndSettle();
+      await _swipeLeft(tester, find.text('완료 테스트 이벤트'));
       expect(find.text('완료 테스트 이벤트'), findsOneWidget);
-      expect(checkCount(), initial + 1);
+      expect(doneMark(), findsOneWidget);
 
       // 다시 왼쪽 스와이프 → 완료 취소
-      await tester.drag(
-        find.text('완료 테스트 이벤트'),
-        const Offset(-400, 0),
+      await _swipeLeft(tester, find.text('완료 테스트 이벤트'));
+      expect(doneMark(), findsNothing);
+    });
+
+    testWidgets('중요 표시: 편집에서 토글 → 저장 → 목록에 ★ 중요 배지', (tester) async {
+      await _startFresh(tester);
+
+      // 이벤트 추가
+      await _tapAddFab(tester);
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '중요 테스트 이벤트',
       );
+      await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
-      expect(checkCount(), initial);
+
+      // 편집 진입 → 중요 토글 ON → 저장
+      await tester.tap(find.text('중요 테스트 이벤트'));
+      await tester.pumpAndSettle();
+      expect(find.text(CalendarStrings.importantLabel), findsOneWidget);
+      await tester.tap(find.byKey(const Key('important_toggle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.save));
+      await tester.pumpAndSettle();
+
+      // 목록에 ★ 중요 배지 노출
+      expect(find.text(CalendarStrings.importantBadge), findsOneWidget);
     });
 
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
@@ -322,7 +357,15 @@ void main() {
       expect(find.text(NotificationStrings.section), findsOneWidget);
       expect(find.text(NotificationStrings.master), findsOneWidget);
 
-      // 세부 항목/테스트 버튼까지 스크롤
+      // 월초/1주 전/1일 전/테스트는 '고급' ExpansionTile 안에 접혀 있으므로 먼저 펼친다.
+      await _scrollToInSettings(
+        tester,
+        find.text(NotificationStrings.advanced),
+      );
+      await tester.tap(find.text(NotificationStrings.advanced));
+      await tester.pumpAndSettle();
+
+      // 펼친 뒤 세부 항목/테스트 버튼까지 스크롤
       await _scrollToInSettings(
         tester,
         find.text(NotificationStrings.test),

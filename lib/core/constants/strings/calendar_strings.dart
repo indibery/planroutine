@@ -29,6 +29,10 @@ class CalendarStrings {
   static const markComplete = '일정 완료';
   static const undoComplete = '완료 취소';
 
+  // 중요 표시
+  static const importantLabel = '중요 표시';
+  static const importantBadge = '중요';
+
   // 스와이프
   static const swipeGoogleSave = 'Google 저장';
   static const swipeHintGoogle = '오른쪽으로 밀기 — Google 저장';

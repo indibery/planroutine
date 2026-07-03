@@ -24,6 +24,7 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'completed_at') String? completedAt,
     @JsonKey(name: 'google_event_id') String? googleEventId,
     @JsonKey(name: 'device_event_id') String? deviceEventId,
+    @JsonKey(name: 'is_important') @Default(false) bool isImportant,
   }) = _CalendarEvent;
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) =>
@@ -46,6 +47,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       completedAt: map['completed_at'] as String?,
       googleEventId: map['google_event_id'] as String?,
       deviceEventId: map['device_event_id'] as String?,
+      isImportant: (map['is_important'] as int?) == 1,
     );
   }
 
@@ -68,6 +70,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       'updated_at': updatedAt ?? now,
       'google_event_id': googleEventId,
       'device_event_id': deviceEventId,
+      'is_important': isImportant ? 1 : 0,
     };
   }
 

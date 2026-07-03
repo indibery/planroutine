@@ -59,6 +59,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
   DateTime? _endDate;
+  late bool _isImportant;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -70,6 +71,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
     _endDate = event?.endDate != null ? event?.endDateTime : null;
+    _isImportant = event?.isImportant ?? false;
   }
 
   @override
@@ -117,6 +119,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
+                const SizedBox(height: AppSizes.spacing8),
+                _buildImportantToggle(),
                 if (_isEditing && aiEnabled) ...[
                   const SizedBox(height: AppSizes.spacing16),
                   _buildAiShareAction(),
@@ -305,6 +309,34 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
 
+  /// 중요 표시 토글. 켜면 캘린더 격자·목록에서 ★(골드)로 강조된다.
+  Widget _buildImportantToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppSizes.radius12),
+      ),
+      child: SwitchListTile(
+        key: const Key('important_toggle'),
+        value: _isImportant,
+        onChanged: (v) => setState(() => _isImportant = v),
+        activeThumbColor: AppColors.gold,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing16,
+        ),
+        secondary: const Icon(Icons.star_rounded, color: AppColors.gold),
+        title: const Text(
+          CalendarStrings.importantLabel,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// iOS/iPad 공유시트 팝오버 앵커 Rect. 미지정 시 iPad에서 PlatformException으로
   /// 시트가 안 뜬다(내보내기 타일과 동일 대응).
   Rect? _shareOrigin() {
@@ -411,6 +443,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       scheduleId: widget.event?.scheduleId,
       createdAt: widget.event?.createdAt ?? now,
       updatedAt: now,
+      isImportant: _isImportant,
     );
   }
 

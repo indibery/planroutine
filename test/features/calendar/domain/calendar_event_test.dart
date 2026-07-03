@@ -215,4 +215,43 @@ void main() {
       expect(event.deviceEventId, isNull);
     });
   });
+
+  group('중요(isImportant) 플래그', () {
+    test('fromMap: is_important=1 이면 isImportant true', () {
+      final e = CalendarEvent.fromMap({
+        'id': 1,
+        'title': '입학식',
+        'event_date': '2026-03-02',
+        'is_all_day': 1,
+        'is_important': 1,
+      });
+      expect(e.isImportant, true);
+    });
+
+    test('fromMap: is_important 컬럼이 없으면(기존 행) false', () {
+      final e = CalendarEvent.fromMap({
+        'id': 1,
+        'title': '입학식',
+        'event_date': '2026-03-02',
+        'is_all_day': 1,
+      });
+      expect(e.isImportant, false);
+    });
+
+    test('toMap: isImportant를 is_important 1/0으로 직렬화', () {
+      expect(
+        const CalendarEvent(
+          title: 'A',
+          eventDate: '2026-03-02',
+          isImportant: true,
+        ).toMap()['is_important'],
+        1,
+      );
+      expect(
+        const CalendarEvent(title: 'B', eventDate: '2026-03-02')
+            .toMap()['is_important'],
+        0,
+      );
+    });
+  });
 }

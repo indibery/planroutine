@@ -47,7 +47,7 @@ class CalendarDayCell extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildDayNumber(),
-            if (events.isNotEmpty) _buildEventDots(),
+            if (events.isNotEmpty) _buildMarkers(),
           ],
         ),
       ),
@@ -92,6 +92,33 @@ class CalendarDayCell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 그 날 마커. 미완료 중요 이벤트가 있으면 색이 아닌 형태(골드 ★)로 강조하고,
+  /// 아니면 기존 점(dot)을 그린다. (공휴일 빨강·토요일 골드 색 규칙과 충돌 회피)
+  Widget _buildMarkers() {
+    final hasImportant =
+        events.any((e) => e.isImportant && !e.isCompleted);
+    if (hasImportant) {
+      // dot 슬롯(약 5px)과 같은 레이아웃 높이를 보고하되, OverflowBox로 별만
+      // 크게 그려 셀 높이(34px)를 넘기지 않게 한다.
+      return SizedBox(
+        height: 5,
+        child: OverflowBox(
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Icon(
+            Icons.star_rounded,
+            key: const Key('day_important_star'),
+            size: 11,
+            color: isCurrentMonth
+                ? AppColors.gold
+                : AppColors.gold.withValues(alpha: 0.3),
+          ),
+        ),
+      );
+    }
+    return _buildEventDots();
   }
 
   Widget _buildEventDots() {

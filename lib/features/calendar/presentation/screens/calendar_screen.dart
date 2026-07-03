@@ -7,6 +7,7 @@ import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -17,6 +18,7 @@ import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../domain/calendar_event.dart';
+import '../date_jump.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_month_pager.dart';
 import '../widgets/calendar_slide_hint_bar.dart';
@@ -24,15 +26,61 @@ import '../widgets/event_edit_dialog.dart';
 import '../widgets/event_list_section.dart';
 
 /// 캘린더 화면
-class CalendarScreen extends ConsumerWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
+  @override
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   static final _monthFormatter = DateFormat('yyyy년 M월', 'ko_KR');
 
+  final ScrollController _scrollController = ScrollController();
+  // 날짜별 섹션 GlobalKey (dateKey → key). ensureVisible 대상.
+  final Map<String, GlobalKey> _sectionKeys = {};
+  // 도착 지점 플래시 대상 dateKey. 잠깐 켜졌다 꺼지며 골드 배경이 사라진다.
+  String? _flashKey;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 선택된 날짜의 섹션(또는 그 이후 가장 가까운 섹션)으로 스크롤 + 플래시.
+  void _jumpToDate(DateTime date) {
+    final grouped = ref.read(monthEventsGroupedProvider).valueOrNull;
+    if (grouped == null || grouped.isEmpty) return;
+    final keys = grouped.map((e) => e.key).toList();
+    final index = nextGroupIndexFor(keys, formatDate(date));
+    if (index < 0) return;
+    final targetKey = keys[index];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _sectionKeys[targetKey]?.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        alignment: 0.0,
+      );
+      // 플래시: 잠깐 켰다가 꺼서 골드 배경이 서서히 사라지게 한다.
+      setState(() => _flashKey = targetKey);
+      Future.delayed(const Duration(milliseconds: 80), () {
+        if (mounted) setState(() => _flashKey = null);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDateProvider);
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
+
+    // 날짜 선택이 바뀌면 목록을 그 날짜로 스크롤한다(월 변경 포함).
+    ref.listen<DateTime>(selectedDateProvider, (_, next) => _jumpToDate(next));
 
     return Scaffold(
       appBar: AppBar(
@@ -67,27 +115,36 @@ class CalendarScreen extends ConsumerWidget {
                         ),
                       ),
                     )
-                  : ListView.builder(
+                  // 한 달치는 항목이 적어 전량 즉시 빌드 — ensureVisible가
+                  // 지연 빌드로 대상을 못 찾는 문제를 피하려 builder 대신 사용.
+                  : ListView(
+                      controller: _scrollController,
                       padding: const EdgeInsets.only(
                         top: AppSizes.spacing16,
                         bottom: AppSizes.fabSize + AppSizes.spacing16,
                       ),
-                      itemCount: groupedEntries.length,
-                      itemBuilder: (context, index) {
-                        final entry = groupedEntries[index];
-                        final date = DateTime.parse(entry.key);
-                        return EventListSection(
-                          selectedDate: date,
-                          events: entry.value,
-                          onEventTap: (event) =>
-                              _onEditEvent(context, ref, event),
-                          onEventSaveToGoogle: _resolveSaveCallback(context, ref),
-                          onEventToggleCompleted: (event) =>
-                              _onToggleCompleted(context, ref, event),
-                          onEventBumpYear: (event) =>
-                              _onBumpYear(context, ref, event),
-                        );
-                      },
+                      children: [
+                        for (final entry in groupedEntries)
+                          KeyedSubtree(
+                            key: _sectionKeys.putIfAbsent(
+                              entry.key,
+                              () => GlobalKey(),
+                            ),
+                            child: EventListSection(
+                              selectedDate: DateTime.parse(entry.key),
+                              events: entry.value,
+                              highlight: _flashKey == entry.key,
+                              onEventTap: (event) =>
+                                  _onEditEvent(context, ref, event),
+                              onEventSaveToGoogle:
+                                  _resolveSaveCallback(context, ref),
+                              onEventToggleCompleted: (event) =>
+                                  _onToggleCompleted(context, ref, event),
+                              onEventBumpYear: (event) =>
+                                  _onBumpYear(context, ref, event),
+                            ),
+                          ),
+                      ],
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => const Center(child: Text(AppStrings.error)),

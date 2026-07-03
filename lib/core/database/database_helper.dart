@@ -14,7 +14,7 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
@@ -50,6 +50,8 @@ class DatabaseHelper {
   /// 컬럼 추가. NULL = 미저장, 값 있으면 재저장 시 update로 처리.
   /// v4 → v5: 기기 캘린더(device_calendar) 중복 방지. calendar_events에
   /// [device_event_id] 컬럼 추가. 동일 패턴.
+  /// v5 → v6: 중요 표시. calendar_events에 [is_important] 컬럼 추가.
+  /// 0 = 일반, 1 = 중요. 격자/목록에서 ★로 강조.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
@@ -72,6 +74,12 @@ class DatabaseHelper {
     if (oldVersion < 5) {
       await db.execute(
         'ALTER TABLE $tableCalendarEvents ADD COLUMN device_event_id TEXT',
+      );
+    }
+    if (oldVersion < 6) {
+      await db.execute(
+        'ALTER TABLE $tableCalendarEvents '
+        'ADD COLUMN is_important INTEGER NOT NULL DEFAULT 0',
       );
     }
   }
@@ -129,6 +137,7 @@ class DatabaseHelper {
         completed_at TEXT,
         google_event_id TEXT,
         device_event_id TEXT,
+        is_important INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
       )
     ''');

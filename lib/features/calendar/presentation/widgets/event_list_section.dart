@@ -25,7 +25,11 @@ class EventListSection extends ConsumerWidget {
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
     required this.onEventBumpYear,
+    this.highlight = false,
   });
+
+  /// 날짜 점프 도착 지점 강조 플래시. 켜졌다 꺼지며 골드 배경이 서서히 사라진다.
+  final bool highlight;
 
   final DateTime selectedDate;
   final List<CalendarEvent> events;
@@ -48,16 +52,26 @@ class EventListSection extends ConsumerWidget {
         ? CalendarIntegrationStrings.swipeSaveDevice
         : CalendarStrings.swipeGoogleSave;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDateHeader(context),
-        const SizedBox(height: AppSizes.spacing8),
-        if (events.isEmpty)
-          _buildEmptyState()
-        else
-          ...events.map((e) => _buildDismissibleEventTile(e, saveLabel)),
-      ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 1500),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: highlight
+            ? AppColors.gold.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDateHeader(context),
+          const SizedBox(height: AppSizes.spacing8),
+          if (events.isEmpty)
+            _buildEmptyState()
+          else
+            ...events.map((e) => _buildDismissibleEventTile(e, saveLabel)),
+        ],
+      ),
     );
   }
 
@@ -151,9 +165,14 @@ class EventListSection extends ConsumerWidget {
 
   Widget _buildEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
+    // 완료되지 않은 중요 이벤트만 골드로 강조(완료 자료는 묻어둔다).
+    final showImportant = event.isImportant && !isDone;
     final titleColor = isDone ? AppColors.sub : AppColors.ink;
     // 색상 피커 제거 후 이벤트 색은 통일 — 저장된 color 무시, 공통 액센트 사용.
-    final accentColor = isDone ? AppColors.faint : AppColors.eventAccent;
+    // 중요는 색이 아닌 형태(★)로 구분하되 레일만 골드로 살짝 강조.
+    final accentColor = isDone
+        ? AppColors.faint
+        : (showImportant ? AppColors.gold : AppColors.eventAccent);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -165,9 +184,16 @@ class EventListSection extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSizes.cardPadding),
           decoration: BoxDecoration(
-            color: AppColors.glass,
+            color: showImportant
+                ? AppColors.gold.withValues(alpha: 0.06)
+                : AppColors.glass,
             borderRadius: BorderRadius.circular(AppSizes.radius14),
-            border: Border.all(color: AppColors.line, width: 0.5),
+            border: Border.all(
+              color: showImportant
+                  ? AppColors.gold.withValues(alpha: 0.35)
+                  : AppColors.line,
+              width: 0.5,
+            ),
           ),
           child: Row(
             children: [
@@ -185,6 +211,7 @@ class EventListSection extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (showImportant) _buildImportantBadge(event),
                     Text(
                       event.title,
                       style: TextStyle(
@@ -234,6 +261,40 @@ class EventListSection extends ConsumerWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 중요 이벤트에 붙는 "★ 중요" 골드 배지. 제목 위 한 줄.
+  Widget _buildImportantBadge(CalendarEvent event) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.spacing4),
+      child: Container(
+        key: Key('event_important_badge_${event.id}'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing8,
+          vertical: 2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.gold,
+          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_rounded, size: 12, color: AppColors.navy),
+            SizedBox(width: 3),
+            Text(
+              CalendarStrings.importantBadge,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.navy,
+              ),
+            ),
+          ],
         ),
       ),
     );
