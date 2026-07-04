@@ -44,13 +44,15 @@ class ThemeModeTile extends ConsumerWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              // 채움(선택) 세그먼트는 goldFill + onGold — 라이트에서 gold(딥골드)를
+              // 채움에 쓰면 navy 텍스트와 대비가 낮다(3.57:1). goldFill로 8.37:1.
               foregroundColor: WidgetStateProperty.resolveWith((states) =>
                   states.contains(WidgetState.selected)
-                      ? AppColors.navy
+                      ? AppColors.onGold
                       : AppColors.sub),
               backgroundColor: WidgetStateProperty.resolveWith((states) =>
                   states.contains(WidgetState.selected)
-                      ? AppColors.gold
+                      ? AppColors.goldFill
                       : Colors.transparent),
               side: WidgetStatePropertyAll(
                 BorderSide(color: AppColors.lineStrong, width: 0.5),
