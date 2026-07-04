@@ -399,10 +399,27 @@ void main() {
       await _startFresh(tester);
       await _tapSettingsTab(tester);
 
-      // '화면' 섹션의 밝게 세그먼트 탭
+      // 먼저 어둡게로 고정한 뒤 밝게로 전환 — 다크→라이트에서 텍스트 색이
+      // 이전(밝은) 값으로 남던 버그 회귀 방지.
       expect(find.text(SettingsStrings.themeLabel), findsOneWidget);
+      await tester.tap(find.text(SettingsStrings.themeDark));
+      await tester.pumpAndSettle();
+
+      // 밝게로 전환
       await tester.tap(find.text(SettingsStrings.themeLight));
       await tester.pumpAndSettle();
+
+      // AppBar 제목 '설정' 텍스트가 라이트 본문색(ink #17253D)로 갱신돼야 한다.
+      // (탭 라벨에도 '설정'이 있으므로 AppBar 안의 것으로 특정)
+      final titleColor = tester
+          .widget<Text>(find.descendant(
+            of: find.byType(AppBar),
+            matching: find.text(SettingsStrings.title),
+          ))
+          .style
+          ?.color;
+      expect(titleColor, const Color(0xFF17253D),
+          reason: '다크→라이트 후 제목이 라이트 ink로 갱신');
 
       // Scaffold 배경이 라이트 팔레트로 바뀌어야 한다.
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
