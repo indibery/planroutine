@@ -99,6 +99,9 @@ platform :ios do
       skip_metadata: true,
       skip_screenshots: true,
       submit_for_review: false,
+      # 바이너리 업로드만 하고 심사 제출은 App Store Connect에서 수동. precheck는
+      # 심사 전 검증이라 불필요하고, ASC API Key로는 IAP 확인이 안 돼 에러가 난다.
+      run_precheck_before_submit: false,
     )
 
     UI.success("App Store 업로드 완료! v#{new_build_number}")
