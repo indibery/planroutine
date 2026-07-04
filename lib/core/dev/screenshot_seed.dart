@@ -54,9 +54,11 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
 
   // ── 캘린더 탭용 — 현재 월 중심의 이벤트 5건 ──
   final events = <CalendarEvent>[
-    _e('교직원 회의', now, color: '#E0B96A'),
+    _e('학부모 공개수업', now, color: '#E0B96A', isImportant: true),
     _e('학급편성 결과 제출', now.add(const Duration(days: 2)), color: '#7FD4A5'),
     _e('학부모 총회 안내장 발송', now.add(const Duration(days: 5)), color: '#8BA8D4'),
+    _e('2025학년도 여름방학 운영 계획', now.add(const Duration(days: 7)),
+        color: '#8BA8D4'),
     _e('교과서 주문 마감', now.add(const Duration(days: 9)),
         color: '#E08978',
         description: '교과서 수량 확정 및 주문 제출'),
@@ -84,11 +86,12 @@ Schedule _s(String title, String date, String category,
     );
 
 CalendarEvent _e(String title, DateTime date,
-        {String? color, String? description}) =>
+        {String? color, String? description, bool isImportant = false}) =>
     CalendarEvent(
       title: title,
       eventDate: '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       isAllDay: true,
       color: color,
       description: description,
+      isImportant: isImportant,
     );
