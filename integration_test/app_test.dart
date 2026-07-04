@@ -493,6 +493,28 @@ void main() {
           reason: '섹션 설명이 라이트 sub(#48566E)로 갱신돼야 함');
     });
 
+    testWidgets('화면 테마: 시스템 모드에서 OS 밝기 변경에 따라간다', (tester) async {
+      // 시스템 모드(기본) + OS 밝기를 라이트로 → 라이트 배경.
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      SharedPreferences.setMockInitialValues({});
+      await _startFresh(tester);
+
+      Color scaffoldBg() {
+        final ctx = tester.element(find.byType(Scaffold).first);
+        return Theme.of(ctx).scaffoldBackgroundColor;
+      }
+
+      expect(scaffoldBg(), const Color(0xFFF6F8FB),
+          reason: '시스템=라이트 OS → 라이트 배경');
+
+      // OS 밝기를 다크로 변경 → 앱도 다크로 따라가야 한다(라우터 재생성 경유).
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      await tester.pumpAndSettle();
+      expect(scaffoldBg(), const Color(0xFF0A1628),
+          reason: '시스템=다크 OS → 다크 배경');
+    });
+
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
       await _startFresh(tester);
 
