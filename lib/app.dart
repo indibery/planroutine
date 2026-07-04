@@ -31,7 +31,12 @@ class PlanRoutineApp extends ConsumerStatefulWidget {
 class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
   static const _sharedFileChannel = MethodChannel('planroutine/shared_file');
 
-  late final GoRouter _router;
+  late GoRouter _router;
+
+  /// 직전 effective 밝기 — 테마가 바뀌면 라우터를 재생성해 전체를 새 팔레트로
+  /// 다시 그린다(ShellRoute 내부 GlobalKey가 페이지를 보존해, 재생성 없이는
+  /// AppColors를 직접 쓰는 위젯이 이전 색으로 남는다).
+  Brightness? _lastBrightness;
 
   @override
   void initState() {
@@ -84,18 +89,22 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
     };
     AppColors.applyBrightness(effective);
 
+    // 밝기가 바뀌면 현재 위치를 유지한 채 라우터를 재생성 → 모든 GlobalKey가 새로
+    // 만들어져 페이지 전체가 새 팔레트로 다시 그려진다.
+    if (_lastBrightness != null && _lastBrightness != effective) {
+      final loc = _router.routerDelegate.currentConfiguration.uri.toString();
+      _router = createRouter(
+        onboardingDone: widget.onboardingDone,
+        initialLocation: loc,
+      );
+    }
+    _lastBrightness = effective;
+
     return MaterialApp.router(
       title: AppStrings.appName,
       theme: AppTheme.of(effective),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
-      // 밝기가 바뀌면 라우트 하위 전체를 재생성해 전역 AppColors를 확실히 반영한다.
-      // (라우터 상태는 상위라 현재 탭은 유지) — 위젯별 리빌드 순서·State 유지에
-      // 의존하지 않아, 탭을 오간 뒤 테마를 바꿔도 텍스트가 이전 색으로 남지 않는다.
-      builder: (context, child) => KeyedSubtree(
-        key: ValueKey(effective),
-        child: child ?? const SizedBox.shrink(),
-      ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

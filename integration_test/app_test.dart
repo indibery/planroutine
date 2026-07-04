@@ -481,6 +481,16 @@ void main() {
           ?.color;
       expect(titleColor, const Color(0xFF17253D),
           reason: '탭 이동 후 다크→라이트에도 제목이 라이트 ink로 갱신');
+
+      // 실기기 실제 증상: AppBar 제목이 아니라 '섹션 설명(subtitle)' 텍스트가
+      // 이전(다크) sub 색으로 남아 흐리게 보였다. subtitle 색도 라이트 sub로
+      // 갱신됐는지 검증(AppColors를 직접 쓰는 위젯이 리빌드됐는지).
+      final subtitleColor = tester
+          .widget<Text>(find.text(SettingsStrings.importDescription))
+          .style
+          ?.color;
+      expect(subtitleColor, const Color(0xFF48566E),
+          reason: '섹션 설명이 라이트 sub(#48566E)로 갱신돼야 함');
     });
 
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {

@@ -27,9 +27,13 @@ class AppRoutes {
 /// 없으므로 Page Not Found를 띄운다. redirect로 이를 가로채 /import로 보내면,
 /// `receive_sharing_intent` 리스너가 별도 스트림으로 전달하는 실제 파일 경로는
 /// app.dart의 _handleSharedFiles가 처리한다.
-GoRouter createRouter({required bool onboardingDone}) => GoRouter(
-      initialLocation:
-          onboardingDone ? AppRoutes.calendar : AppRoutes.onboarding,
+GoRouter createRouter({
+  required bool onboardingDone,
+  String? initialLocation,
+}) =>
+    GoRouter(
+      initialLocation: initialLocation ??
+          (onboardingDone ? AppRoutes.calendar : AppRoutes.onboarding),
       redirect: (context, state) {
         final uri = state.uri;
         final isExternalFileIntent = uri.scheme == 'file' ||
