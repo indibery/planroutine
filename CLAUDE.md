@@ -30,7 +30,7 @@
 | 파일 선택 | file_picker | |
 | 공유 | share_plus, path_provider | 임시 디렉토리 + 공유시트 |
 | 앱 정보 | package_info_plus | 설정 탭 버전 표시 |
-| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss |
+| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마 |
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
@@ -232,7 +232,15 @@ planroutine/
 - iOS 홈 아이콘은 `test/tools/gen_app_icon.dart`가 navy 배경 + 90% LogoHybrid를 1024×1024 PNG로 렌더해 `assets/icon/app_icon.png`에 덮어쓰고, `flutter_launcher_icons`가 각 사이즈를 재생성.
 
 ### 탭바
-- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 navyMid 바 + 상단 1px 골드 라인. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
+- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 3탭 = **캘린더 / 검토 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
+- 배경색은 `Theme.of(context).colorScheme.surface`를 참조한다 — ShellRoute 탭바는 라우트 전환에 유지(리빌드 안 됨)돼, Theme 의존이 없으면 테마 전환 시 이전 색이 남는다.
+
+### 화면 테마 (다크/라이트)
+- 설정 탭 최상단 `ThemeModeTile`(SegmentedButton: 시스템/밝게/어둡게). 선택은 `themeModeProvider`(shared_preferences 저장). 시스템 모드는 기기 밝기 추종.
+- **팔레트 전환 구조**: `AppColors`는 `static const`가 아니라 `_Palette`(dark/light 두 인스턴스) 기반 **static getter**. `AppColors.applyBrightness(effective)`로 현재 팔레트를 교체. 313곳 참조부는 무수정, const 컨텍스트만 const 해제. `AppTextStyles`·`AppGradients`도 같은 이유로 getter.
+- 다크 = 네이비+골드+크림, 라이트 = **쿨 미스트 화이트**(배경 #F6F8FB, 본문 네이비 #17253D, 딥골드 액센트 #9A7415, 밝은 골드 #E6B95C).
+- **골드 의미 토큰**: `gold`(배경 위 텍스트/아이콘/보더/토요일 — 라이트에선 대비용 딥골드) / `goldFill`(배지·pill·버튼·오늘 셀 채움 — 밝은 골드) / `onGold`(goldFill 채움 위 네이비 글씨). "골드 채움은 goldFill + onGold" 규칙으로 다크/라이트 대비를 함께 맞춘다.
+- **테마 변경 = 전체 재생성**: `app.dart`가 effective brightness로 `AppColors.applyBrightness` + `AppTheme.of(brightness)` 동기화 후, MaterialApp `builder`에서 brightness를 `KeyedSubtree` key로 주어 라우트 하위 전체를 재생성한다(라우터 상태는 상위라 현재 탭 유지). 전역 팔레트가 개별 위젯 리빌드 순서에 의존하지 않게 하는 핵심.
 
 ## 배포
 
