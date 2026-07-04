@@ -89,6 +89,13 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
       theme: AppTheme.of(effective),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      // 밝기가 바뀌면 라우트 하위 전체를 재생성해 전역 AppColors를 확실히 반영한다.
+      // (라우터 상태는 상위라 현재 탭은 유지) — 위젯별 리빌드 순서·State 유지에
+      // 의존하지 않아, 탭을 오간 뒤 테마를 바꿔도 텍스트가 이전 색으로 남지 않는다.
+      builder: (context, child) => KeyedSubtree(
+        key: ValueKey(effective),
+        child: child ?? const SizedBox.shrink(),
+      ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

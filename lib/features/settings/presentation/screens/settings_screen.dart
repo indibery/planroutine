@@ -14,7 +14,6 @@ import '../widgets/calendar_integration_section.dart';
 import '../widgets/import_list_tile.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/reset_list_tile.dart';
-import '../providers/theme_mode_provider.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/theme_mode_tile.dart';
 import '../widgets/trash_list_tile.dart';
@@ -29,11 +28,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 테마 변경 시 이 화면 전체를 리빌드해 전역 AppColors(제목·섹션 헤더 등)를
-    // 갱신한다. 이 watch가 없으면 ThemeModeTile만 리빌드돼 나머지 텍스트가
-    // 이전(다크) 색으로 남는다.
-    ref.watch(themeModeProvider);
-
     ref.listen<ResetState>(appResetProvider, (prev, next) {
       switch (next) {
         case ResetSuccess():

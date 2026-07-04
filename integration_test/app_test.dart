@@ -455,6 +455,34 @@ void main() {
           reason: '다크 탭바 배경(navyMid)');
     });
 
+    testWidgets('화면 테마: 어둡게 → 검토탭 → 설정복귀 → 밝게에도 텍스트 갱신',
+        (tester) async {
+      // 실기기 재현: 탭을 오간 뒤 테마를 바꾸면 이전(다크) 텍스트 색이 남던 버그.
+      SharedPreferences.setMockInitialValues({});
+      await _startFresh(tester);
+      await _tapSettingsTab(tester);
+      await tester.tap(find.text(SettingsStrings.themeDark));
+      await tester.pumpAndSettle();
+
+      // 검토 탭 갔다가 설정으로 복귀
+      await _tapScheduleTab(tester);
+      await _tapSettingsTab(tester);
+
+      // 밝게 전환
+      await tester.tap(find.text(SettingsStrings.themeLight));
+      await tester.pumpAndSettle();
+
+      final titleColor = tester
+          .widget<Text>(find.descendant(
+            of: find.byType(AppBar),
+            matching: find.text(SettingsStrings.title),
+          ))
+          .style
+          ?.color;
+      expect(titleColor, const Color(0xFF17253D),
+          reason: '탭 이동 후 다크→라이트에도 제목이 라이트 ink로 갱신');
+    });
+
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
       await _startFresh(tester);
 
