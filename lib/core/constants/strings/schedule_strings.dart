@@ -30,6 +30,14 @@ class ScheduleStrings {
   static String bulkConfirmMessageFor(String scope, int count) =>
       '$scope 검토 대기 $count건을 확정하고 캘린더에 반영합니다.';
 
+  // 일괄 삭제 pill (확정 대칭) — 남은 검토 대기를 한 번에 휴지통으로
+  static String deletePending(int count) => '대기 $count건 삭제';
+  static const bulkDeleteTitle = '검토 대기 삭제';
+  static String bulkDeleteMessageFor(String scope, int count) =>
+      '$scope 검토 대기 $count건을 휴지통으로 보냅니다.\n'
+      '30일 후 자동 삭제되며, 그 전엔 설정 > 휴지통에서 복구할 수 있어요.';
+  static String bulkDeletedSnack(int count) => '$count건을 휴지통으로 옮겼어요';
+
   // 스와이프 삭제 Undo
   static const deletedSnack = '일정을 삭제했어요';
   static const undoAction = '실행취소';

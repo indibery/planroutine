@@ -316,6 +316,28 @@ class ScheduleRepository {
     );
   }
 
+  /// 검토 대기 상태 일정 일괄 삭제(soft-delete → 휴지통).
+  /// [category]가 null이면 전체, 값이 있으면 그 카테고리에 한정.
+  /// 확정된 일정(status=confirmed)은 건드리지 않는다. 반환: 삭제된 건수.
+  Future<int> deleteAllPending({String? category}) async {
+    final db = await _dbHelper.database;
+    final where = <String>[
+      'status = ?',
+      'deleted_at IS NULL',
+    ];
+    final whereArgs = <dynamic>[ScheduleStatus.pending.value];
+    if (category != null) {
+      where.add('category = ?');
+      whereArgs.add(category);
+    }
+    return db.update(
+      DatabaseHelper.tableSchedules,
+      {'deleted_at': DateTime.now().toIso8601String()},
+      where: where.join(' AND '),
+      whereArgs: whereArgs,
+    );
+  }
+
   /// [cutoff]보다 오래 전에 soft-delete된 일정을 영구 삭제.
   /// 반환: 영구 삭제된 건수.
   Future<int> purgeOlderThan(DateTime cutoff) async {

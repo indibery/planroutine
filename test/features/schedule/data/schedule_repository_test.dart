@@ -324,6 +324,41 @@ void main() {
       final all = await repo.getSchedules(status: ScheduleStatus.confirmed);
       expect(all.length, 2);
     });
+
+    test('deleteAllPending은 pending 전체를 휴지통으로(soft-delete), 확정은 유지',
+        () async {
+      final id1 = await seedImportedSchedule(title: 'A');
+      final id2 = await seedImportedSchedule(title: 'B');
+      final id3 = await seedImportedSchedule(title: 'C');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+      final sid3 = await repo.createFromImported(id3, DateTime(2026, 3, 1));
+      await repo.updateStatus(sid3, ScheduleStatus.confirmed); // C만 확정
+
+      final n = await repo.deleteAllPending();
+
+      expect(n, 2, reason: '대기 2건(A,B)만 삭제');
+      // 활성 목록엔 확정된 C만 남음
+      final active = await repo.getSchedules();
+      expect(active.length, 1);
+      expect(active.first.title, 'C');
+      // 삭제분은 휴지통에 (영구 삭제 아님)
+      final deleted = await repo.getDeletedSchedules();
+      expect(deleted.length, 2);
+    });
+
+    test('deleteAllPending(category:)는 그 카테고리의 pending만 삭제', () async {
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+
+      await repo.deleteAllPending(category: '일과운영관리');
+
+      final active = await repo.getSchedules();
+      expect(active.length, 1);
+      expect(active.first.category, '학생학적관리');
+    });
   });
 
   group('purgeOlderThan', () {

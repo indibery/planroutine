@@ -187,5 +187,44 @@ void main() {
       );
       expect(viewConfirmed, findsOneWidget);
     });
+
+    testWidgets('일괄 삭제 pill: 대기 있으면 노출', (tester) async {
+      await tester.runAsync(() async {
+        await seed('대기 A', '2026-03-02', ScheduleStatus.pending);
+        await seed('대기 B', '2026-03-03', ScheduleStatus.pending);
+      });
+      await pumpScreen(tester);
+
+      expect(find.text(ScheduleStrings.deletePending(2)), findsOneWidget);
+      expect(find.text(ScheduleStrings.confirmPending(2)), findsOneWidget);
+    });
+
+    testWidgets('일괄 삭제 → 대기는 휴지통으로, 확정은 유지', (tester) async {
+      await tester.runAsync(() async {
+        await seed('대기 A', '2026-03-02', ScheduleStatus.pending);
+        await seed('확정 B', '2026-03-03', ScheduleStatus.confirmed);
+      });
+      await pumpScreen(tester);
+
+      // 삭제 pill 탭 → 확인 다이얼로그 → 삭제
+      await tester.tap(find.text(ScheduleStrings.deletePending(1)));
+      await tester.pumpAndSettle();
+      expect(find.text(ScheduleStrings.bulkDeleteTitle), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, ScheduleStrings.delete));
+      await tester.runAsync(() async {
+        for (var i = 0;
+            i < 100 && find.text('대기 A').evaluate().isNotEmpty;
+            i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      await tester.pump();
+
+      // 대기 A 사라짐(휴지통) → 대기 0 + 확정 1이라 완료 화면 전환.
+      // (reviewDoneTitle은 확정>0일 때만 나오므로 확정 B가 유지됐다는 증거)
+      expect(find.text('대기 A'), findsNothing);
+      expect(find.text(ScheduleStrings.reviewDoneTitle), findsOneWidget);
+    });
   });
 }

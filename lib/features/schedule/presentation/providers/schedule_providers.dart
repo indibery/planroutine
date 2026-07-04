@@ -132,6 +132,15 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
+  /// 검토 대기 일정 일괄 삭제(휴지통). 카테고리 필터가 켜져 있으면 그 카테고리만.
+  /// 확정본은 건드리지 않으며 캘린더 이벤트에도 영향 없음.
+  Future<void> deleteAllPending() async {
+    final repository = ref.read(scheduleRepositoryProvider);
+    final category = ref.read(scheduleCategoryFilterProvider);
+    await repository.deleteAllPending(category: category);
+    ref.invalidateSelf();
+  }
+
   /// 전체 일정 삭제 (테스트용)
   Future<void> deleteAll() async {
     final repository = ref.read(scheduleRepositoryProvider);

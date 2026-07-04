@@ -136,18 +136,32 @@ class ScheduleScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '$confirmed / $total · $percent% 완료',
+                      // 대기가 있으면 우측 두 pill(삭제·확정)에 공간을 내주려 축약.
+                      hasPending
+                          ? '$confirmed / $total'
+                          : '$confirmed / $total · $percent% 완료',
                       style: TextStyle(
                         fontFamily: 'Space Grotesk',
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.sub,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (hasPending)
+                  if (hasPending) ...[
+                    _DeleteAllPill(
+                      label: ScheduleStrings.deletePending(pendingCount),
+                      onPressed: () => _showBulkDeleteDialog(
+                        context,
+                        ref,
+                        category: category,
+                        pendingCount: pendingCount,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.spacing8),
                     _ConfirmAllPill(
-                      label: confirmAllPillLabel(category, pendingCount),
+                      label: ScheduleStrings.confirmPending(pendingCount),
                       onPressed: () => _showBulkConfirmDialog(
                         context,
                         ref,
@@ -155,6 +169,7 @@ class ScheduleScreen extends ConsumerWidget {
                         pendingCount: pendingCount,
                       ),
                     ),
+                  ],
                 ],
               ),
               const SizedBox(height: AppSizes.spacing8),
@@ -471,6 +486,33 @@ class ScheduleScreen extends ConsumerWidget {
     ref.read(schedulesProvider.notifier).confirmAllPending();
   }
 
+  /// 남은 검토 대기를 한 번에 휴지통으로 (일괄 확정 대칭). soft-delete라 복구 가능.
+  Future<void> _showBulkDeleteDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    required String? category,
+    required int pendingCount,
+  }) async {
+    final scope = (category == null || category.isEmpty)
+        ? ScheduleStrings.all
+        : shortenCategory(category);
+    final ok = await ConfirmDialog.show(
+      context: context,
+      title: ScheduleStrings.bulkDeleteTitle,
+      message: ScheduleStrings.bulkDeleteMessageFor(scope, pendingCount),
+      confirmLabel: ScheduleStrings.delete,
+      confirmColor: AppColors.error,
+    );
+    if (!ok) return;
+    await ref.read(schedulesProvider.notifier).deleteAllPending();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(ScheduleStrings.bulkDeletedSnack(pendingCount)),
+      ));
+  }
+
   String _extractMonthKey(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
@@ -529,6 +571,50 @@ class _ConfirmAllPill extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppColors.onGold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 진행도 행의 소형 빨강 outline pill — '검토 대기 일괄 삭제' 액션(확정 pill 대칭).
+class _DeleteAllPill extends StatelessWidget {
+  const _DeleteAllPill({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+          border: Border.all(
+            color: AppColors.error.withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: AppColors.error, size: 14),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.error,
               ),
             ),
           ],
