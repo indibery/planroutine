@@ -404,19 +404,38 @@ void main() {
       await tester.tap(find.text(SettingsStrings.themeLight));
       await tester.pumpAndSettle();
 
-      // Scaffold 배경이 라이트 팔레트(크림 #F4EFE3)로 바뀌어야 한다.
+      // Scaffold 배경이 라이트 팔레트로 바뀌어야 한다.
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
       final ctx = tester.element(find.byType(Scaffold).first);
       final bg = scaffold.backgroundColor ??
           Theme.of(ctx).scaffoldBackgroundColor;
       expect(bg, const Color(0xFFF6F8FB), reason: '라이트 쿨 미스트 배경');
 
-      // 다시 어둡게 → 네이비 복귀
+      // 하단 탭바도 함께 라이트(surface=흰색)로 바뀌어야 한다.
+      // (ShellRoute 탭바가 테마 변경 시 리빌드 안 되던 버그 회귀 방지)
+      Color tabBarColor() {
+        final container = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(FloatingTabBar),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        return (container.decoration as BoxDecoration).color!;
+      }
+
+      expect(tabBarColor(), const Color(0xFFFFFFFF),
+          reason: '라이트 탭바 배경(surface=흰색)');
+
+      // 다시 어둡게 → 네이비 복귀 (배경 + 탭바 둘 다)
       await tester.tap(find.text(SettingsStrings.themeDark));
       await tester.pumpAndSettle();
       final ctx2 = tester.element(find.byType(Scaffold).first);
       expect(Theme.of(ctx2).scaffoldBackgroundColor, const Color(0xFF0A1628),
           reason: '다크 네이비 배경');
+      expect(tabBarColor(), const Color(0xFF142847),
+          reason: '다크 탭바 배경(navyMid)');
     });
 
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {

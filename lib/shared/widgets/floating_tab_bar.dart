@@ -20,9 +20,13 @@ class FloatingTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Theme.of를 참조해 테마(밝기) 변경 시 이 위젯이 확실히 리빌드되게 한다.
+    // ShellRoute의 탭바는 라우트 전환에 유지돼, 이 의존이 없으면 AppColors 전역
+    // 팔레트가 바뀌어도 리빌드되지 않아 이전(다크) 색이 남는다.
+    final surface = Theme.of(context).colorScheme.surface;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.navyMid,
+        color: surface,
         border: Border(
           top: BorderSide(color: AppColors.line, width: 0.5),
         ),
