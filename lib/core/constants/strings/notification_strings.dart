@@ -11,6 +11,21 @@ class NotificationStrings {
   static const dayBefore = '1일 전 알림';
   static const time = '알림 시각';
 
+  // 통합 알림 본문 — 같은 시각 발송분을 한 알림으로 합칠 때 사용.
+  static const digestTitle = '일정 알림';
+  static const digestTomorrow = '내일';
+  static const digestWeek = '1주 후';
+  static const digestMonth = '이달';
+
+  /// 섹션 제목을 다 못 보일 때의 잔여 개수 표기.
+  static String digestOverflow(int rest) => '외 $rest건';
+
+  /// 이달 섹션의 그 달 전체 건수 표기.
+  static String digestMonthTotal(int count) => '총 $count건';
+
+  /// 이달 섹션에서 중요표시된 이벤트 제목 앞에 붙는 라벨.
+  static const digestImportant = '중요';
+
   static const advanced = '고급';
 
   // 테스트 / 디버그
