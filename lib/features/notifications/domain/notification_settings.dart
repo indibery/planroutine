@@ -58,11 +58,7 @@ class NotificationSettings {
       masterEnabled: json['masterEnabled'] as bool? ?? false,
       monthStartEnabled: json['monthStartEnabled'] as bool? ?? true,
       weekBeforeEnabled: json['weekBeforeEnabled'] as bool? ?? true,
-      // 역호환: 옛 키 'dayBeforeEnabled'를 폴백으로 읽어 기존 사용자의
-      // 토글 상태(특히 OFF)를 잃지 않는다.
-      dayOfEnabled: json['dayOfEnabled'] as bool? ??
-          json['dayBeforeEnabled'] as bool? ??
-          true,
+      dayOfEnabled: json['dayOfEnabled'] as bool? ?? true,
       hour: json['hour'] as int? ?? 8,
       minute: json['minute'] as int? ?? 0,
     );

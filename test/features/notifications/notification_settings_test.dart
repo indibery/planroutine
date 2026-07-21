@@ -23,22 +23,21 @@ void main() {
     });
   });
 
-  group('역호환 (옛 키 dayBeforeEnabled)', () {
-    test('옛 키만 있으면 그 값을 dayOfEnabled로 읽는다 (OFF 보존)', () {
-      // 이전 버전 사용자가 "1일 전"을 꺼둔 상태로 저장한 prefs
+  group('옛 키 dayBeforeEnabled는 더 이상 읽지 않음', () {
+    test('옛 키만 있으면 무시하고 기본값 true', () {
+      // 이전 버전의 "1일 전" 설정은 승계하지 않는다 (기능 완전 제거)
       final restored = NotificationSettings.fromJson({
         'masterEnabled': true,
         'dayBeforeEnabled': false,
       });
-      expect(restored.dayOfEnabled, isFalse);
+      expect(restored.dayOfEnabled, isTrue);
     });
 
-    test('새 키가 있으면 옛 키보다 우선', () {
+    test('새 키 dayOfEnabled를 그대로 읽는다', () {
       final restored = NotificationSettings.fromJson({
-        'dayOfEnabled': true,
-        'dayBeforeEnabled': false,
+        'dayOfEnabled': false,
       });
-      expect(restored.dayOfEnabled, isTrue);
+      expect(restored.dayOfEnabled, isFalse);
     });
 
     test('둘 다 없으면 기본값 true', () {
