@@ -83,10 +83,12 @@ List<PendingNotification> computeNotifications({
       settings.minute,
     );
 
-    // 이번 주 종합: 그 주 월요일 아침에 화~일 이벤트를 미리 보여준다.
-    // 월요일 당일 이벤트는 '오늘' 섹션이 담당하므로 제외한다.
+    // 이번 주 종합: 그 주 월요일 아침에 이번 주 이벤트를 미리 보여준다.
+    // 월요일 당일 이벤트는 '오늘' 섹션이 담당할 때만 제외(중복 방지). 당일 알림이
+    // 꺼져 있으면 월요일도 포함해 월~일 전체를 종합한다(누락 방지).
     final weekday = eventStart.weekday;
-    if (settings.weeklyEnabled && weekday != DateTime.monday) {
+    final coveredByToday = weekday == DateTime.monday && settings.dayOfEnabled;
+    if (settings.weeklyEnabled && !coveredByToday) {
       final monday = eventStart.subtract(Duration(days: weekday - 1));
       if (monday.isAfter(now)) {
         digestAt(monday).week.add(_Entry(eventStart, event.title));

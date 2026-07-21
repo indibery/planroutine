@@ -157,14 +157,36 @@ void main() {
       expect(mon.first.body, contains('목건'));
     });
 
-    test('월요일 당일 이벤트는 이번 주 섹션에서 제외 (오늘이 담당)', () {
-      // 6/1(월) 이벤트 + dayOf off → 이번 주에도 안 들어가 결과 없음
+    test('당일 ON이면 월요일 이벤트는 이번 주에서 제외 (오늘이 담당)', () {
+      // 6/1(월) 이벤트 + dayOf ON → 오늘 섹션에만, 이번 주엔 없음
       final result = computeNotifications(
         events: [event(id: 1, date: '2026-06-01', title: '월건')],
+        settings: master.copyWith(monthStartEnabled: false),
+        now: now,
+      );
+      final mon =
+          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      expect(mon.body, contains('오늘'));
+      expect(mon.body, contains('월건'));
+      expect(mon.body, isNot(contains('이번 주')));
+    });
+
+    test('당일 OFF면 월요일도 이번 주 종합에 포함 (월~일 누락 방지)', () {
+      // dayOf off → 오늘 섹션 없음. 월요일 이벤트가 사라지지 않고 이번 주에 담김
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-01', title: '월건'),
+          event(id: 2, date: '2026-06-03', title: '수건'),
+        ],
         settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
         now: now,
       );
-      expect(result, isEmpty);
+      final mon =
+          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      expect(mon.body, contains('이번 주'));
+      expect(mon.body, contains('월건'));
+      expect(mon.body, contains('수건'));
+      expect(mon.body, isNot(contains('오늘')));
     });
 
     test('weekly=false면 이번 주 종합 없음', () {
