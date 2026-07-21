@@ -7,7 +7,7 @@ import '../domain/pending_notification.dart';
 /// 발송 날짜당 알림 1개로 통합하므로 실제로는 이 상한에 거의 닿지 않는다.
 const int kMaxPendingNotifications = 60;
 
-/// 한 섹션(내일/1주 후/이달)에서 제목을 최대 몇 개까지 노출할지. 초과분은 "외 N건".
+/// 한 섹션(오늘/1주 후/이달)에서 제목을 최대 몇 개까지 노출할지. 초과분은 "외 N건".
 const int _maxTitlesPerSection = 2;
 
 /// 통합 알림 ID: 발송 날짜(YYYYMMDD) 기준 유일.
@@ -24,8 +24,8 @@ int _dailyDigestId(DateTime date) =>
 ///   - completed/deleted 이벤트는 대상 제외
 ///   - 발송 시각이 [now] 이후인 것만 포함 (과거 시각은 iOS가 즉시 발송하므로 배제)
 ///   - **발송 날짜(항상 hour:minute)마다 알림 1개** — 같은 아침에 겹치는
-///     월초·1주 전·1일 전 알림을 하나로 통합한다.
-///   - 각 알림 본문은 `내일 → 1주 후 → 이달` 섹션 순서, 섹션당 제목 최대
+///     월초·1주 전·당일 아침 알림을 하나로 통합한다.
+///   - 각 알림 본문은 `오늘 → 1주 후 → 이달` 섹션 순서, 섹션당 제목 최대
 ///     [_maxTitlesPerSection]개 + "외 N건"
 ///   - 생성 수가 [kMaxPendingNotifications]를 초과하면 가까운 시각 우선 정렬 후 절단
 List<PendingNotification> computeNotifications({
@@ -75,7 +75,7 @@ List<PendingNotification> computeNotifications({
     });
   }
 
-  // 이벤트 1주 전 / 1일 전
+  // 이벤트 1주 전 / 당일 아침
   for (final event in activeEvents) {
     final eventDate = DateTime.tryParse(event.eventDate);
     if (eventDate == null) continue;
@@ -91,10 +91,10 @@ List<PendingNotification> computeNotifications({
       final at = eventStart.subtract(const Duration(days: 7));
       if (at.isAfter(now)) digestAt(at).week.add(_Entry(eventStart, event.title));
     }
-    if (settings.dayBeforeEnabled) {
-      final at = eventStart.subtract(const Duration(days: 1));
-      if (at.isAfter(now)) {
-        digestAt(at).tomorrow.add(_Entry(eventStart, event.title));
+    if (settings.dayOfEnabled) {
+      // 이벤트 당일 아침 발송 ('오늘 X 있어요').
+      if (eventStart.isAfter(now)) {
+        digestAt(eventStart).today.add(_Entry(eventStart, event.title));
       }
     }
   }
@@ -129,17 +129,17 @@ class _Entry {
 
 /// 한 발송 시각에 통합될 알림 본문의 누적 버퍼.
 class _Digest {
-  final List<_Entry> tomorrow = [];
+  final List<_Entry> today = [];
   final List<_Entry> week = [];
 
   /// 이달 섹션: 그 달 전체 건수 + 중요표시된 항목만.
   final List<_Entry> monthImportant = [];
   int monthTotal = 0;
 
-  /// 섹션 순서: 내일 → 1주 후 → 이달. 비어 있는 섹션은 생략.
+  /// 섹션 순서: 오늘 → 1주 후 → 이달. 비어 있는 섹션은 생략.
   String buildBody() {
     final lines = <String>[];
-    _appendTitleSection(NotificationStrings.digestTomorrow, tomorrow, lines);
+    _appendTitleSection(NotificationStrings.digestToday, today, lines);
     _appendTitleSection(NotificationStrings.digestWeek, week, lines);
     _appendMonthSection(lines);
     return lines.join('\n');

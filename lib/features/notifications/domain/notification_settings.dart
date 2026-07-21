@@ -1,13 +1,13 @@
 /// 알림 설정 — SharedPreferences에 직렬화.
 ///
 /// 마스터 스위치가 OFF이면 [monthStartEnabled], [weekBeforeEnabled],
-/// [dayBeforeEnabled] 값과 상관없이 모든 알림이 꺼진다.
+/// [dayOfEnabled] 값과 상관없이 모든 알림이 꺼진다.
 class NotificationSettings {
   const NotificationSettings({
     this.masterEnabled = false,
     this.monthStartEnabled = true,
     this.weekBeforeEnabled = true,
-    this.dayBeforeEnabled = true,
+    this.dayOfEnabled = true,
     this.hour = 8,
     this.minute = 0,
   });
@@ -15,7 +15,9 @@ class NotificationSettings {
   final bool masterEnabled;
   final bool monthStartEnabled;
   final bool weekBeforeEnabled;
-  final bool dayBeforeEnabled;
+
+  /// 이벤트 당일 아침 알림 ('오늘 X 있어요'). 이전 버전의 '1일 전'을 대체.
+  final bool dayOfEnabled;
 
   /// 알림 발송 시각 (로컬 타임존). 기본 08:00 (수업 시작 전 여유).
   final int hour;
@@ -28,7 +30,7 @@ class NotificationSettings {
     bool? masterEnabled,
     bool? monthStartEnabled,
     bool? weekBeforeEnabled,
-    bool? dayBeforeEnabled,
+    bool? dayOfEnabled,
     int? hour,
     int? minute,
   }) {
@@ -36,7 +38,7 @@ class NotificationSettings {
       masterEnabled: masterEnabled ?? this.masterEnabled,
       monthStartEnabled: monthStartEnabled ?? this.monthStartEnabled,
       weekBeforeEnabled: weekBeforeEnabled ?? this.weekBeforeEnabled,
-      dayBeforeEnabled: dayBeforeEnabled ?? this.dayBeforeEnabled,
+      dayOfEnabled: dayOfEnabled ?? this.dayOfEnabled,
       hour: hour ?? this.hour,
       minute: minute ?? this.minute,
     );
@@ -46,7 +48,7 @@ class NotificationSettings {
         'masterEnabled': masterEnabled,
         'monthStartEnabled': monthStartEnabled,
         'weekBeforeEnabled': weekBeforeEnabled,
-        'dayBeforeEnabled': dayBeforeEnabled,
+        'dayOfEnabled': dayOfEnabled,
         'hour': hour,
         'minute': minute,
       };
@@ -56,7 +58,11 @@ class NotificationSettings {
       masterEnabled: json['masterEnabled'] as bool? ?? false,
       monthStartEnabled: json['monthStartEnabled'] as bool? ?? true,
       weekBeforeEnabled: json['weekBeforeEnabled'] as bool? ?? true,
-      dayBeforeEnabled: json['dayBeforeEnabled'] as bool? ?? true,
+      // 역호환: 옛 키 'dayBeforeEnabled'를 폴백으로 읽어 기존 사용자의
+      // 토글 상태(특히 OFF)를 잃지 않는다.
+      dayOfEnabled: json['dayOfEnabled'] as bool? ??
+          json['dayBeforeEnabled'] as bool? ??
+          true,
       hour: json['hour'] as int? ?? 8,
       minute: json['minute'] as int? ?? 0,
     );
@@ -68,7 +74,7 @@ class NotificationSettings {
       other.masterEnabled == masterEnabled &&
       other.monthStartEnabled == monthStartEnabled &&
       other.weekBeforeEnabled == weekBeforeEnabled &&
-      other.dayBeforeEnabled == dayBeforeEnabled &&
+      other.dayOfEnabled == dayOfEnabled &&
       other.hour == hour &&
       other.minute == minute;
 
@@ -77,7 +83,7 @@ class NotificationSettings {
         masterEnabled,
         monthStartEnabled,
         weekBeforeEnabled,
-        dayBeforeEnabled,
+        dayOfEnabled,
         hour,
         minute,
       );

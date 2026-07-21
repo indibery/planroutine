@@ -6,7 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../notifications/domain/notification_settings.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 
-/// 알림 설정 타일 — 마스터 스위치 하나만 기본 노출. 월초/1주 전/1일 전/알림
+/// 알림 설정 타일 — 마스터 스위치 하나만 기본 노출. 월초/1주 전/당일 아침/알림
 /// 시각/테스트/예약된 알림 목록은 '고급' ExpansionTile 안에 숨긴다. 마스터 옆
 /// 서브라인에 현재 상태 요약을 보여줘, 고급을 열지 않아도 알림 구성이 보인다.
 class NotificationSettingsTiles extends ConsumerWidget {
@@ -67,10 +67,10 @@ class NotificationSettingsTiles extends ConsumerWidget {
                 onChanged: notifier.setWeekBefore,
               ),
               _SubSwitch(
-                label: NotificationStrings.dayBefore,
-                value: settings.dayBeforeEnabled,
+                label: NotificationStrings.dayOf,
+                value: settings.dayOfEnabled,
                 enabled: subEnabled,
-                onChanged: notifier.setDayBefore,
+                onChanged: notifier.setDayOf,
               ),
               ListTile(
                 leading: const SizedBox(width: 40),
@@ -126,7 +126,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
     final kinds = <String>[
       if (s.monthStartEnabled) '월초',
       if (s.weekBeforeEnabled) '1주 전',
-      if (s.dayBeforeEnabled) '1일 전',
+      if (s.dayOfEnabled) '당일',
     ];
     if (kinds.isEmpty) return '세부 알림이 모두 꺼져있어요';
     return '${_formatTime(s.hour, s.minute)} · ${kinds.join('·')}';

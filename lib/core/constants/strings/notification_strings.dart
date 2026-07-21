@@ -4,16 +4,16 @@ class NotificationStrings {
 
   static const section = '알림';
   static const master = '알림 사용';
-  static const masterDescription = '월초·1주 전·1일 전에 알림을 보냅니다';
+  static const masterDescription = '월초·1주 전·당일 아침에 알림을 보냅니다';
 
   static const monthStart = '월초 알림';
   static const weekBefore = '1주 전 알림';
-  static const dayBefore = '1일 전 알림';
+  static const dayOf = '당일 아침 알림';
   static const time = '알림 시각';
 
   // 통합 알림 본문 — 같은 시각 발송분을 한 알림으로 합칠 때 사용.
   static const digestTitle = '일정 알림';
-  static const digestTomorrow = '내일';
+  static const digestToday = '오늘';
   static const digestWeek = '1주 후';
   static const digestMonth = '이달';
 
