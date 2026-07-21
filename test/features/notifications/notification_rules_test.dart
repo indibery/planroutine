@@ -22,7 +22,7 @@ CalendarEvent event({
 }
 
 void main() {
-  // 테스트 now: 2026-05-15 10:00 — 5월 중순
+  // 테스트 now: 2026-05-15(금) 10:00. 2026-06-01은 월요일.
   final now = DateTime(2026, 5, 15, 10, 0);
   const master = NotificationSettings(masterEnabled: true);
 
@@ -78,8 +78,8 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('과거 시점 알림은 생성 안 됨', () {
-      // 어제 이벤트 — 당일 알림은 5/14 08:00, 이미 과거
+    test('완전히 과거인 이벤트는 아무 알림도 안 만듦', () {
+      // 어제(5/14 목) 이벤트 — 당일·월요일종합·월초 모두 이미 과거
       final result = computeNotifications(
         events: [event(id: 1, date: '2026-05-14')],
         settings: master,
@@ -87,28 +87,48 @@ void main() {
       );
       expect(result, isEmpty);
     });
+  });
 
-    test('이벤트가 오늘이고 08시가 이미 지났으면 당일 알림 미발송', () {
-      // now=5/15 10:00 → 오늘(5/15) 이벤트의 당일 발송 08:00은 이미 과거
+  group('당일 아침', () {
+    test('이벤트 당일 08:00에 오늘 섹션 1건', () {
       final result = computeNotifications(
-        events: [event(id: 1, date: '2026-05-15')],
+        events: [event(id: 1, date: '2026-06-03', title: '수요건')],
+        settings: master.copyWith(monthStartEnabled: false, weeklyEnabled: false),
+        now: now,
+      );
+      expect(result.length, 1);
+      expect(result.first.scheduledAt, DateTime(2026, 6, 3, 8));
+      expect(result.first.body, contains('오늘'));
+      expect(result.first.body, contains('수요건'));
+    });
+
+    test('dayOf=false면 오늘 섹션 없음', () {
+      final result = computeNotifications(
+        events: [event(id: 1, date: '2026-06-03')],
         settings: master.copyWith(
           monthStartEnabled: false,
-          weekBeforeEnabled: false,
+          weeklyEnabled: false,
+          dayOfEnabled: false,
         ),
         now: now,
       );
       expect(result, isEmpty);
     });
 
-    test('이벤트가 오늘이고 아직 08시 전이면 당일 알림 발송', () {
-      // now=5/15 07:00 → 오늘(5/15) 08:00 발송은 아직 미래
+    test('이벤트가 오늘이고 08시가 이미 지났으면 미발송', () {
+      // now=5/15 10:00 → 오늘(5/15) 08:00은 과거
+      final result = computeNotifications(
+        events: [event(id: 1, date: '2026-05-15')],
+        settings: master.copyWith(monthStartEnabled: false, weeklyEnabled: false),
+        now: now,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('이벤트가 오늘이고 아직 08시 전이면 발송', () {
       final result = computeNotifications(
         events: [event(id: 1, date: '2026-05-15', title: '조회')],
-        settings: master.copyWith(
-          monthStartEnabled: false,
-          weekBeforeEnabled: false,
-        ),
+        settings: master.copyWith(monthStartEnabled: false, weeklyEnabled: false),
         now: DateTime(2026, 5, 15, 7, 0),
       );
       expect(result.length, 1);
@@ -118,266 +138,255 @@ void main() {
     });
   });
 
-  group('월초 알림', () {
-    test('활성 이벤트가 있는 달마다 1개', () {
+  group('월요일 이번 주 종합', () {
+    test('그 주 화~일 이벤트가 월요일 08:00 한 건으로 통합', () {
+      // 6/2(화)·6/4(목) → 6/1(월) 08:00 "이번 주"
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-02', title: '화건'),
+          event(id: 2, date: '2026-06-04', title: '목건'),
+        ],
+        settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
+        now: now,
+      );
+      final mon =
+          result.where((p) => p.scheduledAt == DateTime(2026, 6, 1, 8)).toList();
+      expect(mon.length, 1);
+      expect(mon.first.body, contains('이번 주'));
+      expect(mon.first.body, contains('화건'));
+      expect(mon.first.body, contains('목건'));
+    });
+
+    test('월요일 당일 이벤트는 이번 주 섹션에서 제외 (오늘이 담당)', () {
+      // 6/1(월) 이벤트 + dayOf off → 이번 주에도 안 들어가 결과 없음
+      final result = computeNotifications(
+        events: [event(id: 1, date: '2026-06-01', title: '월건')],
+        settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
+        now: now,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('weekly=false면 이번 주 종합 없음', () {
+      final result = computeNotifications(
+        events: [event(id: 1, date: '2026-06-02')],
+        settings: master.copyWith(
+          monthStartEnabled: false,
+          dayOfEnabled: false,
+          weeklyEnabled: false,
+        ),
+        now: now,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('다른 주 이벤트는 각자의 월요일로 묶임', () {
+      // 6/2(화)→6/1(월), 6/9(화)→6/8(월)
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-02'),
+          event(id: 2, date: '2026-06-09'),
+        ],
+        settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
+        now: now,
+      );
+      final dates = result.map((p) => p.scheduledAt).toSet();
+      expect(dates.contains(DateTime(2026, 6, 1, 8)), isTrue);
+      expect(dates.contains(DateTime(2026, 6, 8, 8)), isTrue);
+      expect(result.length, 2);
+    });
+
+    test('그 주 월요일이 이미 지났으면 미발송 (이벤트가 미래라도)', () {
+      // now=5/15(금). 이벤트 5/16(토) → weekMonday 5/11(월) 과거
+      final result = computeNotifications(
+        events: [event(id: 1, date: '2026-05-16')],
+        settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
+        now: now,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('이번 주 항목이 많으면 "외 N건"으로 압축', () {
+      // 6/2~6/6 (화~토) 5건 → 제목 2개 + 외 3건
+      final result = computeNotifications(
+        events: [
+          for (var i = 0; i < 5; i++)
+            event(
+              id: i + 1,
+              date: '2026-06-0${i + 2}',
+              title: '건${String.fromCharCode(0xAC00 + i)}',
+            ),
+        ],
+        settings: master.copyWith(monthStartEnabled: false, dayOfEnabled: false),
+        now: now,
+      );
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
+      expect(body, contains('외 3건'));
+    });
+  });
+
+  group('월초', () {
+    test('이벤트가 있는 달마다 1일 08:00, 이달 — N건', () {
       final result = computeNotifications(
         events: [
           event(id: 1, date: '2026-06-10', title: '가'),
           event(id: 2, date: '2026-06-20', title: '나'),
           event(id: 3, date: '2026-07-05', title: '다'),
         ],
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
+        settings: master.copyWith(weeklyEnabled: false, dayOfEnabled: false),
         now: now,
       );
-      // 6월, 7월 월초 2건
       expect(result.length, 2);
-      // 이달 섹션은 총 건수 표기 (중요표시 없으면 제목 미노출)
       expect(
         result.any((p) =>
             p.scheduledAt == DateTime(2026, 6, 1, 8) &&
             p.body.contains('이달') &&
-            p.body.contains('총 2건')),
+            p.body.contains('2건')),
         isTrue,
       );
       expect(
         result.any((p) =>
-            p.scheduledAt == DateTime(2026, 7, 1, 8) &&
-            p.body.contains('이달') &&
-            p.body.contains('총 1건')),
+            p.scheduledAt == DateTime(2026, 7, 1, 8) && p.body.contains('1건')),
         isTrue,
       );
     });
 
-    test('이미 지난 이번달 1일은 생성 안 됨 (now=5/15 → 5/1 과거)', () {
+    test('이미 지난 이번달 1일은 미발송 (now=5/15 → 5/1 과거)', () {
       final result = computeNotifications(
-        events: [event(id: 1, date: '2026-05-25')], // 이번 달 이벤트
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
+        events: [event(id: 1, date: '2026-05-25')],
+        settings: master.copyWith(weeklyEnabled: false, dayOfEnabled: false),
         now: now,
       );
-      expect(result, isEmpty); // 5/1은 과거
+      expect(result, isEmpty);
     });
 
-    test('monthStartEnabled=false면 월초 알림 생성 안 됨', () {
+    test('monthStart=false면 월초 알림 없음', () {
       final result = computeNotifications(
         events: [event(id: 1, date: '2026-06-10')],
         settings: master.copyWith(
           monthStartEnabled: false,
-          weekBeforeEnabled: false,
+          weeklyEnabled: false,
           dayOfEnabled: false,
         ),
         now: now,
       );
       expect(result, isEmpty);
     });
-  });
 
-  group('1주 전 / 당일 아침 알림', () {
-    test('이벤트 1주 전 + 당일 각각 다른 날짜에 1개씩', () {
-      final result = computeNotifications(
-        events: [event(id: 42, date: '2026-06-01', title: '연수')],
-        settings: master.copyWith(monthStartEnabled: false),
-        now: now,
-      );
-      expect(result.length, 2);
-      // 1주 전 = 5/25 08:00, 당일 = 6/1 08:00
-      expect(
-        result.any((p) =>
-            p.scheduledAt == DateTime(2026, 5, 25, 8) &&
-            p.body.contains('1주 후') &&
-            p.body.contains('연수')),
-        isTrue,
-      );
-      expect(
-        result.any((p) =>
-            p.scheduledAt == DateTime(2026, 6, 1, 8) &&
-            p.body.contains('오늘') &&
-            p.body.contains('연수')),
-        isTrue,
-      );
-    });
-
-    test('weekBefore=false면 1주 전 알림 생성 안 됨', () {
-      final result = computeNotifications(
-        events: [event(id: 42, date: '2026-06-01')],
-        settings: master.copyWith(
-          monthStartEnabled: false,
-          weekBeforeEnabled: false,
-        ),
-        now: now,
-      );
-      expect(result.length, 1);
-      expect(result.first.body, contains('오늘'));
-    });
-
-    test('dayOf=false면 당일 알림 생성 안 됨', () {
-      final result = computeNotifications(
-        events: [event(id: 42, date: '2026-06-01')],
-        settings: master.copyWith(
-          monthStartEnabled: false,
-          dayOfEnabled: false,
-        ),
-        now: now,
-      );
-      expect(result.length, 1);
-      expect(result.first.body, contains('1주 후'));
-    });
-  });
-
-  group('하루 통합 (버그 픽스)', () {
-    test('같은 날짜 이벤트 3건 → 당일 알림은 1개로 통합', () {
+    test('이달 섹션은 총 건수 + 중요 개수만 표기 (제목 미노출)', () {
       final result = computeNotifications(
         events: [
-          event(id: 1, date: '2026-06-10', title: '가'),
-          event(id: 2, date: '2026-06-10', title: '나'),
-          event(id: 3, date: '2026-06-10', title: '다'),
+          event(id: 1, date: '2026-06-05', title: '일반건'),
+          event(id: 2, date: '2026-06-10', title: '중요건', important: true),
+          event(id: 3, date: '2026-06-15', title: '중요둘', important: true),
         ],
-        settings: master.copyWith(
-          monthStartEnabled: false,
-          weekBeforeEnabled: false,
-        ),
+        settings: master.copyWith(weeklyEnabled: false, dayOfEnabled: false),
         now: now,
       );
-      // 당일 발송일(6/10)에 알림 딱 1개
-      final atFireDay = result
-          .where((p) => p.scheduledAt == DateTime(2026, 6, 10, 8))
-          .toList();
-      expect(atFireDay.length, 1);
-      // 본문에 3건이 압축돼 반영: 제목 2개 노출 + "외 1건"
-      final body = atFireDay.first.body;
-      expect(body, contains('오늘'));
-      expect(body, contains('가'));
-      expect(body, contains('나'));
-      expect(body, contains('외 1건'));
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
+      expect(body, contains('3건'));
+      expect(body, contains('(중요 2)'));
+      expect(body, isNot(contains('중요건')));
+      expect(body, isNot(contains('일반건')));
     });
 
-    test('같은 날 당일 + 월초가 겹치면 한 알림에 병합', () {
-      // event 6/1 → 당일 발송 6/1, June 월초도 6/1 → 병합
+    test('중요표시가 없으면 (중요 …) 생략', () {
       final result = computeNotifications(
-        events: [event(id: 1, date: '2026-06-01', title: '연수')],
-        settings: master.copyWith(weekBeforeEnabled: false),
+        events: [event(id: 1, date: '2026-06-05', title: '일반건')],
+        settings: master.copyWith(weeklyEnabled: false, dayOfEnabled: false),
         now: now,
       );
-      final atJune1 = result
-          .where((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
-          .toList();
-      expect(atJune1.length, 1);
-      final body = atJune1.first.body;
-      expect(body, contains('오늘'));
-      expect(body, contains('이달'));
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
+      expect(body, contains('1건'));
+      expect(body, isNot(contains('중요')));
     });
+  });
 
-    test('본문 섹션 순서: 오늘 → 1주 후 → 이달', () {
-      // 6/1 발송에 오늘(6/1)·1주 후(6/8)·이달(June) 모두 얹히도록 구성
+  group('월요일 통합 (오늘 + 이번 주 + 이달)', () {
+    test('세 섹션이 한 알림에 병합', () {
+      // 6/1(월): 오늘=6/1, 이번 주=6/3, 이달=6월(1일)
       final result = computeNotifications(
         events: [
-          event(id: 1, date: '2026-06-01', title: '오늘건'),
-          event(id: 2, date: '2026-06-08', title: '주간건'),
+          event(id: 1, date: '2026-06-01', title: '월건'),
+          event(id: 2, date: '2026-06-03', title: '수건'),
         ],
         settings: master,
         now: now,
       );
-      final atJune1 = result
-          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
-      final body = atJune1.body;
+      final mon =
+          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      expect(mon.body, contains('오늘'));
+      expect(mon.body, contains('월건'));
+      expect(mon.body, contains('이번 주'));
+      expect(mon.body, contains('수건'));
+      expect(mon.body, contains('이달'));
+    });
+
+    test('본문 섹션 순서: 오늘 → 이번 주 → 이달', () {
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-01', title: '오늘건'),
+          event(id: 2, date: '2026-06-03', title: '주간건'),
+        ],
+        settings: master,
+        now: now,
+      );
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
       final iToday = body.indexOf('오늘');
-      final iWeek = body.indexOf('1주 후');
+      final iWeek = body.indexOf('이번 주');
       final iMonth = body.indexOf('이달');
       expect(iToday, greaterThanOrEqualTo(0));
       expect(iWeek, greaterThan(iToday));
       expect(iMonth, greaterThan(iWeek));
     });
-
-    test('많은 이벤트는 "외 N건"으로 압축', () {
-      final result = computeNotifications(
-        events: [
-          for (var i = 0; i < 5; i++)
-            event(id: i + 1, date: '2026-06-10', title: '건${String.fromCharCode(0xAC00 + i)}'),
-        ],
-        settings: master.copyWith(
-          monthStartEnabled: false,
-          weekBeforeEnabled: false,
-        ),
-        now: now,
-      );
-      final body = result
-          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 10, 8))
-          .body;
-      // 5건 → 제목 2개 + "외 3건"
-      expect(body, contains('외 3건'));
-    });
   });
 
-  group('이달 섹션 (개수 + 중요표시)', () {
-    test('이달 섹션은 총 건수 + 중요표시된 이벤트 제목만 노출', () {
+  group('본문 형식 (이모지 스캔형)', () {
+    test('오늘/이번 주/이달에 이모지 프리픽스', () {
       final result = computeNotifications(
         events: [
-          event(id: 1, date: '2026-06-05', title: '일반건'),
-          event(id: 2, date: '2026-06-10', title: '중요건', important: true),
-          event(id: 3, date: '2026-06-15', title: '또일반'),
+          event(id: 1, date: '2026-06-01', title: '월건'),
+          event(id: 2, date: '2026-06-03', title: '수건'),
         ],
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
+        settings: master,
         now: now,
       );
       final body = result
           .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
           .body;
-      expect(body, contains('총 3건'));
-      expect(body, contains('중요건'));
-      expect(body, isNot(contains('일반건')));
-      expect(body, isNot(contains('또일반')));
+      expect(body, contains('📅 오늘'));
+      expect(body, contains('🗓 이번 주'));
+      expect(body, contains('📌 이달'));
     });
 
-    test('중요표시가 없으면 이달 섹션은 총 건수만', () {
+    test('알림 제목은 "일정 알림"', () {
       final result = computeNotifications(
-        events: [event(id: 1, date: '2026-06-05', title: '일반건')],
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
+        events: [event(id: 1, date: '2026-06-03')],
+        settings: master.copyWith(monthStartEnabled: false, weeklyEnabled: false),
         now: now,
       );
-      final body = result
-          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
-          .body;
-      expect(body, contains('총 1건'));
-      expect(body, isNot(contains('일반건')));
-    });
-
-    test('이달 중요표시 제목은 가장 임박한 순으로 정렬', () {
-      final result = computeNotifications(
-        events: [
-          event(id: 1, date: '2026-06-25', title: '나중중요', important: true),
-          event(id: 2, date: '2026-06-05', title: '먼저중요', important: true),
-        ],
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
-        now: now,
-      );
-      final body = result
-          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
-          .body;
-      expect(body.indexOf('먼저중요'), lessThan(body.indexOf('나중중요')));
+      expect(result.first.title, '일정 알림');
     });
   });
 
   group('iOS 64개 상한', () {
     test('이벤트가 많아도 결과가 kMaxPendingNotifications(60) 이하', () {
       final events = List.generate(
-        40, // 40개 × (주/일) 2개 = 80개 + 월초
+        40,
         (i) => event(
           id: i + 1,
-          date: DateTime(2026, 6, 1).add(Duration(days: i)).toIso8601String().substring(0, 10),
+          date: DateTime(2026, 6, 1)
+              .add(Duration(days: i))
+              .toIso8601String()
+              .substring(0, 10),
         ),
       );
       final result = computeNotifications(
@@ -388,7 +397,33 @@ void main() {
       expect(result.length, lessThanOrEqualTo(kMaxPendingNotifications));
     });
 
-    test('절단 시 시각 오름차순으로 가까운 것 우선', () {
+    test('distinct 발송일이 60을 넘으면 60개로 절단 + 가까운 것 우선', () {
+      // 각기 다른 70개 미래 날짜 → 당일 알림만 70개 distinct 발송일 → 60 절단
+      final events = List.generate(
+        70,
+        (i) => event(
+          id: i + 1,
+          date: DateTime(2026, 6, 1)
+              .add(Duration(days: i))
+              .toIso8601String()
+              .substring(0, 10),
+        ),
+      );
+      final result = computeNotifications(
+        events: events,
+        settings: master.copyWith(monthStartEnabled: false, weeklyEnabled: false),
+        now: now,
+      );
+      expect(result.length, kMaxPendingNotifications); // 60
+      // 가까운 것 우선 → 가장 이른 6/1이 남고, 뒤쪽(8월)은 잘림
+      expect(result.first.scheduledAt, DateTime(2026, 6, 1, 8));
+      expect(
+        result.every((p) => !p.scheduledAt.isAfter(DateTime(2026, 7, 30, 8))),
+        isTrue,
+      );
+    });
+
+    test('시각 오름차순으로 가까운 것 우선 정렬', () {
       final events = List.generate(
         40,
         (i) => event(
@@ -404,7 +439,6 @@ void main() {
         settings: master,
         now: now,
       );
-      // 시간 오름차순 정렬 확인
       for (var i = 1; i < result.length; i++) {
         expect(
           result[i].scheduledAt.isAtSameMomentAs(result[i - 1].scheduledAt) ||
@@ -418,7 +452,7 @@ void main() {
   group('id 유일성', () {
     test('서로 다른 발송 날짜의 알림은 서로 다른 id', () {
       final result = computeNotifications(
-        events: [event(id: 42, date: '2026-06-01')],
+        events: [event(id: 42, date: '2026-06-02')],
         settings: master.copyWith(monthStartEnabled: false),
         now: now,
       );
@@ -432,10 +466,7 @@ void main() {
           event(id: 1, date: '2026-06-10'),
           event(id: 2, date: '2026-07-05'),
         ],
-        settings: master.copyWith(
-          weekBeforeEnabled: false,
-          dayOfEnabled: false,
-        ),
+        settings: master.copyWith(weeklyEnabled: false, dayOfEnabled: false),
         now: now,
       );
       final ids = result.map((p) => p.id).toSet();

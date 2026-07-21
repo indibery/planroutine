@@ -1,12 +1,12 @@
 /// 알림 설정 — SharedPreferences에 직렬화.
 ///
-/// 마스터 스위치가 OFF이면 [monthStartEnabled], [weekBeforeEnabled],
+/// 마스터 스위치가 OFF이면 [monthStartEnabled], [weeklyEnabled],
 /// [dayOfEnabled] 값과 상관없이 모든 알림이 꺼진다.
 class NotificationSettings {
   const NotificationSettings({
     this.masterEnabled = false,
     this.monthStartEnabled = true,
-    this.weekBeforeEnabled = true,
+    this.weeklyEnabled = true,
     this.dayOfEnabled = true,
     this.hour = 8,
     this.minute = 0,
@@ -14,7 +14,9 @@ class NotificationSettings {
 
   final bool masterEnabled;
   final bool monthStartEnabled;
-  final bool weekBeforeEnabled;
+
+  /// 매주 월요일 아침 '이번 주 종합' 알림. 이전 버전의 이벤트별 '1주 전'을 대체.
+  final bool weeklyEnabled;
 
   /// 이벤트 당일 아침 알림 ('오늘 X 있어요'). 이전 버전의 '1일 전'을 대체.
   final bool dayOfEnabled;
@@ -29,7 +31,7 @@ class NotificationSettings {
   NotificationSettings copyWith({
     bool? masterEnabled,
     bool? monthStartEnabled,
-    bool? weekBeforeEnabled,
+    bool? weeklyEnabled,
     bool? dayOfEnabled,
     int? hour,
     int? minute,
@@ -37,7 +39,7 @@ class NotificationSettings {
     return NotificationSettings(
       masterEnabled: masterEnabled ?? this.masterEnabled,
       monthStartEnabled: monthStartEnabled ?? this.monthStartEnabled,
-      weekBeforeEnabled: weekBeforeEnabled ?? this.weekBeforeEnabled,
+      weeklyEnabled: weeklyEnabled ?? this.weeklyEnabled,
       dayOfEnabled: dayOfEnabled ?? this.dayOfEnabled,
       hour: hour ?? this.hour,
       minute: minute ?? this.minute,
@@ -47,7 +49,7 @@ class NotificationSettings {
   Map<String, dynamic> toJson() => {
         'masterEnabled': masterEnabled,
         'monthStartEnabled': monthStartEnabled,
-        'weekBeforeEnabled': weekBeforeEnabled,
+        'weeklyEnabled': weeklyEnabled,
         'dayOfEnabled': dayOfEnabled,
         'hour': hour,
         'minute': minute,
@@ -57,7 +59,7 @@ class NotificationSettings {
     return NotificationSettings(
       masterEnabled: json['masterEnabled'] as bool? ?? false,
       monthStartEnabled: json['monthStartEnabled'] as bool? ?? true,
-      weekBeforeEnabled: json['weekBeforeEnabled'] as bool? ?? true,
+      weeklyEnabled: json['weeklyEnabled'] as bool? ?? true,
       dayOfEnabled: json['dayOfEnabled'] as bool? ?? true,
       hour: json['hour'] as int? ?? 8,
       minute: json['minute'] as int? ?? 0,
@@ -69,7 +71,7 @@ class NotificationSettings {
       other is NotificationSettings &&
       other.masterEnabled == masterEnabled &&
       other.monthStartEnabled == monthStartEnabled &&
-      other.weekBeforeEnabled == weekBeforeEnabled &&
+      other.weeklyEnabled == weeklyEnabled &&
       other.dayOfEnabled == dayOfEnabled &&
       other.hour == hour &&
       other.minute == minute;
@@ -78,7 +80,7 @@ class NotificationSettings {
   int get hashCode => Object.hash(
         masterEnabled,
         monthStartEnabled,
-        weekBeforeEnabled,
+        weeklyEnabled,
         dayOfEnabled,
         hour,
         minute,

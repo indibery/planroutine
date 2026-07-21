@@ -12,7 +12,7 @@
 4. **휴지통** — 일정/이벤트 soft-delete, 30일 후 자동 영구 삭제.
 5. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
 6. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
-7. **로컬 알림** — 월초 · 1주 전 · 당일 아침 08:00 알림 (timeSensitive).
+7. **로컬 알림** — 월초 · 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -179,7 +179,7 @@ planroutine/
 - iOS 64개 상한 → 60개 cap + 가까운 시각 우선 정렬.
 - 기본 08:00 발송 (교사 수업 시작 전 여유 확보).
 - `InterruptionLevel.timeSensitive` 플래그 지정. 실제 집중 모드 돌파 원하면 Apple Developer Portal에서 capability 활성화 + entitlements 추가 필요.
-- 설정 화면에서는 마스터 스위치 하나만 노출 + 현재 설정 요약(`08:00 · 월초·1주 전·당일`) subtitle. 월초/1주 전/당일 아침/알림 시각/테스트/예약된 알림 보기는 `고급` ExpansionTile 안에 접힘.
+- 설정 화면에서는 마스터 스위치 하나만 노출 + 현재 설정 요약(`08:00 · 월초·이번 주·당일`) subtitle. 월초/이번 주/당일 아침/알림 시각/테스트/예약된 알림 보기는 `고급` ExpansionTile 안에 접힘.
 
 ### Google Calendar 연동
 - `google_sign_in`으로 `authHeaders` 획득 → 커스텀 `http.BaseClient`로 `googleapis` 호출.

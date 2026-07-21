@@ -7,7 +7,7 @@ import '../domain/pending_notification.dart';
 /// 발송 날짜당 알림 1개로 통합하므로 실제로는 이 상한에 거의 닿지 않는다.
 const int kMaxPendingNotifications = 60;
 
-/// 한 섹션(오늘/1주 후/이달)에서 제목을 최대 몇 개까지 노출할지. 초과분은 "외 N건".
+/// 한 섹션(오늘/이번 주/이달)에서 제목을 최대 몇 개까지 노출할지. 초과분은 "외 N건".
 const int _maxTitlesPerSection = 2;
 
 /// 통합 알림 ID: 발송 날짜(YYYYMMDD) 기준 유일.
@@ -24,8 +24,8 @@ int _dailyDigestId(DateTime date) =>
 ///   - completed/deleted 이벤트는 대상 제외
 ///   - 발송 시각이 [now] 이후인 것만 포함 (과거 시각은 iOS가 즉시 발송하므로 배제)
 ///   - **발송 날짜(항상 hour:minute)마다 알림 1개** — 같은 아침에 겹치는
-///     월초·1주 전·당일 아침 알림을 하나로 통합한다.
-///   - 각 알림 본문은 `오늘 → 1주 후 → 이달` 섹션 순서, 섹션당 제목 최대
+///     월초·이번 주(월요일)·당일 아침 알림을 하나로 통합한다.
+///   - 각 알림 본문은 `오늘 → 이번 주 → 이달` 섹션 순서, 섹션당 제목 최대
 ///     [_maxTitlesPerSection]개 + "외 N건"
 ///   - 생성 수가 [kMaxPendingNotifications]를 초과하면 가까운 시각 우선 정렬 후 절단
 List<PendingNotification> computeNotifications({
@@ -45,7 +45,7 @@ List<PendingNotification> computeNotifications({
       byFireTime.putIfAbsent(at, () => _Digest());
 
   // 월초 알림: 활성 이벤트가 있는 달마다 1일 발송.
-  // 이달 섹션은 그 달 전체 건수 + 중요표시된 이벤트 제목만 담는다.
+  // 이달 섹션은 그 달 전체 건수 + 중요표시 개수만 담는다.
   if (settings.monthStartEnabled) {
     final byMonth = <String, List<CalendarEvent>>{};
     for (final event in activeEvents) {
@@ -65,17 +65,13 @@ List<PendingNotification> computeNotifications({
       if (at.isAfter(now)) {
         final digest = digestAt(at);
         digest.monthTotal += monthEvents.length;
-        for (final e in monthEvents) {
-          if (!e.isImportant) continue;
-          final date = DateTime.tryParse(e.eventDate);
-          if (date == null) continue;
-          digest.monthImportant.add(_Entry(date, e.title));
-        }
+        digest.monthImportantCount +=
+            monthEvents.where((e) => e.isImportant).length;
       }
     });
   }
 
-  // 이벤트 1주 전 / 당일 아침
+  // 이번 주 종합(월요일) / 당일 아침
   for (final event in activeEvents) {
     final eventDate = DateTime.tryParse(event.eventDate);
     if (eventDate == null) continue;
@@ -87,9 +83,14 @@ List<PendingNotification> computeNotifications({
       settings.minute,
     );
 
-    if (settings.weekBeforeEnabled) {
-      final at = eventStart.subtract(const Duration(days: 7));
-      if (at.isAfter(now)) digestAt(at).week.add(_Entry(eventStart, event.title));
+    // 이번 주 종합: 그 주 월요일 아침에 화~일 이벤트를 미리 보여준다.
+    // 월요일 당일 이벤트는 '오늘' 섹션이 담당하므로 제외한다.
+    final weekday = eventStart.weekday;
+    if (settings.weeklyEnabled && weekday != DateTime.monday) {
+      final monday = eventStart.subtract(Duration(days: weekday - 1));
+      if (monday.isAfter(now)) {
+        digestAt(monday).week.add(_Entry(eventStart, event.title));
+      }
     }
     if (settings.dayOfEnabled) {
       // 이벤트 당일 아침 발송 ('오늘 X 있어요').
@@ -132,35 +133,40 @@ class _Digest {
   final List<_Entry> today = [];
   final List<_Entry> week = [];
 
-  /// 이달 섹션: 그 달 전체 건수 + 중요표시된 항목만.
-  final List<_Entry> monthImportant = [];
+  /// 이달 섹션: 그 달 전체 건수 + 중요표시 개수.
   int monthTotal = 0;
+  int monthImportantCount = 0;
 
-  /// 섹션 순서: 오늘 → 1주 후 → 이달. 비어 있는 섹션은 생략.
+  /// 섹션 순서: 오늘 → 이번 주 → 이달. 비어 있는 섹션은 생략.
+  /// 각 섹션은 이모지 앵커 + 라벨 + ' — ' + 내용 (이모지 스캔형).
   String buildBody() {
     final lines = <String>[];
-    _appendTitleSection(NotificationStrings.digestToday, today, lines);
-    _appendTitleSection(NotificationStrings.digestWeek, week, lines);
+    _appendTitleSection(
+        NotificationStrings.emojiToday, NotificationStrings.digestToday, today, lines);
+    _appendTitleSection(
+        NotificationStrings.emojiWeek, NotificationStrings.digestWeek, week, lines);
     _appendMonthSection(lines);
     return lines.join('\n');
   }
 
-  void _appendTitleSection(String label, List<_Entry> entries, List<String> out) {
+  /// 섹션 공통 접두사: `이모지 라벨 — `.
+  String _sectionHeader(String emoji, String label) => '$emoji $label — ';
+
+  void _appendTitleSection(
+      String emoji, String label, List<_Entry> entries, List<String> out) {
     if (entries.isEmpty) return;
-    out.add('$label: ${_formatTitles(_titlesByImminence(entries))}');
+    out.add('${_sectionHeader(emoji, label)}'
+        '${_formatTitles(_titlesByImminence(entries))}');
   }
 
   void _appendMonthSection(List<String> out) {
     if (monthTotal == 0) return;
     final buffer = StringBuffer(
-      '${NotificationStrings.digestMonth}: '
-      '${NotificationStrings.digestMonthTotal(monthTotal)}',
+      _sectionHeader(NotificationStrings.emojiMonth, NotificationStrings.digestMonth),
     );
-    if (monthImportant.isNotEmpty) {
-      buffer.write(
-        ' · ${NotificationStrings.digestImportant} '
-        '${_formatTitles(_titlesByImminence(monthImportant))}',
-      );
+    buffer.write(NotificationStrings.digestMonthTotal(monthTotal));
+    if (monthImportantCount > 0) {
+      buffer.write(' ${NotificationStrings.digestImportantCount(monthImportantCount)}');
     }
     out.add(buffer.toString());
   }
