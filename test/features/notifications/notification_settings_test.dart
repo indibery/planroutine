@@ -6,7 +6,6 @@ void main() {
     test('toJson → fromJson 하면 원본과 동일', () {
       const original = NotificationSettings(
         masterEnabled: true,
-        monthStartEnabled: false,
         weeklyEnabled: true,
         dayOfEnabled: false,
         hour: 9,

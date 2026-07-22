@@ -1,11 +1,10 @@
 /// 알림 설정 — SharedPreferences에 직렬화.
 ///
-/// 마스터 스위치가 OFF이면 [monthStartEnabled], [weeklyEnabled],
-/// [dayOfEnabled] 값과 상관없이 모든 알림이 꺼진다.
+/// 마스터 스위치가 OFF이면 [weeklyEnabled], [dayOfEnabled] 값과 상관없이
+/// 모든 알림이 꺼진다.
 class NotificationSettings {
   const NotificationSettings({
     this.masterEnabled = false,
-    this.monthStartEnabled = true,
     this.weeklyEnabled = true,
     this.dayOfEnabled = true,
     this.hour = 8,
@@ -13,7 +12,6 @@ class NotificationSettings {
   });
 
   final bool masterEnabled;
-  final bool monthStartEnabled;
 
   /// 매주 월요일 아침 '이번 주 종합' 알림. 이전 버전의 이벤트별 '1주 전'을 대체.
   final bool weeklyEnabled;
@@ -30,7 +28,6 @@ class NotificationSettings {
 
   NotificationSettings copyWith({
     bool? masterEnabled,
-    bool? monthStartEnabled,
     bool? weeklyEnabled,
     bool? dayOfEnabled,
     int? hour,
@@ -38,7 +35,6 @@ class NotificationSettings {
   }) {
     return NotificationSettings(
       masterEnabled: masterEnabled ?? this.masterEnabled,
-      monthStartEnabled: monthStartEnabled ?? this.monthStartEnabled,
       weeklyEnabled: weeklyEnabled ?? this.weeklyEnabled,
       dayOfEnabled: dayOfEnabled ?? this.dayOfEnabled,
       hour: hour ?? this.hour,
@@ -48,7 +44,6 @@ class NotificationSettings {
 
   Map<String, dynamic> toJson() => {
         'masterEnabled': masterEnabled,
-        'monthStartEnabled': monthStartEnabled,
         'weeklyEnabled': weeklyEnabled,
         'dayOfEnabled': dayOfEnabled,
         'hour': hour,
@@ -58,7 +53,6 @@ class NotificationSettings {
   factory NotificationSettings.fromJson(Map<String, dynamic> json) {
     return NotificationSettings(
       masterEnabled: json['masterEnabled'] as bool? ?? false,
-      monthStartEnabled: json['monthStartEnabled'] as bool? ?? true,
       weeklyEnabled: json['weeklyEnabled'] as bool? ?? true,
       dayOfEnabled: json['dayOfEnabled'] as bool? ?? true,
       hour: json['hour'] as int? ?? 8,
@@ -70,7 +64,6 @@ class NotificationSettings {
   bool operator ==(Object other) =>
       other is NotificationSettings &&
       other.masterEnabled == masterEnabled &&
-      other.monthStartEnabled == monthStartEnabled &&
       other.weeklyEnabled == weeklyEnabled &&
       other.dayOfEnabled == dayOfEnabled &&
       other.hour == hour &&
@@ -79,7 +72,6 @@ class NotificationSettings {
   @override
   int get hashCode => Object.hash(
         masterEnabled,
-        monthStartEnabled,
         weeklyEnabled,
         dayOfEnabled,
         hour,

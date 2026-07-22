@@ -524,7 +524,7 @@ void main() {
       expect(find.text(NotificationStrings.section), findsOneWidget);
       expect(find.text(NotificationStrings.master), findsOneWidget);
 
-      // 월초/이번 주/당일 아침/테스트는 '고급' ExpansionTile 안에 접혀 있으므로 먼저 펼친다.
+      // 이번 주/당일 아침/테스트는 '고급' ExpansionTile 안에 접혀 있으므로 먼저 펼친다.
       await _scrollToInSettings(
         tester,
         find.text(NotificationStrings.advanced),
@@ -538,8 +538,6 @@ void main() {
         find.text(NotificationStrings.test),
       );
 
-      expect(find.text(NotificationStrings.monthStart),
-          findsOneWidget);
       expect(find.text(NotificationStrings.weekly),
           findsOneWidget);
       expect(find.text(NotificationStrings.dayOf),

@@ -60,10 +60,6 @@ class NotificationSettingsNotifier
     await save(current.copyWith(masterEnabled: value));
   }
 
-  Future<void> setMonthStart(bool value) async =>
-      save((state.valueOrNull ?? NotificationSettings.defaults)
-          .copyWith(monthStartEnabled: value));
-
   Future<void> setWeekly(bool value) async =>
       save((state.valueOrNull ?? NotificationSettings.defaults)
           .copyWith(weeklyEnabled: value));
