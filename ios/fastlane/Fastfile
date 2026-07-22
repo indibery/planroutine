@@ -116,46 +116,56 @@ platform :ios do
     UI.success("TestFlight 배포 완료! v#{new_build_number}")
   end
 
-  # ── App Store 배포 ──
-  desc "App Store에 새 버전 제출"
+  # ── App Store 배포 (promote 전용 — beta 선행 필요) ──
+  # 바이너리를 새로 빌드/업로드하지 않는다. beta로 이미 올려 TestFlight에서 검증한
+  # 최신 빌드를 그대로 승격(promote)하고 심사 자동 제출 + 승인 시 자동 공개한다.
+  # (재빌드·재업로드 없음 → 업로드 중단 함정 회피, ASC 수동 단계 제거.)
+  desc "App Store에 최신 TestFlight 빌드 승격 + 심사 제출"
   lane :release do
     api_key = load_asc_api_key
 
-    # 함정 #5 선제 차단: 승인본 이하 버전이면 clean 빌드 전에 중단
+    # 가드 A(함정 #5): pubspec versionString이 승인본 이하이면 중단
     assert_version_bumped(api_key)
 
-    latest = latest_testflight_build_number(
-      app_identifier: "com.planroutine.app",
+    require 'spaceship'
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+
+    # 승격 대상 = TestFlight 최신 빌드(=beta로 올린 것)
+    target = latest_testflight_build_number(app_identifier: "com.planroutine.app")
+
+    # 가드 B: 그 빌드가 ASC에 VALID로 존재해야 promote 가능.
+    # 방금 beta로 올렸으면 처리(40~60분)가 끝나야 VALID가 된다.
+    builds = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id, limit: 20, sort: "-uploadedDate",
     )
-    new_build_number = latest + 1
-
-    reset_ios_caches
-
-    Dir.chdir("..") do
-      sh("flutter", "build", "ipa",
-        "--release",
-        "--build-number=#{new_build_number}",
+    unless builds.any? { |b| b.version.to_i == target && b.processing_state == "VALID" }
+      UI.user_error!(
+        "가드 B: build #{target}이 App Store Connect에 VALID로 없습니다(처리 중일 수 있음). " \
+        "먼저 `beta`로 올리고 처리 완료(check_builds에서 VALID 확인) 후 재실행하세요."
       )
     end
 
-    # __dir__ = ios/fastlane → 두 단계 올라가 프로젝트 루트.
-    project_root = File.expand_path("../..", __dir__)
-    ipa_dir = File.join(project_root, "build/ios/ipa")
-    ipa_name = Dir.entries(ipa_dir).find { |f| f.end_with?(".ipa") }
-    UI.user_error!("빌드된 IPA를 찾을 수 없습니다 (#{ipa_dir})") unless ipa_name
-    ipa_path = File.join(ipa_dir, ipa_name)
-
     upload_to_app_store(
-      ipa: ipa_path,
-      skip_metadata: true,
+      api_key: api_key,
+      build_number: target.to_s,
+      skip_binary_upload: true,   # 재업로드 없음 — 기존 빌드 승격만
+      skip_metadata: true,        # App Store 리스팅 메타데이터는 ASC에서 수동 관리
       skip_screenshots: true,
-      submit_for_review: false,
-      # 바이너리 업로드만 하고 심사 제출은 App Store Connect에서 수동. precheck는
-      # 심사 전 검증이라 불필요하고, ASC API Key로는 IAP 확인이 안 돼 에러가 난다.
+      submit_for_review: true,    # 심사 자동 제출
+      automatic_release: true,    # 승인 시 자동 공개
+      force: true,                # HTML 미리보기 확인 스킵(비대화형)
+      # precheck는 ASC API Key로 IAP 확인이 안 돼 에러가 난다 → 끈다.
       run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
+      # 암호화/IDFA 심사 질문 자동 응답.
+      submission_information: {
+        export_compliance_uses_encryption: false,
+        add_id_info_uses_idfa: false,
+      },
     )
 
-    UI.success("App Store 업로드 완료! v#{new_build_number}")
+    UI.success("App Store 심사 제출 완료! v#{target} — 승인 시 자동 공개")
   end
 
   # ── post-deploy: TestFlight 빌드 처리 상태 조회 ──
