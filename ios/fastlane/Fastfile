@@ -121,7 +121,14 @@ platform :ios do
   # 최신 빌드를 그대로 승격(promote)하고 심사 자동 제출 + 승인 시 자동 공개한다.
   # (재빌드·재업로드 없음 → 업로드 중단 함정 회피, ASC 수동 단계 제거.)
   desc "App Store에 최신 TestFlight 빌드 승격 + 심사 제출"
-  lane :release do
+  # ── App Store 심사 제출 (promote 전용) ────────────────────────
+  #
+  #   fastlane ios release                  최신 빌드 승격 + 심사 제출
+  #   fastlane ios release build:115        승격할 빌드를 못박음(검증한 빌드 지정)
+  #   fastlane ios release submit:false     빌드만 붙이고 제출은 ASC에서 수동
+  #
+  # 재빌드/재업로드가 없다 — 실기기로 검증한 그 바이너리가 그대로 심사에 간다.
+  lane :release do |options|
     api_key = load_asc_api_key
 
     # 가드 A(함정 #5): pubspec versionString이 승인본 이하이면 중단
@@ -131,8 +138,55 @@ platform :ios do
     Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
     app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
 
-    # 승격 대상 = TestFlight 최신 빌드(=beta로 올린 것)
-    target = latest_testflight_build_number(app_identifier: "com.planroutine.app")
+    # 가드 C: ASC에 편집 가능한 버전 페이지가 있어야 한다.
+    # 없으면 fastlane 2.233.0이 sync_app_previews에서 NoMethodError로 죽어 원인을
+    # 읽을 수 없다(alpha 실패 사례). 여기서 먼저 사람이 읽을 수 있게 끊는다.
+    edit = begin
+      app.get_edit_app_store_version
+    rescue StandardError
+      nil
+    end
+    if edit.nil?
+      UI.user_error!(
+        "가드 C: App Store Connect에 편집 가능한 버전이 없습니다. " \
+        "ASC → 공직플랜 → '+ 버전 또는 플랫폼'으로 #{pubspec_version_name} 페이지를 " \
+        "만들고 '이번 버전의 새로운 기능'을 채운 뒤 재실행하세요. " \
+        "(현재 상태는 `asc_state`로 확인)"
+      )
+    end
+
+    # 가드 D: 이미 심사 단계면 손대지 않는다.
+    # submit_for_review로 제출된 버전을 다시 건드리면 심사가 되돌려진다.
+    # 수동 제출 후 실수로 release를 돌리는 경우를 막는 가드.
+    editable_states = %w[
+      PREPARE_FOR_SUBMISSION
+      DEVELOPER_REJECTED
+      REJECTED
+      METADATA_REJECTED
+    ]
+    state = edit.app_store_state
+    unless editable_states.include?(state)
+      UI.user_error!(
+        "가드 D: #{edit.version_string}이(가) 이미 '#{state}' 상태입니다. " \
+        "지금 release를 실행하면 진행 중인 심사가 되돌려질 수 있습니다. " \
+        "이미 제출됐다면 아무것도 하지 마세요. 되돌리려면 ASC에서 제출을 취소한 뒤 재실행."
+      )
+    end
+    UI.success("가드 C·D 통과: #{edit.version_string} (#{state})")
+
+    # 승격 대상 결정.
+    # 빌드를 명시하면 그것만 쓴다 — "최신"에 맡기면 검증 후 beta를 한 번 더 돌렸을 때
+    # 테스트하지 않은 빌드가 심사에 올라간다.
+    target =
+      if options[:build]
+        options[:build].to_s.to_i
+      else
+        latest_testflight_build_number(
+          app_identifier: "com.planroutine.app",
+          version: edit.version_string,
+        )
+      end
+    UI.message("승격 대상: build #{target} (#{edit.version_string})")
 
     # 가드 B: 그 빌드가 ASC에 VALID로 존재해야 promote 가능.
     # 방금 beta로 올렸으면 처리(40~60분)가 끝나야 VALID가 된다.
@@ -146,13 +200,16 @@ platform :ios do
       )
     end
 
+    # submit:false면 빌드만 붙이고 제출은 사람이 ASC에서 한다.
+    submit = !%w[false no 0].include?(options[:submit].to_s.downcase)
+
     upload_to_app_store(
       api_key: api_key,
       build_number: target.to_s,
       skip_binary_upload: true,   # 재업로드 없음 — 기존 빌드 승격만
       skip_metadata: true,        # App Store 리스팅 메타데이터는 ASC에서 수동 관리
       skip_screenshots: true,
-      submit_for_review: true,    # 심사 자동 제출
+      submit_for_review: submit,
       automatic_release: true,    # 승인 시 자동 공개
       force: true,                # HTML 미리보기 확인 스킵(비대화형)
       # precheck는 ASC API Key로 IAP 확인이 안 돼 에러가 난다 → 끈다.
@@ -165,11 +222,48 @@ platform :ios do
       },
     )
 
-    UI.success("App Store 심사 제출 완료! v#{target} — 승인 시 자동 공개")
+    if submit
+      UI.success("App Store 심사 제출 완료! v#{target} — 승인 시 자동 공개")
+    else
+      UI.success("빌드 v#{target} 연결 완료 — 제출은 ASC에서 직접 하세요")
+    end
   end
 
-  # ── post-deploy: TestFlight 빌드 처리 상태 조회 ──
-  desc "TestFlight 빌드 상태 조회 (processing_state 확인)"
+  # ── 심사/버전 상태 조회 ───────────────────────────────────────
+  # check_builds는 '빌드'만 보여준다. 심사가 어느 단계인지, 어떤 빌드가 붙어 있는지는
+  # 여기서 본다. release가 왜 막혔는지 진단하는 첫 명령.
+  lane :asc_state do
+    api_key = load_asc_api_key
+    require 'spaceship'
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+
+    live = app.get_live_app_store_version
+    UI.message("라이브(승인본): #{live ? live.version_string : '없음'}")
+    UI.message("pubspec:        #{pubspec_version_name}")
+
+    edit = begin
+      app.get_edit_app_store_version
+    rescue StandardError => e
+      UI.important("편집 버전 조회 실패: #{e.class}")
+      nil
+    end
+
+    if edit.nil?
+      UI.important("편집 가능한 버전이 없습니다.")
+      UI.important("→ ASC에서 '+ 버전 또는 플랫폼'으로 #{pubspec_version_name} 페이지를 먼저 만들어야 release가 동작합니다.")
+    else
+      UI.success("편집 중 버전: #{edit.version_string}")
+      UI.message("상태:         #{edit.app_store_state}")
+      selected = begin
+        edit.build
+      rescue StandardError
+        nil
+      end
+      UI.message("선택된 빌드:  #{selected ? "v#{selected.version}" : '없음'}")
+    end
+  end
+
   lane :check_builds do
     api_key = load_asc_api_key
     require 'spaceship'
