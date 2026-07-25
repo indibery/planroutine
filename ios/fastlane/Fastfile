@@ -27,83 +27,117 @@ def pubspec_version_name
   match[1]
 end
 
-# ASC에 편집 가능한 버전 페이지를 보장한다.
+# ── App Store Connect 공통 ──
+APP_BUNDLE_ID = "com.planroutine.app"
+
+# 스크린샷/메타데이터를 고쳐도 안전한 상태. 이 목록 밖은 심사가 진행 중이라는 뜻이다.
+EDITABLE_STATES = %w[
+  PREPARE_FOR_SUBMISSION
+  DEVELOPER_REJECTED
+  REJECTED
+  METADATA_REJECTED
+].freeze
+
+# 인증 + 앱 조회. 레인마다 세 줄씩 반복하던 것을 한곳으로.
+def asc_app(api_key)
+  require 'spaceship'
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+  app = Spaceship::ConnectAPI::App.find(APP_BUNDLE_ID)
+  UI.user_error!("앱을 찾을 수 없습니다: #{APP_BUNDLE_ID}") if app.nil?
+  app
+end
+
+# 편집 중(제출 준비 중) 버전. 없으면 nil — 조회 실패도 nil로 접는다.
+def edit_version(app)
+  app.get_edit_app_store_version
+rescue StandardError
+  nil
+end
+
+# 편집 가능한 버전 페이지를 보장한다(없으면 생성).
 #
-# 없으면 만든다. minor/major를 올릴 때는 항상 없으므로, 이걸 자동화하지 않으면 매번
-# 사람이 ASC에서 '+ 버전 또는 플랫폼'을 눌러야 한다. patch에서는 기존 페이지가 남아
-# 있어 그냥 통과한다.
+# minor/major를 올릴 때는 항상 없다 — 자동화하지 않으면 매번 사람이 ASC에서
+# '+ 버전 또는 플랫폼'을 눌러야 한다. patch는 기존 페이지가 남아 그냥 통과한다.
+# 없는 채로 upload_to_app_store에 들어가면 fastlane 2.233.0이 sync_app_previews에서
+# NoMethodError로 죽어 원인을 읽을 수 없다.
 def ensure_edit_version(app, version_string)
-  edit = begin
-    app.get_edit_app_store_version
-  rescue StandardError
-    nil
-  end
+  edit = edit_version(app)
   return edit if edit
 
   UI.message("편집 가능한 버전 없음 → #{version_string} 페이지를 생성합니다")
   app.ensure_version!(version_string, platform: Spaceship::ConnectAPI::Platform::IOS)
 
-  edit = begin
-    app.get_edit_app_store_version
-  rescue StandardError
-    nil
-  end
+  edit = edit_version(app)
   if edit.nil?
-    UI.user_error!(
-      "#{version_string} 버전 페이지 생성에 실패했습니다. ASC에서 직접 만든 뒤 재실행하세요."
-    )
+    UI.user_error!("#{version_string} 버전 페이지 생성 실패. ASC에서 직접 만든 뒤 재실행하세요.")
   end
   UI.success("버전 페이지 생성: #{edit.version_string}")
   edit
 end
 
-# "이번 버전의 새로운 기능"을 docs/release_notes/<버전>.ko.txt에서 넣는다.
-# Apple이 업데이트 심사에 필수로 요구하는 항목이라, 비어 있으면 제출이 막힌다.
-def apply_release_notes(edit, version_string)
+# [가드] 심사에 들어간 버전은 건드리지 않는다 — 건드리면 심사가 되돌려진다.
+def assert_editable(edit, action)
+  state = edit.app_store_state
+  unless EDITABLE_STATES.include?(state)
+    UI.user_error!(
+      "#{edit.version_string}이(가) '#{state}' 상태입니다. #{action}을 실행하면 " \
+      "진행 중인 심사가 되돌려질 수 있습니다. 심사를 기다리는 중이면 아무것도 하지 마세요. " \
+      "정말 바꿔야 하면 `withdraw_review`로 철회한 뒤 재실행하세요(대기열 처음으로)."
+    )
+  end
+  UI.success("편집 가능 상태 확인: #{edit.version_string} (#{state})")
+end
+
+# [가드] "이번 버전의 새로운 기능"을 docs/release_notes/<버전>.ko.txt에서 넣는다.
+# Apple이 업데이트 심사에 필수로 요구하므로, 비어 있으면 어차피 제출이 막힌다.
+def apply_release_notes(edit)
+  version_string = edit.version_string
   project_root = File.expand_path("../..", __dir__)
   path = File.join(project_root, "docs/release_notes/#{version_string}.ko.txt")
 
   unless File.exist?(path)
     UI.user_error!(
-      "가드 E: 릴리즈 노트가 없습니다 → docs/release_notes/#{version_string}.ko.txt " \
-      "Apple이 '이번 버전의 새로운 기능'을 필수로 요구합니다. " \
-      "docs/release_notes/README.md 참고."
+      "릴리즈 노트가 없습니다 → docs/release_notes/#{version_string}.ko.txt " \
+      "(Apple 필수 항목. docs/release_notes/README.md 참고)"
     )
   end
-
   notes = File.read(path).strip
   UI.user_error!("릴리즈 노트가 비어 있습니다: #{path}") if notes.empty?
 
   locs = edit.get_app_store_version_localizations
-  if locs.empty?
-    UI.user_error!("버전 로컬라이제이션이 없습니다. ASC에서 언어 설정을 확인하세요.")
-  end
-  locs.each do |loc|
-    loc.update(attributes: { whats_new: notes })
-    UI.message("릴리즈 노트 입력: #{loc.locale} (#{notes.lines.count}줄)")
-  end
-  UI.success("릴리즈 노트 반영 완료")
+  UI.user_error!("버전 로컬라이제이션이 없습니다.") if locs.empty?
+  locs.each { |loc| loc.update(attributes: { whats_new: notes }) }
+  UI.success("릴리즈 노트 반영: #{locs.map(&:locale).join(', ')} (#{notes.lines.count}줄)")
 end
 
-# 가드 D: 편집 가능한 상태인지. 심사에 들어간 버전을 건드리면 심사가 되돌려진다.
-# release / upload_screenshots가 공유한다.
-def assert_version_editable(edit, action)
-  editable_states = %w[
-    PREPARE_FOR_SUBMISSION
-    DEVELOPER_REJECTED
-    REJECTED
-    METADATA_REJECTED
-  ]
-  state = edit.app_store_state
-  unless editable_states.include?(state)
-    UI.user_error!(
-      "가드 D: #{edit.version_string}이(가) 이미 '#{state}' 상태입니다. " \
-      "지금 #{action}을 실행하면 진행 중인 심사가 되돌려질 수 있습니다. " \
-      "심사를 기다리는 중이면 아무것도 하지 마세요. " \
-      "정말 바꿔야 하면 ASC에서 '심사에서 제거'한 뒤 재실행하세요(대기열 처음으로 돌아갑니다)."
-    )
+# 업로드된 스크린샷을 (슬롯, 스크린샷 배열)로 순회한다. 조회·정리가 공유.
+def each_screenshot_set(edit)
+  edit.get_app_store_version_localizations.each do |loc|
+    sets = loc.get_app_screenshot_sets.sort_by { |st| st.screenshot_display_type.to_s }
+    sets.each { |st| yield(loc, st, st.app_screenshots || []) }
   end
-  UI.success("가드 D 통과: #{edit.version_string} (#{state})")
+end
+
+# 파일명이 같은 중복을 첫 장만 남기고 지운다.
+#
+# deliver가 병렬 업로드 중 같은 파일을 두 번 올리는 일이 있다(실측: 10장 → 13장).
+# 전체 재업로드는 같은 경합이 재발하므로 중복만 도려낸다. 몇 번 돌려도 안전하다.
+def dedupe_screenshots!(edit)
+  removed = 0
+  each_screenshot_set(edit) do |_loc, st, shots|
+    seen = {}
+    shots.each do |sh|
+      if seen[sh.file_name]
+        UI.message("  중복 삭제: #{st.screenshot_display_type} / #{sh.file_name}")
+        sh.delete!
+        removed += 1
+      else
+        seen[sh.file_name] = true
+      end
+    end
+  end
+  UI.success(removed.zero? ? "스크린샷 중복 없음" : "스크린샷 중복 #{removed}장 삭제")
+  removed
 end
 
 def next_patch(version)
@@ -116,14 +150,14 @@ end
 # 이하이면 그 train이 닫혀 있어 altool이 업로드를 거부한다(90062/90186).
 # clean 빌드(수 분) + 업로드까지 다 돌린 뒤 거부당하는 낭비를 막으려고,
 # 빌드 전에 즉시 NO-GO로 중단한다. 버전 자동 증가는 하지 않는다 — 증가폭은 사람 판단.
-def assert_version_bumped(api_key)
-  require 'spaceship'
-  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-  app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-  live = app&.get_live_app_store_version
+# [가드] pubspec versionString이 App Store 승인본 이하이면 그 train이 닫혀 있어
+# altool이 업로드를 거부한다(90062/90186). clean 빌드(수 분) + 업로드까지 다 돌린 뒤
+# 거부당하는 낭비를 막으려고 빌드 전에 중단한다.
+# 버전 자동 증가는 하지 않는다 — 증가폭(patch/minor/major)은 사람 판단.
+def assert_version_bumped(app)
+  live = app.get_live_app_store_version
   local = pubspec_version_name
 
-  # 승인본이 아직 없으면(최초 출시 전) 가드 통과.
   if live.nil?
     UI.message("App Store 승인본 없음 — 버전 가드 통과 (pubspec #{local})")
     return
@@ -135,8 +169,8 @@ def assert_version_bumped(api_key)
   else
     UI.user_error!(
       "pubspec 버전 #{local}이(가) App Store 승인본 #{approved} 이하입니다. " \
-      "이 train은 닫혀 있어 업로드가 거부됩니다(함정 #5). " \
-      "빌드 전 중단 — pubspec.yaml의 version을 올리세요 (예: #{next_patch(approved)})."
+      "이 train은 닫혀 있어 업로드가 거부됩니다. " \
+      "pubspec.yaml의 version을 올리세요 (예: #{next_patch(approved)})."
     )
   end
 end
@@ -158,13 +192,11 @@ platform :ios do
   lane :beta do
     api_key = load_asc_api_key
 
-    # 함정 #5 선제 차단: 승인본 이하 버전이면 clean 빌드 전에 중단
-    assert_version_bumped(api_key)
+    # 승인본 이하 버전이면 clean 빌드 전에 중단
+    assert_version_bumped(asc_app(api_key))
 
     # 빌드 번호 자동 증가 (TestFlight 최신 빌드 + 1)
-    latest = latest_testflight_build_number(
-      app_identifier: "com.planroutine.app",
-    )
+    latest = latest_testflight_build_number(app_identifier: APP_BUNDLE_ID)
     new_build_number = latest + 1
     UI.message("빌드 번호: #{latest} → #{new_build_number}")
 
@@ -195,123 +227,127 @@ platform :ios do
     UI.success("TestFlight 배포 완료! v#{new_build_number}")
   end
 
-  # ── App Store 배포 (promote 전용 — beta 선행 필요) ──
-  # 바이너리를 새로 빌드/업로드하지 않는다. beta로 이미 올려 TestFlight에서 검증한
-  # 최신 빌드를 그대로 승격(promote)하고 심사 자동 제출 + 승인 시 자동 공개한다.
-  # (재빌드·재업로드 없음 → 업로드 중단 함정 회피, ASC 수동 단계 제거.)
-  desc "App Store에 최신 TestFlight 빌드 승격 + 심사 제출"
-  # ── App Store 심사 준비 (promote 전용) ────────────────────────
+  # ── App Store 심사 준비 ───────────────────────────────────────
   #
-  #   fastlane ios release build:115        빌드 승격 + 노트 반영 (제출은 안 함)
-  #   fastlane ios release                  승격 대상을 최신으로 (권장하지 않음)
-  #   fastlane ios release submit:true      제출까지 자동 (명시해야만 제출)
-  #
-  # **기본값은 제출하지 않는다.** 최종 '심사를 위해 제출' 버튼은 사람이 누른다 —
-  # 되돌리기 어려운 외부 작업이고, 제출 직전에 ASC에서 눈으로 확인할 여지를 남긴다.
+  #   fastlane ios release build:115           승격 + 노트 + 스크린샷 (제출 안 함)
+  #   fastlane ios release                     승격 대상을 최신으로 (권장하지 않음)
+  #   fastlane ios release shots:false         스크린샷 건너뛰기
+  #   fastlane ios release submit:true         제출까지 자동 (명시해야만)
   #
   # 재빌드/재업로드가 없다 — 실기기로 검증한 그 바이너리가 그대로 심사에 간다.
+  # **기본값은 제출하지 않는다.** 최종 '심사를 위해 제출'은 사람이 ASC에서 누른다.
+  #
+  # 순서: 버전 확인 → 버전 페이지 → 편집 가능 확인 → 릴리즈 노트
+  #       → 빌드 확인 → (스크린샷 + 빌드 연결) → 중복 정리
+  desc "App Store 심사 준비 — 빌드 승격 + 릴리즈 노트 + 스크린샷 (제출은 사람이)"
   lane :release do |options|
     api_key = load_asc_api_key
+    app = asc_app(api_key)
 
-    # 가드 A(함정 #5): pubspec versionString이 승인본 이하이면 중단
-    assert_version_bumped(api_key)
-
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-
-    # 편집 가능한 버전 페이지 보장(없으면 생성).
-    # 없는 채로 upload_to_app_store에 들어가면 fastlane 2.233.0이 sync_app_previews에서
-    # NoMethodError로 죽어 원인을 읽을 수 없다.
+    assert_version_bumped(app)
     edit = ensure_edit_version(app, pubspec_version_name)
+    assert_editable(edit, "release")
+    apply_release_notes(edit)
 
-    # 가드 D: 이미 심사 단계면 손대지 않는다.
-    assert_version_editable(edit, "release")
-
-    # 릴리즈 노트(가드 E) — 없으면 여기서 중단된다.
-    apply_release_notes(edit, edit.version_string)
-
-    # 승격 대상 결정.
-    # 빌드를 명시하면 그것만 쓴다 — "최신"에 맡기면 검증 후 beta를 한 번 더 돌렸을 때
-    # 테스트하지 않은 빌드가 심사에 올라간다.
+    # 승격 대상. 빌드를 명시하면 그것만 쓴다 — "최신"에 맡기면 실기기 검증 후
+    # beta를 한 번 더 돌렸을 때 검증하지 않은 빌드가 심사에 올라간다.
     target =
       if options[:build]
         options[:build].to_s.to_i
       else
         latest_testflight_build_number(
-          app_identifier: "com.planroutine.app",
+          app_identifier: APP_BUNDLE_ID,
           version: edit.version_string,
         )
       end
-    UI.message("승격 대상: build #{target} (#{edit.version_string})")
 
-    # 가드 B: 그 빌드가 ASC에 VALID로 존재해야 promote 가능.
+    # [가드] 그 빌드가 ASC에 VALID로 있어야 승격 가능.
     # 방금 beta로 올렸으면 처리(40~60분)가 끝나야 VALID가 된다.
-    builds = Spaceship::ConnectAPI::Build.all(
-      app_id: app.id, limit: 20, sort: "-uploadedDate",
-    )
+    builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, limit: 20, sort: "-uploadedDate")
     unless builds.any? { |b| b.version.to_i == target && b.processing_state == "VALID" }
       UI.user_error!(
-        "가드 B: build #{target}이 App Store Connect에 VALID로 없습니다(처리 중일 수 있음). " \
-        "먼저 `beta`로 올리고 처리 완료(check_builds에서 VALID 확인) 후 재실행하세요."
+        "build #{target}이 App Store Connect에 VALID로 없습니다(처리 중일 수 있음). " \
+        "`check_builds`로 VALID 확인 후 재실행하세요."
       )
     end
+    UI.success("승격 대상 확인: build #{target} (#{edit.version_string})")
 
-    # 기본은 제출하지 않는다. submit:true를 명시할 때만 제출한다.
-    # 최종 버튼은 사람이 누르는 것이 이 레인의 계약이다.
+    # 스크린샷은 기본 포함. deliver가 **이미지 크기로** 기기 슬롯을 판단하므로
+    # 파일명에 규격을 붙여 두 세트를 함께 둔다(6.5_* = 1284x2778, 6.9_* = 1320x2868).
+    # 파일명 순서가 노출 순서다.
+    shots_dir = File.expand_path("screenshots", __dir__)
+    shots_count = Dir.glob(File.join(shots_dir, "**", "*.png")).count
+    with_shots = !%w[false no 0].include?(options[:shots].to_s.downcase) && shots_count.positive?
+    if with_shots
+      UI.message("스크린샷 #{shots_count}장 포함 → #{shots_dir}")
+    elsif shots_count.zero?
+      UI.important("스크린샷 없음(#{shots_dir}) — 기존 것이 그대로 유지됩니다")
+    else
+      UI.important("스크린샷 건너뜀 (shots:false)")
+    end
+
     submit = %w[true yes 1].include?(options[:submit].to_s.downcase)
 
+    # 빌드 연결 + 스크린샷을 한 번의 deliver 호출로 처리한다(두 번 부르면 느리고,
+    # 중간 상태가 생겨 어디서 실패했는지 읽기 어렵다).
     upload_to_app_store(
       api_key: api_key,
       build_number: target.to_s,
       skip_binary_upload: true,   # 재업로드 없음 — 기존 빌드 승격만
-      skip_metadata: true,        # App Store 리스팅 메타데이터는 ASC에서 수동 관리
-      skip_screenshots: true,
+      skip_metadata: true,        # 리스팅 문구는 ASC에서 관리(노트는 위에서 넣었다)
+      skip_screenshots: !with_shots,
+      overwrite_screenshots: with_shots,
+      screenshots_path: with_shots ? shots_dir : nil,
       submit_for_review: submit,
       automatic_release: true,    # 승인 시 자동 공개
       force: true,                # HTML 미리보기 확인 스킵(비대화형)
       # precheck는 ASC API Key로 IAP 확인이 안 돼 에러가 난다 → 끈다.
       run_precheck_before_submit: false,
       precheck_include_in_app_purchases: false,
-      # 암호화/IDFA 심사 질문 자동 응답.
       submission_information: {
         export_compliance_uses_encryption: false,
         add_id_info_uses_idfa: false,
       },
     )
 
-    if submit
-      UI.success("App Store 심사 제출 완료! v#{target} — 승인 시 자동 공개")
+    # 업로드 직후 중복 정리 — deliver의 병렬 업로드가 같은 파일을 두 번 올릴 수 있다.
+    dedupe_screenshots!(edit) if with_shots
+
+    # 의도가 아니라 **실제 상태**를 다시 읽어 보고한다.
+    #
+    # submit:false로 돌려도 심사 대기열에 들어가는 경우가 있다 — 한 번 제출했다가
+    # withdraw_review로 내린 버전(DEVELOPER_REJECTED)에 빌드를 다시 연결하면
+    # ASC가 이전 제출을 복원한다(실측). "제출 안 했다"고 단정하면 거짓이 된다.
+    final = edit_version(app) || edit
+    in_queue = !EDITABLE_STATES.include?(final.app_store_state)
+
+    UI.success("완료 — #{final.version_string} / build #{target} / 상태 #{final.app_store_state}")
+    if in_queue
+      UI.success("심사 대기열에 있습니다 — 승인 시 자동 공개")
+      UI.important("의도와 다르면 `withdraw_review`로 내릴 수 있습니다") unless submit
     else
-      UI.success("심사 준비 완료 — #{edit.version_string} / build #{target}")
-      UI.important("남은 한 단계는 사람이 누릅니다:")
-      UI.important("  ASC → 공직플랜 → #{edit.version_string} → '심사를 위해 제출'")
-      UI.important("  (스크린샷 확인: `check_screenshots` / 상태 확인: `asc_state`)")
+      UI.important("아직 제출되지 않았습니다. 남은 한 단계는 사람이 누릅니다:")
+      UI.important("  ASC → 공직플랜 → #{final.version_string} → '심사를 위해 제출'")
     end
+    UI.important("확인: `asc_state` (상태·빌드·스크린샷 한눈에)")
   end
 
-  # ── 심사 철회 ────────────────────────────────────────────────
+  # ── 심사 철회 ─────────────────────────────────────────────────
   #
   #   fastlane ios withdraw_review
   #
-  # 제출한 심사를 내려 편집 가능한 상태(DEVELOPER_REJECTED)로 되돌린다.
-  # 스크린샷·메타데이터를 고쳐 다시 올려야 할 때만 쓴다.
+  # 제출한 심사를 내려 편집 가능한 상태로 되돌린다. 스크린샷·노트를 고쳐 다시 올릴 때만.
   # ⚠️ 대기열 처음으로 돌아간다 — 이미 IN_REVIEW면 손실이 더 크다.
+  desc "심사 철회 — 편집 가능한 상태로 되돌린다"
   lane :withdraw_review do
     api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+    app = asc_app(api_key)
 
-    edit = begin
-      app.get_edit_app_store_version
-    rescue StandardError
-      nil
-    end
-    UI.user_error!("편집 가능한 버전이 없습니다 — 철회할 심사가 없습니다.") if edit.nil?
+    edit = edit_version(app)
+    UI.user_error!("편집 중 버전이 없습니다 — 철회할 심사가 없습니다.") if edit.nil?
 
     state = edit.app_store_state
-    if %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED].include?(state)
+    if EDITABLE_STATES.include?(state)
       UI.important("#{edit.version_string}은(는) 이미 '#{state}' — 철회할 것이 없습니다.")
       next
     end
@@ -319,7 +355,7 @@ platform :ios do
     UI.message("#{edit.version_string} (#{state}) 심사를 철회합니다…")
 
     # app.reject_version_if_possible!를 쓰지 않는 이유:
-    # 그 경로는 AppStoreVersionSubmission#can_reject를 보는데, Apple이 이 필드를 더 이상
+    # 그 경로는 AppStoreVersionSubmission#can_reject를 보는데 Apple이 이 필드를 더 이상
     # 돌려주지 않아 nil이 온다(실측). fastlane은 nil을 falsy로 보고 막아버린다.
     # 실제 철회는 제출 객체 DELETE — ASC API v1의 문서화된 방법이라 직접 호출한다.
     submission = begin
@@ -333,176 +369,62 @@ platform :ios do
       submission.delete!
     rescue StandardError => e
       UI.user_error!(
-        "철회 실패(#{e.class}: #{e.message}). 이미 심사가 진행됐을 수 있습니다 " \
-        "→ ASC에서 '심사에서 제거'를 직접 누르세요."
+        "철회 실패(#{e.class}: #{e.message}) → ASC에서 '심사에서 제거'를 직접 누르세요."
       )
     end
-    UI.success("심사 철회 완료 — 이제 스크린샷/메타데이터를 고칠 수 있습니다")
+    UI.success("심사 철회 완료 — 상태 반영에 몇 초 걸린다(asc_state로 확인)")
   end
 
-  # ── 스토어 스크린샷만 올리기 ──────────────────────────────────
-  #
-  #   fastlane ios upload_screenshots
-  #
-  # ios/fastlane/screenshots/ko/ 의 이미지를 ASC에 올린다. deliver가 **이미지 크기로**
-  # 기기 슬롯을 판단하므로 파일명에 규격을 붙여 두 세트를 함께 둔다
-  # (6.5_*.png = 1284x2778, 6.9_*.png = 1320x2868). 파일명 순서가 노출 순서다.
-  #
-  # 바이너리·메타데이터는 건드리지 않고 제출도 하지 않는다.
-  lane :upload_screenshots do
-    api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-
-    edit = ensure_edit_version(app, pubspec_version_name)
-    # 심사 중인 버전의 스크린샷을 갈아치우면 심사가 되돌려질 수 있다.
-    assert_version_editable(edit, "upload_screenshots")
-
-    shots_dir = File.expand_path("screenshots", __dir__)
-    count = Dir.glob(File.join(shots_dir, "**", "*.png")).count
-    UI.user_error!("올릴 스크린샷이 없습니다: #{shots_dir}") if count.zero?
-    UI.message("스크린샷 #{count}장 업로드 → #{edit.version_string}")
-
-    upload_to_app_store(
-      api_key: api_key,
-      skip_binary_upload: true,
-      skip_metadata: true,        # 리스팅 문구는 건드리지 않는다
-      skip_screenshots: false,
-      overwrite_screenshots: true,
-      screenshots_path: shots_dir,
-      submit_for_review: false,   # 제출은 release가 한다
-      force: true,
-      run_precheck_before_submit: false,
-    )
-
-    UI.success("스크린샷 업로드 완료 — #{edit.version_string}")
-  end
-
-  # ── 심사/버전 상태 조회 ───────────────────────────────────────
-  # check_builds는 '빌드'만 보여준다. 심사가 어느 단계인지, 어떤 빌드가 붙어 있는지는
-  # 여기서 본다. release가 왜 막혔는지 진단하는 첫 명령.
+  # ── 상태 진단 ─────────────────────────────────────────────────
+  # 버전·심사 단계·선택된 빌드·스크린샷을 한 번에 본다. 막혔을 때 첫 명령.
+  desc "심사 상태 + 선택된 빌드 + 스크린샷 조회"
   lane :asc_state do
     api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+    app = asc_app(api_key)
 
     live = app.get_live_app_store_version
     UI.message("라이브(승인본): #{live ? live.version_string : '없음'}")
     UI.message("pubspec:        #{pubspec_version_name}")
 
-    edit = begin
-      app.get_edit_app_store_version
-    rescue StandardError => e
-      UI.important("편집 버전 조회 실패: #{e.class}")
+    edit = edit_version(app)
+    if edit.nil?
+      UI.important("편집 중 버전 없음 — release가 #{pubspec_version_name} 페이지를 자동 생성합니다.")
+      next
+    end
+
+    UI.success("편집 중 버전: #{edit.version_string}")
+    # app_store_state는 구 필드, app_version_state가 현재 필드다. 둘이 어긋날 수 있어
+    # 둘 다 찍는다(어긋나면 app_version_state를 믿는다).
+    UI.message("상태:         #{edit.app_store_state}")
+    UI.message("버전 상태:    #{edit.app_version_state.inspect}")
+    sub = begin
+      edit.fetch_app_store_version_submission
+    rescue StandardError
       nil
     end
+    UI.message("제출 객체:    #{sub ? '있음 (심사 대기열에 있음)' : '없음 (제출 안 됨)'}")
+    editable = EDITABLE_STATES.include?(edit.app_store_state)
+    UI.message("편집 가능:    #{editable ? '예' : '아니오 — 심사 진행 중(withdraw_review로 철회)'}")
 
-    if edit.nil?
-      UI.important("편집 가능한 버전이 없습니다.")
-      UI.important("→ ASC에서 '+ 버전 또는 플랫폼'으로 #{pubspec_version_name} 페이지를 먼저 만들어야 release가 동작합니다.")
-    else
-      UI.success("편집 중 버전: #{edit.version_string}")
-      UI.message("상태:         #{edit.app_store_state}")
-      selected = begin
-        edit.build
-      rescue StandardError
-        nil
-      end
-      UI.message("선택된 빌드:  #{selected ? "v#{selected.version}" : '없음'}")
+    selected = begin
+      edit.build
+    rescue StandardError
+      nil
+    end
+    UI.message("선택된 빌드:  #{selected ? "v#{selected.version}" : '없음'}")
 
-      # 심사 제출 객체 — 철회(withdraw_review) 가능 여부는 여기서 나온다.
-      sub = begin
-        edit.fetch_app_store_version_submission
-      rescue StandardError => e
-        UI.important("제출 객체 조회 실패: #{e.class}")
-        nil
-      end
-      if sub.nil?
-        UI.message("제출 객체:    없음 (아직 제출 안 됨)")
-      else
-        UI.message("제출 객체:    있음 / canReject = #{sub.can_reject.inspect}")
-        UI.important("canReject=false — API로 철회 불가. ASC에서 '심사에서 제거'를 직접 눌러야 합니다.") unless sub.can_reject
-      end
+    each_screenshot_set(edit) do |loc, st, shots|
+      dupes = shots.map(&:file_name).tally.select { |_, n| n > 1 }.keys
+      suffix = dupes.empty? ? "" : "  ⚠️ 중복: #{dupes.join(', ')}"
+      UI.message("스크린샷:     #{loc.locale} / #{st.screenshot_display_type} #{shots.count}장#{suffix}")
     end
   end
 
-  # ── 업로드된 스토어 스크린샷 조회 ────────────────────────────
-  # 기기 슬롯별로 몇 장이 붙어 있는지 본다. 구 스크린샷이 남아 겹치는지 확인용.
-  lane :check_screenshots do
-    api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-
-    edit = app.get_edit_app_store_version
-    UI.user_error!("편집 중 버전이 없습니다.") if edit.nil?
-    UI.message("버전 #{edit.version_string} (#{edit.app_store_state})")
-
-    edit.get_app_store_version_localizations.each do |loc|
-      UI.message("── #{loc.locale} ──")
-      sets = loc.get_app_screenshot_sets
-      if sets.empty?
-        UI.important("  스크린샷 없음")
-        next
-      end
-      sets.sort_by { |st| st.screenshot_display_type.to_s }.each do |st|
-        shots = st.app_screenshots || []
-        UI.message("  #{st.screenshot_display_type}: #{shots.count}장")
-        shots.each { |sh| UI.message("      #{sh.file_name}") }
-      end
-    end
-  end
-
-  # ── 중복 스크린샷 정리 ───────────────────────────────────────
-  #
-  #   fastlane ios dedupe_screenshots
-  #
-  # deliver가 병렬 업로드 중 같은 파일을 두 번 올리는 일이 있다(실측: 10장 올렸는데 13장).
-  # 파일명이 같은 것 중 첫 장만 남기고 지운다. 전체 재업로드는 같은 문제가 재발할 수 있어
-  # 중복만 도려낸다.
-  lane :dedupe_screenshots do
-    api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-
-    edit = app.get_edit_app_store_version
-    UI.user_error!("편집 중 버전이 없습니다.") if edit.nil?
-    assert_version_editable(edit, "dedupe_screenshots")
-
-    removed = 0
-    edit.get_app_store_version_localizations.each do |loc|
-      loc.get_app_screenshot_sets.each do |st|
-        seen = {}
-        (st.app_screenshots || []).each do |sh|
-          if seen[sh.file_name]
-            UI.message("  중복 삭제: #{st.screenshot_display_type} / #{sh.file_name}")
-            sh.delete!
-            removed += 1
-          else
-            seen[sh.file_name] = true
-          end
-        end
-      end
-    end
-
-    if removed.zero?
-      UI.success("중복 없음")
-    else
-      UI.success("중복 #{removed}장 삭제 — check_screenshots로 재확인하세요")
-    end
-  end
-
+  desc "최근 TestFlight 빌드 처리 상태"
   lane :check_builds do
     api_key = load_asc_api_key
-    require 'spaceship'
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
-    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
-    UI.message("App ID: #{app.id}")
-    builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, limit: 5, sort: "-uploadedDate")
-    builds.each do |b|
+    app = asc_app(api_key)
+    Spaceship::ConnectAPI::Build.all(app_id: app.id, limit: 5, sort: "-uploadedDate").each do |b|
       UI.message("  v#{b.version} (#{b.processing_state}) — uploaded #{b.uploaded_date}")
     end
   end

@@ -59,9 +59,19 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 **beta는 게이트 GO이면 사용자 승인 없이 바로 실행**하고 push까지 진행. 배포 실패 시에만
 멈춰서 리포트한다.
 
-**release는 제출하지 않는다** — 승격·릴리즈 노트·(선택)스크린샷까지 준비하고 멈춘다.
+**release는 제출하지 않는다** — 승격·릴리즈 노트·스크린샷까지 준비하고 멈춘다.
 최종 '심사를 위해 제출'은 사용자가 ASC에서 누른다. `submit:true`를 사용자가 명시적으로
 요청했을 때만 자동 제출한다.
+
+⚠️ **예외: 한 번 제출했다가 `withdraw_review`로 내린 버전**(DEVELOPER_REJECTED)에
+빌드를 다시 연결하면 **ASC가 이전 제출을 복원해 스스로 WAITING_FOR_REVIEW가 된다**(실측).
+그래서 release는 마지막에 **실제 상태를 다시 읽어** 보고한다 — 의도가 아니라 결과를 말한다.
+처음 만든 버전(PREPARE_FOR_SUBMISSION)에서는 제출되지 않는다.
+
+**스크린샷은 release에 포함된다** (`shots:false`로 건너뛸 수 있음).
+`overwrite_screenshots: true`가 실제로는 기존 것을 지우지 않아 업로드분이 중복으로 쌓인다
+(실측: 10장 올렸는데 20장). 그래서 release가 업로드 직후 `dedupe_screenshots!`로
+파일명 중복을 정리한다 — 이 단계가 빠지면 스토어에 같은 화면이 두 번 보인다.
 
 ```bash
 ./ios/bin/fastlane.sh beta                  # TestFlight 업로드 (재빌드 O)
