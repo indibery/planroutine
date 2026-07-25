@@ -85,6 +85,8 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 
 ```bash
 ./ios/bin/fastlane.sh asc_state      # 심사 단계 + 선택된 빌드 조회 (진단 1순위)
+                                     #   PREPARE_FOR_SUBMISSION → 제출 가능
+                                     #   WAITING_FOR_REVIEW/IN_REVIEW → 손대지 말 것
 ./ios/bin/fastlane.sh check_builds   # 최근 5개 빌드 processing_state 조회
 ```
 - `processing_state`가 VALID면 정상. PROCESSING이면 잠시 후 재조회.
@@ -93,12 +95,14 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 
 ## 트러블슈팅 (레인 실패 시)
 
-- **가드 C (편집 가능한 버전 없음)**: ASC에 그 버전 페이지가 없으면 중단 + 할 일 안내.
-  없는 채로 진행하면 fastlane 2.233.0이 `sync_app_previews`에서
-  `NoMethodError: get_app_store_version_localizations for nil`로 죽어 원인을 못 읽는다.
-  → ASC `+ 버전 또는 플랫폼`으로 버전 페이지 생성 + "이번 버전의 새로운 기능" 입력 후 재실행.
-  **minor/major를 올릴 때 반드시 만난다** (patch는 기존 페이지가 남아 안 걸린다).
-  (1.2.0 첫 제출이 이걸로 실패했다.)
+- **버전 페이지 자동 생성**: ASC에 그 버전 페이지가 없으면 `ensure_edit_version`이
+  `app.ensure_version!`로 만든다. **minor/major를 올릴 때는 항상 없다**(patch는 기존
+  페이지가 남아 통과). 자동화 전에는 여기서 fastlane 2.233.0이 `sync_app_previews`의
+  `NoMethodError: get_app_store_version_localizations for nil`로 죽어 원인을 못 읽었다.
+- **가드 E (릴리즈 노트 없음)**: `docs/release_notes/<버전>.ko.txt`가 없으면 중단.
+  Apple이 "이번 버전의 새로운 기능"을 업데이트 심사에 필수로 요구하므로 비어 있으면
+  어차피 제출이 막힌다. **버전을 올리면 이 파일을 먼저 만든다.**
+  release가 이 파일을 읽어 ASC에 자동 입력한다(스토어 문구도 git 리뷰 대상이 된다).
 - **가드 D (이미 심사 단계)**: 편집 버전 상태가 `PREPARE_FOR_SUBMISSION`/`*_REJECTED`가
   아니면 중단. `submit_for_review`로 제출된 버전을 다시 건드리면 **진행 중인 심사가
   되돌려진다**. 수동 제출 후 실수로 release를 돌리는 사고를 막는다.

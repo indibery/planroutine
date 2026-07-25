@@ -27,6 +27,64 @@ def pubspec_version_name
   match[1]
 end
 
+# ASC에 편집 가능한 버전 페이지를 보장한다.
+#
+# 없으면 만든다. minor/major를 올릴 때는 항상 없으므로, 이걸 자동화하지 않으면 매번
+# 사람이 ASC에서 '+ 버전 또는 플랫폼'을 눌러야 한다. patch에서는 기존 페이지가 남아
+# 있어 그냥 통과한다.
+def ensure_edit_version(app, version_string)
+  edit = begin
+    app.get_edit_app_store_version
+  rescue StandardError
+    nil
+  end
+  return edit if edit
+
+  UI.message("편집 가능한 버전 없음 → #{version_string} 페이지를 생성합니다")
+  app.ensure_version!(version_string, platform: Spaceship::ConnectAPI::Platform::IOS)
+
+  edit = begin
+    app.get_edit_app_store_version
+  rescue StandardError
+    nil
+  end
+  if edit.nil?
+    UI.user_error!(
+      "#{version_string} 버전 페이지 생성에 실패했습니다. ASC에서 직접 만든 뒤 재실행하세요."
+    )
+  end
+  UI.success("버전 페이지 생성: #{edit.version_string}")
+  edit
+end
+
+# "이번 버전의 새로운 기능"을 docs/release_notes/<버전>.ko.txt에서 넣는다.
+# Apple이 업데이트 심사에 필수로 요구하는 항목이라, 비어 있으면 제출이 막힌다.
+def apply_release_notes(edit, version_string)
+  project_root = File.expand_path("../..", __dir__)
+  path = File.join(project_root, "docs/release_notes/#{version_string}.ko.txt")
+
+  unless File.exist?(path)
+    UI.user_error!(
+      "가드 E: 릴리즈 노트가 없습니다 → docs/release_notes/#{version_string}.ko.txt " \
+      "Apple이 '이번 버전의 새로운 기능'을 필수로 요구합니다. " \
+      "docs/release_notes/README.md 참고."
+    )
+  end
+
+  notes = File.read(path).strip
+  UI.user_error!("릴리즈 노트가 비어 있습니다: #{path}") if notes.empty?
+
+  locs = edit.get_app_store_version_localizations
+  if locs.empty?
+    UI.user_error!("버전 로컬라이제이션이 없습니다. ASC에서 언어 설정을 확인하세요.")
+  end
+  locs.each do |loc|
+    loc.update(attributes: { whats_new: notes })
+    UI.message("릴리즈 노트 입력: #{loc.locale} (#{notes.lines.count}줄)")
+  end
+  UI.success("릴리즈 노트 반영 완료")
+end
+
 def next_patch(version)
   parts = version.split(".").map(&:to_i)
   parts[2] = (parts[2] || 0) + 1
@@ -138,22 +196,10 @@ platform :ios do
     Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
     app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
 
-    # 가드 C: ASC에 편집 가능한 버전 페이지가 있어야 한다.
-    # 없으면 fastlane 2.233.0이 sync_app_previews에서 NoMethodError로 죽어 원인을
-    # 읽을 수 없다(alpha 실패 사례). 여기서 먼저 사람이 읽을 수 있게 끊는다.
-    edit = begin
-      app.get_edit_app_store_version
-    rescue StandardError
-      nil
-    end
-    if edit.nil?
-      UI.user_error!(
-        "가드 C: App Store Connect에 편집 가능한 버전이 없습니다. " \
-        "ASC → 공직플랜 → '+ 버전 또는 플랫폼'으로 #{pubspec_version_name} 페이지를 " \
-        "만들고 '이번 버전의 새로운 기능'을 채운 뒤 재실행하세요. " \
-        "(현재 상태는 `asc_state`로 확인)"
-      )
-    end
+    # 편집 가능한 버전 페이지 보장(없으면 생성).
+    # 없는 채로 upload_to_app_store에 들어가면 fastlane 2.233.0이 sync_app_previews에서
+    # NoMethodError로 죽어 원인을 읽을 수 없다.
+    edit = ensure_edit_version(app, pubspec_version_name)
 
     # 가드 D: 이미 심사 단계면 손대지 않는다.
     # submit_for_review로 제출된 버전을 다시 건드리면 심사가 되돌려진다.
@@ -172,7 +218,10 @@ platform :ios do
         "이미 제출됐다면 아무것도 하지 마세요. 되돌리려면 ASC에서 제출을 취소한 뒤 재실행."
       )
     end
-    UI.success("가드 C·D 통과: #{edit.version_string} (#{state})")
+    UI.success("가드 D 통과: #{edit.version_string} (#{state})")
+
+    # 릴리즈 노트(가드 E) — 없으면 여기서 중단된다.
+    apply_release_notes(edit, edit.version_string)
 
     # 승격 대상 결정.
     # 빌드를 명시하면 그것만 쓴다 — "최신"에 맡기면 검증 후 beta를 한 번 더 돌렸을 때
