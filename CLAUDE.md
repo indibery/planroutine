@@ -315,13 +315,21 @@ planroutine/
 ### 명령
 ```
 ./ios/bin/fastlane.sh beta          # TestFlight (재빌드+업로드)
-./ios/bin/fastlane.sh release       # 최신 beta 빌드 promote + 심사 자동 제출 + 자동 공개
+./ios/bin/fastlane.sh release build:115   # 빌드 승격 + 릴리즈 노트 반영 (제출은 안 함)
+./ios/bin/fastlane.sh upload_screenshots  # 스토어 스크린샷 교체
+./ios/bin/fastlane.sh check_screenshots   # 올라간 스크린샷 슬롯별 확인
+./ios/bin/fastlane.sh dedupe_screenshots  # 중복 업로드 정리
+./ios/bin/fastlane.sh withdraw_review     # 심사 철회 (편집 가능 상태로)
+./ios/bin/fastlane.sh asc_state           # 심사 단계 + 선택된 빌드 조회
 ./ios/bin/fastlane.sh check_builds  # 최근 빌드 processing_state 조회 (post-deploy)
 ```
 - Wrapper가 Homebrew Ruby(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입해 `bundle exec fastlane`을 돌린다. 사용자 shell 설정은 건드리지 않는다.
 - `ios/Gemfile`에 fastlane + cocoapods 고정. 최초 실행 시 wrapper가 자동으로 `bundle install`.
 - beta의 build_number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산.
-- **release는 promote 전용**(바로팀과 동일 방식): 재빌드/재업로드 없이 최신 TestFlight 빌드를 `skip_binary_upload`로 승격 + `submit_for_review`/`automatic_release` 자동 제출·공개. 가드 A(버전>승인본) + 가드 B(승격할 빌드가 ASC에 VALID) 통과 필요. 실기기 검증 후에만 실행(즉시 심사행).
+- **release는 promote 전용 + 제출하지 않는다**: 재빌드/재업로드 없이 TestFlight 빌드를 `skip_binary_upload`로 승격하고, 버전 페이지 생성·릴리즈 노트 주입까지 한다. **최종 '심사를 위해 제출' 버튼은 사람이 ASC에서 누른다** (`submit:true`를 명시하면 자동 제출하지만 기본은 아님). 되돌리기 어려운 외부 작업이라 제출 직전에 눈으로 확인할 여지를 남긴다.
+- **승격 대상은 `build:<N>`으로 못박을 것.** 미지정 시 최신을 집는데, 실기기 검증 후 `beta`를 한 번 더 돌렸다면 검증하지 않은 빌드가 올라간다.
+- **가드 4개**: A(버전>승인본) / B(빌드 VALID) / D(이미 심사 단계면 손대지 않음) / E(릴리즈 노트 존재). 버전 페이지는 없으면 자동 생성된다(minor·major에서는 항상 없다).
+- **릴리즈 노트는 `docs/release_notes/<버전>.ko.txt`** — release가 읽어 ASC에 넣는다. 버전을 올리면 이 파일을 먼저 만든다.
 - **beta 레인**은 시작 시 `reset_ios_caches`(flutter clean + Pods/build 제거)를 자동 실행 — 시뮬 슬라이스 함정(#6) 차단. clean 때문에 매 beta가 수 분 더 걸린다. release는 빌드가 없어 해당 없음.
 
 ### 배포 플로우 정책 (메모리에 기록됨)

@@ -59,11 +59,17 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 **beta는 게이트 GO이면 사용자 승인 없이 바로 실행**하고 push까지 진행. 배포 실패 시에만
 멈춰서 리포트한다.
 
+**release는 제출하지 않는다** — 승격·릴리즈 노트·(선택)스크린샷까지 준비하고 멈춘다.
+최종 '심사를 위해 제출'은 사용자가 ASC에서 누른다. `submit:true`를 사용자가 명시적으로
+요청했을 때만 자동 제출한다.
+
 ```bash
 ./ios/bin/fastlane.sh beta                  # TestFlight 업로드 (재빌드 O)
-./ios/bin/fastlane.sh release               # 최신 빌드 promote + 심사 제출 + 자동 공개
-./ios/bin/fastlane.sh release build:115     # 승격할 빌드 못박기 (검증한 빌드 지정)
-./ios/bin/fastlane.sh release submit:false  # 빌드만 연결, 제출은 ASC에서 수동
+./ios/bin/fastlane.sh release build:115     # 승격 + 노트 반영 (제출은 안 함 ← 기본)
+./ios/bin/fastlane.sh release submit:true   # 제출까지 자동 (명시해야만)
+./ios/bin/fastlane.sh withdraw_review       # 심사 철회 (편집 가능 상태로)
+./ios/bin/fastlane.sh check_screenshots     # 올라간 스크린샷 슬롯별 확인
+./ios/bin/fastlane.sh dedupe_screenshots    # 중복 업로드 정리
 ```
 
 - **release는 재빌드/재업로드가 없다** — `skip_binary_upload: true`로 승격만 한다.

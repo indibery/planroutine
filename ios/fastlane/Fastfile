@@ -200,11 +200,14 @@ platform :ios do
   # 최신 빌드를 그대로 승격(promote)하고 심사 자동 제출 + 승인 시 자동 공개한다.
   # (재빌드·재업로드 없음 → 업로드 중단 함정 회피, ASC 수동 단계 제거.)
   desc "App Store에 최신 TestFlight 빌드 승격 + 심사 제출"
-  # ── App Store 심사 제출 (promote 전용) ────────────────────────
+  # ── App Store 심사 준비 (promote 전용) ────────────────────────
   #
-  #   fastlane ios release                  최신 빌드 승격 + 심사 제출
-  #   fastlane ios release build:115        승격할 빌드를 못박음(검증한 빌드 지정)
-  #   fastlane ios release submit:false     빌드만 붙이고 제출은 ASC에서 수동
+  #   fastlane ios release build:115        빌드 승격 + 노트 반영 (제출은 안 함)
+  #   fastlane ios release                  승격 대상을 최신으로 (권장하지 않음)
+  #   fastlane ios release submit:true      제출까지 자동 (명시해야만 제출)
+  #
+  # **기본값은 제출하지 않는다.** 최종 '심사를 위해 제출' 버튼은 사람이 누른다 —
+  # 되돌리기 어려운 외부 작업이고, 제출 직전에 ASC에서 눈으로 확인할 여지를 남긴다.
   #
   # 재빌드/재업로드가 없다 — 실기기로 검증한 그 바이너리가 그대로 심사에 간다.
   lane :release do |options|
@@ -254,8 +257,9 @@ platform :ios do
       )
     end
 
-    # submit:false면 빌드만 붙이고 제출은 사람이 ASC에서 한다.
-    submit = !%w[false no 0].include?(options[:submit].to_s.downcase)
+    # 기본은 제출하지 않는다. submit:true를 명시할 때만 제출한다.
+    # 최종 버튼은 사람이 누르는 것이 이 레인의 계약이다.
+    submit = %w[true yes 1].include?(options[:submit].to_s.downcase)
 
     upload_to_app_store(
       api_key: api_key,
@@ -279,8 +283,61 @@ platform :ios do
     if submit
       UI.success("App Store 심사 제출 완료! v#{target} — 승인 시 자동 공개")
     else
-      UI.success("빌드 v#{target} 연결 완료 — 제출은 ASC에서 직접 하세요")
+      UI.success("심사 준비 완료 — #{edit.version_string} / build #{target}")
+      UI.important("남은 한 단계는 사람이 누릅니다:")
+      UI.important("  ASC → 공직플랜 → #{edit.version_string} → '심사를 위해 제출'")
+      UI.important("  (스크린샷 확인: `check_screenshots` / 상태 확인: `asc_state`)")
     end
+  end
+
+  # ── 심사 철회 ────────────────────────────────────────────────
+  #
+  #   fastlane ios withdraw_review
+  #
+  # 제출한 심사를 내려 편집 가능한 상태(DEVELOPER_REJECTED)로 되돌린다.
+  # 스크린샷·메타데이터를 고쳐 다시 올려야 할 때만 쓴다.
+  # ⚠️ 대기열 처음으로 돌아간다 — 이미 IN_REVIEW면 손실이 더 크다.
+  lane :withdraw_review do
+    api_key = load_asc_api_key
+    require 'spaceship'
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+
+    edit = begin
+      app.get_edit_app_store_version
+    rescue StandardError
+      nil
+    end
+    UI.user_error!("편집 가능한 버전이 없습니다 — 철회할 심사가 없습니다.") if edit.nil?
+
+    state = edit.app_store_state
+    if %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED].include?(state)
+      UI.important("#{edit.version_string}은(는) 이미 '#{state}' — 철회할 것이 없습니다.")
+      next
+    end
+
+    UI.message("#{edit.version_string} (#{state}) 심사를 철회합니다…")
+
+    # app.reject_version_if_possible!를 쓰지 않는 이유:
+    # 그 경로는 AppStoreVersionSubmission#can_reject를 보는데, Apple이 이 필드를 더 이상
+    # 돌려주지 않아 nil이 온다(실측). fastlane은 nil을 falsy로 보고 막아버린다.
+    # 실제 철회는 제출 객체 DELETE — ASC API v1의 문서화된 방법이라 직접 호출한다.
+    submission = begin
+      edit.fetch_app_store_version_submission
+    rescue StandardError => e
+      UI.user_error!("제출 객체를 찾을 수 없습니다(#{e.class}) — 이미 내려갔을 수 있습니다.")
+    end
+    UI.user_error!("제출 객체가 없습니다 — 철회할 심사가 없습니다.") if submission.nil?
+
+    begin
+      submission.delete!
+    rescue StandardError => e
+      UI.user_error!(
+        "철회 실패(#{e.class}: #{e.message}). 이미 심사가 진행됐을 수 있습니다 " \
+        "→ ASC에서 '심사에서 제거'를 직접 누르세요."
+      )
+    end
+    UI.success("심사 철회 완료 — 이제 스크린샷/메타데이터를 고칠 수 있습니다")
   end
 
   # ── 스토어 스크린샷만 올리기 ──────────────────────────────────
@@ -354,6 +411,87 @@ platform :ios do
         nil
       end
       UI.message("선택된 빌드:  #{selected ? "v#{selected.version}" : '없음'}")
+
+      # 심사 제출 객체 — 철회(withdraw_review) 가능 여부는 여기서 나온다.
+      sub = begin
+        edit.fetch_app_store_version_submission
+      rescue StandardError => e
+        UI.important("제출 객체 조회 실패: #{e.class}")
+        nil
+      end
+      if sub.nil?
+        UI.message("제출 객체:    없음 (아직 제출 안 됨)")
+      else
+        UI.message("제출 객체:    있음 / canReject = #{sub.can_reject.inspect}")
+        UI.important("canReject=false — API로 철회 불가. ASC에서 '심사에서 제거'를 직접 눌러야 합니다.") unless sub.can_reject
+      end
+    end
+  end
+
+  # ── 업로드된 스토어 스크린샷 조회 ────────────────────────────
+  # 기기 슬롯별로 몇 장이 붙어 있는지 본다. 구 스크린샷이 남아 겹치는지 확인용.
+  lane :check_screenshots do
+    api_key = load_asc_api_key
+    require 'spaceship'
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+
+    edit = app.get_edit_app_store_version
+    UI.user_error!("편집 중 버전이 없습니다.") if edit.nil?
+    UI.message("버전 #{edit.version_string} (#{edit.app_store_state})")
+
+    edit.get_app_store_version_localizations.each do |loc|
+      UI.message("── #{loc.locale} ──")
+      sets = loc.get_app_screenshot_sets
+      if sets.empty?
+        UI.important("  스크린샷 없음")
+        next
+      end
+      sets.sort_by { |st| st.screenshot_display_type.to_s }.each do |st|
+        shots = st.app_screenshots || []
+        UI.message("  #{st.screenshot_display_type}: #{shots.count}장")
+        shots.each { |sh| UI.message("      #{sh.file_name}") }
+      end
+    end
+  end
+
+  # ── 중복 스크린샷 정리 ───────────────────────────────────────
+  #
+  #   fastlane ios dedupe_screenshots
+  #
+  # deliver가 병렬 업로드 중 같은 파일을 두 번 올리는 일이 있다(실측: 10장 올렸는데 13장).
+  # 파일명이 같은 것 중 첫 장만 남기고 지운다. 전체 재업로드는 같은 문제가 재발할 수 있어
+  # 중복만 도려낸다.
+  lane :dedupe_screenshots do
+    api_key = load_asc_api_key
+    require 'spaceship'
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    app = Spaceship::ConnectAPI::App.find("com.planroutine.app")
+
+    edit = app.get_edit_app_store_version
+    UI.user_error!("편집 중 버전이 없습니다.") if edit.nil?
+    assert_version_editable(edit, "dedupe_screenshots")
+
+    removed = 0
+    edit.get_app_store_version_localizations.each do |loc|
+      loc.get_app_screenshot_sets.each do |st|
+        seen = {}
+        (st.app_screenshots || []).each do |sh|
+          if seen[sh.file_name]
+            UI.message("  중복 삭제: #{st.screenshot_display_type} / #{sh.file_name}")
+            sh.delete!
+            removed += 1
+          else
+            seen[sh.file_name] = true
+          end
+        end
+      end
+    end
+
+    if removed.zero?
+      UI.success("중복 없음")
+    else
+      UI.success("중복 #{removed}장 삭제 — check_screenshots로 재확인하세요")
     end
   end
 
