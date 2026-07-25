@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planroutine/core/constants/app_colors.dart';
+import 'package:planroutine/core/constants/app_sizes.dart';
+import 'package:planroutine/features/calendar/presentation/widgets/calendar_day_cell.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/calendar_grid.dart';
 
 void main() {
@@ -79,6 +81,65 @@ void main() {
           tester.getRect(find.byKey(const Key('weekend_column_sun'))).bottom;
 
       expect(columnBottom - lastRowBottom, lessThan(20));
+    });
+
+    testWidgets('6행짜리 달에서도 열 배경이 마지막 주에서 끝난다', (tester) async {
+      // 2026년 8월 1일은 토요일 → 선행 6칸 + 31일 = 37셀 = 6행.
+      // pager의 고정 높이(6행 기준)에 딱 맞는 달이라 여유가 가장 적다.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: AppSizes.calendarGridHeight,
+              child: CalendarGrid(
+                year: 2026,
+                month: 8,
+                selectedDate: DateTime(2026, 8, 1),
+                eventsMap: const {},
+                onDateSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // 8월은 선행 셀에 7월 30·31일이 들어와 날짜 텍스트로는 특정할 수 없다.
+      // 셀은 생성 순서대로 배치되므로 마지막 셀이 곧 마지막 주다.
+      final lastRowBottom =
+          tester.getRect(find.byType(CalendarDayCell).last).bottom;
+      final columnBottom =
+          tester.getRect(find.byKey(const Key('weekend_column_sun'))).bottom;
+
+      expect(columnBottom - lastRowBottom, lessThan(20));
+    });
+
+    testWidgets('6행짜리 달이 고정 높이 안에 들어간다 (마지막 주가 잘리지 않는다)',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: AppSizes.calendarGridHeight,
+              child: CalendarGrid(
+                year: 2026,
+                month: 8,
+                selectedDate: DateTime(2026, 8, 1),
+                eventsMap: const {},
+                onDateSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // 그리드가 고정 높이를 넘으면 RenderFlex 오버플로가 나고 마지막 주가 잘린다.
+      // 셀 높이를 키울 때 pager 높이 상수가 따라오지 않으면 여기서 먼저 걸린다.
+      final gridHeight =
+          tester.getRect(find.byKey(const Key('weekend_column_sun'))).height;
+      expect(gridHeight, lessThanOrEqualTo(AppSizes.calendarGridHeight));
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('일요일과 토요일 열 색은 서로 다르다', (tester) async {
