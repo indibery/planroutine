@@ -36,7 +36,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 337 유닛/위젯 + 11 통합 |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 360 유닛/위젯 + 11 통합 |
 
 ## 프로젝트 구조
 
@@ -107,11 +107,12 @@ planroutine/
 │   │   │   ├── domain/                 # notification_settings, pending_notification
 │   │   │   └── presentation/           # syncer + 설정 providers
 │   │   ├── today/                      # 오늘 탭 (첫 화면)
-│   │   │   ├── domain/                 # today_view(순수 함수), stamp_settings
+│   │   │   ├── domain/                 # today_view(순수 함수), stamp_settings(도장 설정)
 │   │   │   └── presentation/
 │   │   │       ├── screens/today_screen.dart    # provider 배선만
 │   │   │       ├── providers/today_providers.dart
 │   │   │       └── widgets/
+│   │   │           ├── midnight_watcher.dart    # 자정 넘김 시 기준일 갱신 (app.dart가 감쌈)
 │   │   │           ├── today_body.dart          # 순수 위젯 (위젯 테스트 대상)
 │   │   │           ├── today_event_row.dart     # 체크 원 + 제목 + 도장 슬롯
 │   │   │           ├── today_progress_ring.dart # 결산 링 (CustomPainter)
@@ -211,8 +212,20 @@ planroutine/
   feature 간 순환 참조가 되므로 신호만 올린다. **단 `TodayViewNotifier.toggleCompleted`는
   리비전을 올리지 않는다** — 올리면 자기 build가 다시 돌아 자리 고정이 깨진다.
 - **`todayViewProvider`는 autoDispose.** 이 앱은 `StatefulShellRoute`가 아닌 평범한
-  `ShellRoute`라 탭을 옮기면 화면이 dispose된다. provider만 살아남으면 재진입해도 옛 목록이
-  보인다 → 수명을 화면에 묶어 재진입 = 재조회로 만든다.
+  `ShellRoute`라 `context.go`로 탭을 옮기면 화면이 dispose된다. provider만 살아남으면
+  재진입해도 옛 목록이 보인다 → 수명을 화면에 묶어 재진입 = 재조회로 만든다.
+  - ⚠️ **`push`는 예외다.** `push`로 덮인 화면은 offstage로 마운트가 유지돼 autoDispose가
+    걸리지 않는다. 지금은 `/trash`·`/import` 진입점이 설정 탭에만 있어 무해하지만,
+    **오늘 탭에 push 라우트를 붙이면** 그 화면이 `eventsRevisionProvider`를 올리지 않는 한
+    pop 후 목록이 stale이 된다.
+- **자정 넘김**: `todayReferenceProvider`는 부팅 시점 `DateTime.now()`를 캐시하고 autoDispose가
+  아니라 탭을 옮겨도 살아 있다. `MidnightWatcher`(`app.dart`가 `MaterialApp`을 감쌈)가 앱 복귀 시
+  날짜가 **바뀐 경우에만** 무효화한다(복귀마다 하면 같은 날에도 DB 재조회). FAB은 캐시된
+  기준일이 아니라 누른 시점의 `DateTime.now()`로 일정을 만든다 — 자정 직후 어제 날짜로
+  등록되는 것을 막는다. 포그라운드로 켜둔 채 자정을 넘기는 경우는 미대응(복귀 이벤트가 없다).
+- **완료 취소는 낙하의 역재생이 아니라 제자리 페이드아웃**이다. 같은 곡선을 reverse하면
+  사라지는 동안 도장이 `scale 2.4` 쪽으로 부풀어 슬롯(56)을 넘어 제목을 덮는다
+  (`CompletionSeal`이 `AnimationStatus.reverse`를 보고 scale/rotate를 안착값에 고정).
 - **완료 도장**(`설정 > 완료 도장`): 모양 3종(완료 원형·결재 사각·좋아요 엄지 아이콘) +
   "이미 찍은 도장 흐리게"(기본 ON). 모양 규칙은 `SealStyle` enum이 들고 있어(`isSquare`,
   `usesIcon`) 위젯은 enum만 보고 그린다. 흐리게는 **지난 도장에만** 적용 —
@@ -229,9 +242,11 @@ planroutine/
 - **주말 열 배경**: 토·일 열에 옅은 tint(`calendarWeekendTint`/`calendarSaturdayTint`)를
   **요일 헤더부터 마지막 주까지 세로로** 깐다. 셀마다 그리면 radius로 열이 끊기고 헤더까지
   이어지지 않으므로, `CalendarGrid`가 `Stack`으로 그리드 뒤에 한 장을 깐다.
-  - ⚠️ `Stack`을 `Column(mainAxisSize.min)`으로 한 번 감싸야 한다. 부모
-    `CalendarMonthPager`가 6행 기준 고정 높이(230)를 주는데, 5행인 달은 그리드가 더 짧아
-    `Positioned.fill`이 빈 주 자리까지 칠해 열이 아래로 샌다(테스트가 지킨다).
+  - ⚠️ `Stack`을 **`Align(alignment: Alignment.topCenter)`** 로 감싸 부모의 tight 제약을
+    풀어야 한다. 부모 `CalendarMonthPager`가 6행 기준 고정 높이를 주는데, 5행인 달은
+    그리드가 더 짧아 `Positioned.fill`이 빈 주 자리까지 칠해 열이 아래로 샌다
+    (테스트가 지킨다). 셀·pager 높이는 `AppSizes.calendarCellHeight`에서 파생된다 —
+    두 곳에 숫자를 박으면 셀을 키울 때 pager가 실제 주를 자른다.
 - **토요일은 중립 파랑**(`calendarSaturday`: 다크 `#8BA8D4` / 라이트 `#3F5F94`).
   골드는 **오늘 셀·선택 링·중요 ★** 강조 전용이다. 토요일까지 골드로 쓰면 골드가 네 가지
   의미를 동시에 져서 어느 것도 강조가 안 된다.

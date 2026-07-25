@@ -133,7 +133,8 @@ class _TodayEventRowState extends State<TodayEventRow>
             ),
           ),
           child: Padding(
-            // 우측 여백 — 도장이 화면 경계에 붙지 않게. 앱 전체 페이지 여백(20)에 맞춘다.
+            // 우측 여백 12 — 도장이 화면 경계에 붙지 않게. 도장 슬롯의 좌우 여유(6)와
+            // 합쳐 화면 끝에서 18pt 떨어진다(테스트가 최소 12를 지킨다).
             padding: const EdgeInsets.only(
               left: AppSizes.spacing8,
               right: AppSizes.spacing12,

@@ -37,15 +37,18 @@ DB 스키마 변경 없음. `CalendarRepository` 변경 없음 — 기존 `getEv
 
 ```
 lib/features/today/
-├── domain/today_view.dart              # TodayView + buildTodayView() ← 순수 함수
+├── domain/
+│   ├── today_view.dart                  # TodayView + buildTodayView() ← 순수 함수
+│   └── stamp_settings.dart              # SealStyle + StampSettings (도장 설정)
 └── presentation/
     ├── screens/today_screen.dart        # provider 배선만 (얇은 조합)
     ├── providers/today_providers.dart   # todayReferenceProvider, TodayViewNotifier
     └── widgets/
         ├── today_body.dart              # 순수 위젯 (view + 콜백) ← 위젯 테스트 대상
-        ├── today_progress_ring.dart     # CustomPainter 링 + 카운터
+        ├── today_progress_ring.dart     # CustomPainter 링 + 카운트업 + 완주 펄스/햅틱
         ├── today_event_row.dart         # 체크 원 + 제목 + 도장 슬롯
-        └── completion_seal.dart         # "완료" 도장 (애니메이션)
+        ├── completion_seal.dart         # 완료 도장 3종 (애니메이션)
+        └── midnight_watcher.dart        # 자정 넘김 시 기준일 갱신 (app.dart가 감쌈)
 lib/core/constants/strings/today_strings.dart
 ```
 
@@ -103,6 +106,22 @@ TodayScreen → TodayBody(view, onToggle) → TodayProgressRing / TodayEventRow
   설정값은 `settings/presentation/providers`에 두고 소비자가 import하는 기존 관례를 따랐다
   (`calendar_target_provider` 선례). 도메인(`SealStyle`/`StampSettings`)은 `today/domain`.
 
+### 2026-07-25 자정 넘김 대응
+
+`todayReferenceProvider`는 부팅 시점 `DateTime.now()`를 캐시하고 autoDispose가 아니라 탭을
+옮겨도 살아 있다. 그대로 두면 앱을 켜둔 채 자정을 넘긴 뒤에도 오늘 탭이 계속 어제를 기준으로
+조회한다(`todayViewProvider`가 재조회돼도 기준일이 어제라 결과가 어제다).
+
+- `MidnightWatcher`(`app.dart`가 `MaterialApp`을 감쌈)가 **앱 복귀 시에만** 날짜를 비교하고,
+  **바뀌었을 때만** 무효화한다. 복귀마다 무효화하면 같은 날에도 DB 재조회가 매번 일어난다.
+- ⚠️ `late String _lastSeenDate = ...` 같은 **필드 초기화식은 첫 읽기까지 지연된다.** 그 첫
+  읽기가 복귀 콜백 안이면 이미 자정 지난 시각으로 초기화돼 "안 바뀌었다"고 판단한다 →
+  `initState`에서 즉시 채운다. (`TodayEventRow._stampedOnEntry`도 같은 함정)
+- **FAB은 캐시된 기준일이 아니라 누른 시점의 `DateTime.now()`** 로 일정을 만든다. 기준일을
+  넘기면 자정 직후 어제 날짜로 일정이 등록된다.
+- **미대응**: 포그라운드로 켜둔 채 자정을 넘기는 경우(복귀 이벤트가 없다). 화면을 벗어났다
+  들어오면 `todayViewProvider`는 재조회되지만 기준일은 그대로다.
+
 ### 완료 토글
 
 `TodayViewNotifier.toggleCompleted(event)`:
@@ -132,8 +151,8 @@ TodayScreen → TodayBody(view, onToggle) → TodayProgressRing / TodayEventRow
 | 행 눌림 | 340ms `scale 1 → 0.975 → 1` + `HapticFeedback.mediumImpact()` |
 | 도장 낙하 | 460ms `scale 2.4 → 0.92 → 1.05 → 1.0` / `rotate −26° → −10°` / `opacity 0 → 0.88` |
 | 링 충전 | 550ms `Curves.easeOutCubic` + 숫자 카운트업 |
-| 완주 | 링 골드 펄스 700ms + `HapticFeedback.heavyImpact()` + "오늘 업무를 모두 닫았습니다" |
-| 완료 취소 | 도장 200ms 페이드아웃 |
+| 완주 | 링 골드 펄스 700ms + `HapticFeedback.heavyImpact()` + "오늘 업무 모두 완료했네요!" |
+| 완료 취소 | 도장 200ms 페이드아웃 — **낙하의 역재생이 아니다.** `AnimationStatus.reverse`를 보고 scale/rotate를 안착값에 고정하고 불투명도만 감쇠한다(역재생하면 사라지는 동안 도장이 부풀어 제목을 덮는다) |
 
 색은 전부 `AppColors` 토큰: 도장 테두리·링 값 `goldFill`, 도장 문구 `gold`, 완료 텍스트 `faint`.
 
@@ -158,10 +177,22 @@ TodayScreen → TodayBody(view, onToggle) → TodayProgressRing / TodayEventRow
 - `withToggled`가 자리를 유지한 채 완료 상태만 바꾼다
 
 **위젯**
-- `today_body_test.dart` — 체크 탭 시 콜백, 완료 항목 취소선, 지난 섹션 접힘/펼침, 빈 상태
-- `today_progress_ring_test.dart` — done/total 표시, 완주 문안 전환
+- `today_body_test.dart` — 체크 탭 시 콜백, 완료 항목 취소선, 지난 섹션 접힘/펼침, 빈 상태,
+  도장 모양/흐리게 4경우
+- `today_progress_ring_test.dart` — done/total 표시
+- `today_progress_ring_pulse_test.dart` — 완주 heavyImpact 햅틱(발화/미발화/반복 방지),
+  숫자 카운트업
+- `completion_seal_test.dart` — 모양 3종, 문구 폭 가드, 흐리게 불투명도
+- `completion_seal_reverse_test.dart` — 완료 취소가 부풀지 않고 진해지지 않는지
+- `today_screen_test.dart` — AppBar 구조, FAB, 등록 시트
+- `midnight_watcher_test.dart` — 복귀 시 날짜 변경/미변경/반복
 
-기존 테스트는 수정하지 않는다.
+**미검증으로 남긴 것** (부채)
+- 6행짜리 달(예: 2026년 8월)의 주말 열 — 현재 여유 5pt로 정상이나 5행(7월)만 테스트가 있다
+- `stampSettingsProvider`의 SharedPreferences 왕복 — 순수 직렬화만 검증된다
+- 월/연 경계 `buildTodayView`
+
+기존 테스트는 수정하지 않는다(단 `TodayView.progress` 제거 시 해당 단정 3개는 함께 정리).
 
 ## 범위 밖
 

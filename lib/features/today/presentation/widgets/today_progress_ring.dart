@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
@@ -41,6 +42,8 @@ class _TodayProgressRingState extends State<TodayProgressRing>
     // 완주하는 순간에만 한 번 — 이미 완주한 상태로 재빌드될 때는 울리지 않는다.
     if (widget._isAllDone && !oldWidget._isAllDone) {
       _pulse.forward(from: 0);
+      // 개별 체크는 mediumImpact(행), 완주는 heavyImpact(화면) — 보상 강도를 나눈다.
+      HapticFeedback.heavyImpact();
     }
   }
 
@@ -91,7 +94,8 @@ class _TodayProgressRingState extends State<TodayProgressRing>
               height: TodayProgressRing._diameter,
               child: Center(
                 child: Text(
-                  '${widget.done}/${widget.total}',
+                  // 호와 같은 보간값을 쓴다 — 숫자만 즉시 튀면 충전 연출이 깨진다.
+                  '${(value * widget.total).round()}/${widget.total}',
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 17,

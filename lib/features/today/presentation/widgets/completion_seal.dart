@@ -54,9 +54,12 @@ class CompletionSeal extends StatelessWidget {
     TweenSequenceItem(tween: Tween(begin: 1.05, end: 1.0), weight: 25),
   ]);
 
+  /// 안착 각도 — 낙하가 끝난 도장이 앉는 기울기. 페이드아웃은 이 각도를 유지한다.
+  static const _restAngle = -10 * math.pi / 180;
+
   static final Animatable<double> _rotation = Tween<double>(
     begin: -26 * math.pi / 180,
-    end: -10 * math.pi / 180,
+    end: _restAngle,
   ).chain(CurveTween(curve: Curves.easeOut));
 
   /// 낙하 초반에 0 → 1로 나타난 뒤 안착 불투명도로 잦아든다.
@@ -65,6 +68,9 @@ class CompletionSeal extends StatelessWidget {
   /// AnimatedBuilder 안에서 읽혀 프레임마다 TweenSequence가 새로 생긴다.
   static final Animatable<double> _opacityFull = _opacityTo(_restOpacity);
   static final Animatable<double> _opacityDimmed = _opacityTo(_dimmedOpacity);
+
+  /// 안착 후 유지되는 불투명도(흐리게 설정 반영).
+  double get _restingOpacity => dimmed ? _dimmedOpacity : _restOpacity;
 
   static Animatable<double> _opacityTo(double resting) => TweenSequence<double>([
         TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 30),
@@ -76,12 +82,21 @@ class CompletionSeal extends StatelessWidget {
     return AnimatedBuilder(
       animation: animation,
       builder: (context, _) {
+        // 완료 취소(reverse)는 낙하의 역재생이 아니라 **제자리 페이드아웃**이다.
+        // 같은 곡선을 거꾸로 돌리면 사라지는 동안 도장이 scale 2.4쪽으로 부풀어
+        // 슬롯(56)을 넘어 제목을 덮고, 불투명도도 안착값보다 진해진다.
+        final fadingOut = animation.status == AnimationStatus.reverse;
+        final t = animation.value;
+
         return Opacity(
-          opacity: (dimmed ? _opacityDimmed : _opacityFull).evaluate(animation),
+          // 페이드아웃은 안착 불투명도에서 0으로 선형 감쇠(t가 1 → 0).
+          opacity: fadingOut
+              ? t * _restingOpacity
+              : (dimmed ? _opacityDimmed : _opacityFull).evaluate(animation),
           child: Transform.rotate(
-            angle: _rotation.evaluate(animation),
+            angle: fadingOut ? _restAngle : _rotation.evaluate(animation),
             child: Transform.scale(
-              scale: _scale.evaluate(animation),
+              scale: fadingOut ? 1 : _scale.evaluate(animation),
               child: _stamp(),
             ),
           ),
