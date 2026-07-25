@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
@@ -570,22 +571,15 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('AI 사진 가져오기: 붙여넣기 → 미리보기 → 등록 → 검토 대기 노출',
+    testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 학교일정으로 대기',
         (tester) async {
       await _startFresh(tester);
 
-      // 일정 탭 AppBar 가져오기 아이콘으로 진입 (신규 진입점 검증)
+      // 입력 탭 히어로가 주 경로 — 별도 화면으로 들어가지 않는다.
       await _tapScheduleTab(tester);
-      await tester.tap(find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byIcon(Icons.file_download_outlined),
-      ));
-      await tester.pumpAndSettle();
-
-      // AI 섹션 노출 확인 (필요 시 스크롤)
-      final aiPaste = find.text(ImportStrings.aiPaste);
-      await _scrollToInSettings(tester, aiPaste);
-      expect(find.text(ImportStrings.aiCopyPrompt), findsOneWidget);
+      final aiPaste = find.text(ImportStrings.heroStepPaste);
+      expect(aiPaste, findsOneWidget);
+      expect(find.text(ImportStrings.heroStepCopy), findsOneWidget);
 
       // AI 응답을 클립보드에 준비 (실기기/시뮬 실제 클립보드).
       // 실기기 검증에서 GPT 출력이 스마트 따옴표로 복사돼 실패했던 형태 그대로 사용.
@@ -606,10 +600,12 @@ void main() {
       await tester.tap(find.text(ImportStrings.aiRegisterButton(2)));
       await tester.pumpAndSettle();
 
-      // 일정 탭에서 검토 대기로 보이는지 (/import는 ShellRoute 안이라 탭바 유지)
-      await _tapScheduleTab(tester);
+      // 같은 화면 아래 검토 목록에 학교일정으로 올라온다.
       expect(find.text('입학식'), findsOneWidget);
       expect(find.text('봄 현장체험학습'), findsOneWidget);
+      expect(find.text(EntryKind.event.label), findsWidgets,
+          reason: '사진 경로로 들어온 것은 학교일정 배지를 단다');
+      expect(find.text(ScheduleStrings.bulkRegisterEvent(2)), findsOneWidget);
     });
   });
 }

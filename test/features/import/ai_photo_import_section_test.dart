@@ -68,7 +68,7 @@ void main() {
       await pumpSection(tester);
       await tester.tap(find.text('① 변환 프롬프트 복사'));
       await tester.pump();
-      expect(clipboardText, contains('학교 연간 행사 일정표'));
+      expect(clipboardText, contains('일정표'));
       expect(clipboardText, contains('yyyy-MM-dd'));
     });
 
@@ -111,7 +111,7 @@ void main() {
       await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
     });
 
-    testWidgets('클립보드에 행사 JSON이 없으면 안내만 하고 등록 없음', (tester) async {
+    testWidgets('클립보드에 일정 JSON이 없으면 안내만 하고 등록 없음', (tester) async {
       await pumpSection(tester);
       clipboardText = '사진이 잘 안 보여요';
 
@@ -121,7 +121,7 @@ void main() {
       });
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('행사를 찾지 못했'), findsOneWidget);
+      expect(find.text(ImportStrings.aiParseEmpty), findsOneWidget);
       final saved = await tester.runAsync(() => repo.getSchedules());
       expect(saved, isEmpty);
       await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진

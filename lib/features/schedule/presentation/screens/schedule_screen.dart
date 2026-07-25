@@ -6,10 +6,11 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../import/presentation/widgets/photo_input_hero.dart';
+import '../../domain/entry_kind.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/category_label.dart';
@@ -18,7 +19,10 @@ import '../widgets/schedule_filter_bar.dart';
 import '../widgets/schedule_tile.dart';
 import '../widgets/slide_hint_bar.dart';
 
-/// 일정 검토/확정 화면
+/// 입력 탭 — 넣기가 주인공, 검토는 그 아래.
+///
+/// 사용자가 자주 하는 동작은 검토가 아니라 **넣기**(월간 일정표 사진 → AI 변환)라서
+/// 히어로를 맨 위에 두고, 검토 영역은 대기가 있을 때만 아래에서 커진다.
 class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key});
 
@@ -31,7 +35,7 @@ class ScheduleScreen extends ConsumerWidget {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('REVIEW', style: AppTextStyles.eyebrow),
+            Text('INPUT', style: AppTextStyles.eyebrow),
             const SizedBox(height: 2),
             Text(
               ScheduleStrings.title,
@@ -39,18 +43,14 @@ class ScheduleScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          // 가져오기 상시 진입점 — 검토할 일정의 공급 문은 검토 탭에 둔다.
-          IconButton(
-            icon: Icon(Icons.file_download_outlined,
-                color: AppColors.gold),
-            tooltip: ScheduleStrings.goImport,
-            onPressed: () => context.push(AppRoutes.import),
-          ),
-        ],
       ),
       body: Column(
         children: [
+          // 주 경로 = 사진 AI. 작년 업무 CSV는 히어로 안의 보조 한 줄.
+          PhotoInputHero(
+            onOpenCsvImport: () => context.push(AppRoutes.import),
+          ),
+          const Divider(height: 1),
           _buildProgress(context, ref, schedulesAsync),
           // 스와이프 안내는 스와이프할 목록이 있을 때만
           if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
@@ -86,6 +86,64 @@ class ScheduleScreen extends ConsumerWidget {
               ),
             ),
           ),
+          _buildBulkRegisterBar(context, ref, schedulesAsync),
+        ],
+      ),
+    );
+  }
+
+  /// 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`.
+  ///
+  /// 현재 뷰(카테고리·종류 필터 반영)의 대기 건수 기준이고, 해당 종류의 대기가
+  /// 0이면 그 pill은 숨는다. 성격이 다른 것이 한 번에 섞여 확정되지 않게 나눴다.
+  Widget _buildBulkRegisterBar(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Schedule>> schedulesAsync,
+  ) {
+    final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
+    final pending =
+        list.where((s) => s.status == ScheduleStatus.pending).toList();
+    if (pending.isEmpty) return const SizedBox.shrink();
+
+    final taskCount = pending.where((s) => s.kind == EntryKind.task).length;
+    final eventCount = pending.where((s) => s.kind == EntryKind.event).length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.pagePadding,
+        AppSizes.spacing8,
+        AppSizes.pagePadding,
+        AppSizes.spacing12,
+      ),
+      child: Row(
+        children: [
+          if (taskCount > 0)
+            Expanded(
+              child: _BulkRegisterPill(
+                label: ScheduleStrings.bulkRegisterTask(taskCount),
+                onPressed: () => _showBulkConfirmDialog(
+                  context,
+                  ref,
+                  kind: EntryKind.task,
+                  pendingCount: taskCount,
+                ),
+              ),
+            ),
+          if (taskCount > 0 && eventCount > 0)
+            const SizedBox(width: AppSizes.spacing8),
+          if (eventCount > 0)
+            Expanded(
+              child: _BulkRegisterPill(
+                label: ScheduleStrings.bulkRegisterEvent(eventCount),
+                onPressed: () => _showBulkConfirmDialog(
+                  context,
+                  ref,
+                  kind: EntryKind.event,
+                  pendingCount: eventCount,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -127,7 +185,7 @@ class ScheduleScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      // 대기가 있으면 우측 두 pill(삭제·확정)에 공간을 내주려 축약.
+                      // 대기가 있으면 우측 삭제 pill에 공간을 내주려 축약.
                       hasPending
                           ? '$confirmed / $total'
                           : '$confirmed / $total · $percent% 완료',
@@ -140,7 +198,8 @@ class ScheduleScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (hasPending) ...[
+                  // 확정은 하단 종류별 일괄 등록 바에서. 여기엔 삭제만 둔다.
+                  if (hasPending)
                     _DeleteAllPill(
                       label: ScheduleStrings.deletePending(pendingCount),
                       onPressed: () => _showBulkDeleteDialog(
@@ -150,17 +209,6 @@ class ScheduleScreen extends ConsumerWidget {
                         pendingCount: pendingCount,
                       ),
                     ),
-                    const SizedBox(width: AppSizes.spacing8),
-                    _ConfirmAllPill(
-                      label: ScheduleStrings.confirmPending(pendingCount),
-                      onPressed: () => _showBulkConfirmDialog(
-                        context,
-                        ref,
-                        category: category,
-                        pendingCount: pendingCount,
-                      ),
-                    ),
-                  ],
                 ],
               ),
               const SizedBox(height: AppSizes.spacing8),
@@ -240,68 +288,50 @@ class ScheduleScreen extends ConsumerWidget {
               color: AppColors.sub,
             ),
           ),
-          if (!hasFilter) ...[
-            const SizedBox(height: AppSizes.spacing16),
-            Builder(
-              builder: (context) => GoldGradientButton(
-                label: ScheduleStrings.goImport,
-                icon: Icons.file_download_outlined,
-                onPressed: () => context.push(AppRoutes.import),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  /// 모두 확정된 뒤의 조용한 완료 화면 — 리스트 대신 절제된 마무리.
+  /// 대기가 없을 때의 최소 요약 — `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄.
+  ///
+  /// 검토는 검토할 때만 크게 나온다. 다음 행동(넣기)은 위 히어로가 이미 맡고 있어
+  /// 여기서 다시 CTA를 세우지 않는다.
   Widget _buildReviewDoneState(WidgetRef ref, int confirmedCount) {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.pagePadding,
+        vertical: AppSizes.spacing12,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              color: AppColors.inkGreen.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.check,
-                size: 34, color: AppColors.inkGreen),
+          Row(
+            children: [
+              Icon(Icons.check_circle, size: 16, color: AppColors.inkGreen),
+              const SizedBox(width: AppSizes.spacing8),
+              Expanded(
+                child: Text(
+                  ScheduleStrings.reviewIdle,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 13,
+                    color: AppColors.sub,
+                  ),
+                ),
+              ),
+              Text(
+                ScheduleStrings.confirmedTotal(confirmedCount),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.sub,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSizes.spacing16),
-          Text(
-            ScheduleStrings.reviewDoneTitle,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacing8),
-          Text(
-            ScheduleStrings.reviewDoneBody(confirmedCount),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              height: 1.65,
-              color: AppColors.sub,
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacing20),
-          // 주 행동 = 다음 공급(가져오기) 골드 pill. 확정 기록 보기는 약한 텍스트 링크로.
-          Builder(
-            builder: (context) => GoldGradientButton(
-              label: ScheduleStrings.goImport,
-              icon: Icons.file_download_outlined,
-              onPressed: () => context.push(AppRoutes.import),
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacing4),
           TextButton(
             onPressed: () =>
                 ref.read(scheduleStatusFilterProvider.notifier).state =
@@ -462,11 +492,12 @@ class ScheduleScreen extends ConsumerWidget {
   Future<void> _showBulkConfirmDialog(
     BuildContext context,
     WidgetRef ref, {
-    required String? category,
+    required EntryKind kind,
     required int pendingCount,
   }) async {
-    final scope =
-        (category == null || category.isEmpty) ? ScheduleStrings.all : shortenCategory(category);
+    final scope = kind == EntryKind.task
+        ? ScheduleStrings.kindTask
+        : ScheduleStrings.kindEvent;
     final confirmed = await ConfirmDialog.show(
       context: context,
       title: ScheduleStrings.bulkConfirmTitle,
@@ -474,7 +505,7 @@ class ScheduleScreen extends ConsumerWidget {
       confirmLabel: ScheduleStrings.confirm,
     );
     if (!confirmed) return;
-    ref.read(schedulesProvider.notifier).confirmAllPending();
+    ref.read(schedulesProvider.notifier).confirmAllPending(kind: kind);
   }
 
   /// 남은 검토 대기를 한 번에 휴지통으로 (일괄 확정 대칭). soft-delete라 복구 가능.
@@ -524,9 +555,9 @@ class ScheduleScreen extends ConsumerWidget {
   }
 }
 
-/// 진행도 행 우측의 소형 골드 pill — '전체 확정' 액션.
-class _ConfirmAllPill extends StatelessWidget {
-  const _ConfirmAllPill({required this.label, required this.onPressed});
+/// 하단 종류별 일괄 등록 pill — 골드 채움 + onGold 글씨.
+class _BulkRegisterPill extends StatelessWidget {
+  const _BulkRegisterPill({required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;
@@ -537,7 +568,8 @@ class _ConfirmAllPill extends StatelessWidget {
       onTap: onPressed,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 32,
+        height: 40,
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           gradient: AppGradients.gold,
@@ -553,15 +585,19 @@ class _ConfirmAllPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.done_all, color: AppColors.onGold, size: 14),
+            Icon(Icons.done_all, color: AppColors.onGold, size: 15),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onGold,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onGold,
+                ),
               ),
             ),
           ],

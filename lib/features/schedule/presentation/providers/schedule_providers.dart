@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../data/schedule_repository.dart';
+import '../../domain/entry_kind.dart';
 import '../../domain/schedule.dart';
 
 /// 일정 리포지토리 프로바이더
@@ -15,17 +16,29 @@ final scheduleStatusFilterProvider = StateProvider<ScheduleStatus?>((ref) {
   return ScheduleStatus.pending;
 });
 
-/// 상태별 전역 건수(카테고리 무관) — 칩 라벨·진행도·확정 요약에 사용.
+/// 종류 필터. null = 전체 — 업무와 학교일정을 한 목록에서 같이 검토하는 게 기본.
+final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
+
+/// 상태별 전역 건수(카테고리·종류 무관) — 칩 라벨·진행도·확정 요약·일괄 등록 pill에 사용.
 /// schedulesProvider 변경(확정/삭제/등록)에 반응해 갱신.
-final scheduleCountsProvider =
-    FutureProvider<({int pending, int confirmed})>((ref) async {
+///
+/// 대기는 종류별로도 센다 — `일괄 업무 등록 N건`/`일괄 일정 등록 N건` pill이
+/// 각자의 건수를 달고, 0이면 숨어야 한다. 대기 목록을 한 번만 조회해 나눈다.
+final scheduleCountsProvider = FutureProvider<
+    ({int pending, int confirmed, int pendingTask, int pendingEvent})>(
+        (ref) async {
   await ref.watch(schedulesProvider.future);
   final repository = ref.watch(scheduleRepositoryProvider);
   final pending =
       await repository.getSchedules(status: ScheduleStatus.pending);
   final confirmed =
       await repository.getSchedules(status: ScheduleStatus.confirmed);
-  return (pending: pending.length, confirmed: confirmed.length);
+  return (
+    pending: pending.length,
+    confirmed: confirmed.length,
+    pendingTask: pending.where((s) => s.kind == EntryKind.task).length,
+    pendingEvent: pending.where((s) => s.kind == EntryKind.event).length,
+  );
 });
 
 /// 일정 카테고리 필터
@@ -54,8 +67,13 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
   Future<List<Schedule>> build() async {
     final status = ref.watch(scheduleStatusFilterProvider);
     final category = ref.watch(scheduleCategoryFilterProvider);
+    final kind = ref.watch(scheduleKindFilterProvider);
     final repository = ref.watch(scheduleRepositoryProvider);
-    return repository.getSchedules(status: status, category: category);
+    return repository.getSchedules(
+      status: status,
+      category: category,
+      kind: kind,
+    );
   }
 
   /// 일정 상태 변경 (확정 시 캘린더 이벤트 자동 생성)
@@ -107,7 +125,8 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
 
   /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성).
   /// 카테고리 필터가 켜져 있으면 그 카테고리만 대상.
-  Future<void> confirmAllPending() async {
+  /// [kind]를 주면 그 종류만 — 입력 탭의 `일괄 업무 등록`/`일괄 일정 등록`.
+  Future<void> confirmAllPending({EntryKind? kind}) async {
     final repository = ref.read(scheduleRepositoryProvider);
     final category = ref.read(scheduleCategoryFilterProvider);
 
@@ -115,9 +134,10 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     final pendingSchedules = await repository.getSchedules(
       status: ScheduleStatus.pending,
       category: category,
+      kind: kind,
     );
 
-    await repository.confirmAllPending(category: category);
+    await repository.confirmAllPending(category: category, kind: kind);
 
     // 각 확정된 일정에 대해 캘린더 이벤트 생성
     final calendarRepo = ref.read(calendarRepositoryProvider);

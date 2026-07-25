@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../../../core/utils/date_utils.dart' as du;
 
-/// AI가 사진에서 뽑아준 행사 한 건.
+/// AI가 사진에서 뽑아준 학교일정 한 건.
 class AiScheduleItem {
   const AiScheduleItem({required this.title, required this.date, this.description});
 
@@ -21,7 +21,7 @@ class ParsedAiSchedules {
   final int invalidCount;
 }
 
-/// AI 응답 텍스트에서 행사 JSON 배열을 관대하게 추출한다.
+/// AI 응답 텍스트에서 일정 JSON 배열을 관대하게 추출한다.
 /// 코드펜스(```json)·인사말이 섞여 있어도 첫 번째 유효한 JSON 배열을 찾고,
 /// iOS/ChatGPT 복사 과정에서 생기는 스마트 따옴표(“ ” ‘ ’)는 표준 따옴표로
 /// 정규화한다(실기기 검증에서 GPT 출력이 이걸로 파싱 실패했던 실사례).
@@ -129,12 +129,12 @@ List<dynamic>? _extractFirstJsonArray(String text) {
 String buildAiPhotoPrompt(DateTime now) {
   final schoolYear = now.month >= 3 ? now.year : now.year - 1;
   return '''
-첨부한 사진은 학교 연간 행사 일정표입니다. 표에 있는 모든 행사를 아래 JSON 배열로만 출력하세요. 설명·인사말 없이 JSON만 출력합니다.
+첨부한 사진은 학교 월간·연간 일정표입니다. 표에 있는 모든 일정을 아래 JSON 배열로만 출력하세요. 설명·인사말 없이 JSON만 출력합니다.
 
-[{"title": "행사명", "date": "yyyy-MM-dd", "description": "비고(없으면 생략)"}]
+[{"title": "일정 이름", "date": "yyyy-MM-dd", "description": "비고(없으면 생략)"}]
 
 규칙:
 - 날짜에 연도가 없으면 3~12월은 $schoolYear년, 1~2월은 ${schoolYear + 1}년으로 합니다. (학년도 기준)
-- 기간 행사(예: 3.16~3.20)는 시작일 기준 1건으로 하고 기간을 description에 적습니다.
+- 기간 일정(예: 3.16~3.20)은 시작일 기준 1건으로 하고 기간을 description에 적습니다.
 - 읽을 수 없는 항목은 건너뜁니다.''';
 }

@@ -15,20 +15,30 @@ class ImportStrings {
   static const aiDivider = '또는 · AI 사진 변환'; // (구) — 순서 교체 후 csvDivider 사용
   static const csvDivider = '또는 · CSV 파일 가져오기';
   static const csvTitle = '작년 CSV 업로드';
-  static const aiTitle = '행사표를 사진으로';
+  static const aiTitle = '학교일정을 사진으로';
   static const aiDescription =
-      '연간 행사 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';
+      '월간·연간 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';
   static const aiCopyPrompt = '① 변환 프롬프트 복사';
   static const aiPaste = '② 붙여넣기로 가져오기';
   static const aiHint =
       '프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
   static const aiPromptCopied = '프롬프트를 복사했어요. AI 앱에 사진과 함께 붙여넣으세요';
-  static const aiParseEmpty = '붙여넣은 내용에서 행사를 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
+  static const aiParseEmpty = '붙여넣은 내용에서 일정을 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
   static const aiPreviewTitle = '붙여넣기 미리보기';
-  static String aiPreviewCount(int n) => '행사 $n건 인식';
+  static String aiPreviewCount(int n) => '일정 $n건 인식';
   static String aiPreviewDup(int n) => '중복 $n건 제외';
   static String aiRegisterButton(int n) => '$n건 검토 목록에 등록';
   static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';
+
+  // 입력 탭 히어로 — 사진 AI가 주 경로, 작년 업무 CSV는 보조 한 줄
+  static const heroTitle = '학교일정 사진으로 넣기';
+  static const heroSubtitle = '월간 일정표를 찍어 AI에게 맡기세요';
+  static const heroStepCopy = '① 프롬프트';
+  static const heroStepAway = 'AI 앱';
+  static const heroStepPaste = '② 붙여넣기';
+  static const heroHint =
+      '① 프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
+  static const heroCsvLink = '작년 업무 가져오기 (에듀파인 CSV)';
 
   // 에듀파인에서 CSV 받고 가져오는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)
   static const edufineGuideTitle =

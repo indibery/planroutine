@@ -2,7 +2,11 @@
 class ScheduleStrings {
   ScheduleStrings._();
 
-  static const title = '일정 검토';
+  /// 탭 화면 제목. 이 탭은 업무와 학교일정을 **둘 다** 넣으므로 그냥 '입력'이다.
+  static const title = '입력';
+
+  /// 검토 섹션 헤더 — 입력 영역 아래, 대기가 있을 때만 크게 나온다.
+  static const reviewSection = '검토';
   static const confirm = '확정';
   static const delete = '삭제';
 
@@ -21,10 +25,22 @@ class ScheduleStrings {
   static String chipConfirmed(int n) => '확정됨 $n';
   static String doneSummary(int n) => '확정 $n건은 캘린더에 반영됨';
   static const reviewDoneTitle = '검토가 끝났어요';
+
+  // 대기가 없을 때의 최소 요약 — 검토는 검토할 때만 크게 나온다.
+  static const reviewIdle = '검토 대기 없음';
+  static String confirmedTotal(int n) => '확정 $n건';
   static String reviewDoneBody(int n) =>
       '확정한 $n건은 캘린더에 반영됐습니다.\n새 일정은 가져오기에서 추가하세요.';
   static String viewConfirmed(int n) => '확정됨 $n건 보기';
   static const goImport = '일정 가져오기';
+
+  // 종류 필터 (전체 / 업무 / 학교일정)
+  static const kindTask = '업무';
+  static const kindEvent = '학교일정';
+
+  // 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
+  static String bulkRegisterTask(int n) => '일괄 업무 등록 $n건';
+  static String bulkRegisterEvent(int n) => '일괄 일정 등록 $n건';
 
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>

@@ -26,8 +26,9 @@ class MainShell extends StatelessWidget {
     ),
     (
       route: AppRoutes.schedule,
-      icon: Icons.checklist_rtl_outlined,
-      activeIcon: Icons.checklist_rtl,
+      // 이 탭의 주 동작은 검토가 아니라 넣기 — 체크리스트 아이콘은 어긋난다.
+      icon: Icons.note_add_outlined,
+      activeIcon: Icons.note_add,
       label: AppStrings.tabSchedule,
     ),
     (
