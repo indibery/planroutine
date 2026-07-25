@@ -1,5 +1,6 @@
 import '../../../core/database/database_helper.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../schedule/domain/entry_kind.dart';
 import '../domain/calendar_event.dart';
 
 /// 캘린더 이벤트 DB 저장소.
@@ -188,6 +189,8 @@ class CalendarRepository {
       scheduleId: scheduleId,
       createdAt: now,
       updatedAt: now,
+      // 종류를 승계한다 — 끊기면 학교일정이 업무로 둔갑해 오늘 탭에 뜬다.
+      kind: EntryKind.fromValue(schedule['kind'] as String?),
     );
     return createEvent(event);
   }

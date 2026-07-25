@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'entry_kind.dart';
+
 part 'schedule.freezed.dart';
 part 'schedule.g.dart';
 
@@ -34,6 +36,7 @@ abstract class Schedule with _$Schedule {
     @JsonKey(name: 'sub_category') String? subCategory,
     @JsonKey(name: 'source_id') int? sourceId,
     @Default(ScheduleStatus.pending) ScheduleStatus status,
+    @Default(EntryKind.task) EntryKind kind,
     @JsonKey(name: 'created_at') String? createdAt,
     @JsonKey(name: 'updated_at') String? updatedAt,
     @JsonKey(name: 'deleted_at') String? deletedAt,
@@ -54,6 +57,7 @@ abstract class Schedule with _$Schedule {
       'sub_category': subCategory,
       'source_id': sourceId,
       'status': status.value,
+      'kind': kind.dbValue,
       'created_at': createdAt ?? now,
       'updated_at': updatedAt ?? now,
     };
@@ -70,6 +74,7 @@ abstract class Schedule with _$Schedule {
       subCategory: map['sub_category'] as String?,
       sourceId: map['source_id'] as int?,
       status: ScheduleStatus.fromValue(map['status'] as String? ?? 'pending'),
+      kind: EntryKind.fromValue(map['kind'] as String?),
       createdAt: map['created_at'] as String?,
       updatedAt: map['updated_at'] as String?,
       deletedAt: map['deleted_at'] as String?,

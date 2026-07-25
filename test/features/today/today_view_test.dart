@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/features/today/domain/today_view.dart';
 
 /// 테스트 기준일 — 2026년 7월 25일 토요일.
@@ -13,6 +14,7 @@ CalendarEvent _event({
   String title = '업무 처리',
   bool completed = false,
   bool important = false,
+  EntryKind kind = EntryKind.task,
 }) {
   return CalendarEvent(
     id: id,
@@ -20,6 +22,7 @@ CalendarEvent _event({
     eventDate: formatDate(date),
     completedAt: completed ? '2026-07-25T09:00:00.000' : null,
     isImportant: important,
+    kind: kind,
   );
 }
 
@@ -241,6 +244,63 @@ void main() {
 
       expect(toggled.doneCount, 0);
       expect(toggled.totalCount, 1);
+    });
+  });
+
+  group('buildTodayView — 업무만 담는다', () {
+    test('학교일정은 오늘 목록에 들어가지 않는다', () {
+      final view = buildTodayView(
+        events: [
+          _event(id: 1, date: _today),
+          _event(id: 2, date: _today, kind: EntryKind.event, title: '운동회'),
+        ],
+        today: _today,
+      );
+
+      expect(_ids(view.today), [1]);
+    });
+
+    test('학교일정은 지난 목록에도 들어가지 않는다', () {
+      final view = buildTodayView(
+        events: [
+          _event(
+            id: 2,
+            date: _today.subtract(const Duration(days: 2)),
+            kind: EntryKind.event,
+            title: '과학의 달 행사',
+          ),
+        ],
+        today: _today,
+      );
+
+      expect(view.overdue, isEmpty);
+    });
+
+    test('진행도는 업무만 센다', () {
+      final view = buildTodayView(
+        events: [
+          _event(id: 1, date: _today, completed: true),
+          _event(id: 2, date: _today),
+          _event(id: 3, date: _today, kind: EntryKind.event, title: '운동회'),
+        ],
+        today: _today,
+      );
+
+      expect(view.totalCount, 2);
+      expect(view.doneCount, 1);
+      expect(view.remainingCount, 1);
+    });
+
+    test('오늘 학교일정만 있는 날은 빈 상태다 (달성이 아니다)', () {
+      final view = buildTodayView(
+        events: [
+          _event(id: 1, date: _today, kind: EntryKind.event, title: '운동회'),
+        ],
+        today: _today,
+      );
+
+      expect(view.hasToday, isFalse);
+      expect(view.isAllDone, isFalse);
     });
   });
 }

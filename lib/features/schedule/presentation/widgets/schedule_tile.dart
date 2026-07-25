@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
+import '../../domain/entry_kind.dart';
 import '../../domain/schedule.dart';
 import 'category_label.dart';
 
@@ -89,6 +90,8 @@ class ScheduleTile extends StatelessWidget {
                             _buildConfirmedBadge(),
                             const SizedBox(width: AppSizes.spacing8),
                           ],
+                          _buildKindBadge(schedule.kind),
+                          const SizedBox(width: AppSizes.spacing8),
                           Expanded(
                             child: Text(
                               schedule.title,
@@ -178,6 +181,32 @@ class ScheduleTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 업무 / 학교일정 배지 — 일괄 확정 전에 성격을 구분하려면 행마다 보여야 한다.
+  /// 확정 배지와 같은 옅은배경+진한글씨 형(양 테마 대비 안정).
+  /// 골드는 오늘·중요 전용이라 쓰지 않는다.
+  Widget _buildKindBadge(EntryKind kind) {
+    final color = kind == EntryKind.event ? AppColors.info : AppColors.sub;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing8,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+      ),
+      child: Text(
+        kind.label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

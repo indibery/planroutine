@@ -14,7 +14,7 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
@@ -82,6 +82,15 @@ class DatabaseHelper {
         'ADD COLUMN is_important INTEGER NOT NULL DEFAULT 0',
       );
     }
+    if (oldVersion < 7) {
+      // 업무/학교일정 구분. 기본값 task라 기존 데이터는 전부 업무가 된다 —
+      // 지금까지 들어온 것은 사실상 전부 CSV(생산문서등록대장)이므로 맞는 분류다.
+      for (final table in [tableSchedules, tableCalendarEvents]) {
+        await db.execute(
+          "ALTER TABLE $table ADD COLUMN kind TEXT NOT NULL DEFAULT 'task'",
+        );
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -113,6 +122,7 @@ class DatabaseHelper {
         sub_category TEXT,
         source_id INTEGER,
         status TEXT NOT NULL DEFAULT 'pending',
+        kind TEXT NOT NULL DEFAULT 'task',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,
@@ -138,6 +148,7 @@ class DatabaseHelper {
         google_event_id TEXT,
         device_event_id TEXT,
         is_important INTEGER NOT NULL DEFAULT 0,
+        kind TEXT NOT NULL DEFAULT 'task',
         FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
       )
     ''');

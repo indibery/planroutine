@@ -17,6 +17,7 @@ _Schedule _$ScheduleFromJson(Map<String, dynamic> json) => _Schedule(
   status:
       $enumDecodeNullable(_$ScheduleStatusEnumMap, json['status']) ??
       ScheduleStatus.pending,
+  kind: $enumDecodeNullable(_$EntryKindEnumMap, json['kind']) ?? EntryKind.task,
   createdAt: json['created_at'] as String?,
   updatedAt: json['updated_at'] as String?,
   deletedAt: json['deleted_at'] as String?,
@@ -31,6 +32,7 @@ Map<String, dynamic> _$ScheduleToJson(_Schedule instance) => <String, dynamic>{
   'sub_category': instance.subCategory,
   'source_id': instance.sourceId,
   'status': _$ScheduleStatusEnumMap[instance.status]!,
+  'kind': _$EntryKindEnumMap[instance.kind]!,
   'created_at': instance.createdAt,
   'updated_at': instance.updatedAt,
   'deleted_at': instance.deletedAt,
@@ -40,3 +42,5 @@ const _$ScheduleStatusEnumMap = {
   ScheduleStatus.pending: 'pending',
   ScheduleStatus.confirmed: 'confirmed',
 };
+
+const _$EntryKindEnumMap = {EntryKind.task: 'task', EntryKind.event: 'event'};

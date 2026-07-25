@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../schedule/domain/entry_kind.dart';
+
 part 'calendar_event.freezed.dart';
 part 'calendar_event.g.dart';
 
@@ -25,6 +27,7 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'google_event_id') String? googleEventId,
     @JsonKey(name: 'device_event_id') String? deviceEventId,
     @JsonKey(name: 'is_important') @Default(false) bool isImportant,
+    @Default(EntryKind.task) EntryKind kind,
   }) = _CalendarEvent;
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) =>
@@ -48,6 +51,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       googleEventId: map['google_event_id'] as String?,
       deviceEventId: map['device_event_id'] as String?,
       isImportant: (map['is_important'] as int?) == 1,
+      kind: EntryKind.fromValue(map['kind'] as String?),
     );
   }
 
@@ -75,6 +79,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       'google_event_id': googleEventId,
       'device_event_id': deviceEventId,
       'is_important': isImportant ? 1 : 0,
+      'kind': kind.dbValue,
     };
   }
 

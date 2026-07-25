@@ -6,24 +6,26 @@ part of 'calendar_event.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_CalendarEvent _$CalendarEventFromJson(Map<String, dynamic> json) =>
-    _CalendarEvent(
-      id: (json['id'] as num?)?.toInt(),
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      eventDate: json['event_date'] as String,
-      endDate: json['end_date'] as String?,
-      isAllDay: json['is_all_day'] as bool? ?? true,
-      color: json['color'] as String?,
-      scheduleId: (json['schedule_id'] as num?)?.toInt(),
-      createdAt: json['created_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
-      deletedAt: json['deleted_at'] as String?,
-      completedAt: json['completed_at'] as String?,
-      googleEventId: json['google_event_id'] as String?,
-      deviceEventId: json['device_event_id'] as String?,
-      isImportant: json['is_important'] as bool? ?? false,
-    );
+_CalendarEvent _$CalendarEventFromJson(
+  Map<String, dynamic> json,
+) => _CalendarEvent(
+  id: (json['id'] as num?)?.toInt(),
+  title: json['title'] as String,
+  description: json['description'] as String?,
+  eventDate: json['event_date'] as String,
+  endDate: json['end_date'] as String?,
+  isAllDay: json['is_all_day'] as bool? ?? true,
+  color: json['color'] as String?,
+  scheduleId: (json['schedule_id'] as num?)?.toInt(),
+  createdAt: json['created_at'] as String?,
+  updatedAt: json['updated_at'] as String?,
+  deletedAt: json['deleted_at'] as String?,
+  completedAt: json['completed_at'] as String?,
+  googleEventId: json['google_event_id'] as String?,
+  deviceEventId: json['device_event_id'] as String?,
+  isImportant: json['is_important'] as bool? ?? false,
+  kind: $enumDecodeNullable(_$EntryKindEnumMap, json['kind']) ?? EntryKind.task,
+);
 
 Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>
     <String, dynamic>{
@@ -42,4 +44,7 @@ Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>
       'google_event_id': instance.googleEventId,
       'device_event_id': instance.deviceEventId,
       'is_important': instance.isImportant,
+      'kind': _$EntryKindEnumMap[instance.kind]!,
     };
+
+const _$EntryKindEnumMap = {EntryKind.task: 'task', EntryKind.event: 'event'};

@@ -74,8 +74,12 @@ TodayView buildTodayView({
         .subtract(Duration(days: lookbackDays)),
   );
 
+  // 오늘 탭은 **업무**만 다룬다 — 학교일정(운동회 등)에는 완료 개념이 없어
+  // 도장·진행 링의 의미가 깨진다. 캘린더 탭에서는 둘 다 보인다.
+  final tasks = events.where((e) => e.kind.showsInToday);
+
   // 'YYYY-MM-DD'는 사전순 비교가 곧 날짜순 비교다.
-  final overdue = events
+  final overdue = tasks
       .where((e) =>
           e.deletedAt == null &&
           !e.isCompleted &&
@@ -84,7 +88,7 @@ TodayView buildTodayView({
       .toList()
     ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
-  final todayEvents = events
+  final todayEvents = tasks
       .where((e) => e.deletedAt == null && e.eventDate == todayStr)
       .toList();
 
