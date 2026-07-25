@@ -19,12 +19,13 @@ import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/core/dev/screenshot_seed.dart';
+import 'package:planroutine/features/settings/presentation/providers/stamp_settings_provider.dart';
 import 'package:planroutine/shared/widgets/floating_tab_bar.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App Store용 4화면 스크린샷 촬영', (tester) async {
+  testWidgets('App Store용 5화면 스크린샷 촬영', (tester) async {
     // DB 초기화 후 seed 주입
     await DatabaseHelper.instance.resetAllData();
     final container = ProviderContainer();
@@ -38,12 +39,26 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // 1. 캘린더 탭 (기본 진입)
+    // 1. 오늘 탭 (기본 진입) — 스토어에서는 도장이 선명해야 하므로 '흐리게'를 끈다.
+    await container
+        .read(stampSettingsProvider.notifier)
+        .setDimPreviousStamps(false);
+    await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
     await tester.pumpAndSettle();
-    await binding.takeScreenshot('1_calendar');
+    await binding.takeScreenshot('1_today');
 
-    // 2. 일정 탭
+    // 2. 캘린더 탭
+    await tester.tap(find.descendant(
+      of: find.byType(FloatingTabBar),
+      matching: find.byIcon(Icons.calendar_month_outlined),
+    ));
+    await tester.pumpAndSettle();
+    await binding.convertFlutterSurfaceToImage();
+    await tester.pumpAndSettle();
+    await binding.takeScreenshot('2_calendar');
+
+    // 3. 검토 탭
     final scheduleTab = find.descendant(
       of: find.byType(FloatingTabBar),
       matching: find.byIcon(Icons.checklist_rtl_outlined),
@@ -51,9 +66,9 @@ void main() {
     await tester.tap(scheduleTab.first);
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
-    await binding.takeScreenshot('2_schedule');
+    await binding.takeScreenshot('3_schedule');
 
-    // 3. 설정 탭
+    // 5. 설정 탭
     final settingsTab = find.descendant(
       of: find.byType(FloatingTabBar),
       matching: find.byIcon(Icons.settings_outlined),
@@ -61,7 +76,7 @@ void main() {
     await tester.tap(settingsTab.first);
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
-    await binding.takeScreenshot('4_settings');
+    await binding.takeScreenshot('5_settings');
 
     // 4. 설정 → Import 풀스크린 + 에듀파인 가이드 펼침
     // SectionHeader와 ListTile이 같은 텍스트를 가지므로 아이콘으로 구분
@@ -71,6 +86,6 @@ void main() {
     await tester.tap(find.text(ImportStrings.edufineGuideTitle));
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
-    await binding.takeScreenshot('3_import');
+    await binding.takeScreenshot('4_import');
   });
 }

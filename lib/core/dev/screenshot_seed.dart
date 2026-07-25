@@ -68,6 +68,17 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
     await calendarRepo.createEvent(e);
   }
 
+  // ── 오늘 탭용 — 오늘 날짜 4건(2건은 완료) + 기한 지난 1건 ──
+  // 완료 2건이 있어야 도장이 보이고, 미완료가 남아야 체크 원의 역할이 읽힌다.
+  for (final title in ['생활기록부 창체 입력 마감', '방과후 강사 계약서 검토']) {
+    final id = await calendarRepo.createEvent(_e(title, now));
+    await calendarRepo.markCompleted(id);
+  }
+  await calendarRepo.createEvent(_e('나이스 출결 마감 확인', now));
+  await calendarRepo.createEvent(
+    _e('교육과정 운영위원회 회의록 작성', now.subtract(const Duration(days: 3))),
+  );
+
   // 캘린더 프로바이더 새로고침
   container.invalidate(selectedMonthEventsProvider);
 
