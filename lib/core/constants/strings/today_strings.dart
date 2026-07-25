@@ -8,8 +8,10 @@ class TodayStrings {
   static const overdueSection = '기한이 지난';
   static const todaySection = '오늘';
 
-  // 완료 도장
-  static const sealLabel = '완료';
+  // 완료 도장 — 모양별 문구 (SealStyle이 참조)
+  static const sealComplete = '완료';
+  static const sealApprove = '결재';
+  static const sealLike = '좋아요';
 
   // 진행도 문안
   static const allDone = '오늘 업무 모두 완료했네요!';

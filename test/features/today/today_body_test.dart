@@ -5,7 +5,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
+import 'package:planroutine/features/today/domain/stamp_settings.dart';
 import 'package:planroutine/features/today/domain/today_view.dart';
+import 'package:planroutine/features/today/presentation/widgets/completion_seal.dart';
 import 'package:planroutine/features/today/presentation/widgets/today_body.dart';
 
 final _today = DateTime(2026, 7, 25);
@@ -115,7 +117,7 @@ void main() {
       await pumpBody(tester, viewOf([_event(id: 3, completed: true)]));
 
       expect(find.byKey(const Key('today_seal_3')), findsOneWidget);
-      expect(find.text(TodayStrings.sealLabel), findsOneWidget);
+      expect(find.text(TodayStrings.sealComplete), findsOneWidget);
     });
 
     testWidgets('완료 도장은 화면 오른쪽에 최소 12의 여백을 남긴다', (tester) async {
@@ -131,6 +133,106 @@ void main() {
       await pumpBody(tester, viewOf([_event(id: 3)]));
 
       expect(find.byKey(const Key('today_seal_3')), findsNothing);
+    });
+  });
+
+  group('오늘 탭 — 도장 설정', () {
+    double sealOpacity(WidgetTester tester) {
+      return tester
+          .widget<Opacity>(
+            find.descendant(
+              of: find.byType(CompletionSeal),
+              matching: find.byType(Opacity),
+            ),
+          )
+          .opacity;
+    }
+
+    testWidgets('설정한 도장 모양이 행에 그려진다', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TodayBody(
+              view: viewOf([_event(id: 1, completed: true)]),
+              today: _today,
+              stampSettings: const StampSettings(style: SealStyle.approve),
+              onToggle: (_) {},
+              onEventTap: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(TodayStrings.sealApprove), findsOneWidget);
+    });
+
+    testWidgets('흐리게 옵션이 켜지면 진입 시 이미 완료된 도장은 옅게 찍힌다', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TodayBody(
+              view: viewOf([_event(id: 1, completed: true)]),
+              today: _today,
+              stampSettings: const StampSettings(dimPreviousStamps: true),
+              onToggle: (_) {},
+              onEventTap: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(sealOpacity(tester), lessThan(0.5));
+    });
+
+    testWidgets('흐리게 옵션이 꺼지면 진입 시 완료된 도장도 진하게 찍힌다', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TodayBody(
+              view: viewOf([_event(id: 1, completed: true)]),
+              today: _today,
+              stampSettings: const StampSettings(dimPreviousStamps: false),
+              onToggle: (_) {},
+              onEventTap: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(sealOpacity(tester), greaterThan(0.5));
+    });
+
+    testWidgets('흐리게 옵션이 켜져 있어도 화면에서 방금 찍은 도장은 진하다', (tester) async {
+      var view = viewOf([_event(id: 1)]);
+
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) {
+            return MaterialApp(
+              home: Scaffold(
+                body: TodayBody(
+                  view: view,
+                  today: _today,
+                  stampSettings: const StampSettings(dimPreviousStamps: true),
+                  onToggle: (_) => setState(() {
+                    view = view.withToggled(1, '2026-07-25T10:00:00.000');
+                  }),
+                  onEventTap: (_) {},
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('today_check_1')));
+      await tester.pumpAndSettle();
+
+      expect(sealOpacity(tester), greaterThan(0.5));
     });
   });
 

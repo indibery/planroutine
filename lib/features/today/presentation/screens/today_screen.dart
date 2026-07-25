@@ -8,6 +8,8 @@ import '../../../../shared/widgets/gold_fab.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../calendar/presentation/widgets/event_edit_dialog.dart';
+import '../../../settings/presentation/providers/stamp_settings_provider.dart';
+import '../../domain/stamp_settings.dart';
 import '../providers/today_providers.dart';
 import '../widgets/today_body.dart';
 
@@ -21,6 +23,8 @@ class TodayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(todayViewProvider);
     final today = ref.watch(todayReferenceProvider);
+    final stampSettings = ref.watch(stampSettingsProvider).valueOrNull ??
+        StampSettings.defaults;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,6 +61,7 @@ class TodayScreen extends ConsumerWidget {
         data: (data) => TodayBody(
           view: data,
           today: today,
+          stampSettings: stampSettings,
           onToggle: (event) =>
               ref.read(todayViewProvider.notifier).toggleCompleted(event),
           onEventTap: (event) => _onEditEvent(context, ref, event),

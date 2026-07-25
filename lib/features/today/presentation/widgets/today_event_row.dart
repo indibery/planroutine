@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../calendar/domain/calendar_event.dart';
+import '../../domain/stamp_settings.dart';
 import 'completion_seal.dart';
 
 /// 오늘 탭의 이벤트 한 줄 — 체크 원 + 제목 + 완료 도장 슬롯.
@@ -17,10 +18,14 @@ class TodayEventRow extends StatefulWidget {
     required this.event,
     required this.onToggle,
     required this.onTap,
+    this.stampSettings = StampSettings.defaults,
     this.showOverdueDate = false,
   });
 
   final CalendarEvent event;
+
+  /// 도장 모양 + "이미 찍은 도장 흐리게" 설정.
+  final StampSettings stampSettings;
 
   /// 체크 원 탭.
   final VoidCallback onToggle;
@@ -65,12 +70,20 @@ class _TodayEventRowState extends State<TodayEventRow>
     ),
   ]);
 
+  /// 이 행이 처음 그려질 때 이미 완료돼 있었는지.
+  ///
+  /// "이미 찍은 도장 흐리게" 설정은 **지난 도장**에만 적용해야 한다. 화면에서 방금
+  /// 누른 도장은 진하게 남아야 누르는 재미가 산다.
+  late bool _stampedOnEntry = widget.event.isCompleted;
+
   @override
   void didUpdateWidget(TodayEventRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     final was = oldWidget.event.isCompleted;
     final now = widget.event.isCompleted;
     if (now && !was) {
+      // 화면에서 방금 찍은 도장 — 흐리게 대상이 아니다.
+      _stampedOnEntry = false;
       _seal.forward(from: 0);
     } else if (!now && was) {
       _seal.reverse();
@@ -258,6 +271,9 @@ class _TodayEventRowState extends State<TodayEventRow>
                   child: CompletionSeal(
                     key: Key('today_seal_${widget.event.id}'),
                     animation: _seal,
+                    style: widget.stampSettings.style,
+                    dimmed: widget.stampSettings.dimPreviousStamps &&
+                        _stampedOnEntry,
                   ),
                 )
               : null,

@@ -82,6 +82,27 @@ TodayScreen → TodayBody(view, onToggle) → TodayProgressRing / TodayEventRow
 참조가 되므로 신호만 올린다. **단 `TodayViewNotifier.toggleCompleted`는 리비전을 올리지
 않는다** — 올리면 자기 build가 다시 돌아 자리 고정이 깨진다.
 
+### 2026-07-25 완료 도장 설정 (3종 + 흐리게)
+
+도장이 여러 개 쌓이면 목록이 시끄럽다는 피드백 → 설정으로 뺐다.
+
+`설정 탭 > 완료 도장` (`StampSettingsTiles`):
+
+| 설정 | 값 | 기본 |
+|---|---|---|
+| 도장 모양 | 완료(원형·글자) / 결재(사각·글자) / 좋아요(원형·엄지 아이콘) | 완료 |
+| 이미 찍은 도장 흐리게 | on/off | **on** |
+
+- `SealStyle` enum이 모양 규칙을 들고 있다(`isSquare`, `usesIcon`, `label`) —
+  `CompletionSeal`은 enum만 보고 그린다. 모양을 더 늘릴 때 위젯 분기를 건드릴 필요가 없다.
+- "좋아요"는 네 글자라 도장 안에 안 들어가서 **엄지 아이콘**으로 찍는다(설정 라벨만 "좋아요").
+- **흐리게는 "지난 도장"에만 적용한다.** `TodayEventRow._stampedOnEntry`(행이 처음 그려질 때
+  이미 완료였는지)로 구분하고, 화면에서 방금 누른 도장은 `didUpdateWidget`에서 이 플래그를
+  내려 진하게 남긴다. 방금 찍은 도장까지 옅어지면 누르는 재미가 죽는다.
+- 저장은 `stampSettingsProvider`(SharedPreferences, key `stamp_settings_v1`).
+  설정값은 `settings/presentation/providers`에 두고 소비자가 import하는 기존 관례를 따랐다
+  (`calendar_target_provider` 선례). 도메인(`SealStyle`/`StampSettings`)은 `today/domain`.
+
 ### 완료 토글
 
 `TodayViewNotifier.toggleCompleted(event)`:

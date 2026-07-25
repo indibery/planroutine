@@ -7,6 +7,13 @@ class SettingsStrings {
   // 화면 테마
   static const appearanceSection = '화면';
   static const themeLabel = '화면 테마';
+
+  // 완료 도장 (오늘 탭)
+  static const stampSection = '완료 도장';
+  static const stampDescription = '오늘 탭에서 체크할 때 찍히는 도장';
+  static const stampStyleLabel = '도장 모양';
+  static const stampDimLabel = '이미 찍은 도장 흐리게';
+  static const stampDimDescription = '방금 찍은 도장은 진하게, 지난 도장은 잔상으로';
   static const themeSystem = '시스템';
   static const themeLight = '밝게';
   static const themeDark = '어둡게';

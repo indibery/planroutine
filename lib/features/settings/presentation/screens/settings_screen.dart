@@ -15,6 +15,7 @@ import '../widgets/import_list_tile.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/reset_list_tile.dart';
 import '../widgets/settings_section.dart';
+import '../widgets/stamp_settings_tiles.dart';
 import '../widgets/theme_mode_tile.dart';
 import '../widgets/trash_list_tile.dart';
 
@@ -63,6 +64,11 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(
             title: SettingsStrings.appearanceSection,
             child: ThemeModeTile(),
+          ),
+          const SettingsSection(
+            title: SettingsStrings.stampSection,
+            subtitle: SettingsStrings.stampDescription,
+            child: StampSettingsTiles(),
           ),
           const SettingsSection(
             title: SettingsStrings.importSection,

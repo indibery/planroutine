@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../calendar/domain/calendar_event.dart';
+import '../../domain/stamp_settings.dart';
 import '../../domain/today_view.dart';
 import 'today_event_row.dart';
 import 'today_progress_ring.dart';
@@ -20,10 +21,14 @@ class TodayBody extends StatefulWidget {
     required this.today,
     required this.onToggle,
     required this.onEventTap,
+    this.stampSettings = StampSettings.defaults,
   });
 
   final TodayView view;
   final DateTime today;
+
+  /// 도장 모양 + "이미 찍은 도장 흐리게" 설정.
+  final StampSettings stampSettings;
   final ValueChanged<CalendarEvent> onToggle;
   final ValueChanged<CalendarEvent> onEventTap;
 
@@ -209,6 +214,7 @@ class _TodayBodyState extends State<TodayBody> {
     return TodayEventRow(
       key: Key('today_row_${event.id}'),
       event: event,
+      stampSettings: widget.stampSettings,
       showOverdueDate: overdue,
       onToggle: () => widget.onToggle(event),
       onTap: () => widget.onEventTap(event),
