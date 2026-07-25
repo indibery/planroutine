@@ -68,6 +68,16 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 그래서 release는 마지막에 **실제 상태를 다시 읽어** 보고한다 — 의도가 아니라 결과를 말한다.
 처음 만든 버전(PREPARE_FOR_SUBMISSION)에서는 제출되지 않는다.
 
+**스토어 문구도 release가 맞춘다** — 리포가 단일 출처다.
+- 설명: `docs/app_store_description.md`의 ```text 블록 → 버전 로컬라이제이션 `description`
+- 심사 메모: `docs/app_review_notes.md`의 ```text 블록 → App Review Information `notes`
+- 릴리즈 노트: `docs/release_notes/<버전>.ko.txt` → `whats_new`
+ASC에서 직접 고친 내용은 덮어써진다. 그래야 "코드에서 기능을 뺐는데 스토어 설명은 그대로"인
+어긋남이 안 생긴다. `asc_state`가 리포와 다른지 미리 보여준다.
+⚠️ **Apple이 설명에서 거부하는 문자가 있다** — `★`를 넣었더니 반려됐다(실측:
+`Description can't contain the following character(s): ★`). 특수기호는 글로 풀어 쓸 것.
+⚠️ ```text 블록 형식이 깨지면 release가 중단된다(길이·마크다운 혼입 검증).
+
 **스크린샷은 release에 포함된다** (`shots:false`로 건너뛸 수 있음).
 `overwrite_screenshots: true`가 실제로는 기존 것을 지우지 않아 업로드분이 중복으로 쌓인다
 (실측: 10장 올렸는데 20장). 그래서 release가 업로드 직후 `dedupe_screenshots!`로

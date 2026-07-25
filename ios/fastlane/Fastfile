@@ -110,6 +110,71 @@ def apply_release_notes(edit)
   UI.success("릴리즈 노트 반영: #{locs.map(&:locale).join(', ')} (#{notes.lines.count}줄)")
 end
 
+# 문서(.md)의 첫 ```text 블록을 스토어 문구로 뽑는다.
+#
+# 설명·심사 메모의 단일 출처를 리포에 두기 위한 장치. 마크다운 본문(설명·주의사항)은
+# 블록 밖에 있고, 스토어에 들어갈 글만 블록 안에 있다.
+# 잘못 파싱해 반쪽짜리 글이 스토어에 올라가면 사용자가 본다 → 검증을 거친다.
+def extract_store_text(relative_path, label, min_length)
+  project_root = File.expand_path("../..", __dir__)
+  path = File.join(project_root, relative_path)
+  UI.user_error!("#{label} 문서가 없습니다 → #{relative_path}") unless File.exist?(path)
+
+  body = File.read(path)
+  match = body.match(/```text\n(.*?)```/m)
+  UI.user_error!(
+    "#{label}에서 ```text 블록을 찾지 못했습니다 → #{relative_path} " \
+    "(스토어에 들어갈 글은 ```text 블록 안에 둔다)"
+  ) if match.nil?
+
+  text = match[1].strip
+  if text.length < min_length
+    UI.user_error!(
+      "#{label}이 너무 짧습니다(#{text.length}자 < #{min_length}자) — 파싱이 깨졌을 수 있습니다: #{relative_path}"
+    )
+  end
+  if text.include?("```") || text.start_with?("#")
+    UI.user_error!("#{label} 파싱 결과에 마크다운이 섞였습니다: #{relative_path}")
+  end
+  text
+end
+
+# 스토어 설명 + 심사 메모를 리포 기준으로 맞춘다.
+#
+# 리포가 단일 출처다 — ASC에서 직접 고친 내용은 여기서 덮어써진다. 그래야 "코드에서
+# 기능을 뺐는데 스토어 설명은 그대로 남는" 어긋남이 생기지 않는다.
+# 바뀐 항목만 로그로 남겨 무엇이 갱신됐는지 보이게 한다.
+def apply_store_metadata(edit)
+  description = extract_store_text("docs/app_store_description.md", "App Store 설명", 400)
+  notes = extract_store_text("docs/app_review_notes.md", "심사 메모", 200)
+
+  # 설명 — 로케일별 로컬라이제이션
+  edit.get_app_store_version_localizations.each do |loc|
+    if loc.description.to_s.strip == description
+      UI.message("설명 #{loc.locale}: 변경 없음")
+    else
+      loc.update(attributes: { description: description })
+      UI.success("설명 #{loc.locale}: 갱신 (#{description.length}자)")
+    end
+  end
+
+  # 심사 메모 — 버전당 하나(App Review Information)
+  detail = begin
+    edit.fetch_app_store_review_detail
+  rescue StandardError => e
+    UI.important("심사 메모 조회 실패(#{e.class}) — ASC에서 직접 확인하세요")
+    nil
+  end
+  return if detail.nil?
+
+  if detail.notes.to_s.strip == notes
+    UI.message("심사 메모: 변경 없음")
+  else
+    detail.update(attributes: { notes: notes })
+    UI.success("심사 메모: 갱신 (#{notes.length}자)")
+  end
+end
+
 # 업로드된 스크린샷을 (슬롯, 스크린샷 배열)로 순회한다. 조회·정리가 공유.
 def each_screenshot_set(edit)
   edit.get_app_store_version_localizations.each do |loc|
@@ -248,6 +313,8 @@ platform :ios do
     edit = ensure_edit_version(app, pubspec_version_name)
     assert_editable(edit, "release")
     apply_release_notes(edit)
+    # 스토어 설명 + 심사 메모도 리포 기준으로 맞춘다(리포가 단일 출처).
+    apply_store_metadata(edit)
 
     # 승격 대상. 빌드를 명시하면 그것만 쓴다 — "최신"에 맡기면 실기기 검증 후
     # beta를 한 번 더 돌렸을 때 검증하지 않은 빌드가 심사에 올라간다.
@@ -412,6 +479,21 @@ platform :ios do
       nil
     end
     UI.message("선택된 빌드:  #{selected ? "v#{selected.version}" : '없음'}")
+
+    # 스토어 문구가 리포와 어긋나는지 — release가 맞춰주지만 미리 보여준다.
+    begin
+      desc = extract_store_text("docs/app_store_description.md", "App Store 설명", 400)
+      notes = extract_store_text("docs/app_review_notes.md", "심사 메모", 200)
+      edit.get_app_store_version_localizations.each do |loc|
+        same = loc.description.to_s.strip == desc
+        UI.message("설명 #{loc.locale}:   #{same ? '리포와 일치' : '⚠️ 리포와 다름 (release가 갱신)'}")
+      end
+      detail = edit.fetch_app_store_review_detail
+      same = detail.notes.to_s.strip == notes
+      UI.message("심사 메모:    #{same ? '리포와 일치' : '⚠️ 리포와 다름 (release가 갱신)'}")
+    rescue StandardError => e
+      UI.important("스토어 문구 비교 실패: #{e.class}")
+    end
 
     each_screenshot_set(edit) do |loc, st, shots|
       dupes = shots.map(&:file_name).tally.select { |_, n| n > 1 }.keys
