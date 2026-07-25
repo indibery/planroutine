@@ -14,6 +14,7 @@ export 'strings/import_strings.dart';
 export 'strings/notification_strings.dart';
 export 'strings/schedule_strings.dart';
 export 'strings/settings_strings.dart';
+export 'strings/today_strings.dart';
 export 'strings/trash_strings.dart';
 
 /// 도메인에 귀속되지 않는 공통 문자열.
@@ -24,6 +25,7 @@ class AppStrings {
   static const appName = '공직플랜';
 
   // 탭/네비게이션
+  static const tabToday = '오늘';
   static const tabCalendar = '캘린더';
   static const tabSchedule = '검토';
 

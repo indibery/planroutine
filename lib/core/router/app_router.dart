@@ -5,6 +5,7 @@ import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/today/presentation/screens/today_screen.dart';
 import '../../features/trash/presentation/screens/trash_screen.dart';
 import '../../shared/widgets/main_shell.dart';
 
@@ -13,6 +14,7 @@ class AppRoutes {
   AppRoutes._();
 
   static const onboarding = '/onboarding';
+  static const today = '/today';
   static const calendar = '/calendar';
   static const schedule = '/schedule';
   static const settings = '/settings';
@@ -33,7 +35,7 @@ GoRouter createRouter({
 }) =>
     GoRouter(
       initialLocation: initialLocation ??
-          (onboardingDone ? AppRoutes.calendar : AppRoutes.onboarding),
+          (onboardingDone ? AppRoutes.today : AppRoutes.onboarding),
       redirect: (context, state) {
         final uri = state.uri;
         final isExternalFileIntent = uri.scheme == 'file' ||
@@ -51,6 +53,12 @@ GoRouter createRouter({
         ShellRoute(
           builder: (context, state, child) => MainShell(child: child),
           routes: [
+            GoRoute(
+              path: AppRoutes.today,
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: TodayScreen(),
+              ),
+            ),
             GoRoute(
               path: AppRoutes.calendar,
               pageBuilder: (context, state) => const NoTransitionPage(

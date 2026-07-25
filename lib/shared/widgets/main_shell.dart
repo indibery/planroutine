@@ -13,6 +13,12 @@ class MainShell extends StatelessWidget {
 
   static const _tabs = [
     (
+      route: AppRoutes.today,
+      icon: Icons.check_circle_outline,
+      activeIcon: Icons.check_circle,
+      label: AppStrings.tabToday,
+    ),
+    (
       route: AppRoutes.calendar,
       icon: Icons.calendar_month_outlined,
       activeIcon: Icons.calendar_month,
