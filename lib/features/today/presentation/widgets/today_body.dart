@@ -37,6 +37,9 @@ class TodayBody extends StatefulWidget {
 }
 
 class _TodayBodyState extends State<TodayBody> {
+  /// build마다 새로 만들지 않는다 — calendar_screen.dart의 _monthFormatter와 같은 이유.
+  static final _heroFormatter = DateFormat('M월 d일 EEEE', 'ko_KR');
+
   /// 지난 항목은 기본 접힘 — 임포트 직후엔 수십 건이 쌓여 있어 오늘이 밀려난다.
   bool _overdueExpanded = false;
 
@@ -53,11 +56,9 @@ class _TodayBodyState extends State<TodayBody> {
           _overdueHeader(view.overdue.length),
           if (_overdueExpanded)
             ...view.overdue.map((e) => _row(e, overdue: true)),
+          if (view.hasToday) _sectionRule(),
         ],
-        if (view.hasToday) ...[
-          if (view.overdue.isNotEmpty) _sectionRule(),
-          ...view.today.map((e) => _row(e, overdue: false)),
-        ],
+        ...view.today.map((e) => _row(e, overdue: false)),
       ],
     );
   }
@@ -90,7 +91,7 @@ class _TodayBodyState extends State<TodayBody> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  DateFormat('M월 d일 EEEE', 'ko_KR').format(widget.today),
+                  _heroFormatter.format(widget.today),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 14,

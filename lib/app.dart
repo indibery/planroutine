@@ -12,6 +12,7 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/import/presentation/providers/import_providers.dart';
 import 'features/settings/presentation/providers/theme_mode_provider.dart';
+import 'features/today/presentation/widgets/midnight_watcher.dart';
 
 /// 앱 루트 위젯.
 ///
@@ -100,20 +101,23 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
     }
     _lastBrightness = effective;
 
-    return MaterialApp.router(
-      title: AppStrings.appName,
-      theme: AppTheme.of(effective),
-      routerConfig: _router,
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ko', 'KR'),
-      ],
-      locale: const Locale('ko', 'KR'),
+    // 앱이 켜진 채 자정을 넘기면 오늘 탭의 기준일을 갱신한다(복귀 시 1회 비교).
+    return MidnightWatcher(
+      child: MaterialApp.router(
+        title: AppStrings.appName,
+        theme: AppTheme.of(effective),
+        routerConfig: _router,
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ko', 'KR'),
+        ],
+        locale: const Locale('ko', 'KR'),
+      ),
     );
   }
 }

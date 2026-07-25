@@ -51,6 +51,15 @@ class AppTextStyles {
         fontWeight: FontWeight.w600,
         color: AppColors.sub,
       );
+  /// 제목 위에 얹는 영문 소제목(REVIEW·TODAY 등). AppBar·섹션 헤더가 공유한다.
+  static TextStyle get eyebrow => TextStyle(
+        fontFamily: 'Pretendard',
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 2.5,
+        color: AppColors.gold,
+      );
+
   static TextStyle get caption => TextStyle(
         fontFamily: 'Pretendard',
         fontSize: 10,

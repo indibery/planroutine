@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,12 +8,28 @@ import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:planroutine/features/notifications/presentation/providers/notification_providers.dart';
 import 'package:planroutine/features/today/domain/today_view.dart';
 import 'package:planroutine/features/today/presentation/providers/today_providers.dart';
 
 import '../../helpers/test_database.dart';
 
 final _today = DateTime(2026, 7, 25);
+
+/// sync 호출 횟수를 세고, gate가 열릴 때까지 첫 호출을 붙잡아 두는 테스트용 syncer.
+class _GatedSyncer extends NotificationSyncer {
+  _GatedSyncer(super.ref);
+
+  int calls = 0;
+  Completer<void>? gate;
+
+  @override
+  Future<void> sync() async {
+    calls++;
+    final pending = gate;
+    if (pending != null) await pending.future;
+  }
+}
 
 void main() {
   setUpAll(setUpFfiForTests);
@@ -98,6 +116,49 @@ void main() {
 
       final next = await container.read(todayViewProvider.future);
       expect(next.today, isEmpty);
+    });
+  });
+
+  group('알림 재예약 합치기', () {
+    test('sync가 진행 중이면 연속 토글이 한 번으로 합쳐진다', () async {
+      final gated = ProviderContainer(
+        overrides: [
+          calendarRepositoryProvider.overrideWithValue(repository),
+          todayReferenceProvider.overrideWithValue(_today),
+          notificationSyncerProvider.overrideWith(_GatedSyncer.new),
+        ],
+      );
+      addTearDown(gated.dispose);
+      final syncer =
+          gated.read(notificationSyncerProvider) as _GatedSyncer;
+
+      await insert('첫째 업무', _today);
+      await insert('둘째 업무', _today);
+      await insert('셋째 업무', _today);
+      // 리스너는 seed 뒤에 붙인다 — 먼저 붙이면 빈 결과가 캐시된다.
+      gated.listen(todayViewProvider, (_, _) {});
+      final view = await gated.read(todayViewProvider.future);
+      final notifier = gated.read(todayViewProvider.notifier);
+
+      syncer.gate = Completer<void>();
+
+      // 1) 첫 토글 → sync가 실제로 gate에 걸릴 때까지 기다린다.
+      final first = notifier.toggleCompleted(view.today[0]);
+      while (syncer.calls == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      // 2) sync가 진행 중인 동안 두 번 더 토글 (DB 쓰기까지 끝낼 시간을 준다)
+      final second = notifier.toggleCompleted(view.today[1]);
+      final third = notifier.toggleCompleted(view.today[2]);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      // 3) gate를 열면 밀린 요청이 한 번으로 합쳐져 재실행된다.
+      syncer.gate!.complete();
+      await Future.wait([first, second, third]);
+
+      // 진행 중이던 1회 + 합쳐진 재실행 1회 = 2회 (합치지 않으면 3회)
+      expect(syncer.calls, 2);
     });
   });
 

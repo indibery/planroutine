@@ -31,16 +31,7 @@ class TodayScreen extends ConsumerWidget {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'TODAY',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 2.5,
-                color: AppColors.gold,
-              ),
-            ),
+            Text('TODAY', style: AppTextStyles.eyebrow),
             const SizedBox(height: 2),
             Text(TodayStrings.title, style: AppTextStyles.heading),
           ],
@@ -68,19 +59,20 @@ class TodayScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: GoldFab(
-        onTap: () => _onAddEvent(context, ref, today),
+        onTap: () => _onAddEvent(context, ref),
         tooltip: TodayStrings.addEvent,
       ),
     );
   }
 
   /// FAB — 오늘 날짜로 새 일정 등록.
-  Future<void> _onAddEvent(
-    BuildContext context,
-    WidgetRef ref,
-    DateTime today,
-  ) async {
-    final result = await EventEditDialog.show(context, initialDate: today);
+  ///
+  /// 화면이 들고 있는 기준일(캐시) 대신 **누른 시점의 실제 오늘**을 쓴다. 앱을 켜둔 채
+  /// 자정을 넘긴 직후라면 기준일이 아직 어제일 수 있고, 그대로 넘기면 어제 날짜로
+  /// 일정이 만들어진다.
+  Future<void> _onAddEvent(BuildContext context, WidgetRef ref) async {
+    final result =
+        await EventEditDialog.show(context, initialDate: DateTime.now());
     if (result == null) return;
     // 캘린더 탭과 같은 경로로 저장한다 — 여기서 리비전이 올라 오늘 목록도 갱신된다.
     await ref.read(selectedMonthEventsProvider.notifier).addEvent(result);

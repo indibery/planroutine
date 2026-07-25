@@ -8,15 +8,9 @@ import '../../core/theme/app_gradients.dart';
 ///
 /// 두 탭 모두 "일정 추가" 진입점이라 같은 위젯을 써서 생김새가 어긋나지 않게 한다.
 class GoldFab extends StatelessWidget {
-  const GoldFab({
-    super.key,
-    required this.onTap,
-    this.icon = Icons.add,
-    this.tooltip,
-  });
+  const GoldFab({super.key, required this.onTap, this.tooltip});
 
   final VoidCallback onTap;
-  final IconData icon;
   final String? tooltip;
 
   @override
@@ -41,13 +35,14 @@ class GoldFab extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
-          child: tooltip == null
-              ? _icon()
-              : Tooltip(message: tooltip ?? '', child: _icon()),
+          child: switch (tooltip) {
+            final String message => Tooltip(message: message, child: _icon()),
+            null => _icon(),
+          },
         ),
       ),
     );
   }
 
-  Widget _icon() => Icon(icon, color: AppColors.onGold, size: 26);
+  Widget _icon() => Icon(Icons.add, color: AppColors.onGold, size: 26);
 }

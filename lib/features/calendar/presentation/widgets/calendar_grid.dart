@@ -40,26 +40,24 @@ class CalendarGrid extends StatelessWidget {
     // 주말 열 배경을 셀이 아니라 그리드 뒤에 한 장으로 깐다. 셀마다 그리면 radius로
     // 열이 끊기고 헤더까지 이어지지 않는다.
     //
-    // 바깥 Column(mainAxisSize.min)이 필요한 이유: 부모(CalendarMonthPager)가 6행 기준
-    // 고정 높이(230)를 주는데, 5행인 달은 그리드가 더 짧다. Stack이 그 tight 제약을
-    // 그대로 받으면 Positioned.fill이 빈 주 자리까지 배경을 칠해 열이 아래로 샌다.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          children: [
-            Positioned.fill(child: _buildWeekendColumns()),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildWeekdayHeader(),
-                const SizedBox(height: AppSizes.spacing4),
-                _buildDayGrid(),
-              ],
-            ),
-          ],
-        ),
-      ],
+    // Align로 부모의 tight 제약을 느슨하게 풀어준다. 부모(CalendarMonthPager)는 6행
+    // 기준 고정 높이를 주는데, 5행인 달은 그리드가 더 짧다. 제약을 그대로 받으면
+    // Positioned.fill이 빈 주 자리까지 배경을 칠해 주말 열이 아래로 샌다.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Stack(
+        children: [
+          Positioned.fill(child: _buildWeekendColumns()),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildWeekdayHeader(),
+              const SizedBox(height: AppSizes.spacing4),
+              _buildDayGrid(),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -68,33 +66,32 @@ class CalendarGrid extends StatelessWidget {
   Widget _buildWeekendColumns() {
     return Row(
       key: const Key('calendar_weekend_columns'),
-      children: List.generate(7, (index) {
-        final isSunday = index == 0;
-        final isSaturday = index == 6;
-        if (!isSunday && !isSaturday) {
-          return const Expanded(child: SizedBox.shrink());
-        }
-        return Expanded(
-          child: DecoratedBox(
-            key: Key(isSunday ? 'weekend_column_sun' : 'weekend_column_sat'),
-            decoration: BoxDecoration(
-              color: isSunday
-                  ? AppColors.calendarWeekendTint
-                  : AppColors.calendarSaturdayTint,
-              // 바깥쪽 모서리만 둥글려 화면 가장자리에서 띠처럼 마감된다.
-              borderRadius: BorderRadius.horizontal(
-                left: isSunday
-                    ? const Radius.circular(AppSizes.radius8)
-                    : Radius.zero,
-                right: isSaturday
-                    ? const Radius.circular(AppSizes.radius8)
-                    : Radius.zero,
-              ),
-            ),
-            child: const SizedBox.expand(),
+      children: [
+        _weekendColumn(isSunday: true),
+        // 평일 5칸은 그릴 것이 없으므로 자리만 차지한다.
+        const Spacer(flex: 5),
+        _weekendColumn(isSunday: false),
+      ],
+    );
+  }
+
+  Widget _weekendColumn({required bool isSunday}) {
+    final corner = const Radius.circular(AppSizes.radius8);
+    return Expanded(
+      child: DecoratedBox(
+        key: Key(isSunday ? 'weekend_column_sun' : 'weekend_column_sat'),
+        decoration: BoxDecoration(
+          color: isSunday
+              ? AppColors.calendarWeekendTint
+              : AppColors.calendarSaturdayTint,
+          // 바깥쪽 모서리만 둥글려 화면 가장자리에서 띠처럼 마감된다.
+          borderRadius: BorderRadius.horizontal(
+            left: isSunday ? corner : Radius.zero,
+            right: isSunday ? Radius.zero : corner,
           ),
-        );
-      }),
+        ),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 

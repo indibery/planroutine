@@ -149,7 +149,6 @@ void main() {
 
       expect(view.doneCount, 1);
       expect(view.totalCount, 2);
-      expect(view.progress, 0.5);
     });
 
     test('오늘 일정이 없으면 hasToday가 false이고 진행도는 0이다', () {
@@ -159,7 +158,6 @@ void main() {
       );
 
       expect(view.hasToday, isFalse);
-      expect(view.progress, 0);
       expect(view.isAllDone, isFalse);
     });
 
@@ -173,7 +171,6 @@ void main() {
       );
 
       expect(view.isAllDone, isTrue);
-      expect(view.progress, 1);
     });
 
     test('남은 건수는 오늘 미완료 개수다', () {

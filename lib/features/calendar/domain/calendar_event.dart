@@ -54,6 +54,10 @@ abstract class CalendarEvent with _$CalendarEvent {
   /// 완료된 이벤트인지 (completedAt이 null이 아니면 완료)
   bool get isCompleted => completedAt != null;
 
+  /// 중요 강조(★·골드)를 노출할지. 완료한 자료는 묻어두는 것이 규칙이라
+  /// 미완료일 때만 강조한다. 캘린더 리스트와 오늘 탭이 같은 규칙을 쓴다.
+  bool get showsImportant => isImportant && !isCompleted;
+
   /// DB 삽입용 Map 변환 (deletedAt은 repository에서 별도 관리)
   Map<String, dynamic> toMap() {
     final now = DateTime.now().toIso8601String();

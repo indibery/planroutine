@@ -47,4 +47,16 @@ class AppSizes {
 
   static const fabSize = 56.0;
   static const tabBarHeight = 72.0;
+
+  // ── 캘린더 그리드 ────────────────────────────────────────
+  /// 날짜 셀 한 칸 높이. dot 유무로 행 높이가 흔들리지 않게 명시한다.
+  static const calendarCellHeight = 34.0;
+
+  /// 요일 헤더 글자 높이(약 17) + 헤더~그리드 간격 + 폰트 메트릭 여유.
+  static const calendarHeaderHeight = 17.0;
+
+  /// PageView가 요구하는 그리드 영역 고정 높이 — 6행 기준.
+  /// 셀 높이를 바꾸면 여기가 함께 따라와야 실제 주가 잘리지 않는다.
+  static const calendarGridHeight =
+      calendarCellHeight * 6 + calendarHeaderHeight + spacing4 + 5;
 }

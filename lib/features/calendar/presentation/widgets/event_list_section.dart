@@ -165,8 +165,7 @@ class EventListSection extends ConsumerWidget {
 
   Widget _buildEventTile(CalendarEvent event) {
     final isDone = event.isCompleted;
-    // 완료되지 않은 중요 이벤트만 골드로 강조(완료 자료는 묻어둔다).
-    final showImportant = event.isImportant && !isDone;
+    final showImportant = event.showsImportant;
     final titleColor = isDone ? AppColors.sub : AppColors.ink;
     // 색상 피커 제거 후 이벤트 색은 통일 — 저장된 color 무시, 공통 액센트 사용.
     // 중요는 색이 아닌 형태(★)로 구분하되 레일만 골드로 살짝 강조.

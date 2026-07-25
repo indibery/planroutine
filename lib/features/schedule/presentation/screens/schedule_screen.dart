@@ -31,16 +31,7 @@ class ScheduleScreen extends ConsumerWidget {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'REVIEW',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 2.5,
-                color: AppColors.gold,
-              ),
-            ),
+            Text('REVIEW', style: AppTextStyles.eyebrow),
             const SizedBox(height: 2),
             Text(
               ScheduleStrings.title,

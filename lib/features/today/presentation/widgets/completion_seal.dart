@@ -60,15 +60,16 @@ class CompletionSeal extends StatelessWidget {
   ).chain(CurveTween(curve: Curves.easeOut));
 
   /// 낙하 초반에 0 → 1로 나타난 뒤 안착 불투명도로 잦아든다.
-  Animatable<double> get _opacity => TweenSequence<double>([
-        TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 30),
-        TweenSequenceItem(
-          tween: Tween(begin: 1.0, end: _restingOpacity),
-          weight: 70,
-        ),
-      ]);
+  ///
+  /// dimmed 여부로 도착점만 갈리므로 둘을 미리 만들어 둔다. getter로 두면
+  /// AnimatedBuilder 안에서 읽혀 프레임마다 TweenSequence가 새로 생긴다.
+  static final Animatable<double> _opacityFull = _opacityTo(_restOpacity);
+  static final Animatable<double> _opacityDimmed = _opacityTo(_dimmedOpacity);
 
-  double get _restingOpacity => dimmed ? _dimmedOpacity : _restOpacity;
+  static Animatable<double> _opacityTo(double resting) => TweenSequence<double>([
+        TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 30),
+        TweenSequenceItem(tween: Tween(begin: 1.0, end: resting), weight: 70),
+      ]);
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class CompletionSeal extends StatelessWidget {
       animation: animation,
       builder: (context, _) {
         return Opacity(
-          opacity: _opacity.evaluate(animation).clamp(0.0, 1.0),
+          opacity: (dimmed ? _opacityDimmed : _opacityFull).evaluate(animation),
           child: Transform.rotate(
             angle: _rotation.evaluate(animation),
             child: Transform.scale(
@@ -98,25 +99,23 @@ class CompletionSeal extends StatelessWidget {
     return Container(
       width: _size,
       height: _size,
+      // 안쪽 얇은 테두리 한 겹 — 실제 도장의 이중 테두리 인상.
+      padding: const EdgeInsets.all(_innerPadding),
       decoration: BoxDecoration(
         borderRadius: radius,
         border: Border.all(color: AppColors.goldFill, width: _outerBorder),
       ),
-      child: Padding(
-        // 안쪽 얇은 테두리 한 겹 — 실제 도장의 이중 테두리 인상.
-        padding: const EdgeInsets.all(_innerPadding),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: style.isSquare
-                ? BorderRadius.circular(AppSizes.radius4)
-                : radius,
-            border: Border.all(
-              color: AppColors.goldFill.withValues(alpha: 0.6),
-              width: _innerBorder,
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: style.isSquare
+              ? BorderRadius.circular(AppSizes.radius4)
+              : radius,
+          border: Border.all(
+            color: AppColors.goldFill.withValues(alpha: 0.6),
+            width: _innerBorder,
           ),
-          child: Center(child: _mark()),
         ),
+        child: Center(child: _mark()),
       ),
     );
   }

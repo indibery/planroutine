@@ -38,7 +38,8 @@ class CalendarDayCell extends StatelessWidget {
       child: Container(
         // 셀 높이를 명시해 dot 유무에 따라 행 높이가 흔들리지 않게 한다.
         // dayNumber 28 + dot 4 + padding 1 = 33pt → 34pt(1pt 마진).
-        height: 34,
+        // pager의 고정 높이와 같은 상수에서 나온다(AppSizes.calendarGridHeight).
+        height: AppSizes.calendarCellHeight,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.calendarSelected : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSizes.radius8),

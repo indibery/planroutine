@@ -6,7 +6,6 @@ class TodayStrings {
 
   // 섹션 헤더
   static const overdueSection = '기한이 지난';
-  static const todaySection = '오늘';
 
   // 완료 도장 — 모양별 문구 (SealStyle이 참조)
   static const sealComplete = '완료';
@@ -25,6 +24,5 @@ class TodayStrings {
   static const addEvent = '오늘 일정 추가';
 
   // 지난 섹션 접힘 안내
-  static const overdueExpandHint = '탭하면 펼쳐집니다';
   static String overdueCount(int count) => '$count건';
 }

@@ -65,14 +65,32 @@ class TodayViewNotifier extends AutoDisposeAsyncNotifier<TodayView> {
     await _syncNotifications();
   }
 
+  bool _syncing = false;
+  bool _syncPending = false;
+
   /// 알림 재예약. `computeNotifications`가 완료 이벤트를 대상에서 제외하므로
   /// sync를 빠뜨리면 이미 처리한 일이 다음 알림에 남는다.
+  ///
+  /// **연속 체크를 합친다.** sync 1회가 1년치 DB 조회 + 최대 60건 순차 재예약이라,
+  /// 오늘 탭의 주 사용 패턴(연달아 5~10개 체크)에서 그 비용이 그대로 곱해진다.
+  /// 진행 중이면 "한 번 더 필요하다"만 표시하고, 끝난 뒤 마지막 상태로 한 번만 다시 돈다.
+  ///
   /// 플랫폼 에러(권한 거부 등)는 조용히 무시 — 완료 처리 자체는 이미 끝났다.
   Future<void> _syncNotifications() async {
+    if (_syncing) {
+      _syncPending = true;
+      return;
+    }
+    _syncing = true;
     try {
-      await ref.read(notificationSyncerProvider).sync();
+      do {
+        _syncPending = false;
+        await ref.read(notificationSyncerProvider).sync();
+      } while (_syncPending);
     } catch (_) {
       // 무시
+    } finally {
+      _syncing = false;
     }
   }
 }

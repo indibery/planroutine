@@ -35,21 +35,6 @@ class _TodayProgressRingState extends State<TodayProgressRing>
     duration: const Duration(milliseconds: 700),
   );
 
-  static final Animatable<double> _pulseScale = TweenSequence<double>([
-    TweenSequenceItem(
-      tween: Tween(begin: 1.0, end: 1.07).chain(
-        CurveTween(curve: Curves.easeOut),
-      ),
-      weight: 45,
-    ),
-    TweenSequenceItem(
-      tween: Tween(begin: 1.07, end: 1.0).chain(
-        CurveTween(curve: Curves.easeIn),
-      ),
-      weight: 55,
-    ),
-  ]);
-
   @override
   void didUpdateWidget(TodayProgressRing oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -70,9 +55,10 @@ class _TodayProgressRingState extends State<TodayProgressRing>
     return AnimatedBuilder(
       animation: _pulse,
       builder: (context, child) {
+        // 0 → 1 → 0 벨커브 하나로 확대와 글로우를 함께 만든다.
         final glow = math.sin(_pulse.value * math.pi);
         return Transform.scale(
-          scale: _pulseScale.evaluate(_pulse),
+          scale: 1 + 0.07 * glow,
           child: DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,

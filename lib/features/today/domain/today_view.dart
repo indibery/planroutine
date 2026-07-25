@@ -37,9 +37,6 @@ class TodayView {
   /// 오늘 항목을 모두 닫았는지. 오늘 일정이 없는 날은 false(달성이 아니라 빈 상태).
   bool get isAllDone => hasToday && doneCount == totalCount;
 
-  /// 링에 그릴 진행도 0.0~1.0. 지난 항목이 섞이면 1.0에 도달할 수 없어 제외한다.
-  double get progress => totalCount == 0 ? 0 : doneCount / totalCount;
-
   /// [id] 항목의 완료 상태만 바꾼 새 뷰. **목록 순서와 위치는 그대로 둔다.**
   ///
   /// 완료 즉시 재정렬하면 탭한 행이 아래로 이동해 도장 애니메이션이 화면 밖에서
