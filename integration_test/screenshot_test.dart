@@ -6,9 +6,15 @@
 //   flutter drive \
 //     --driver=test_driver/integration_test.dart \
 //     --target=integration_test/screenshot_test.dart \
-//     -d <iPhone 12 Pro Max UDID>
+//     -d <UDID>
 //
-// 결과: docs/screenshots/{1_calendar,2_schedule,3_import,4_settings}.png
+// 결과: docs/screenshots/{1_today,2_calendar,3_schedule,4_import,5_settings}.png
+//
+// 드라이버가 루트에 쓴다 → App Store 제출용은 규격별 폴더로 옮긴다.
+//   6.9" (1320x2868, iPhone 17 Pro Max) → docs/screenshots/appstore/6.9/
+//   6.5" (1284x2778, iPhone 12 Pro Max) → docs/screenshots/appstore/6.5/
+// 두 규격을 모두 두는 이유: 기존 승인본이 6.5"라 like-for-like 교체가 되고,
+// ASC가 6.9"를 요구해도 바로 대응된다.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
