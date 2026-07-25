@@ -13,6 +13,8 @@
 5. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
 6. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
 7. **로컬 알림** — 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
+8. **오늘 탭(첫 화면)** — 오늘 처리할 이벤트만 모아 체크 원 탭으로 완료. 완료 순간 골드
+   도장이 찍히고 상단 결산 링이 차오른다. 기한이 지난 항목은 롤링 7일까지만 기본 접힘.
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -23,18 +25,18 @@
 |--------|------|------|
 | 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 3탭 (캘린더/일정/설정) + push(/trash, /import) |
+| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/검토/설정) + push(/trash, /import). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v4 (3 테이블, soft-delete + completed + google_event_id) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
 | 공유 | share_plus, path_provider | 임시 디렉토리 + 공유시트 |
 | 앱 정보 | package_info_plus | 설정 탭 버전 표시 |
-| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마 |
+| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장 |
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 109 유닛 + 11 통합 |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 337 유닛/위젯 + 11 통합 |
 
 ## 프로젝트 구조
 
@@ -56,9 +58,10 @@ planroutine/
 │   │   │       ├── notification_strings.dart
 │   │   │       ├── schedule_strings.dart
 │   │   │       ├── settings_strings.dart
+│   │   │       ├── today_strings.dart
 │   │   │       └── trash_strings.dart
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles
-│   │   ├── router/                     # GoRouter (3탭 + /trash, /import 푸시)
+│   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
 │   │   ├── database/                   # DatabaseHelper (v4, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
@@ -91,6 +94,7 @@ planroutine/
 │   │   │       │   ├── export_list_tile.dart
 │   │   │       │   ├── google_account_list_tile.dart
 │   │   │       │   ├── notification_settings_tiles.dart
+│   │   │       │   ├── stamp_settings_tiles.dart   # 완료 도장 모양 + 흐리게
 │   │   │       │   ├── trash_list_tile.dart
 │   │   │       │   ├── reset_list_tile.dart
 │   │   │       │   └── app_info_list_tile.dart
@@ -102,11 +106,22 @@ planroutine/
 │   │   │   ├── data/                   # notification_service, notification_rules
 │   │   │   ├── domain/                 # notification_settings, pending_notification
 │   │   │   └── presentation/           # syncer + 설정 providers
+│   │   ├── today/                      # 오늘 탭 (첫 화면)
+│   │   │   ├── domain/                 # today_view(순수 함수), stamp_settings
+│   │   │   └── presentation/
+│   │   │       ├── screens/today_screen.dart    # provider 배선만
+│   │   │       ├── providers/today_providers.dart
+│   │   │       └── widgets/
+│   │   │           ├── today_body.dart          # 순수 위젯 (위젯 테스트 대상)
+│   │   │           ├── today_event_row.dart     # 체크 원 + 제목 + 도장 슬롯
+│   │   │           ├── today_progress_ring.dart # 결산 링 (CustomPainter)
+│   │   │           └── completion_seal.dart     # 완료 도장 (3종)
 │   │   └── onboarding/                 # 최초 진입 플로우
 │   └── shared/
 │       └── widgets/
 │           ├── main_shell.dart         # 하단 탭 Shell
 │           ├── floating_tab_bar.dart   # 이름은 legacy, 현재 화면 폭 불투명 탭바
+│           ├── gold_fab.dart           # 골드 원형 FAB (캘린더·오늘 탭 공유)
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
 │           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle
@@ -181,6 +196,30 @@ planroutine/
 - `InterruptionLevel.timeSensitive` 플래그 지정. 실제 집중 모드 돌파 원하면 Apple Developer Portal에서 capability 활성화 + entitlements 추가 필요.
 - 설정 화면에서는 마스터 스위치 하나만 노출 + 현재 설정 요약(`08:00 · 이번 주·당일`) subtitle. 이번 주/당일 아침/알림 시각/테스트/예약된 알림 보기는 `고급` ExpansionTile 안에 접힘.
 
+### 오늘 탭 (결재 도장 + 결산 링)
+- **DB 변경 없음.** `calendar_events.completed_at`과 기존 `getEventsByDateRange`를 재사용한다.
+- `buildTodayView(events, today, lookbackDays)`는 **순수 함수** — 지난/오늘 분리, 정렬,
+  진행도 계산을 한곳에 모아 유닛 테스트로 고정한다(`computeNotifications`와 같은 패턴).
+- **지난 항목은 롤링 7일 컷오프 + 기본 접힘.** 작년 CSV를 임포트하는 앱이라 컷오프가 없으면
+  지난 미완료가 수백 건 쌓여 "오늘"이 화면 밖으로 밀려난다.
+- **진행도 링은 오늘 항목만** 계산한다. 지난 항목이 섞이면 1.0(완주)에 도달할 수 없다.
+- **완료 토글은 자리 고정** — `TodayView.withToggled()`로 해당 항목만 교체하고
+  `invalidateSelf`를 하지 않는다. 즉시 재정렬하면 탭한 행이 밀려나 도장 애니메이션이
+  화면 밖에서 재생된다.
+- **`eventsRevisionProvider`**(calendar_providers): 이벤트 CRUD가 올리는 신호. 오늘 탭이
+  watch해 스스로 재조회한다. 캘린더 provider가 오늘 탭 provider를 직접 invalidate하면
+  feature 간 순환 참조가 되므로 신호만 올린다. **단 `TodayViewNotifier.toggleCompleted`는
+  리비전을 올리지 않는다** — 올리면 자기 build가 다시 돌아 자리 고정이 깨진다.
+- **`todayViewProvider`는 autoDispose.** 이 앱은 `StatefulShellRoute`가 아닌 평범한
+  `ShellRoute`라 탭을 옮기면 화면이 dispose된다. provider만 살아남으면 재진입해도 옛 목록이
+  보인다 → 수명을 화면에 묶어 재진입 = 재조회로 만든다.
+- **완료 도장**(`설정 > 완료 도장`): 모양 3종(완료 원형·결재 사각·좋아요 엄지 아이콘) +
+  "이미 찍은 도장 흐리게"(기본 ON). 모양 규칙은 `SealStyle` enum이 들고 있어(`isSquare`,
+  `usesIcon`) 위젯은 enum만 보고 그린다. 흐리게는 **지난 도장에만** 적용 —
+  `TodayEventRow._stampedOnEntry`로 구분하고 방금 누른 도장은 진하게 남긴다.
+  도장 문구는 44px 안에 들어가야 한다(내부 폭 31.4). 영문 4글자('Good')는 13px에서 50px로
+  물리적으로 안 맞아 아이콘을 쓴다 — 가드 테스트가 이 폭을 지킨다.
+
 ### Google Calendar 연동
 - `google_sign_in`으로 `authHeaders` 획득 → 커스텀 `http.BaseClient`로 `googleapis` 호출.
 - 단방향(생성만) — 수정/삭제 동기화 없음 (개인정보 최소 노출).
@@ -232,7 +271,7 @@ planroutine/
 - iOS 홈 아이콘은 `test/tools/gen_app_icon.dart`가 navy 배경 + 90% LogoHybrid를 1024×1024 PNG로 렌더해 `assets/icon/app_icon.png`에 덮어쓰고, `flutter_launcher_icons`가 각 사이즈를 재생성.
 
 ### 탭바
-- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 3탭 = **캘린더 / 검토 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
+- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 4탭 = **오늘 / 캘린더 / 검토 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
 - 배경색은 `Theme.of(context).colorScheme.surface`를 참조한다 — ShellRoute 탭바는 라우트 전환에 유지(리빌드 안 됨)돼, Theme 의존이 없으면 테마 전환 시 이전 색이 남는다.
 
 ### 화면 테마 (다크/라이트)
@@ -292,6 +331,10 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 파일명: snake_case / 클래스명: PascalCase
 - 한글 UI, 한글 주석
 - 삭제 시 반드시 `deleted_at IS NULL` 필터 동반
+- **위젯 테스트에서 실제 DB I/O는 `tester.runAsync()` 안에서** — `testWidgets`의 fake-async
+  존에서 sqflite FFI를 그냥 await하면 완료되지 않아 테스트가 10분 타임아웃까지 멈춘다.
+  seed 삽입도 마찬가지. 화면이 뜰 때까지는 조건 폴링으로 기다린다
+  (`schedule_screen_review_test.dart`·`today_screen_test.dart` 참고)
 - 날짜 문자열 포맷은 `date_utils.formatDate(DateTime) → 'YYYY-MM-DD'` 공용 함수 사용
 - 확인 다이얼로그는 `ConfirmDialog.show()` 공통 위젯 사용 (신규 AlertDialog 직접 만들지 않기)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리
