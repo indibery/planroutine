@@ -225,6 +225,20 @@ planroutine/
 - 단방향(생성만) — 수정/삭제 동기화 없음 (개인정보 최소 노출).
 - GCP OAuth client는 "테스트" 모드, 테스트 사용자 수동 등록 필요. App Store 출시 시 verification 필요.
 
+### 캘린더 그리드 가시성
+- **주말 열 배경**: 토·일 열에 옅은 tint(`calendarWeekendTint`/`calendarSaturdayTint`)를
+  **요일 헤더부터 마지막 주까지 세로로** 깐다. 셀마다 그리면 radius로 열이 끊기고 헤더까지
+  이어지지 않으므로, `CalendarGrid`가 `Stack`으로 그리드 뒤에 한 장을 깐다.
+  - ⚠️ `Stack`을 `Column(mainAxisSize.min)`으로 한 번 감싸야 한다. 부모
+    `CalendarMonthPager`가 6행 기준 고정 높이(230)를 주는데, 5행인 달은 그리드가 더 짧아
+    `Positioned.fill`이 빈 주 자리까지 칠해 열이 아래로 샌다(테스트가 지킨다).
+- **토요일은 중립 파랑**(`calendarSaturday`: 다크 `#8BA8D4` / 라이트 `#3F5F94`).
+  골드는 **오늘 셀·선택 링·중요 ★** 강조 전용이다. 토요일까지 골드로 쓰면 골드가 네 가지
+  의미를 동시에 져서 어느 것도 강조가 안 된다.
+- **요일 헤더는 본문색 + w700** — 라벨(요일)이 데이터(날짜 `14px w500`)보다 옅으면 배경처럼
+  묻힌다. 높이는 그대로 두고 굵기·색으로만 위계를 만든다.
+- 이벤트 점은 최대 3개까지만 표기(4개 이상도 3개로 유지).
+
 ### 스와이프 UX
 | 탭 | 오른쪽(→) | 왼쪽(←) |
 |---|---|---|
@@ -278,7 +292,7 @@ planroutine/
 - 설정 탭 최상단 `ThemeModeTile`(SegmentedButton: 시스템/밝게/어둡게). 선택은 `themeModeProvider`(shared_preferences 저장). 시스템 모드는 기기 밝기 추종.
 - **팔레트 전환 구조**: `AppColors`는 `static const`가 아니라 `_Palette`(dark/light 두 인스턴스) 기반 **static getter**. `AppColors.applyBrightness(effective)`로 현재 팔레트를 교체. 313곳 참조부는 무수정, const 컨텍스트만 const 해제. `AppTextStyles`·`AppGradients`도 같은 이유로 getter.
 - 다크 = 네이비+골드+크림, 라이트 = **쿨 미스트 화이트**(배경 #F6F8FB, 본문 네이비 #17253D, 딥골드 액센트 #9A7415, 밝은 골드 #E6B95C).
-- **골드 의미 토큰**: `gold`(배경 위 텍스트/아이콘/보더/토요일 — 라이트에선 대비용 딥골드) / `goldFill`(배지·pill·버튼·오늘 셀 채움 — 밝은 골드) / `onGold`(goldFill 채움 위 네이비 글씨). "골드 채움은 goldFill + onGold" 규칙으로 다크/라이트 대비를 함께 맞춘다.
+- **골드 의미 토큰**: `gold`(배경 위 텍스트/아이콘/보더 — 라이트에선 대비용 딥골드) / `goldFill`(배지·pill·버튼·오늘 셀 채움 — 밝은 골드) / `onGold`(goldFill 채움 위 네이비 글씨). "골드 채움은 goldFill + onGold" 규칙으로 다크/라이트 대비를 함께 맞춘다.
 - **테마 변경 = 전체 재생성**: `app.dart`가 effective brightness로 `AppColors.applyBrightness` + `AppTheme.of(brightness)` 동기화 후, MaterialApp `builder`에서 brightness를 `KeyedSubtree` key로 주어 라우트 하위 전체를 재생성한다(라우터 상태는 상위라 현재 탭 유지). 전역 팔레트가 개별 위젯 리빌드 순서에 의존하지 않게 하는 핵심.
 
 ## 배포

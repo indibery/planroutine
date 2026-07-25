@@ -30,6 +30,8 @@ class _Palette {
     required this.calendarToday,
     required this.calendarSelected,
     required this.calendarSaturday,
+    required this.calendarWeekendTint,
+    required this.calendarSaturdayTint,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
   });
@@ -59,7 +61,14 @@ class _Palette {
   final Color eventAccent;
   final Color calendarToday;
   final Color calendarSelected;
+  /// 토요일 날짜·요일 글자 — **중립 파랑**. 골드는 오늘/선택/중요 강조 전용이라
+  /// 토요일까지 골드로 쓰면 골드가 네 가지 의미를 동시에 져서 강조가 무너진다.
   final Color calendarSaturday;
+
+  /// 주말 열 배경 tint — 일요일(붉은 기) / 토요일(파란 기).
+  /// 요일 헤더부터 마지막 주까지 세로로 이어져 요일이 '열'로 읽히게 한다.
+  final Color calendarWeekendTint;
+  final Color calendarSaturdayTint;
   final Color categoryDailyOps;
   final Color categoryCurriculum;
 }
@@ -88,7 +97,9 @@ const _dark = _Palette(
   eventAccent: Color(0xFF4A6FA5),
   calendarToday: Color(0xFFE0B96A),
   calendarSelected: Color(0x29E0B96A),
-  calendarSaturday: Color(0xFFF5D98F),
+  calendarSaturday: Color(0xFF8BA8D4), // 중립 파랑 (골드 강조와 분리)
+  calendarWeekendTint: Color(0x1FE08978), // 일요일 열 — 붉은 기 12%
+  calendarSaturdayTint: Color(0x1F8BA8D4), // 토요일 열 — 파란 기 12%
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
 );
@@ -119,7 +130,9 @@ const _light = _Palette(
   eventAccent: Color(0xFF3E6BB0), // 이벤트 레일(밝은 블루)
   calendarToday: Color(0xFFE6B95C), // 밝은 골드 원 + 네이비 텍스트
   calendarSelected: Color(0x1FE6B95C),
-  calendarSaturday: Color(0xFF9A7415), // 배경 위 딥골드
+  calendarSaturday: Color(0xFF3F5F94), // 중립 파랑 (골드 강조와 분리)
+  calendarWeekendTint: Color(0x12C0392B), // 일요일 열 — 붉은 기 7%
+  calendarSaturdayTint: Color(0x143F5F94), // 토요일 열 — 파란 기 8%
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
 );
@@ -198,6 +211,10 @@ class AppColors {
   static Color get calendarSelected => _current.calendarSelected;
   static Color get calendarWeekend => _current.inkRed;
   static Color get calendarSaturday => _current.calendarSaturday;
+
+  /// 주말 열 배경 tint (일요일 / 토요일).
+  static Color get calendarWeekendTint => _current.calendarWeekendTint;
+  static Color get calendarSaturdayTint => _current.calendarSaturdayTint;
 
   /// 이벤트 점·막대 공통 액센트색.
   static Color get eventAccent => _current.eventAccent;

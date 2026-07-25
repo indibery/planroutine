@@ -37,12 +37,64 @@ class CalendarGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 주말 열 배경을 셀이 아니라 그리드 뒤에 한 장으로 깐다. 셀마다 그리면 radius로
+    // 열이 끊기고 헤더까지 이어지지 않는다.
+    //
+    // 바깥 Column(mainAxisSize.min)이 필요한 이유: 부모(CalendarMonthPager)가 6행 기준
+    // 고정 높이(230)를 주는데, 5행인 달은 그리드가 더 짧다. Stack이 그 tight 제약을
+    // 그대로 받으면 Positioned.fill이 빈 주 자리까지 배경을 칠해 열이 아래로 샌다.
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildWeekdayHeader(),
-        const SizedBox(height: AppSizes.spacing4),
-        _buildDayGrid(),
+        Stack(
+          children: [
+            Positioned.fill(child: _buildWeekendColumns()),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildWeekdayHeader(),
+                const SizedBox(height: AppSizes.spacing4),
+                _buildDayGrid(),
+              ],
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  /// 토·일 열 배경 — 요일 헤더부터 마지막 주까지 세로로 이어져 요일이 '열'로 읽힌다.
+  /// 헤더/그리드와 같은 7분할이라 열이 정확히 맞는다.
+  Widget _buildWeekendColumns() {
+    return Row(
+      key: const Key('calendar_weekend_columns'),
+      children: List.generate(7, (index) {
+        final isSunday = index == 0;
+        final isSaturday = index == 6;
+        if (!isSunday && !isSaturday) {
+          return const Expanded(child: SizedBox.shrink());
+        }
+        return Expanded(
+          child: DecoratedBox(
+            key: Key(isSunday ? 'weekend_column_sun' : 'weekend_column_sat'),
+            decoration: BoxDecoration(
+              color: isSunday
+                  ? AppColors.calendarWeekendTint
+                  : AppColors.calendarSaturdayTint,
+              // 바깥쪽 모서리만 둥글려 화면 가장자리에서 띠처럼 마감된다.
+              borderRadius: BorderRadius.horizontal(
+                left: isSunday
+                    ? const Radius.circular(AppSizes.radius8)
+                    : Radius.zero,
+                right: isSaturday
+                    ? const Radius.circular(AppSizes.radius8)
+                    : Radius.zero,
+              ),
+            ),
+            child: const SizedBox.expand(),
+          ),
+        );
+      }),
     );
   }
 
@@ -55,15 +107,17 @@ class CalendarGrid extends StatelessWidget {
         } else if (index == 6) {
           textColor = AppColors.calendarSaturday;
         } else {
-          textColor = AppColors.textSecondary;
+          // 평일은 본문색 — 라벨(요일)이 데이터(날짜)보다 옅으면 배경처럼 묻힌다.
+          textColor = AppColors.textPrimary;
         }
         return Expanded(
           child: Center(
             child: Text(
               _weekdays[index],
               style: TextStyle(
+                fontFamily: 'Pretendard',
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: textColor,
               ),
             ),
