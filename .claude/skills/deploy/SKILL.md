@@ -84,6 +84,7 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 ## 3) POST-DEPLOY
 
 ```bash
+./ios/bin/fastlane.sh upload_screenshots  # 스토어 스크린샷만 올리기 (제출 안 함)
 ./ios/bin/fastlane.sh asc_state      # 심사 단계 + 선택된 빌드 조회 (진단 1순위)
                                      #   PREPARE_FOR_SUBMISSION → 제출 가능
                                      #   WAITING_FOR_REVIEW/IN_REVIEW → 손대지 말 것
@@ -99,6 +100,12 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
   `app.ensure_version!`로 만든다. **minor/major를 올릴 때는 항상 없다**(patch는 기존
   페이지가 남아 통과). 자동화 전에는 여기서 fastlane 2.233.0이 `sync_app_previews`의
   `NoMethodError: get_app_store_version_localizations for nil`로 죽어 원인을 못 읽었다.
+- **스크린샷**: `ios/fastlane/screenshots/ko/`에 두면 `upload_screenshots`가 올린다.
+  deliver가 **이미지 크기로** 기기 슬롯을 판단하므로 파일명에 규격을 붙여 두 세트를
+  함께 둔다(`6.5_*.png` = 1284x2778, `6.9_*.png` = 1320x2868). **파일명 순서 = 노출 순서.**
+  원본은 `docs/screenshots/appstore/{6.5,6.9}/`, 촬영은 `screenshot_test.dart`.
+  ⚠️ **심사 대기/진행 중에는 가드 D가 막는다** — 스크린샷을 갈아치우면 심사가 되돌려질 수
+  있다. 다음 버전 준비 때 올리거나, ASC에서 '심사에서 제거' 후 올릴 것(대기열 처음으로).
 - **가드 E (릴리즈 노트 없음)**: `docs/release_notes/<버전>.ko.txt`가 없으면 중단.
   Apple이 "이번 버전의 새로운 기능"을 업데이트 심사에 필수로 요구하므로 비어 있으면
   어차피 제출이 막힌다. **버전을 올리면 이 파일을 먼저 만든다.**
