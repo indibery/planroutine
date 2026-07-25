@@ -60,12 +60,19 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 멈춰서 리포트한다.
 
 ```bash
-./ios/bin/fastlane.sh beta      # TestFlight 업로드 (재빌드 O)
-./ios/bin/fastlane.sh release   # 최신 beta 빌드 promote + 심사 자동 제출 + 자동 공개
+./ios/bin/fastlane.sh beta                  # TestFlight 업로드 (재빌드 O)
+./ios/bin/fastlane.sh release               # 최신 빌드 promote + 심사 제출 + 자동 공개
+./ios/bin/fastlane.sh release build:115     # 승격할 빌드 못박기 (검증한 빌드 지정)
+./ios/bin/fastlane.sh release submit:false  # 빌드만 연결, 제출은 ASC에서 수동
 ```
 
-- **release는 재빌드/재업로드가 없다** — `latest_testflight_build_number`로 최신 beta
-  빌드를 골라 `skip_binary_upload: true`로 승격만 한다. 그래서 빠르고 업로드 중단 함정과 무관.
+- **release는 재빌드/재업로드가 없다** — `skip_binary_upload: true`로 승격만 한다.
+  그래서 빠르고 업로드 중단 함정과 무관.
+- ⚠️ **승격 대상 기본값은 "최신"이다.** 실기기 검증을 끝낸 뒤 `beta`를 한 번 더 돌리면
+  release가 **검증하지 않은 빌드**를 심사에 올린다. 검증한 빌드가 최신이 아닐 수 있으면
+  `release build:<N>`으로 못박을 것. (기본값도 편집 버전 train으로 한정된다)
+- **수동 제출 흐름을 섞지 말 것** — ASC에서 직접 제출할 거면 release를 아예 돌리지 않거나
+  `release submit:false`로 빌드만 연결한다. 섞으면 가드 D가 막는다(그게 막으라고 있는 가드).
 - release는 `submit_for_review: true` + `automatic_release: true`라 **실행 즉시 Apple 심사행
   → 승인 시 자동 공개**된다. 되돌리기 어려운 외부 작업이므로, **실기기 검증이 끝난 뒤에만**
   실행한다. 알림·UI 동작처럼 시뮬에서 못 밟는 변경이 있었으면 사용자 실기기 확인을 먼저 받는다.
@@ -77,6 +84,7 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 ## 3) POST-DEPLOY
 
 ```bash
+./ios/bin/fastlane.sh asc_state      # 심사 단계 + 선택된 빌드 조회 (진단 1순위)
 ./ios/bin/fastlane.sh check_builds   # 최근 5개 빌드 processing_state 조회
 ```
 - `processing_state`가 VALID면 정상. PROCESSING이면 잠시 후 재조회.
@@ -85,6 +93,16 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 
 ## 트러블슈팅 (레인 실패 시)
 
+- **가드 C (편집 가능한 버전 없음)**: ASC에 그 버전 페이지가 없으면 중단 + 할 일 안내.
+  없는 채로 진행하면 fastlane 2.233.0이 `sync_app_previews`에서
+  `NoMethodError: get_app_store_version_localizations for nil`로 죽어 원인을 못 읽는다.
+  → ASC `+ 버전 또는 플랫폼`으로 버전 페이지 생성 + "이번 버전의 새로운 기능" 입력 후 재실행.
+  **minor/major를 올릴 때 반드시 만난다** (patch는 기존 페이지가 남아 안 걸린다).
+  (1.2.0 첫 제출이 이걸로 실패했다.)
+- **가드 D (이미 심사 단계)**: 편집 버전 상태가 `PREPARE_FOR_SUBMISSION`/`*_REJECTED`가
+  아니면 중단. `submit_for_review`로 제출된 버전을 다시 건드리면 **진행 중인 심사가
+  되돌려진다**. 수동 제출 후 실수로 release를 돌리는 사고를 막는다.
+  이미 제출됐으면 아무것도 하지 말 것.
 - **가드 A (#5 higher version 거부)**: beta/release 진입 시 `assert_version_bumped`가
   pubspec versionString을 App Store 승인본과 비교해 이하이면 즉시 중단. 걸리면 안내대로
   `pubspec.yaml` versionString을 승인본보다 높게 수정 후 재실행.
