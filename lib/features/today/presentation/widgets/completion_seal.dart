@@ -30,6 +30,15 @@ class CompletionSeal extends StatelessWidget {
   /// 지름. 행 우측 도장 슬롯(56)보다 작게 둬 글자와 붙지 않는다.
   static const _size = 44.0;
 
+  static const _outerBorder = 2.5;
+  static const _innerPadding = 3.0;
+  static const _innerBorder = 0.8;
+
+  /// 이중 테두리 안쪽에 글자가 놓일 수 있는 폭.
+  /// 문구를 바꿀 때 이 폭을 넘으면 글자가 깨진다(테스트가 지킨다).
+  static const innerWidth =
+      _size - 2 * (_outerBorder + _innerPadding + _innerBorder);
+
   /// 안착 후 남는 불투명도. 방금 찍은 도장은 진하게, 지난 도장은 잔상처럼.
   static const _restOpacity = 0.88;
   static const _dimmedOpacity = 0.32;
@@ -91,11 +100,11 @@ class CompletionSeal extends StatelessWidget {
       height: _size,
       decoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(color: AppColors.goldFill, width: 2.5),
+        border: Border.all(color: AppColors.goldFill, width: _outerBorder),
       ),
       child: Padding(
         // 안쪽 얇은 테두리 한 겹 — 실제 도장의 이중 테두리 인상.
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(_innerPadding),
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: style.isSquare
@@ -103,7 +112,7 @@ class CompletionSeal extends StatelessWidget {
                 : radius,
             border: Border.all(
               color: AppColors.goldFill.withValues(alpha: 0.6),
-              width: 0.8,
+              width: _innerBorder,
             ),
           ),
           child: Center(child: _mark()),

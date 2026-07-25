@@ -57,6 +57,20 @@ void main() {
       expect(find.byIcon(Icons.thumb_up_alt_rounded), findsOneWidget);
       expect(find.text('좋아요'), findsNothing);
     });
+
+    testWidgets('글자 도장의 문구는 테두리 안에 들어간다 (넘치면 글자가 깨진다)',
+        (tester) async {
+      for (final style in SealStyle.values.where((s) => !s.usesIcon)) {
+        await pumpSeal(tester, style: style);
+        final textWidth = tester.getSize(find.text(style.label)).width;
+        expect(
+          textWidth,
+          lessThanOrEqualTo(CompletionSeal.innerWidth),
+          reason: '"${style.label}" 도장 문구가 '
+              '${textWidth.toStringAsFixed(1)}로 내부 폭을 넘는다',
+        );
+      }
+    });
   });
 
   group('이미 찍은 도장 흐리게', () {
