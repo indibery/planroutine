@@ -8,9 +8,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/title_year_utils.dart';
-import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
+import '../../../../shared/widgets/gold_fab.dart';
 import '../../../device_calendar/data/device_calendar_service.dart';
 import '../../../device_calendar/presentation/providers/device_calendar_providers.dart';
 import '../../../google/data/google_calendar_service.dart';
@@ -83,29 +83,8 @@ class CalendarScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: Container(
-        width: AppSizes.fabSize,
-        height: AppSizes.fabSize,
-        decoration: BoxDecoration(
-          gradient: AppGradients.gold,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.gold.withValues(alpha: 0.35),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () => _onAddEvent(context, ref, selectedDate),
-            child: Icon(Icons.add, color: AppColors.onGold, size: 26),
-          ),
-        ),
+      floatingActionButton: GoldFab(
+        onTap: () => _onAddEvent(context, ref, selectedDate),
       ),
     );
   }

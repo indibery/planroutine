@@ -11,7 +11,8 @@ import 'today_progress_ring.dart';
 
 /// 오늘 탭 본문 — provider 없이 [TodayView]만 받아 그린다(위젯 테스트 대상).
 ///
-/// 구성: 큰 제목 → 결산 링(또는 빈 상태) → 기한이 지난(기본 접힘) → 오늘 목록.
+/// 구성: 결산 링(또는 빈 상태) → 기한이 지난(기본 접힘) → 오늘 목록.
+/// 화면 제목은 AppBar가 담당한다 — 캘린더·검토 탭과 같은 구조.
 class TodayBody extends StatefulWidget {
   const TodayBody({
     super.key,
@@ -39,9 +40,9 @@ class _TodayBodyState extends State<TodayBody> {
     final view = widget.view;
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: AppSizes.spacing32),
+      padding: const EdgeInsets.only(bottom: AppSizes.spacing48),
       children: [
-        _pageTitle(),
+        // 제목은 AppBar가 담당한다(다른 탭과 동일 구조).
         if (view.hasToday) _progressHero(view) else _emptyToday(),
         if (view.overdue.isNotEmpty) ...[
           _overdueHeader(view.overdue.length),
@@ -56,33 +57,12 @@ class _TodayBodyState extends State<TodayBody> {
     );
   }
 
-  Widget _pageTitle() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.pagePadding,
-        AppSizes.spacing8,
-        AppSizes.pagePadding,
-        AppSizes.spacing4,
-      ),
-      child: Text(
-        TodayStrings.title,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 30,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.6,
-          color: AppColors.ink,
-        ),
-      ),
-    );
-  }
-
   /// 결산 히어로 — 링 + 오늘 날짜 + 남은 건수(또는 완주 문안).
   Widget _progressHero(TodayView view) {
     return Container(
       margin: const EdgeInsets.fromLTRB(
         AppSizes.pagePadding,
-        AppSizes.spacing4,
+        AppSizes.spacing12,
         AppSizes.pagePadding,
         AppSizes.spacing8,
       ),

@@ -15,6 +15,13 @@ final selectedDateProvider = StateProvider<DateTime>((ref) {
   return DateTime.now();
 });
 
+/// 이벤트 변경 리비전 — 이벤트 CRUD가 일어날 때마다 1 증가한다.
+///
+/// 같은 이벤트를 다른 렌즈로 보는 화면(오늘 탭)이 이 값을 watch해 스스로 재조회한다.
+/// 캘린더 provider가 오늘 탭 provider를 직접 invalidate하면 feature 간 순환 참조가
+/// 생기므로, 신호만 올리고 구독은 각 화면이 하게 둔다.
+final eventsRevisionProvider = StateProvider<int>((ref) => 0);
+
 /// 현재 보고 있는 월의 이벤트
 final selectedMonthEventsProvider =
     AsyncNotifierProvider<SelectedMonthEventsNotifier, List<CalendarEvent>>(
@@ -49,6 +56,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     await repository.createEvent(event);
     ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
+    _bumpRevision();
     await _syncNotifications();
   }
 
@@ -58,6 +66,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     await repository.updateEvent(event);
     ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
+    _bumpRevision();
     await _syncNotifications();
   }
 
@@ -67,6 +76,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     await repository.deleteEvent(id);
     ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
+    _bumpRevision();
     await _syncNotifications();
   }
 
@@ -82,8 +92,13 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     }
     ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidateSelf();
+    _bumpRevision();
     await _syncNotifications();
   }
+
+  /// 이벤트 목록을 보는 다른 화면(오늘 탭)에 변경을 알린다.
+  void _bumpRevision() =>
+      ref.read(eventsRevisionProvider.notifier).state++;
 
   /// 알림 재예약 — 이벤트 변경이 알림 스케줄에 반영되도록.
   /// 실패해도 이벤트 변경 자체는 계속 진행.

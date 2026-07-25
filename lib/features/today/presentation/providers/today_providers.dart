@@ -9,12 +9,21 @@ import '../../domain/today_view.dart';
 final todayReferenceProvider = Provider<DateTime>((ref) => DateTime.now());
 
 /// 오늘 탭 화면 상태.
+///
+/// autoDispose인 이유: 이 앱은 `StatefulShellRoute`가 아닌 평범한 `ShellRoute`라
+/// 탭을 옮기면 화면 위젯이 dispose된다. provider만 살아남으면 화면과 상태의 수명이
+/// 어긋나 다시 들어와도 예전 목록이 보인다. 수명을 화면에 묶어 재진입 = 재조회로 만든다.
 final todayViewProvider =
-    AsyncNotifierProvider<TodayViewNotifier, TodayView>(TodayViewNotifier.new);
+    AsyncNotifierProvider.autoDispose<TodayViewNotifier, TodayView>(
+  TodayViewNotifier.new,
+);
 
-class TodayViewNotifier extends AsyncNotifier<TodayView> {
+class TodayViewNotifier extends AutoDisposeAsyncNotifier<TodayView> {
   @override
   Future<TodayView> build() async {
+    // 화면에 머문 채 다른 경로로 이벤트가 바뀌면(캘린더 탭 CRUD, 오늘 탭 FAB 등록,
+    // 편집 시트 저장·삭제) 리비전이 올라 여기가 다시 돈다.
+    ref.watch(eventsRevisionProvider);
     final today = ref.watch(todayReferenceProvider);
     final repository = ref.watch(calendarRepositoryProvider);
     final events = await repository.getEventsByDateRange(
@@ -49,6 +58,8 @@ class TodayViewNotifier extends AsyncNotifier<TodayView> {
     }
 
     // 캘린더 탭도 같은 이벤트를 그리므로 캐시를 비운다.
+    // 단 eventsRevisionProvider는 올리지 않는다 — 올리면 이 provider의 build가 다시
+    // 돌아 목록이 재정렬되고, 위에서 지킨 자리 고정이 그 자리에서 깨진다.
     ref.invalidate(monthEventsByYearMonthProvider);
     ref.invalidate(selectedMonthEventsProvider);
     await _syncNotifications();

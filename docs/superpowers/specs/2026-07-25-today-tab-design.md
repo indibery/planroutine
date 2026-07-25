@@ -67,6 +67,21 @@ buildTodayView(events, today)  ← 순수
 TodayScreen → TodayBody(view, onToggle) → TodayProgressRing / TodayEventRow
 ```
 
+### 2026-07-25 후속 수정 (실기기 피드백)
+
+| 항목 | 변경 | 이유 |
+|---|---|---|
+| 완주 문안 | "오늘 업무를 모두 닫았습니다" → **"오늘 업무 모두 완료했네요!"** | "닫았다"는 잘 쓰지 않는 표현 |
+| 화면 구조 | 본문 큰 제목 → **AppBar(eyebrow `TODAY` + 제목)** | 캘린더·검토 탭이 모두 AppBar를 써서 오늘 탭만 이질적이었다 |
+| 일정 등록 | **골드 FAB 추가** (`shared/widgets/gold_fab.dart`) | 오늘 탭에서도 등록 가능해야 한다. 캘린더 탭 FAB를 같은 위젯으로 추출해 공유 |
+| 갱신 버그 | **`eventsRevisionProvider` 도입** | 캘린더에서 추가한 오늘 일정이 오늘 탭에 안 나타났다 |
+| provider 수명 | `todayViewProvider`를 **autoDispose로** | 평범한 `ShellRoute`라 탭 전환 시 화면은 dispose되는데 provider가 남아 재진입 시 옛 목록이 보였다 |
+
+`eventsRevisionProvider`는 캘린더 CRUD가 올리는 신호이고, 오늘 탭이 watch해 스스로
+재조회한다. 캘린더 provider가 오늘 탭 provider를 직접 invalidate하면 feature 간 순환
+참조가 되므로 신호만 올린다. **단 `TodayViewNotifier.toggleCompleted`는 리비전을 올리지
+않는다** — 올리면 자기 build가 다시 돌아 자리 고정이 깨진다.
+
 ### 완료 토글
 
 `TodayViewNotifier.toggleCompleted(event)`:

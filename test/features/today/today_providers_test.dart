@@ -6,6 +6,7 @@ import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/providers/calendar_providers.dart';
+import 'package:planroutine/features/today/domain/today_view.dart';
 import 'package:planroutine/features/today/presentation/providers/today_providers.dart';
 
 import '../../helpers/test_database.dart';
@@ -36,6 +37,16 @@ void main() {
     await db.close();
   });
 
+  /// 오늘 탭 화면 진입을 모사한다.
+  ///
+  /// todayViewProvider는 autoDispose라 구독자가 없으면 read 직후 폐기된다. 화면이
+  /// 떠 있는 동안만 상태가 유지되는 실제 동작과 같으므로, 리스너로 붙잡은 뒤 첫 조회를
+  /// 기다린다. (setUp에서 붙잡으면 데이터 삽입 전에 build가 돌아 빈 결과가 캐시된다.)
+  Future<TodayView> openTodayTab() {
+    container.listen(todayViewProvider, (_, _) {});
+    return container.read(todayViewProvider.future);
+  }
+
   Future<int> insert(String title, DateTime date) {
     return repository.createEvent(
       CalendarEvent(title: title, eventDate: formatDate(date)),
@@ -48,7 +59,7 @@ void main() {
       await insert('지난 업무', _today.subtract(const Duration(days: 2)));
       await insert('컷오프 밖', _today.subtract(const Duration(days: 30)));
 
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       expect(view.today.map((e) => e.title), ['오늘 업무']);
       expect(view.overdue.map((e) => e.title), ['지난 업무']);
@@ -58,16 +69,42 @@ void main() {
       final id = await insert('삭제된 업무', _today);
       await repository.deleteEvent(id);
 
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       expect(view.today, isEmpty);
+    });
+  });
+
+  group('캘린더 탭 변경 반영', () {
+    test('캘린더에서 오늘 일정을 추가하면 오늘 탭 목록에 나타난다', () async {
+      final view = await openTodayTab();
+      expect(view.today, isEmpty);
+
+      // 캘린더 탭이 쓰는 경로로 추가 (EventEditDialog 저장과 동일)
+      await container.read(selectedMonthEventsProvider.notifier).addEvent(
+            CalendarEvent(title: '새 학년 준비 회의', eventDate: formatDate(_today)),
+          );
+
+      final next = await container.read(todayViewProvider.future);
+      expect(next.today.map((e) => e.title), ['새 학년 준비 회의']);
+    });
+
+    test('캘린더에서 이벤트를 삭제하면 오늘 탭에서도 사라진다', () async {
+      final id = await insert('삭제될 일정', _today);
+      final view = await openTodayTab();
+      expect(view.today, hasLength(1));
+
+      await container.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+
+      final next = await container.read(todayViewProvider.future);
+      expect(next.today, isEmpty);
     });
   });
 
   group('TodayViewNotifier.toggleCompleted', () {
     test('완료로 토글하면 DB에 완료 시각이 기록된다', () async {
       await insert('출결 마감 확인', _today);
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       await container
           .read(todayViewProvider.notifier)
@@ -80,7 +117,7 @@ void main() {
     test('완료된 항목을 다시 토글하면 완료 시각이 지워진다', () async {
       final id = await insert('출결 마감 확인', _today);
       await repository.markCompleted(id);
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       await container
           .read(todayViewProvider.notifier)
@@ -93,7 +130,7 @@ void main() {
     test('토글해도 목록 순서가 그대로 유지된다 (재정렬하지 않는다)', () async {
       await insert('첫째 업무', _today);
       await insert('둘째 업무', _today);
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       await container
           .read(todayViewProvider.notifier)
@@ -107,7 +144,7 @@ void main() {
 
     test('지난 항목을 완료해도 지난 목록에 남는다', () async {
       await insert('지난 업무', _today.subtract(const Duration(days: 3)));
-      final view = await container.read(todayViewProvider.future);
+      final view = await openTodayTab();
 
       await container
           .read(todayViewProvider.notifier)
