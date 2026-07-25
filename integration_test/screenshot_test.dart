@@ -64,15 +64,15 @@ void main() {
     await tester.pumpAndSettle();
     await binding.takeScreenshot('2_calendar');
 
-    // 3. 검토 탭
+    // 3. 입력 탭
     final scheduleTab = find.descendant(
       of: find.byType(FloatingTabBar),
-      matching: find.byIcon(Icons.checklist_rtl_outlined),
+      matching: find.byIcon(Icons.note_add_outlined),
     );
     await tester.tap(scheduleTab.first);
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
-    await binding.takeScreenshot('3_schedule');
+    await binding.takeScreenshot('3_input');
 
     // 5. 설정 탭
     final settingsTab = find.descendant(

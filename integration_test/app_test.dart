@@ -55,8 +55,8 @@ Future<void> _tapCalendarTab(WidgetTester tester) => _tapTab(
 
 Future<void> _tapScheduleTab(WidgetTester tester) => _tapTab(
       tester,
-      icon: Icons.checklist_rtl_outlined,
-      activeIcon: Icons.checklist_rtl,
+      icon: Icons.note_add_outlined,
+      activeIcon: Icons.note_add,
     );
 
 Future<void> _tapSettingsTab(WidgetTester tester) => _tapTab(
@@ -114,7 +114,7 @@ void main() {
       expect(find.text(SettingsStrings.title), findsWidgets);
     });
 
-    testWidgets('탭 전환: 캘린더 → 일정 → 설정', (tester) async {
+    testWidgets('탭 전환: 캘린더 → 입력 → 설정', (tester) async {
       await _startFresh(tester);
 
       await _tapScheduleTab(tester);
@@ -160,7 +160,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('일정 검토 빈 상태 표시', (tester) async {
+    testWidgets('입력 탭 검토 영역 빈 상태 표시', (tester) async {
       await _startFresh(tester);
 
       await _tapScheduleTab(tester);
@@ -456,7 +456,7 @@ void main() {
           reason: '다크 탭바 배경(navyMid)');
     });
 
-    testWidgets('화면 테마: 어둡게 → 검토탭 → 설정복귀 → 밝게에도 텍스트 갱신',
+    testWidgets('화면 테마: 어둡게 → 입력탭 → 설정복귀 → 밝게에도 텍스트 갱신',
         (tester) async {
       // 실기기 재현: 탭을 오간 뒤 테마를 바꾸면 이전(다크) 텍스트 색이 남던 버그.
       SharedPreferences.setMockInitialValues({});
@@ -465,7 +465,7 @@ void main() {
       await tester.tap(find.text(SettingsStrings.themeDark));
       await tester.pumpAndSettle();
 
-      // 검토 탭 갔다가 설정으로 복귀
+      // 입력 탭 갔다가 설정으로 복귀
       await _tapScheduleTab(tester);
       await _tapSettingsTab(tester);
 

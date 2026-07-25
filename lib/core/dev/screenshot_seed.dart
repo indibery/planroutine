@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/calendar/domain/calendar_event.dart';
 import '../../features/calendar/presentation/providers/calendar_providers.dart';
+import '../../features/schedule/domain/entry_kind.dart';
 import '../../features/schedule/domain/schedule.dart';
 import '../../features/schedule/presentation/providers/schedule_providers.dart';
 
@@ -23,7 +24,7 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
 
   final now = DateTime.now();
 
-  // ── 일정 검토 탭용 — 2026년 분 20개 (확정 3 / 대기 17) ──
+  // ── 입력 탭 검토 영역용 — 2026년 분 (확정 3 / 대기 업무 17 + 대기 학교일정 4) ──
   final schedules = <Schedule>[
     _s('2025학년도 새봄초등학교 1차 학급편성 결과 제출', '2026-01-03', '학생학적',
         ScheduleStatus.confirmed),
@@ -47,6 +48,11 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
     _s('방학 중 교직원 연수', '2026-07-25', '조직통계'),
     _s('2학기 개학 준비', '2026-08-20', '교육과정계획'),
     _s('9월 생활지도 계획', '2026-09-02', '일과운영관리'),
+    // 월간 일정표 사진(AI 변환)으로 들어오는 학교일정 — 종류 배지·일괄 일정 등록용
+    _sKind('입학식', '2026-03-02', EntryKind.event),
+    _sKind('과학의 달 행사', '2026-04-10', EntryKind.event),
+    _sKind('운동회', '2026-05-15', EntryKind.event),
+    _sKind('학예발표회', '2026-10-23', EntryKind.event),
   ];
   for (final s in schedules) {
     await scheduleRepo.insertConfirmedOrPending(s);
@@ -87,14 +93,22 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
   return;
 }
 
-Schedule _s(String title, String date, String category,
-        [ScheduleStatus status = ScheduleStatus.pending]) =>
+Schedule _s(
+  String title,
+  String date,
+  String category, [
+  ScheduleStatus status = ScheduleStatus.pending,
+]) =>
     Schedule(
       title: title,
       scheduledDate: date,
       category: category,
       status: status,
     );
+
+/// 사진 AI 경로로 들어오는 학교일정 — 그 경로는 카테고리를 매기지 않는다.
+Schedule _sKind(String title, String date, EntryKind kind) =>
+    Schedule(title: title, scheduledDate: date, kind: kind);
 
 CalendarEvent _e(String title, DateTime date,
         {String? color, String? description, bool isImportant = false}) =>

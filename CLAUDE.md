@@ -3,17 +3,20 @@
 ## 프로젝트 개요
 **공직플랜** — 계획(Plan)과 반복(Routine). 초등 교사를 위한 업무 일정 관리 앱.
 매년 반복되는 교사 업무 사이클을 작년 데이터 기반으로 올해 일정으로 빠르게 세팅.
-작년 CSV를 가져와 일정 탭에서 검토·확정하는 흐름이 핵심.
+**입력 탭**에서 넣고(월간 일정표 사진 → AI 변환 / 작년 CSV) 그 아래 검토 목록에서
+확정하는 흐름이 핵심. 항목은 **업무**(내가 처리할 일)와 **학교일정**(학교에서 열리는 일)로 나뉜다.
 
 ## 핵심 기능
-1. **작년 일정 가져오기** — 설정 탭 1줄 진입 → `/import` 풀스크린 플로우에서 CSV 업로드. 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
-2. **검토 후 확정** — 일정 탭에서 슬라이드로 확정(→) / 삭제(←). 진행도 행 우측의 `전체 확정` pill로 일괄 확정. 확정 시 캘린더 이벤트 자동 생성.
-3. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 제목에 올해 이전 연도가 있는 이벤트는 리스트에 "이전 연도 자료" 골드 배지(`2025→2026`) 노출 → 탭 시 연도 고친 제목으로 편집 화면 진입(날짜도 함께 수정). 편집 다이얼로그 내에도 동일 연도 바꾸기 칩.
-4. **휴지통** — 일정/이벤트 soft-delete, 30일 후 자동 영구 삭제.
-5. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
-6. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
-7. **로컬 알림** — 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
-8. **오늘 탭(첫 화면)** — 오늘 처리할 이벤트만 모아 체크 원 탭으로 완료. 완료 순간 골드
+1. **입력 탭(주 경로: 사진 AI)** — 히어로에서 `① 프롬프트 복사 → AI 앱 다녀오기 → ② 붙여넣기` 왕복으로 학교일정을 등록. 앱은 네트워크를 쓰지 않고 클립보드만 오간다.
+2. **작년 업무 가져오기(보조)** — 입력 탭 히어로 아래 한 줄 링크(설정 탭에도 진입점) → `/import` 풀스크린에서 CSV 업로드. 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
+3. **업무 / 학교일정 구분** — `EntryKind`(task/event). CSV 경로 = 업무, 사진 AI 경로 = 학교일정. 오늘 탭에는 업무만, 캘린더에는 둘 다.
+4. **검토 후 확정** — 입력 탭 검토 목록에서 슬라이드로 확정(→) / 삭제(←). 하단 `일괄 업무 등록 N건` / `일괄 일정 등록 N건` pill로 종류별 일괄 확정(해당 종류 0건이면 숨김). 확정 시 캘린더 이벤트 자동 생성(종류 승계). 대기가 없으면 검토 영역은 요약 한 줄로 축소.
+5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 제목에 올해 이전 연도가 있는 이벤트는 리스트에 "이전 연도 자료" 골드 배지(`2025→2026`) 노출 → 탭 시 연도 고친 제목으로 편집 화면 진입(날짜도 함께 수정). 편집 다이얼로그 내에도 동일 연도 바꾸기 칩.
+6. **휴지통** — 일정/이벤트 soft-delete, 30일 후 자동 영구 삭제.
+7. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
+8. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
+9. **로컬 알림** — 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
+10. **오늘 탭(첫 화면)** — 오늘 처리할 **업무**만 모아 체크 원 탭으로 완료. 완료 순간 골드
    도장이 찍히고 상단 결산 링이 차오른다. 기한이 지난 항목은 롤링 7일까지만 기본 접힘.
 
 ## 타깃 사용자
@@ -25,8 +28,8 @@
 |--------|------|------|
 | 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/검토/설정) + push(/trash, /import). 초기 라우트 `/today` |
-| 로컬 DB | sqflite | 스키마 v4 (3 테이블, soft-delete + completed + google_event_id) |
+| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import). 초기 라우트 `/today` |
+| 로컬 DB | sqflite | 스키마 v7 (3 테이블, soft-delete + completed + google_event_id + kind) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
@@ -36,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 360 유닛/위젯 + 11 통합 |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 414 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -62,25 +65,28 @@ planroutine/
 │   │   │       └── trash_strings.dart
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles
 │   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
-│   │   ├── database/                   # DatabaseHelper (v4, forTesting 생성자)
+│   │   ├── database/                   # DatabaseHelper (v7, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
-│   │   ├── import/                     # 작년 CSV 가져오기
-│   │   │   ├── data/                   # csv_parser, import_repository
+│   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
+│   │   │   ├── data/                   # csv_parser, import_repository, ai_schedule_parser/register
 │   │   │   ├── domain/                 # imported_schedule
 │   │   │   └── presentation/
+│   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기+미리보기 (히어로·가져오기 화면 공유)
 │   │   │       ├── screens/import_screen.dart  # 풀스크린 + sticky 스테퍼
 │   │   │       ├── widgets/
+│   │   │       │   ├── photo_input_hero.dart   # 입력 탭 히어로 (왕복 3단 + CSV 보조 링크)
+│   │   │       │   ├── ai_photo_import_section.dart
 │   │   │       │   ├── import_summary_card.dart
 │   │   │       │   └── edufine_guide_section.dart  # 2단 접힘 안내 + 팁 박스
 │   │   │       └── providers/                   # importStateProvider (importFromPath API)
-│   │   ├── schedule/                   # 일정 검토/확정
-│   │   │   ├── data/                   # schedule_repository (soft-delete + purge)
-│   │   │   ├── domain/                 # schedule (status: pending/confirmed)
-│   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet
+│   │   ├── schedule/                   # 입력 탭 (넣기 + 검토/확정)
+│   │   │   ├── data/                   # schedule_repository (soft-delete + purge, kind 필터)
+│   │   │   ├── domain/                 # schedule (status: pending/confirmed), entry_kind (task/event)
+│   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, FilterBar(상태/종류/카테고리)
 │   │   ├── calendar/                   # 자체 캘린더
 │   │   │   ├── data/                   # calendar_repository
-│   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt)
+│   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt/kind)
 │   │   │   └── presentation/           # CalendarScreen, EventEditDialog, ListSection
 │   │   ├── trash/                      # 휴지통
 │   │   │   └── presentation/           # TrashScreen + snapshot
@@ -142,7 +148,7 @@ planroutine/
 ├── data/sample/                        # 테스트용 CSV
 ├── docs/                               # requirements, data-schema
 ├── test/
-│   ├── features/                       # 단위 테스트 (109개)
+│   ├── features/                       # 단위/위젯 테스트
 │   │   ├── calendar/data/
 │   │   ├── schedule/data/
 │   │   ├── notifications/              # computeNotifications
@@ -151,15 +157,16 @@ planroutine/
 │   ├── helpers/test_database.dart      # FFI in-memory DB 팩토리
 │   └── tools/gen_app_icon.dart         # 1024×1024 PNG 렌더 (자동 스캔 제외)
 └── integration_test/
-    └── app_test.dart                   # UX E2E 11 시나리오
+    └── app_test.dart                   # UX E2E 19 시나리오
 ```
 
-## 데이터베이스 스키마 (v4)
+## 데이터베이스 스키마 (v7)
 
 ### schedules
 - `id`, `title`, `description`, `scheduled_date`
 - `category`, `sub_category`, `source_id` → imported_schedules
 - `status` (pending/confirmed)
+- **`kind`** (v7): `task`(업무) / `event`(학교일정), DEFAULT `'task'`
 - `created_at`, `updated_at`, **`deleted_at`** (NULL=활성)
 
 ### calendar_events
@@ -169,13 +176,19 @@ planroutine/
 - **`deleted_at`** (v2): NULL=활성, ISO=휴지통
 - **`completed_at`** (v3): NULL=미완료, ISO=완료 시각
 - **`google_event_id`** (v4): NULL=미저장, 값 있으면 재저장 시 update (중복 방지)
+- **`device_event_id`** (v5): 기기 캘린더 저장 식별자
+- **`is_important`** (v6): 0/1 — 미완료일 때만 골드 강조(`showsImportant`)
+- **`kind`** (v7): `task`/`event`. 확정 시 `schedules.kind`를 승계한다
 
 ### imported_schedules
 - 원본 생산문서등록대장 CSV 보관. PlanRoutine export 포맷 임포트는 이 테이블을 건너뛰고 schedules로 직접 삽입.
 
 ### 마이그레이션
-- `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id).
+- `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id),
+  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블).
   기존 사용자도 ALTER TABLE로 데이터 유지한 채 업그레이드.
+- v7의 `DEFAULT 'task'`가 곧 제품 결정이다 — **기존 데이터는 전부 업무**(지금까지 들어온 것은
+  사실상 전부 CSV). 별도 백필 스크립트가 없는 이유.
 
 ## 주요 설계 결정
 
@@ -254,10 +267,29 @@ planroutine/
   묻힌다. 높이는 그대로 두고 굵기·색으로만 위계를 만든다.
 - 이벤트 점은 최대 3개까지만 표기(4개 이상도 3개로 유지).
 
+### 업무 / 학교일정 (EntryKind)
+- `lib/features/schedule/domain/entry_kind.dart` — `task`(업무) / `event`(학교일정). DB 값은 `'task'`/`'event'`, 모르는 값·null은 업무로 폴백.
+- **입력 경로가 종류를 결정한다**: 작년 CSV(생산문서등록대장) → 업무 / 월간 일정표 사진 AI → 학교일정. 두 경로 모두 `status=pending`으로 들어와 같은 검토 관문을 지난다.
+- **승계 지점이 급소**: `CalendarRepository.createFromSchedule`이 `schedules.kind`를 이벤트로 옮긴다. 여기서 끊기면 데이터는 멀쩡한데 오늘 탭에 운동회가 뜨는, 원인이 두 레이어 떨어진 버그가 된다.
+- `buildTodayView`가 `e.kind.showsInToday`로 걸러 **오늘 탭은 업무만** 담는다 — 학교일정에는 완료 개념이 없어 도장·진행 링의 의미가 깨진다.
+- 캘린더는 둘 다 보여준다. 월 그리드 점의 종류별 색 구분은 하지 않는다(색 규칙이 이미 골드=오늘·중요, 붉은색=공휴일·일요일, 파랑=토요일·이벤트로 포화).
+
+### 입력 탭 구조
+- **넣기가 주인공**, 검토는 그 아래. 화면 제목 `입력`(eyebrow `INPUT`), 탭 라벨 `입력`.
+- `PhotoInputHero`(import feature) — 왕복 3단 `① 프롬프트 · AI 앱 · ② 붙여넣기`. 가운데 칸은 앱 밖에서 벌어지는 일이라 **누를 수 없다**. 작년 업무 CSV는 아래 한 줄 링크.
+- AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndPreview`에 있다 — 히어로와 가져오기 화면 섹션이 같은 로직을 공유한다.
+- 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다. 일괄 삭제 pill은 진행도 행에 남아 있다(전체 대기 대상).
+- 필터 3줄: 상태(대기/확정됨) · 종류(업무/학교일정 **토글**, '전체' 칩 없음 — 카테고리 줄의 '전체'와 헷갈린다) · 카테고리.
+- 대기가 없으면 검토 영역은 `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄로 축소된다. 넣기 CTA를 여기 또 세우지 않는다(히어로가 바로 위에 있다).
+
+### 용어
+- **일정 / 학교일정 / 업무**만 쓴다. "행사"·"행사표"는 쓰지 않는다(AI 프롬프트 본문 포함).
+- 예외: `category_label.dart`의 `학교행사`는 에듀파인 실제 분류명이라 그대로 둔다.
+
 ### 스와이프 UX
 | 탭 | 오른쪽(→) | 왼쪽(←) |
 |---|---|---|
-| 일정 | 확정 | 삭제(soft) |
+| 입력(검토 목록) | 확정 | 삭제(soft) |
 | 캘린더 | Google 저장 | 완료 토글 |
 - 각 탭 상단에 2줄 안내 바 (SharedPreferences로 영구 닫기 가능).
 
@@ -300,7 +332,7 @@ planroutine/
 - iOS 홈 아이콘은 `test/tools/gen_app_icon.dart`가 navy 배경 + 90% LogoHybrid를 1024×1024 PNG로 렌더해 `assets/icon/app_icon.png`에 덮어쓰고, `flutter_launcher_icons`가 각 사이즈를 재생성.
 
 ### 탭바
-- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 4탭 = **오늘 / 캘린더 / 검토 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
+- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 4탭 = **오늘 / 캘린더 / 입력 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
 - 배경색은 `Theme.of(context).colorScheme.surface`를 참조한다 — ShellRoute 탭바는 라우트 전환에 유지(리빌드 안 됨)돼, Theme 의존이 없으면 테마 전환 시 이전 색이 남는다.
 
 ### 화면 테마 (다크/라이트)

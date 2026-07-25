@@ -10,7 +10,6 @@ import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
-import 'package:planroutine/shared/widgets/pill_chip.dart';
 
 import '../../../helpers/test_database.dart';
 
@@ -81,16 +80,8 @@ void main() {
 
       expect(find.text('대기 업무'), findsOneWidget);
       expect(find.text('확정된 업무'), findsNothing);
-      // 상태 줄에는 전체 칩이 없다(할 일과 기록을 섞지 않음).
-      // 종류 줄의 '전체'는 별개 — 칩이 정확히 하나뿐임으로 확인한다.
-      expect(
-        find.descendant(
-          of: find.byType(PillChip),
-          matching: find.text(ScheduleStrings.all),
-        ),
-        findsOneWidget,
-        reason: '종류 줄의 전체 칩 1개뿐 (상태 줄엔 없음)',
-      );
+      expect(find.text(ScheduleStrings.all), findsNothing,
+          reason: '상태·종류 줄에 전체 칩 없음(카테고리 줄은 카테고리 없어서 숨김)');
       expect(find.text('검토 대기 1'), findsOneWidget);
       expect(find.text('확정됨 1'), findsOneWidget);
     });

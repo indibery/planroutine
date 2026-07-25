@@ -75,8 +75,10 @@ class _StatusRow extends ConsumerWidget {
   }
 }
 
-/// 종류 필터 1줄 — 전체/업무/학교일정.
+/// 종류 필터 1줄 — 업무 / 학교일정 토글.
 ///
+/// '전체' 칩을 두지 않는다 — 아래 카테고리 줄에도 '전체'가 있어 무엇의 전체인지
+/// 헷갈린다. 선택된 칩을 다시 누르면 해제(=전체)다.
 /// 대기 뷰에서만 건수를 붙인다(확정됨 뷰에서 대기 건수를 보여주면 오독을 부른다).
 class _KindRow extends ConsumerWidget {
   const _KindRow();
@@ -91,8 +93,10 @@ class _KindRow extends ConsumerWidget {
     String label(String base, int? count) =>
         (isPendingView && count != null) ? '$base $count' : base;
 
-    void select(EntryKind? kind) =>
-        ref.read(scheduleKindFilterProvider.notifier).state = kind;
+    // 같은 칩 재탭 = 해제. 별도 '전체' 칩 없이 전체로 돌아가는 길을 준다.
+    void toggle(EntryKind kind) =>
+        ref.read(scheduleKindFilterProvider.notifier).state =
+            current == kind ? null : kind;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -103,21 +107,15 @@ class _KindRow extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
-            label: ScheduleStrings.all,
-            selected: current == null,
-            onTap: () => select(null),
-          ),
-          const SizedBox(width: AppSizes.spacing8),
-          PillChip(
             label: label(ScheduleStrings.kindTask, counts?.pendingTask),
             selected: current == EntryKind.task,
-            onTap: () => select(EntryKind.task),
+            onTap: () => toggle(EntryKind.task),
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
             label: label(ScheduleStrings.kindEvent, counts?.pendingEvent),
             selected: current == EntryKind.event,
-            onTap: () => select(EntryKind.event),
+            onTap: () => toggle(EntryKind.event),
           ),
         ],
       ),
