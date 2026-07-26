@@ -25,7 +25,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets('가져오기 초기 화면: AI 사진 섹션이 CSV 카드보다 위', (tester) async {
+  testWidgets('가져오기 화면은 작년 업무 CSV 전용 — 사진 AI 섹션이 없다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -37,12 +37,16 @@ void main() {
     );
     await tester.pump();
 
-    final aiY = tester.getTopLeft(find.text(ImportStrings.aiPaste)).dy;
-    final csvY = tester.getTopLeft(find.text(ImportStrings.selectFile)).dy;
-    expect(aiY, lessThan(csvY), reason: 'AI 사진(수시)이 위, CSV(연 1회)가 아래');
+    // 제목부터 무엇을 하는 화면인지 말한다.
+    expect(find.text(ImportStrings.screenTitle), findsOneWidget);
+    expect(find.text(ImportStrings.csvTitle), findsOneWidget);
+    expect(find.text(ImportStrings.selectFile), findsOneWidget);
+    expect(find.text(ImportStrings.edufineGuideTitle), findsOneWidget);
 
-    // 구분선 문구는 CSV 쪽으로
-    expect(find.text(ImportStrings.csvDivider), findsOneWidget);
-    expect(find.text(ImportStrings.aiDivider), findsNothing);
+    // 사진 AI는 입력 탭 히어로가 맡는다 — 여기서 또 권하면
+    // '작년 업무 가져오기'를 누르고 들어온 사람에게 엉뚱한 화면이 된다.
+    expect(find.text(ImportStrings.aiPaste), findsNothing);
+    expect(find.text(ImportStrings.aiCopyPrompt), findsNothing);
+    expect(find.text(ImportStrings.aiTitle), findsNothing);
   });
 }

@@ -8,7 +8,7 @@
 
 ## 핵심 기능
 1. **입력 탭(주 경로: 사진 AI)** — 히어로에서 `① 프롬프트 복사 → AI 앱 다녀오기 → ② 붙여넣기` 왕복으로 학교일정을 등록. 앱은 네트워크를 쓰지 않고 클립보드만 오간다.
-2. **작년 업무 가져오기(보조)** — 입력 탭 히어로 아래 한 줄 링크(설정 탭에도 진입점) → `/import` 풀스크린에서 CSV 업로드. 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
+2. **작년 업무 가져오기(보조)** — 입력 탭 히어로 아래 테두리 카드 한 줄 → `/import` 풀스크린에서 CSV 업로드. **진입점은 이 한 곳뿐**(설정 탭에서 제거). 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
 3. **업무 / 학교일정 구분** — `EntryKind`(task/event). CSV 경로 = 업무, 사진 AI 경로 = 학교일정. 오늘 탭에는 업무만, 캘린더에는 둘 다.
 4. **검토 후 확정** — 입력 탭 검토 목록에서 슬라이드로 확정(→) / 삭제(←). 하단 `일괄 업무 등록 N건` / `일괄 일정 등록 N건` pill로 종류별 일괄 확정(해당 종류 0건이면 숨김). 확정 시 캘린더 이벤트 자동 생성(종류 승계). 대기가 없으면 검토 영역은 요약 한 줄로 축소.
 5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 제목에 올해 이전 연도가 있는 이벤트는 리스트에 "이전 연도 자료" 골드 배지(`2025→2026`) 노출 → 탭 시 연도 고친 제목으로 편집 화면 진입(날짜도 함께 수정). 편집 다이얼로그 내에도 동일 연도 바꾸기 칩.
@@ -39,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 430 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 428 유닛/위젯 + 20 E2E |
 
 ## 프로젝트 구조
 
@@ -73,10 +73,9 @@ planroutine/
 │   │   │   ├── domain/                 # imported_schedule
 │   │   │   └── presentation/
 │   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기+미리보기 (히어로·가져오기 화면 공유)
-│   │   │       ├── screens/import_screen.dart  # 풀스크린 + sticky 스테퍼
+│   │   │       ├── screens/import_screen.dart  # 작년 업무 CSV 전용 풀스크린 + sticky 스테퍼
 │   │   │       ├── widgets/
-│   │   │       │   ├── photo_input_hero.dart   # 입력 탭 히어로 (왕복 3단 + CSV 보조 링크)
-│   │   │       │   ├── ai_photo_import_section.dart
+│   │   │       │   ├── photo_input_hero.dart   # 입력 탭 히어로 (왕복 3단 + CSV 보조 카드)
 │   │   │       │   ├── import_summary_card.dart
 │   │   │       │   └── edufine_guide_section.dart  # 2단 접힘 안내 + 팁 박스
 │   │   │       └── providers/                   # importStateProvider (importFromPath API)
@@ -96,7 +95,6 @@ planroutine/
 │   │   │       ├── screens/settings_screen.dart   # 얇은 조합
 │   │   │       ├── widgets/
 │   │   │       │   ├── settings_section.dart       # 헤더+본문+Divider wrapper
-│   │   │       │   ├── import_list_tile.dart
 │   │   │       │   ├── export_list_tile.dart
 │   │   │       │   ├── google_account_list_tile.dart
 │   │   │       │   ├── notification_settings_tiles.dart
@@ -157,7 +155,7 @@ planroutine/
 │   ├── helpers/test_database.dart      # FFI in-memory DB 팩토리
 │   └── tools/gen_app_icon.dart         # 1024×1024 PNG 렌더 (자동 스캔 제외)
 └── integration_test/
-    └── app_test.dart                   # UX E2E 19 시나리오
+    └── app_test.dart                   # UX E2E 20 시나리오
 ```
 
 ## 데이터베이스 스키마 (v7)
@@ -276,7 +274,7 @@ planroutine/
 
 ### 입력 탭 구조
 - **넣기가 주인공**, 검토는 그 아래. 화면 제목 `입력`(eyebrow `INPUT`), 탭 라벨 `입력`.
-- `PhotoInputHero`(import feature) — 왕복 3단 `① 프롬프트 · AI 앱 · ② 붙여넣기`. 가운데 칸은 앱 밖에서 벌어지는 일이라 **누를 수 없다**. 작년 업무 CSV는 아래 한 줄 링크.
+- `PhotoInputHero`(import feature) — 왕복 3단 `① 프롬프트 · AI 앱 · ② 붙여넣기`. 가운데 칸은 앱 밖에서 벌어지는 일이라 **누를 수 없다**. 작년 업무 CSV는 아래 **테두리 카드 한 줄**(옅은 글씨면 학기 초에 못 찾는다 — 히어로는 골드 채움이라 위계는 유지된다).
 - AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndPreview`에 있다 — 히어로와 가져오기 화면 섹션이 같은 로직을 공유한다.
 - 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다.
 - **필터는 접힌다** — 접힘: `[검토 대기 21 · 업무] [21건 삭제] [⌄]` 한 줄(약 41px) / 펼침: 라벨 `필터` + 칩 3줄(상태 · 종류 · 카테고리). 히어로가 위쪽 210px을 쓰므로 칩을 항상 펼쳐두면 iPhone에서 목록이 두어 칸만 남는다. 그렇다고 필터를 바텀시트로 보내면 지금 무엇으로 걸러졌는지 알 수 없어, **요약은 남기고 칩만 접는다**.
@@ -314,8 +312,10 @@ planroutine/
 - `SettingsSection` wrapper가 헤더(title+subtitle) + 본문 + Divider 3종 세트를 1줄로 묶는다.
 - 확인 다이얼로그는 `shared/widgets/confirm_dialog.dart`의 `ConfirmDialog.show()` 공통 사용.
 
-### Import 플로우
-- 설정 탭에 1줄 ListTile만 놓고, 탭 시 `/import`로 push (ShellRoute 내부라 탭바 유지).
+### Import 플로우 (`/import` = 작년 업무 CSV 전용)
+- **이 화면에 사진 AI를 두지 않는다.** '작년 업무 가져오기'를 눌러 들어온 사람에게 "학교일정을 사진으로"가 크게 뜨면 엉뚱한 화면이 된다(실기기 피드백). 사진 AI는 입력 탭 히어로가 맡는다.
+- 화면 제목은 `ImportStrings.screenTitle`(`작년 업무 가져오기`). 진입점은 입력 탭 히어로의 CSV 카드 하나뿐 — **설정 탭의 가져오기 섹션은 제거**(히어로와 중복).
+- 탭 시 `/import`로 push (ShellRoute 내부라 탭바 유지).
 - `ImportScreen`의 AppBar 바로 아래에 `ImportSteps` 스테퍼가 sticky로 고정돼, Initial/Loading/Success/Registered 모든 상태에서 현재 단계가 보인다.
 - Initial 뷰에 `EdufineGuideSection` 접힘 안내 (① CSV 다운받기: 번호 4단계 + annotation 스크린샷 / ② 아이폰으로 가져오기: A. 공유시트 / B. 파일 앱 택1 + "더 보기" 팁 박스).
 

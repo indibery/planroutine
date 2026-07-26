@@ -110,31 +110,39 @@ class PhotoInputHero extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSizes.spacing4),
+          const SizedBox(height: AppSizes.spacing8),
+          // 보조 경로지만 학기 초에 반드시 한 번은 찾아야 한다 —
+          // 옅은 글씨 한 줄이면 못 찾는다. 테두리로 눌 수 있음을 보이되,
+          // 히어로(골드 채움)와는 위계를 벌려 주·보조가 뒤바뀌지 않게 한다.
           InkWell(
             onTap: onOpenCsvImport,
-            borderRadius: BorderRadius.circular(AppSizes.radius8),
-            child: Padding(
+            borderRadius: BorderRadius.circular(AppSizes.radius12),
+            child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.spacing4,
-                vertical: AppSizes.spacing8,
+                horizontal: AppSizes.spacing12,
+                vertical: AppSizes.spacing12,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppSizes.radius12),
+                border: Border.all(color: AppColors.line, width: 0.8),
               ),
               child: Row(
                 children: [
                   Icon(Icons.file_download_outlined,
-                      size: 15, color: AppColors.sub),
+                      size: 17, color: AppColors.gold),
                   const SizedBox(width: AppSizes.spacing8),
                   Expanded(
                     child: Text(
                       ImportStrings.heroCsvLink,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontSize: 13,
-                        color: AppColors.sub,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 16, color: AppColors.faint),
+                  Icon(Icons.chevron_right, size: 18, color: AppColors.sub),
                 ],
               ),
             ),

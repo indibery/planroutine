@@ -121,8 +121,7 @@ void main() {
       expect(find.text(ScheduleStrings.title), findsWidgets);
 
       await _tapSettingsTab(tester);
-      // '일정 가져오기'는 섹션 헤더 + 진입 타일 양쪽에 나타나므로 findsWidgets.
-      expect(find.text(SettingsStrings.importSection), findsWidgets);
+      expect(find.text(SettingsStrings.exportSection), findsWidgets);
 
       await _tapCalendarTab(tester);
       expect(find.text(CalendarStrings.title), findsWidgets);
@@ -168,15 +167,14 @@ void main() {
       expect(find.text(ScheduleStrings.empty), findsOneWidget);
     });
 
-    testWidgets('설정 탭: 가져오기 인라인 섹션 + 전체 삭제 메뉴 노출', (tester) async {
+    testWidgets('설정 탭: 가져오기 섹션 없음 + 전체 삭제 메뉴 노출', (tester) async {
       await _startFresh(tester);
 
       await _tapSettingsTab(tester);
 
-      // 가져오기 섹션 노출 — 헤더 + /import로 진입하는 업로드 타일.
-      // (파일 선택 UI는 이제 push된 ImportScreen 안에 있어 설정 탭엔 없다)
-      expect(find.text(SettingsStrings.importSection), findsWidgets);
-      expect(find.byIcon(Icons.upload_file), findsOneWidget);
+      // 가져오기 진입점은 입력 탭 히어로 하나뿐 — 설정 탭에는 없다.
+      expect(find.text(ImportStrings.screenTitle), findsNothing);
+      expect(find.byIcon(Icons.upload_file), findsNothing);
 
       // 데이터 관리 섹션 (fold 아래)
       await _scrollToInSettings(
@@ -487,7 +485,7 @@ void main() {
       // 이전(다크) sub 색으로 남아 흐리게 보였다. subtitle 색도 라이트 sub로
       // 갱신됐는지 검증(AppColors를 직접 쓰는 위젯이 리빌드됐는지).
       final subtitleColor = tester
-          .widget<Text>(find.text(SettingsStrings.importDescription))
+          .widget<Text>(find.text(SettingsStrings.exportDescription))
           .style
           ?.color;
       expect(subtitleColor, const Color(0xFF48566E),
@@ -569,6 +567,19 @@ void main() {
       // 네이티브 시트 표시 대기 — 여기서 PlatformException이 나면 테스트가 실패한다
       await tester.pump(const Duration(seconds: 2));
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('입력 탭 히어로의 CSV 링크로 가져오기 화면에 진입한다', (tester) async {
+      await _startFresh(tester);
+
+      await _tapScheduleTab(tester);
+      await tester.tap(find.text(ImportStrings.heroCsvLink));
+      await tester.pumpAndSettle();
+
+      // ImportScreen은 작년 업무 CSV 전용 — 제목·파일 선택이 보이고 AI는 없다.
+      expect(find.text(ImportStrings.screenTitle), findsWidgets);
+      expect(find.text(ImportStrings.selectFile), findsWidgets);
+      expect(find.text(ImportStrings.aiPaste), findsNothing);
     });
 
     testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 학교일정으로 대기',

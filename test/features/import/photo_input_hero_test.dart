@@ -7,6 +7,7 @@ import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/import/presentation/widgets/photo_input_hero.dart';
 import 'package:planroutine/features/schedule/data/schedule_repository.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 
 import '../../helpers/test_database.dart';
@@ -95,5 +96,61 @@ void main() {
     await pumpHero(tester);
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('② 붙여넣기 → 미리보기 → 등록하면 검토 대기로 저장된다', (tester) async {
+    await pumpHero(tester);
+    clipboardText =
+        '[{"title":"입학식","date":"2026-03-02"},{"title":"봄 현장체험학습","date":"2026-04-24"}]';
+
+    // FFI DB 호출은 실제 비동기라 runAsync로 감싸고, 고정 delay 대신
+    // 시트가 열릴 때까지 조건 대기(첫 DB 오픈은 수백 ms 걸릴 수 있음).
+    await tester.runAsync(() async {
+      await tester.tap(find.text(ImportStrings.heroStepPaste));
+      for (var i = 0;
+          i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
+          i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('2건'), findsWidgets);
+    expect(find.text('입학식'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.textContaining('검토 목록에 등록'));
+      for (var i = 0;
+          i < 100 &&
+              find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+          i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+
+    final saved = await tester.runAsync(() => repo.getSchedules());
+    expect(saved!.length, 2);
+    expect(saved.every((s) => s.kind == EntryKind.event), isTrue,
+        reason: '사진 경로는 학교일정');
+    await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
+  });
+
+  testWidgets('클립보드에 일정 JSON이 없으면 안내만 하고 등록하지 않는다', (tester) async {
+    await pumpHero(tester);
+    clipboardText = '사진이 잘 안 보여요';
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text(ImportStrings.heroStepPaste));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text(ImportStrings.aiParseEmpty), findsOneWidget);
+    final saved = await tester.runAsync(() => repo.getSchedules());
+    expect(saved, isEmpty);
+    await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
   });
 }

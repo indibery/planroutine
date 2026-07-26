@@ -9,11 +9,13 @@ import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/imported_schedule.dart';
 import '../providers/import_providers.dart';
-import '../widgets/ai_photo_import_section.dart';
 import '../widgets/edufine_guide_section.dart';
 import '../widgets/import_summary_card.dart';
 
-/// 작년 일정 가져오기 전용 풀스크린.
+/// **작년 업무 CSV** 전용 풀스크린.
+///
+/// 학교일정 사진 AI는 입력 탭 히어로가 맡는다 — 여기서 또 보여주면
+/// "작년 업무 가져오기"를 누르고 들어온 사람에게 엉뚱한 화면이 된다.
 ///
 /// 상단에 1-2-3 스테퍼가 항상 노출되어 어느 단계인지 한눈에 보이고,
 /// 그 아래 state별 본문이 바뀐다.
@@ -28,7 +30,7 @@ class ImportScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          SettingsStrings.importSection,
+          ImportStrings.screenTitle,
           style: AppTextStyles.heading,
         ),
       ),
@@ -99,28 +101,6 @@ class ImportScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 수시로 쓰는 AI 사진 변환이 맨 위, 연 1회 CSV는 "또는" 아래 — 순서 = 빈도.
-          const AiPhotoImportSection(),
-          const SizedBox(height: AppSizes.spacing16),
-          Row(
-            children: [
-              Expanded(child: Divider(color: AppColors.line)),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.spacing12),
-                child: Text(
-                  ImportStrings.csvDivider,
-                  style: TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                    color: AppColors.faint,
-                  ),
-                ),
-              ),
-              Expanded(child: Divider(color: AppColors.line)),
-            ],
-          ),
-          const SizedBox(height: AppSizes.spacing16),
           Container(
             padding: const EdgeInsets.all(AppSizes.cardPadding),
             decoration: BoxDecoration(

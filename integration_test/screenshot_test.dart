@@ -84,10 +84,11 @@ void main() {
     await binding.convertFlutterSurfaceToImage();
     await binding.takeScreenshot('5_settings');
 
-    // 4. 설정 → Import 풀스크린 + 에듀파인 가이드 펼침
-    // SectionHeader와 ListTile이 같은 텍스트를 가지므로 아이콘으로 구분
-    await tester
-        .tap(find.widgetWithIcon(ListTile, Icons.upload_file));
+    // 4. 입력 탭 히어로의 CSV 링크 → Import 풀스크린 + 에듀파인 가이드 펼침
+    // (설정 탭의 가져오기 섹션은 히어로와 중복이라 없앴다)
+    await tester.tap(scheduleTab.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ImportStrings.heroCsvLink));
     await tester.pumpAndSettle();
     await tester.tap(find.text(ImportStrings.edufineGuideTitle));
     await tester.pumpAndSettle();

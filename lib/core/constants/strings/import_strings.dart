@@ -2,7 +2,10 @@
 class ImportStrings {
   ImportStrings._();
 
-  static const description = 'CSV 파일을 업로드해 작년 업무 일정을 불러옵니다';
+  /// `/import` 화면 제목. 이 화면은 **작년 업무 CSV 전용**이다 —
+  /// 학교일정 사진 AI는 입력 탭 히어로가 맡는다.
+  static const screenTitle = '작년 업무 가져오기';
+  static const description = '에듀파인 생산문서등록대장 CSV를 올리면 작년에 처리한 업무가 올해 일정으로 들어옵니다';
   static const selectFile = '파일 선택';
   static const selectFileAgain = '새 파일 가져오기';
   static const parsing = '파일 분석 중...';
@@ -12,9 +15,7 @@ class ImportStrings {
   static const registerCount = '건 등록됨';
 
   // AI 사진 변환 (붙여넣기 가져오기)
-  static const aiDivider = '또는 · AI 사진 변환'; // (구) — 순서 교체 후 csvDivider 사용
-  static const csvDivider = '또는 · CSV 파일 가져오기';
-  static const csvTitle = '작년 CSV 업로드';
+  static const csvTitle = '작년 업무 CSV 올리기';
   static const aiTitle = '학교일정을 사진으로';
   static const aiDescription =
       '월간·연간 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';

@@ -11,7 +11,6 @@ import '../widgets/ai_task_share_tile.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/export_list_tile.dart';
 import '../widgets/calendar_integration_section.dart';
-import '../widgets/import_list_tile.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/reset_list_tile.dart';
 import '../widgets/settings_section.dart';
@@ -69,11 +68,6 @@ class SettingsScreen extends ConsumerWidget {
             title: SettingsStrings.stampSection,
             subtitle: SettingsStrings.stampDescription,
             child: StampSettingsTiles(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.importSection,
-            subtitle: SettingsStrings.importDescription,
-            child: ImportListTile(),
           ),
           const SettingsSection(
             title: SettingsStrings.exportSection,
