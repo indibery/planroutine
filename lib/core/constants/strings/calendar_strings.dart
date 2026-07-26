@@ -28,6 +28,9 @@ class CalendarStrings {
   static const markComplete = '일정 완료';
   static const undoComplete = '완료 취소';
 
+  // 업무 / 학교일정
+  static const kindLabel = '종류';
+
   // 중요 표시
   static const importantLabel = '중요 표시';
   static const importantBadge = '중요';

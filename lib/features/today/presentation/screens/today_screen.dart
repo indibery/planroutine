@@ -71,8 +71,11 @@ class TodayScreen extends ConsumerWidget {
   /// 자정을 넘긴 직후라면 기준일이 아직 어제일 수 있고, 그대로 넘기면 어제 날짜로
   /// 일정이 만들어진다.
   Future<void> _onAddEvent(BuildContext context, WidgetRef ref) async {
-    final result =
-        await EventEditDialog.show(context, initialDate: DateTime.now());
+    final result = await EventEditDialog.show(
+      context,
+      initialDate: DateTime.now(),
+      allowKindChange: false,
+    );
     if (result == null) return;
     // 캘린더 탭과 같은 경로로 저장한다 — 여기서 리비전이 올라 오늘 목록도 갱신된다.
     await ref.read(selectedMonthEventsProvider.notifier).addEvent(result);
@@ -89,6 +92,7 @@ class TodayScreen extends ConsumerWidget {
       context,
       initialDate: event.eventDateTime,
       event: event,
+      allowKindChange: false,
     );
     if (result == null) return;
     await ref.read(selectedMonthEventsProvider.notifier).updateEvent(result);

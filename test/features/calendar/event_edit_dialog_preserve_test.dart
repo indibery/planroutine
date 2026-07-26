@@ -43,6 +43,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).first, newTitle);
+    // 종류 세그먼트(Task 5)가 성격 카드에 더해지며 시트가 길어져, 기본 테스트
+    // 뷰포트(800x600)에서는 저장 버튼이 스크롤 밖으로 밀린다 — 눈에 보이게 당긴다.
+    await tester.ensureVisible(find.text('저장'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('저장'));
     await tester.pumpAndSettle();
     return captured;

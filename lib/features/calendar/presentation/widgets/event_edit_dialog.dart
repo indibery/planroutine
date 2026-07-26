@@ -10,6 +10,8 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../features/settings/presentation/providers/ai_task_share_provider.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
+import '../../../../shared/widgets/segmented_setting_row.dart';
+import '../../../schedule/domain/entry_kind.dart';
 import '../../data/ai_task_exporter.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
@@ -20,16 +22,25 @@ class EventEditDialog extends ConsumerStatefulWidget {
     super.key,
     required this.initialDate,
     this.event,
+    this.allowKindChange = true,
   });
 
   final DateTime initialDate;
   final CalendarEvent? event;
+
+  /// 종류(업무/학교일정) 선택 행을 노출할지.
+  ///
+  /// 오늘 탭은 업무만 담는 화면이라 `false`로 잠근다 — 거기서 학교일정을 만들면
+  /// 저장 직후 목록에서 사라져 저장 실패로 읽힌다. 잠가도 `_kind` 상태는 살아 있어
+  /// 기존 이벤트를 편집할 때 원래 종류가 보존된다.
+  final bool allowKindChange;
 
   /// 바텀시트 표시
   static Future<CalendarEvent?> show(
     BuildContext context, {
     required DateTime initialDate,
     CalendarEvent? event,
+    bool allowKindChange = true,
   }) {
     return showModalBottomSheet<CalendarEvent>(
       context: context,
@@ -45,6 +56,7 @@ class EventEditDialog extends ConsumerStatefulWidget {
       builder: (_) => EventEditDialog(
         initialDate: initialDate,
         event: event,
+        allowKindChange: allowKindChange,
       ),
     );
   }
@@ -59,6 +71,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
   late bool _isImportant;
+  late EntryKind _kind;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -70,6 +83,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
     _isImportant = event?.isImportant ?? false;
+    _kind = event?.kind ?? EntryKind.task;
   }
 
   @override
@@ -118,7 +132,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
                 const SizedBox(height: AppSizes.spacing8),
-                _buildImportantToggle(),
+                _buildAttributesCard(),
                 if (_isEditing && aiEnabled) ...[
                   const SizedBox(height: AppSizes.spacing16),
                   _buildAiShareAction(),
@@ -294,30 +308,53 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
 
-  /// 중요 표시 토글. 켜면 캘린더 격자·목록에서 ★(골드)로 강조된다.
-  Widget _buildImportantToggle() {
+  /// 성격 카드 — "이 항목이 어떤 성격인가"를 정하는 값들을 한 테두리에 묶는다.
+  ///
+  /// 종류(업무/학교일정) + 중요 표시. [EventEditDialog.allowKindChange]가 false면
+  /// 종류 행과 구분선을 함께 뺀다 — 구분선만 남으면 뭔가 잘린 것처럼 읽힌다.
+  Widget _buildAttributesCard() {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppSizes.radius12),
       ),
-      child: SwitchListTile(
-        key: const Key('important_toggle'),
-        value: _isImportant,
-        onChanged: (v) => setState(() => _isImportant = v),
-        activeThumbColor: AppColors.gold,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacing16,
-        ),
-        secondary: Icon(Icons.star_rounded, color: AppColors.gold),
-        title: Text(
-          CalendarStrings.importantLabel,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+      child: Column(
+        children: [
+          if (widget.allowKindChange) ...[
+            SegmentedSettingRow<EntryKind>(
+              key: const Key('kind_selector'),
+              icon: Icons.label_outline,
+              label: CalendarStrings.kindLabel,
+              segments: EntryKind.values
+                  .map((k) => ButtonSegment<EntryKind>(
+                        value: k,
+                        label: Text(k.filterLabel),
+                      ))
+                  .toList(),
+              selected: _kind,
+              onChanged: (k) => setState(() => _kind = k),
+            ),
+            Divider(height: 1, color: AppColors.border),
+          ],
+          SwitchListTile(
+            key: const Key('important_toggle'),
+            value: _isImportant,
+            onChanged: (v) => setState(() => _isImportant = v),
+            activeThumbColor: AppColors.gold,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.spacing16,
+            ),
+            secondary: Icon(Icons.star_rounded, color: AppColors.gold),
+            title: Text(
+              CalendarStrings.importantLabel,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -416,6 +453,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         description: _trimmedDescription(),
         eventDate: formatDate(_eventDate),
         isImportant: _isImportant,
+        kind: _kind,
         updatedAt: now,
       );
     }
@@ -426,6 +464,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       eventDate: formatDate(_eventDate),
       isAllDay: true,
       isImportant: _isImportant,
+      kind: _kind,
       createdAt: now,
       updatedAt: now,
     );
