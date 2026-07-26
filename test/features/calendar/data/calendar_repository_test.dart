@@ -224,4 +224,51 @@ void main() {
       expect(event.deviceEventId, 'EKE-99999');
     });
   });
+
+  group('fromImport — 가져온 자료 판별', () {
+    /// schedules 행을 직접 넣는다. source_id가 있으면 에듀파인 CSV 출처다.
+    Future<int> insertSchedule({int? sourceId}) async {
+      final database = await db.database;
+      return database.insert(DatabaseHelper.tableSchedules, {
+        'title': '업무',
+        'scheduled_date': '2026-05-01',
+        'status': 'confirmed',
+        'source_id': sourceId,
+        'created_at': '2026-01-01T00:00:00.000',
+        'updated_at': '2026-01-01T00:00:00.000',
+      });
+    }
+
+    test('CSV 출처(schedule.source_id 있음) 이벤트는 fromImport=true', () async {
+      final scheduleId = await insertSchedule(sourceId: 77);
+      await repo.createEvent(buildEvent(title: '가져온 업무', scheduleId: scheduleId));
+
+      final events = await repo.getEventsByDate(DateTime(2026, 5, 1));
+      expect(events.single.fromImport, true);
+    });
+
+    test('확정 경로지만 CSV 출처가 아니면 fromImport=false', () async {
+      final scheduleId = await insertSchedule();
+      await repo.createEvent(buildEvent(title: '사진 AI 일정', scheduleId: scheduleId));
+
+      final events = await repo.getEventsByDate(DateTime(2026, 5, 1));
+      expect(events.single.fromImport, false);
+    });
+
+    test('손으로 넣은 이벤트(scheduleId 없음)는 fromImport=false', () async {
+      await repo.createEvent(buildEvent(title: '손입력'));
+
+      final events = await repo.getEventsByDate(DateTime(2026, 5, 1));
+      expect(events.single.fromImport, false);
+    });
+
+    test('toMap에는 from_import가 없다 — 있으면 insert가 깨진다', () {
+      const event = CalendarEvent(
+        title: '아무거나',
+        eventDate: '2026-05-01',
+        fromImport: true,
+      );
+      expect(event.toMap().containsKey('from_import'), false);
+    });
+  });
 }

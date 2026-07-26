@@ -28,6 +28,9 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'device_event_id') String? deviceEventId,
     @JsonKey(name: 'is_important') @Default(false) bool isImportant,
     @Default(EntryKind.task) EntryKind kind,
+    /// 에듀파인 CSV로 가져온 자료인지. **조회 시점 조인으로 채우는 파생 값**이라
+    /// DB 컬럼이 아니다 — [toMap]에 넣으면 insert가 깨진다.
+    @JsonKey(includeToJson: false) @Default(false) bool fromImport,
   }) = _CalendarEvent;
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) =>
@@ -52,6 +55,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       deviceEventId: map['device_event_id'] as String?,
       isImportant: (map['is_important'] as int?) == 1,
       kind: EntryKind.fromValue(map['kind'] as String?),
+      fromImport: (map['from_import'] as int?) == 1,
     );
   }
 
