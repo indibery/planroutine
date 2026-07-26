@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../providers/theme_mode_provider.dart';
-import 'segmented_setting_row.dart';
+import '../../../../shared/widgets/segmented_setting_row.dart';
 
 /// 화면 테마 선택 타일 — 시스템/밝게/어둡게 세그먼트.
 class ThemeModeTile extends ConsumerWidget {

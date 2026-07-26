@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_sizes.dart';
 
 /// 설정 한 줄 = 아이콘 + 라벨 + 세그먼트 선택기.
 ///

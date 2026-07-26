@@ -6,7 +6,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../today/domain/stamp_settings.dart';
 import '../providers/stamp_settings_provider.dart';
-import 'segmented_setting_row.dart';
+import '../../../../shared/widgets/segmented_setting_row.dart';
 
 /// 완료 도장 설정 — 도장 모양 선택 + "이미 찍은 도장 흐리게" 스위치.
 class StampSettingsTiles extends ConsumerWidget {
