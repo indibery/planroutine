@@ -65,7 +65,7 @@ planroutine/
 │   │   │       └── trash_strings.dart
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles
 │   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
-│   │   ├── database/                   # DatabaseHelper (v7, forTesting 생성자)
+│   │   ├── database/                   # DatabaseHelper (v8, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
 │   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
