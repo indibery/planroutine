@@ -38,9 +38,9 @@ class ScheduleStrings {
   /// (펼친 상태에서 요약을 그대로 두면 아래 칩과 같은 말을 반복한다).
   static const filter = '필터';
 
-  // 종류 필터 (업무 / 학교일정)
+  // 종류 (업무 / 행사)
   static const kindTask = '업무';
-  static const kindEvent = '학교일정';
+  static const kindEvent = '행사';
 
   // 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
   static String bulkRegisterTask(int n) => '일괄 업무 등록 $n건';

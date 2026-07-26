@@ -56,7 +56,7 @@ void main() {
 
       expect(find.byType(KindBadge), findsNWidgets(2));
       expect(find.text('업무'), findsOneWidget);
-      expect(find.text('일정'), findsOneWidget);
+      expect(find.text('행사'), findsOneWidget);
     });
 
     testWidgets('중요 행에도 종류 배지가 함께 보이고 제목이 넘치지 않는다',

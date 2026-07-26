@@ -343,7 +343,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               segments: EntryKind.values
                   .map((k) => ButtonSegment<EntryKind>(
                         value: k,
-                        label: Text(k.filterLabel),
+                        label: Text(k.label),
                       ))
                   .toList(),
               selected: _kind,

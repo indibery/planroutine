@@ -112,7 +112,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(PillChip),
-          matching: find.text(EntryKind.task.filterLabel),
+          matching: find.text(EntryKind.task.label),
         ),
         findsOneWidget,
       );
@@ -141,7 +141,7 @@ void main() {
       // 펼쳐서 학교일정으로 좁힌 뒤 다시 접는다.
       await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('${EntryKind.event.filterLabel} 1'));
+      await tester.tap(find.text('${EntryKind.event.label} 1'));
       await tester.runAsync(() async {
         for (var i = 0;
             i < 100 &&
@@ -162,7 +162,7 @@ void main() {
 
       expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsNothing);
       expect(
-        find.text('검토 대기 2 · ${EntryKind.event.filterLabel}'),
+        find.text('검토 대기 2 · ${EntryKind.event.label}'),
         findsOneWidget,
         reason: '접어도 무엇으로 걸러졌는지 남아야 한다',
       );

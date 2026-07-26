@@ -78,7 +78,7 @@ void main() {
         tester,
         title: '가을 운동회',
         beforeSave: (tester) async {
-          await tester.tap(find.text('학교일정'));
+          await tester.tap(find.text('행사'));
           await tester.pumpAndSettle();
         },
       );

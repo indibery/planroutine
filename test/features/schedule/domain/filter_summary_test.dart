@@ -42,7 +42,7 @@ void main() {
   group('종류·카테고리를 덧붙인다', () {
     test('종류만 켜져 있으면 가운뎃점으로 잇는다', () {
       expect(summary(kind: EntryKind.task), '검토 대기 21 · 업무');
-      expect(summary(kind: EntryKind.event), '검토 대기 21 · 학교일정');
+      expect(summary(kind: EntryKind.event), '검토 대기 21 · 행사');
     });
 
     test('카테고리만 켜져 있어도 잇는다', () {

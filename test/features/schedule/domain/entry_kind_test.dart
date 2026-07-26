@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 
 /// 업무 / 학교일정 구분.
@@ -36,8 +37,17 @@ void main() {
       for (final kind in EntryKind.values) {
         expect(kind.label, isNotEmpty);
         expect(kind.label.length, lessThanOrEqualTo(4),
-            reason: '배지·pill에 들어가야 하므로 짧아야 한다');
+            reason: '배지·필터 칩·요약 줄이 모두 이 하나를 쓰므로 짧아야 한다');
       }
+    });
+
+    test('라벨은 ScheduleStrings 한 곳에서 온다 — enum에 문자열을 박지 않는다', () {
+      expect(EntryKind.task.label, ScheduleStrings.kindTask);
+      expect(EntryKind.event.label, ScheduleStrings.kindEvent);
+    });
+
+    test('두 종류의 라벨이 서로 다르다 — 대비가 라벨 하나로 서야 한다', () {
+      expect(EntryKind.task.label, isNot(EntryKind.event.label));
     });
 
     test('오늘 탭에 나타나는 것은 업무뿐이다', () {

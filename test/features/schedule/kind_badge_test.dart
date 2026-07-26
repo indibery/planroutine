@@ -26,10 +26,10 @@ void main() {
       expect(badgeTextColor(tester), AppColors.sub);
     });
 
-    testWidgets('학교일정은 짧은 라벨 "일정" + 파랑 계열', (tester) async {
+    testWidgets('행사는 라벨 "행사" + 파랑 계열', (tester) async {
       await pump(tester, EntryKind.event);
 
-      expect(find.text('일정'), findsOneWidget);
+      expect(find.text('행사'), findsOneWidget);
       expect(badgeTextColor(tester), AppColors.info);
     });
   });

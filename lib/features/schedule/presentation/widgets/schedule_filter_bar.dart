@@ -234,13 +234,13 @@ class _KindRow extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
-            label: label(EntryKind.task.filterLabel, counts?.pendingTask),
+            label: label(EntryKind.task.label, counts?.pendingTask),
             selected: current == EntryKind.task,
             onTap: () => toggle(EntryKind.task),
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
-            label: label(EntryKind.event.filterLabel, counts?.pendingEvent),
+            label: label(EntryKind.event.label, counts?.pendingEvent),
             selected: current == EntryKind.event,
             onTap: () => toggle(EntryKind.event),
           ),

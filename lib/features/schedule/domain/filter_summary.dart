@@ -23,7 +23,7 @@ String buildFilterSummary({
       ScheduleStatus.confirmed => ScheduleStrings.chipConfirmed(confirmedCount),
       null => '${ScheduleStrings.all} ${pendingCount + confirmedCount}',
     },
-    if (kind != null) kind.filterLabel,
+    if (kind != null) kind.label,
     if (categoryLabel != null && categoryLabel.isNotEmpty) categoryLabel,
   ];
   return parts.join(' · ');
