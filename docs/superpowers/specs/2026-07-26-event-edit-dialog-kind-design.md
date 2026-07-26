@@ -181,9 +181,14 @@ CalendarEvent _buildEvent() {
 - 스타일은 `schedule_tile._buildKindBadge`(`schedule_tile.dart:191`)와 동일 — 옅은 배경
   (alpha 0.15) + 진한 글씨 10px w700, 학교일정 `AppColors.info` / 업무 `AppColors.sub`.
   골드는 오늘·중요 전용이라 쓰지 않는다.
-- 같은 배지가 두 파일에 생기므로 **`shared/widgets/kind_badge.dart`로 추출**하고 양쪽이
-  공유한다(`SegmentedSettingRow` 이동과 같은 성격). 라벨은 `EntryKind.label`(`업무`/`일정`) —
-  행마다 반복되는 자리라 짧은 쪽을 쓴다(`entry_kind.dart:24` 주석).
+- 같은 배지가 두 파일에 생기므로 **`features/schedule/presentation/widgets/kind_badge.dart`로
+  추출**하고 캘린더가 그걸 쓴다. 라벨은 `EntryKind.label`(`업무`/`일정`) — 행마다 반복되는
+  자리라 짧은 쪽을 쓴다(`entry_kind.dart:24` 주석).
+  - `shared/widgets/`에 두지 않는 이유: 이 배지는 `EntryKind`에 종속인데 지금 `shared/widgets/`
+    아래 어떤 위젯도 `features/`를 import 하지 않는다. 그 방향을 처음 뚫는 대신, `EntryKind`의
+    주인인 schedule feature에 두고 캘린더가 가져다 쓴다 — 캘린더는 이미 `calendar_event.dart:4`·
+    `calendar_repository.dart:3`에서 schedule 도메인에 의존한다.
+  - `SegmentedSettingRow`는 feature 의존이 없어 `shared/widgets/`로 옮겨도 이 문제가 없다.
 
 ## 테스트
 
