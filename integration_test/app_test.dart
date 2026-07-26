@@ -12,6 +12,7 @@ import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
+import 'package:planroutine/features/calendar/presentation/widgets/event_list_section.dart';
 import 'package:planroutine/shared/widgets/floating_tab_bar.dart';
 
 /// 설정 탭 내부에서 target이 화면에 보일 때까지 스크롤한 뒤 다음 액션을 허용한다.
@@ -346,8 +347,15 @@ void main() {
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
-      // 목록에 ★ 중요 배지 노출
-      expect(find.text(CalendarStrings.importantBadge), findsOneWidget);
+      // 목록에 ★ 아이콘 노출 (글자 없는 인라인 표시).
+      // 격자 셀도 같은 아이콘을 쓰므로 목록 섹션 안으로 한정한다.
+      expect(
+        find.descendant(
+          of: find.byType(EventListSection),
+          matching: find.byIcon(Icons.star_rounded),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('날짜 점프: 이번 달 말일 근처 셀을 탭하면 그 이벤트가 목록에 보인다',

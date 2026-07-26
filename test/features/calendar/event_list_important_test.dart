@@ -42,7 +42,7 @@ void main() {
   }
 
   group('목록 — 중요 이벤트 강조', () {
-    testWidgets('중요 이벤트는 ★ 중요 배지 + 골드 레일', (tester) async {
+    testWidgets('중요 이벤트는 ★ 아이콘 + 골드 레일', (tester) async {
       await pump(tester, const [
         CalendarEvent(
           id: 1,
@@ -52,7 +52,9 @@ void main() {
         ),
       ]);
 
+      // 배지 줄이 아니라 제목 앞 인라인 ★ 아이콘 (같은 key 유지)
       expect(find.byKey(const Key('event_important_badge_1')), findsOneWidget);
+      expect(find.text('중요'), findsNothing);
       expect(railColor(tester, 1), AppColors.gold);
     });
 

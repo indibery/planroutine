@@ -8,6 +8,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
+import '../../../schedule/presentation/widgets/kind_badge.dart';
 import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
@@ -181,6 +182,7 @@ class EventListSection extends ConsumerWidget {
       child: GestureDetector(
         onTap: () => onEventTap(event),
         child: Container(
+          key: Key('event_card_${event.id}'),
           padding: const EdgeInsets.all(AppSizes.cardPadding),
           decoration: BoxDecoration(
             color: showImportant
@@ -210,22 +212,41 @@ class EventListSection extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (showImportant) _buildImportantBadge(event),
-                    Text(
-                      event.title,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor,
-                        decoration: isDone
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        decorationColor: AppColors.faint,
-                        decorationThickness: 2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        KindBadge(kind: event.kind),
+                        const SizedBox(width: AppSizes.spacing8),
+                        if (showImportant) ...[
+                          Semantics(
+                            label: CalendarStrings.importantBadge,
+                            child: Icon(
+                              Icons.star_rounded,
+                              key: Key('event_important_badge_${event.id}'),
+                              size: 16,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.spacing4),
+                        ],
+                        Expanded(
+                          child: Text(
+                            event.title,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: titleColor,
+                              decoration: isDone
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                              decorationColor: AppColors.faint,
+                              decorationThickness: 2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     if (event.description != null &&
                         event.description!.isNotEmpty)
@@ -298,19 +319,6 @@ class EventListSection extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 중요 이벤트에 붙는 "★ 중요" 골드 배지. 제목 위 한 줄.
-  Widget _buildImportantBadge(CalendarEvent event) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.spacing4),
-      child: _goldPill(
-        key: Key('event_important_badge_${event.id}'),
-        icon: Icons.star_rounded,
-        iconSize: 12,
-        label: CalendarStrings.importantBadge,
       ),
     );
   }
