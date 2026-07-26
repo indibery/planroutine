@@ -249,8 +249,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
 
   Widget _buildDateTile({
     required String label,
-    DateTime? date,
-    String? hint,
+    required DateTime date,
     required VoidCallback onTap,
   }) {
     final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
@@ -276,10 +275,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             ),
             const Spacer(),
             Text(
-              date != null ? formatter.format(date) : (hint ?? ''),
+              formatter.format(date),
               style: TextStyle(
                 fontSize: 14,
-                color: date != null ? AppColors.textPrimary : AppColors.textHint,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: AppSizes.spacing8),
