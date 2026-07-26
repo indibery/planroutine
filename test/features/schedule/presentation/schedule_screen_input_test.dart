@@ -14,7 +14,6 @@ import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
-import 'package:planroutine/shared/widgets/pill_chip.dart';
 
 import '../../../helpers/test_database.dart';
 
@@ -121,8 +120,10 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.text(ScheduleStrings.bulkRegisterTask(1)), findsOneWidget);
+      // 건수까지 특정하면 가드가 깨져 '…0건'으로 렌더돼도 findsNothing이 통과해버린다
+      // (0건은 이 매처가 찾는 문자열과 다르므로). 접두만 봐서 pill의 존재 자체를 검사한다.
       expect(
-        find.textContaining(ScheduleStrings.bulkRegisterEvent(1)),
+        find.textContaining(ScheduleStrings.bulkRegisterEventPrefix),
         findsNothing,
       );
     });
@@ -166,12 +167,10 @@ void main() {
       await pumpScreen(tester);
       await expandFilters(tester);
 
-      // 대기 뷰에서는 칩에 건수가 붙는다 (예: '행사 1').
-      // 히어로 제목도 '행사'로 시작하므로 칩(PillChip)으로 한정한다.
-      await tester.tap(find.descendant(
-        of: find.byType(PillChip),
-        matching: find.textContaining(ScheduleStrings.kindEvent),
-      ));
+      // 대기 뷰에서는 칩에 건수가 붙는다 — '행사 1'.
+      // '행사' ⊂ '학교행사'라 부분 일치로 찾으면 카테고리 칩(에듀파인 분류명)과
+      // 충돌할 수 있다 — 건수까지 포함한 정확 매칭으로 칩 자체를 특정한다.
+      await tester.tap(find.text('${EntryKind.event.label} 1'));
       // 필터 변경 → 실제 DB 재조회. 로딩 스피너가 남은 채 pumpAndSettle하면
       // fake-async가 DB future를 못 끝내 영원히 안 멎는다 → runAsync에서 대기.
       await tester.runAsync(() async {

@@ -331,12 +331,19 @@ planroutine/
 ### 용어
 - **일정 / 행사 / 업무**를 쓴다. `학교일정`은 쓰지 않는다 — `일정`이 우산말(시트 제목
   `일정 추가/수정`)이자 라벨의 절반이라 겹쳐 읽혔다(사용자 신고, 2026-07-27).
-- **`행사`가 에듀파인 카테고리 `학교행사`와 안 부딪히는 이유**: 둘은 **같은 행에 나타날 수
-  없다.** 카테고리 배지는 `schedule.category != null`일 때만 렌더되고(`schedule_tile.dart`),
-  `category`를 채우는 것은 CSV 경로(`createFromImported`·`createBulkFromImported`)뿐이며
-  그 경로는 항상 업무다. 사진 AI 경로(= 행사)는 `registerAiSchedules`가 `category`를 넣지
-  않는다. 캘린더 목록에는 카테고리 배지 자체가 없다.
+- **`행사`가 에듀파인 카테고리 `학교행사`와 안 부딪히는 이유**(목록 행 한정): **목록의 같은
+  행 안에서는** 둘이 나타날 수 없다. 카테고리 배지는 `schedule.category != null`일 때만
+  렌더되고(`schedule_tile.dart`), `category`를 채우는 경로는 CSV 경로
+  (`createFromImported`·`createBulkFromImported`·`_importPlanRoutineCsv`)뿐이며 그 경로는
+  항상 업무다. 사진 AI 경로(= 행사)는 `registerAiSchedules`가 `category`를 넣지 않는다.
+  캘린더 목록에는 카테고리 배지 자체가 없다.
   (이전에는 이 혼동을 걱정해 "행사" 사용을 금지했었다 — 근거를 확인하고 뒤집었다.)
+  - ⚠️ **알려진 공존 지점은 펼친 필터 패널이다.** `schedule_filter_bar.dart`의 `_KindRow`가
+    `[업무][행사]`를 그리고 바로 아래 `_CategoryRow`가 `shortenCategory()`의 `학교행사` 칩을
+    그려 두 낱말이 같은 화면에 동시에 보인다 — 펼친 상태의 헤더는 `필터` 한 단어뿐이라 행별
+    라벨도 없다. 감당 가능한 이유: 선택의 의미가 다르다(하나는 종류, 하나는 카테고리)와
+    카테고리 칩은 CSV 경로(=업무) 항목에만 존재해 실제로 나타나는 것은 `[업무][행사]` +
+    `[전체][일과운영]…[학교행사]…` 두 줄이지, 한 항목이 두 낱말을 동시에 다는 것은 아니다.
 - 예외 둘:
   - `category_label.dart`의 `학교행사` — 에듀파인 실제 분류명이라 그대로 둔다.
   - **AI 프롬프트 본문**(`ai_schedule_parser.dart`의 `buildAiPhotoPrompt`) — `학교 월간·연간
