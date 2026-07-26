@@ -31,6 +31,9 @@ class CalendarStrings {
   // 업무 / 학교일정
   static const kindLabel = '종류';
 
+  // 가져온 자료 출처
+  static const fromImportBadge = '작년';
+
   // 중요 표시
   static const importantLabel = '중요 표시';
   static const importantBadge = '중요';

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/utils/title_year_utils.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../../schedule/presentation/widgets/kind_badge.dart';
@@ -25,7 +24,6 @@ class EventListSection extends ConsumerWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
-    required this.onEventBumpYear,
     this.highlight = false,
   });
 
@@ -39,9 +37,6 @@ class EventListSection extends ConsumerWidget {
   /// 외부 캘린더 저장 콜백. null이면 오른쪽 스와이프가 비활성화돼 왼쪽 스와이프(완료 토글)만 동작.
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
-
-  /// 제목에 이전 연도가 있는 이벤트의 "연도 올해로" 배지 탭 콜백.
-  final ValueChanged<CalendarEvent> onEventBumpYear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -269,7 +264,7 @@ class EventListSection extends ConsumerWidget {
                   ],
                 ),
               ),
-              _buildYearBadge(event),
+              _buildImportBadge(event),
               if (isDone)
                 Padding(
                   padding: const EdgeInsets.only(left: AppSizes.spacing4),
@@ -286,60 +281,33 @@ class EventListSection extends ConsumerWidget {
     );
   }
 
-  /// 골드 채움 pill 공용 위젯 — 중요 배지·연도 배지가 공유.
-  /// 채움은 [AppColors.goldFill], 위 글씨·아이콘은 [AppColors.onGold].
-  Widget _goldPill({
-    Key? key,
-    required IconData icon,
-    required double iconSize,
-    required String label,
-  }) {
-    return Container(
-      key: key,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing8,
-        vertical: 3,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.goldFill,
-        borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: iconSize, color: AppColors.onGold),
-          const SizedBox(width: AppSizes.spacing4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.onGold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 제목에 올해 이전 연도가 있으면 노출되는 골드 배지. 탭하면 호출부(_onBumpYear)가
-  /// 연도 고친 제목으로 편집 화면에 진입시킨다. 이전 연도가 없거나 이미 완료된
-  /// 이벤트면 자리를 차지하지 않는다(완료 자료는 연도 고칠 일이 드묾).
-  Widget _buildYearBadge(CalendarEvent event) {
-    if (event.isCompleted) return const SizedBox.shrink();
-    final currentYear = DateTime.now().year;
-    final result = bumpTitleYear(event.title, currentYear);
-    if (result.from == null) return const SizedBox.shrink();
+  /// 에듀파인 CSV로 가져온 자료임을 알리는 출처 배지.
+  ///
+  /// 연도를 보지 않는다 — 제목에 연도가 없어도 붙는다. 누르는 것이 아니므로
+  /// 조용해야 하고, 종류 배지(채움)와 한 행에서 구분되도록 **테두리형**으로 그린다.
+  /// 골드는 오늘·중요 전용이라 쓰지 않는다.
+  Widget _buildImportBadge(CalendarEvent event) {
+    if (!event.fromImport) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(left: AppSizes.spacing8),
-      child: GestureDetector(
-        key: Key('year_bump_badge_${event.id}'),
-        onTap: () => onEventBumpYear(event),
-        child: _goldPill(
-          icon: Icons.event_repeat,
-          iconSize: 14,
-          label: '${result.from}→$currentYear',
+      child: Container(
+        key: Key('event_import_badge_${event.id}'),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing8,
+          vertical: 3,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.sub.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        ),
+        child: Text(
+          CalendarStrings.fromImportBadge,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: AppColors.sub,
+          ),
         ),
       ),
     );
