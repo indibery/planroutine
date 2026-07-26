@@ -82,4 +82,42 @@ void main() {
       expect(result.createdAt, '2026-01-01T00:00:00.000');
     });
   });
+
+  group('종료 날짜 입력 제거', () {
+    Future<void> pumpSheet(WidgetTester tester, {CalendarEvent? event}) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventEditDialog(
+                initialDate: DateTime(2026, 3, 2),
+                event: event,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('시트에 "종료 날짜" 타일이 없다', (tester) async {
+      await pumpSheet(tester);
+
+      expect(find.text('종료 날짜'), findsNothing);
+      expect(find.text('날짜'), findsOneWidget);
+    });
+
+    testWidgets('설명칸은 최소 4줄 높이로 열린다', (tester) async {
+      await pumpSheet(tester);
+
+      final field = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(TextFormField).last,
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field.minLines, 4);
+      expect(field.maxLines, 6);
+    });
+  });
 }

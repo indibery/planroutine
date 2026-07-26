@@ -13,7 +13,6 @@ class CalendarStrings {
   static const eventDescription = '설명';
   static const eventDescriptionHint = '설명을 입력하세요 (선택)';
   static const eventDate = '날짜';
-  static const eventEndDate = '종료 날짜';
   static const titleRequired = '제목을 입력해주세요';
 
   // Google 캘린더 저장

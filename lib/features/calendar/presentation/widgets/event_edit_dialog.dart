@@ -58,7 +58,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
-  DateTime? _endDate;
   late bool _isImportant;
   bool get _isEditing => widget.event != null;
 
@@ -70,7 +69,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     _descriptionController =
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
-    _endDate = event?.endDate != null ? event?.endDateTime : null;
     _isImportant = event?.isImportant ?? false;
   }
 
@@ -236,28 +234,16 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         labelText: CalendarStrings.eventDescription,
         hintText: CalendarStrings.eventDescriptionHint,
       ),
-      maxLines: 2,
+      minLines: 4,
+      maxLines: 6,
     );
   }
 
   Widget _buildDateRow() {
-    final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDateTile(
-          label: CalendarStrings.eventDate,
-          date: _eventDate,
-          onTap: () => _pickDate(isStart: true),
-        ),
-        const SizedBox(height: AppSizes.spacing8),
-        _buildDateTile(
-          label: CalendarStrings.eventEndDate,
-          date: _endDate,
-          hint: formatter.format(_eventDate),
-          onTap: () => _pickDate(isStart: false),
-        ),
-      ],
+    return _buildDateTile(
+      label: CalendarStrings.eventDate,
+      date: _eventDate,
+      onTap: _pickDate,
     );
   }
 
@@ -387,26 +373,16 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-  Future<void> _pickDate({required bool isStart}) async {
-    final initial = isStart ? _eventDate : (_endDate ?? _eventDate);
+  Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
+      initialDate: _eventDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       locale: const Locale('ko', 'KR'),
     );
     if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _eventDate = picked;
-          if (_endDate != null && _endDate!.isBefore(picked)) {
-            _endDate = picked;
-          }
-        } else {
-          _endDate = picked.isBefore(_eventDate) ? _eventDate : picked;
-        }
-      });
+      setState(() => _eventDate = picked);
     }
   }
 
@@ -433,8 +409,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   /// `CalendarEvent`에 필드가 추가돼도 여기를 고칠 필요가 없어야 한다.
   CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();
-    final end = _endDate;
-    final endDateStr = end != null ? formatDate(end) : null;
     final existing = widget.event;
 
     if (existing != null) {
@@ -442,7 +416,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         title: _titleController.text.trim(),
         description: _trimmedDescription(),
         eventDate: formatDate(_eventDate),
-        endDate: endDateStr,
         isImportant: _isImportant,
         updatedAt: now,
       );
@@ -452,7 +425,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       title: _titleController.text.trim(),
       description: _trimmedDescription(),
       eventDate: formatDate(_eventDate),
-      endDate: endDateStr,
       isAllDay: true,
       isImportant: _isImportant,
       createdAt: now,
