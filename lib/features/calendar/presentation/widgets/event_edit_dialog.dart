@@ -126,7 +126,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 _buildHeader(),
                 const SizedBox(height: AppSizes.spacing20),
                 _buildTitleField(),
-                _buildYearBumpChip(),
+                _buildYearShiftChip(),
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDescriptionField(),
                 const SizedBox(height: AppSizes.spacing16),
@@ -199,28 +199,34 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-  /// 제목에 올해 이전 연도가 있을 때만 나타나는 "연도 올해로" 원탭 칩.
+  /// 제목에 연도가 있으면 나타나는 "연도 한 해 밀기" 원탭 칩.
   ///
-  /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 이전
-  /// 연도만 올해로 치환하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
-  Widget _buildYearBumpChip() {
-    final currentYear = DateTime.now().year;
+  /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 **모든**
+  /// 연도를 +1년 하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
+  ///
+  /// 조건 없이 항상 뜬다 — 편집 화면은 사용자가 일부러 연 곳이라 조를 일이 없다.
+  /// 목록 쪽에서 같은 조건을 쓰면 고칠 때마다 다시 조르는 순환이 된다.
+  Widget _buildYearShiftChip() {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _titleController,
       builder: (context, value, _) {
-        final result = bumpTitleYear(value.text, currentYear);
-        if (result.from == null) return const SizedBox.shrink();
+        final result = shiftTitleYears(value.text);
+        if (result.from.isEmpty) return const SizedBox.shrink();
+        final label = result.from.length == 1
+            ? '${result.from.first} → ${result.from.first + 1}'
+            : CalendarStrings.yearShiftAll;
         return Align(
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(top: AppSizes.spacing8),
             child: ActionChip(
+              key: const Key('year_shift_chip'),
               avatar: Icon(
                 Icons.event_repeat,
                 size: 18,
                 color: AppColors.gold,
               ),
-              label: Text('${result.from} → $currentYear'),
+              label: Text(label),
               labelStyle: TextStyle(
                 color: AppColors.ink,
                 fontWeight: FontWeight.w600,

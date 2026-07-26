@@ -2,97 +2,87 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/utils/title_year_utils.dart';
 
 void main() {
-  group('bumpTitleYear — 제목의 이전 연도를 올해로', () {
-    test('학년도 표기 이전 연도를 올해로 치환', () {
-      final r = bumpTitleYear('2025학년도 겨울방학 운영 계획', 2026);
+  group('shiftTitleYears — 제목의 연도를 한 해 민다', () {
+    test('학년도 표기를 한 해 뒤로', () {
+      final r = shiftTitleYears('2025학년도 겨울방학 운영 계획');
       expect(r.title, '2026학년도 겨울방학 운영 계획');
-      expect(r.from, 2025);
+      expect(r.from, [2025]);
     });
 
-    test('"년" 표기도 치환', () {
-      final r = bumpTitleYear('2025년 겨울방학 현수막 품의', 2026);
+    test('"년" 표기도 이동', () {
+      final r = shiftTitleYears('2025년 겨울방학 현수막 품의');
       expect(r.title, '2026년 겨울방학 현수막 품의');
-      expect(r.from, 2025);
+      expect(r.from, [2025]);
     });
 
-    test('올해 이상 연도는 건드리지 않음 (이미 미래 참조)', () {
-      final r = bumpTitleYear('2026학년도 본예산요구서 제출', 2026);
-      expect(r.title, '2026학년도 본예산요구서 제출');
-      expect(r.from, isNull);
-    });
-
-    test('미래 연도도 건드리지 않음', () {
-      final r = bumpTitleYear('2027 졸업식 행사 협의', 2026);
+    test('올해 연도도 민다 — 12월 업무가 가리키는 2월 졸업식은 한 해 뒤가 된다', () {
+      final r = shiftTitleYears('2026 졸업식 행사 협의');
       expect(r.title, '2027 졸업식 행사 협의');
-      expect(r.from, isNull);
+      expect(r.from, [2026]);
     });
 
-    test('연도 없는 제목은 그대로', () {
-      final r = bumpTitleYear('종업식 및 졸업식 안내장', 2026);
+    test('미래 연도도 민다 (상대 기준이라 예외를 두지 않는다)', () {
+      final r = shiftTitleYears('2027 졸업식 행사 협의');
+      expect(r.title, '2028 졸업식 행사 협의');
+      expect(r.from, [2027]);
+    });
+
+    test('연도 없는 제목은 그대로, from은 빈 리스트', () {
+      final r = shiftTitleYears('종업식 및 졸업식 안내장');
       expect(r.title, '종업식 및 졸업식 안내장');
-      expect(r.from, isNull);
+      expect(r.from, isEmpty);
     });
 
-    test('한 제목에 옛 연도+미래 연도 → 옛 연도만 치환, from은 옛 연도', () {
-      final r = bumpTitleYear(
-        '2025학년도 안건발의서[2026학년도 보결수업 규정 개정]',
-        2026,
+    test('한 제목에 두 연도 — 간격이 유지된다', () {
+      final r = shiftTitleYears('2025학년도 안건발의서[2026학년도 보결수업 규정 개정]');
+      expect(
+        r.title,
+        '2026학년도 안건발의서[2027학년도 보결수업 규정 개정]',
+        reason: '"올해로 맞추기"는 둘 다 2026으로 뭉갰다 — 상대 이동은 1년 간격을 지킨다',
       );
-      expect(r.title, '2026학년도 안건발의서[2026학년도 보결수업 규정 개정]');
-      expect(r.from, 2025);
+      expect(r.from, [2025, 2026]);
     });
 
-    test('2년 전 데이터도 올해로 (from은 가장 이른 옛 연도)', () {
-      final r = bumpTitleYear('2024학년도 결산 보고', 2026);
-      expect(r.title, '2026학년도 결산 보고', reason: '2024 < 2026 → 2026');
-      expect(r.from, 2024);
+    test('두 해 전 자료는 한 번에 올해가 되지 않는다 (한 번 더 눌러야 함)', () {
+      final r = shiftTitleYears('2024학년도 결산 보고');
+      expect(r.title, '2025학년도 결산 보고');
+      expect(r.from, [2024]);
     });
 
-    test('연도처럼 보이는 비연도 4자리는 치환하지 않음 (19xx/그 외)', () {
-      // 1000명 같은 수치는 연도(20xx)가 아니므로 건드리지 않는다.
-      final r = bumpTitleYear('1000명 참가 행사 계획', 2026);
+    test('연도처럼 보이는 비연도 4자리는 건드리지 않음', () {
+      final r = shiftTitleYears('1000명 참가 행사 계획');
       expect(r.title, '1000명 참가 행사 계획');
-      expect(r.from, isNull);
+      expect(r.from, isEmpty);
     });
 
     test('더 긴 숫자열 안의 20xx는 연도로 보지 않음', () {
-      final r = bumpTitleYear('문서120250 처리', 2026);
+      final r = shiftTitleYears('문서120250 처리');
       expect(r.title, '문서120250 처리');
-      expect(r.from, isNull);
+      expect(r.from, isEmpty);
     });
 
-    // ── verifier가 스크래치로만 확인했던 엣지들을 리그레션으로 고정 ──
-
-    test('맨 끝에 오는 연도도 치환', () {
-      final r = bumpTitleYear('2024학년도 결산 2024', 2026);
-      expect(r.title, '2026학년도 결산 2026');
-      expect(r.from, 2024);
+    test('맨 끝에 오는 연도도 이동', () {
+      final r = shiftTitleYears('2024학년도 결산 2024');
+      expect(r.title, '2025학년도 결산 2025');
+      expect(r.from, [2024], reason: '같은 연도가 두 번 나와도 from은 중복 없이 1개');
     });
 
-    test('한글에 바로 붙은 앞자리 연도도 치환 (앞이 숫자만 아니면 됨)', () {
-      final r = bumpTitleYear('문서2025 처리', 2026);
+    test('한글에 바로 붙은 앞자리 연도도 이동 (앞이 숫자만 아니면 됨)', () {
+      final r = shiftTitleYears('문서2025 처리');
       expect(r.title, '문서2026 처리');
-      expect(r.from, 2025);
+      expect(r.from, [2025]);
     });
 
-    test('세 연도 혼재 — 옛 연도만 치환, from은 최소 옛 연도', () {
-      final r = bumpTitleYear('2023·2024 계획과 2027 전망', 2026);
-      expect(r.title, '2026·2026 계획과 2027 전망');
-      expect(r.from, 2023);
+    test('세 연도 혼재 — 전부 한 해씩, from은 등장 순서', () {
+      final r = shiftTitleYears('2023·2024 계획과 2027 전망');
+      expect(r.title, '2024·2025 계획과 2028 전망');
+      expect(r.from, [2023, 2024, 2027]);
     });
 
-    test('경계값 — 올해와 같은 연도는 보존', () {
-      final r = bumpTitleYear('2026 예산', 2026);
-      expect(r.title, '2026 예산');
-      expect(r.from, isNull);
-    });
-
-    test('경계값 — 먼 미래(2030/2099)는 보존, 먼 과거(2009)는 치환', () {
-      expect(bumpTitleYear('2030 로드맵', 2026).from, isNull);
-      expect(bumpTitleYear('2099 비전', 2026).from, isNull);
-      final past = bumpTitleYear('2009 자료', 2026);
-      expect(past.title, '2026 자료');
-      expect(past.from, 2009);
+    test('by를 주면 그만큼 민다', () {
+      final r = shiftTitleYears('2024학년도 결산 보고', by: 2);
+      expect(r.title, '2026학년도 결산 보고');
+      expect(r.from, [2024]);
     });
   });
 }
