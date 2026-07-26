@@ -121,7 +121,10 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.text(ScheduleStrings.bulkRegisterTask(1)), findsOneWidget);
-      expect(find.textContaining('일괄 일정 등록'), findsNothing);
+      expect(
+        find.textContaining(ScheduleStrings.bulkRegisterEvent(1)),
+        findsNothing,
+      );
     });
 
     testWidgets('일괄 업무 등록은 업무만 확정한다', (tester) async {

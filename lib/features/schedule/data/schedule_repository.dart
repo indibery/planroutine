@@ -300,7 +300,7 @@ class ScheduleRepository {
 
   /// 검토 대기 상태 일정 일괄 확정.
   /// [category]·[kind]가 null이면 전체, 값이 있으면 거기에 한정.
-  /// 입력 탭은 `일괄 업무 등록`/`일괄 일정 등록`으로 나눠 부르므로 [kind]가 필요하다.
+  /// 입력 탭은 `일괄 업무 등록`/`일괄 행사 등록`으로 나눠 부르므로 [kind]가 필요하다.
   Future<int> confirmAllPending({String? category, EntryKind? kind}) async {
     final db = await _dbHelper.database;
     final where = <String>[

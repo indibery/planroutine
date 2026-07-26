@@ -22,7 +22,7 @@ final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
 /// 상태별 전역 건수(카테고리·종류 무관) — 칩 라벨·진행도·확정 요약·일괄 등록 pill에 사용.
 /// schedulesProvider 변경(확정/삭제/등록)에 반응해 갱신.
 ///
-/// 대기는 종류별로도 센다 — `일괄 업무 등록 N건`/`일괄 일정 등록 N건` pill이
+/// 대기는 종류별로도 센다 — `일괄 업무 등록 N건`/`일괄 행사 등록 N건` pill이
 /// 각자의 건수를 달고, 0이면 숨어야 한다. 대기 목록을 한 번만 조회해 나눈다.
 final scheduleCountsProvider = FutureProvider<
     ({int pending, int confirmed, int pendingTask, int pendingEvent})>(
@@ -125,7 +125,7 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
 
   /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성).
   /// 카테고리 필터가 켜져 있으면 그 카테고리만 대상.
-  /// [kind]를 주면 그 종류만 — 입력 탭의 `일괄 업무 등록`/`일괄 일정 등록`.
+  /// [kind]를 주면 그 종류만 — 입력 탭의 `일괄 업무 등록`/`일괄 행사 등록`.
   Future<void> confirmAllPending({EntryKind? kind}) async {
     final repository = ref.read(scheduleRepositoryProvider);
     final category = ref.read(scheduleCategoryFilterProvider);

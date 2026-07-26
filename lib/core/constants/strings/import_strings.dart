@@ -22,7 +22,7 @@ class ImportStrings {
 
   // AI 사진 변환 (붙여넣기 가져오기)
   static const csvTitle = '작년 업무 CSV 올리기';
-  static const aiTitle = '학교일정을 사진으로';
+  static const aiTitle = '행사를 사진으로';
   static const aiDescription =
       '월간·연간 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';
   static const aiCopyPrompt = '① 변환 프롬프트 복사';
@@ -38,7 +38,7 @@ class ImportStrings {
   static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';
 
   // 입력 탭 히어로 — 사진 AI가 주 경로, 작년 업무 CSV는 보조 한 줄
-  static const heroTitle = '학교일정 사진으로 넣기';
+  static const heroTitle = '행사 사진으로 넣기';
   static const heroSubtitle = '월간 일정표를 찍어 AI에게 맡기세요';
   static const heroStepCopy = '① 프롬프트';
   static const heroStepAway = 'AI 앱';

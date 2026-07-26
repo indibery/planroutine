@@ -44,7 +44,7 @@ class ScheduleStrings {
 
   // 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
   static String bulkRegisterTask(int n) => '일괄 업무 등록 $n건';
-  static String bulkRegisterEvent(int n) => '일괄 일정 등록 $n건';
+  static String bulkRegisterEvent(int n) => '일괄 행사 등록 $n건';
 
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>
