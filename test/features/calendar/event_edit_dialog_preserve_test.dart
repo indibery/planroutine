@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -84,6 +85,71 @@ void main() {
       expect(result.endDate, '2026-03-04');
       expect(result.id, 7);
       expect(result.createdAt, '2026-01-01T00:00:00.000');
+    });
+  });
+
+  group('편집 저장 — 날짜를 종료일 뒤로 옮기면 기간을 정리한다', () {
+    // Task 4가 종료 날짜 입력을 없애며, 옛 _pickDate(isStart: true)가 갖고 있던
+    // "endDate가 새 시작일보다 앞서면 시작일로 당긴다" 클램프도 함께 사라졌다.
+    // 지금은 copyWith가 endDate를 보존만 하므로, 시작일을 옛 종료일보다 뒤로
+    // 옮기면 모순된 기간(end < start)이 그대로 DB에 남는다. 모순되면 버린다.
+    testWidgets('종료일보다 뒤로 날짜를 옮겨 저장하면 endDate가 사라진다', (tester) async {
+      const seed = CalendarEvent(
+        id: 21,
+        title: '수련회',
+        eventDate: '2026-03-02',
+        endDate: '2026-03-04',
+      );
+
+      CalendarEvent? captured;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('ko', 'KR')],
+            locale: const Locale('ko', 'KR'),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async {
+                    captured = await EventEditDialog.show(
+                      context,
+                      initialDate: DateTime(2026, 3, 2),
+                      event: seed,
+                    );
+                  },
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('날짜'));
+      await tester.pumpAndSettle();
+
+      // 종료일(3월 4일)보다 뒤인 3월 15일을 고른다.
+      await tester.tap(find.text('15'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('확인'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('저장'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('저장'));
+      await tester.pumpAndSettle();
+
+      expect(captured, isNotNull);
+      expect(captured!.eventDate, '2026-03-15');
+      expect(captured!.endDate, isNull,
+          reason: '새 시작일(3/15)이 옛 종료일(3/4)보다 뒤라 기간이 모순되므로 버려야 한다');
     });
   });
 

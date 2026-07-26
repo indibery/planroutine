@@ -59,7 +59,15 @@ void main() {
 
   group('종류 선택 — 캘린더 경로(선택 가능)', () {
     testWidgets('종류 행이 보이고 기본값은 업무', (tester) async {
-      final result = await openAndSave(tester, title: '교육계획 수립');
+      final result = await openAndSave(
+        tester,
+        title: '교육계획 수립',
+        // 저장하면 시트가 닫혀 위젯 트리에서 사라지므로, 행이 "보이는지"는
+        // 닫히기 전(beforeSave)에 확인해야 한다.
+        beforeSave: (tester) async {
+          expect(find.byKey(kindSelector), findsOneWidget);
+        },
+      );
 
       expect(result, isNotNull);
       expect(result!.kind, EntryKind.task);

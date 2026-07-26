@@ -448,10 +448,16 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     final existing = widget.event;
 
     if (existing != null) {
+      // 종료 날짜 입력 UI는 없지만 endDate는 copyWith가 보존한다. 시작일을
+      // 옛 종료일보다 뒤로 옮기면 기간이 거꾸로(end < start) 남아 Google/기기
+      // 캘린더 저장이 실패한다 — UI로 고칠 방법도 없으니 모순되면 버린다.
+      final staleEnd = existing.endDate != null &&
+          existing.endDateTime.isBefore(_eventDate);
       return existing.copyWith(
         title: _titleController.text.trim(),
         description: _trimmedDescription(),
         eventDate: formatDate(_eventDate),
+        endDate: staleEnd ? null : existing.endDate,
         isImportant: _isImportant,
         kind: _kind,
         updatedAt: now,
