@@ -10,6 +10,8 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../features/settings/presentation/providers/ai_task_share_provider.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
+import '../../../../shared/widgets/segmented_setting_row.dart';
+import '../../../schedule/domain/entry_kind.dart';
 import '../../data/ai_task_exporter.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
@@ -20,16 +22,25 @@ class EventEditDialog extends ConsumerStatefulWidget {
     super.key,
     required this.initialDate,
     this.event,
+    this.allowKindChange = true,
   });
 
   final DateTime initialDate;
   final CalendarEvent? event;
+
+  /// 종류(업무/학교일정) 선택 행을 노출할지.
+  ///
+  /// 오늘 탭은 업무만 담는 화면이라 `false`로 잠근다 — 거기서 학교일정을 만들면
+  /// 저장 직후 목록에서 사라져 저장 실패로 읽힌다. 잠가도 `_kind` 상태는 살아 있어
+  /// 기존 이벤트를 편집할 때 원래 종류가 보존된다.
+  final bool allowKindChange;
 
   /// 바텀시트 표시
   static Future<CalendarEvent?> show(
     BuildContext context, {
     required DateTime initialDate,
     CalendarEvent? event,
+    bool allowKindChange = true,
   }) {
     return showModalBottomSheet<CalendarEvent>(
       context: context,
@@ -45,6 +56,7 @@ class EventEditDialog extends ConsumerStatefulWidget {
       builder: (_) => EventEditDialog(
         initialDate: initialDate,
         event: event,
+        allowKindChange: allowKindChange,
       ),
     );
   }
@@ -58,8 +70,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late DateTime _eventDate;
-  DateTime? _endDate;
   late bool _isImportant;
+  late EntryKind _kind;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -70,8 +82,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     _descriptionController =
         TextEditingController(text: event?.description ?? '');
     _eventDate = event?.eventDateTime ?? widget.initialDate;
-    _endDate = event?.endDate != null ? event?.endDateTime : null;
     _isImportant = event?.isImportant ?? false;
+    _kind = event?.kind ?? EntryKind.task;
   }
 
   @override
@@ -120,7 +132,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                 const SizedBox(height: AppSizes.spacing16),
                 _buildDateRow(),
                 const SizedBox(height: AppSizes.spacing8),
-                _buildImportantToggle(),
+                _buildAttributesCard(),
                 if (_isEditing && aiEnabled) ...[
                   const SizedBox(height: AppSizes.spacing16),
                   _buildAiShareAction(),
@@ -236,35 +248,22 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         labelText: CalendarStrings.eventDescription,
         hintText: CalendarStrings.eventDescriptionHint,
       ),
-      maxLines: 2,
+      minLines: 4,
+      maxLines: 6,
     );
   }
 
   Widget _buildDateRow() {
-    final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDateTile(
-          label: CalendarStrings.eventDate,
-          date: _eventDate,
-          onTap: () => _pickDate(isStart: true),
-        ),
-        const SizedBox(height: AppSizes.spacing8),
-        _buildDateTile(
-          label: CalendarStrings.eventEndDate,
-          date: _endDate,
-          hint: formatter.format(_eventDate),
-          onTap: () => _pickDate(isStart: false),
-        ),
-      ],
+    return _buildDateTile(
+      label: CalendarStrings.eventDate,
+      date: _eventDate,
+      onTap: _pickDate,
     );
   }
 
   Widget _buildDateTile({
     required String label,
-    DateTime? date,
-    String? hint,
+    required DateTime date,
     required VoidCallback onTap,
   }) {
     final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
@@ -290,10 +289,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             ),
             const Spacer(),
             Text(
-              date != null ? formatter.format(date) : (hint ?? ''),
+              formatter.format(date),
               style: TextStyle(
                 fontSize: 14,
-                color: date != null ? AppColors.textPrimary : AppColors.textHint,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: AppSizes.spacing8),
@@ -309,30 +308,53 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
 
-  /// 중요 표시 토글. 켜면 캘린더 격자·목록에서 ★(골드)로 강조된다.
-  Widget _buildImportantToggle() {
+  /// 성격 카드 — "이 항목이 어떤 성격인가"를 정하는 값들을 한 테두리에 묶는다.
+  ///
+  /// 종류(업무/학교일정) + 중요 표시. [EventEditDialog.allowKindChange]가 false면
+  /// 종류 행과 구분선을 함께 뺀다 — 구분선만 남으면 뭔가 잘린 것처럼 읽힌다.
+  Widget _buildAttributesCard() {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppSizes.radius12),
       ),
-      child: SwitchListTile(
-        key: const Key('important_toggle'),
-        value: _isImportant,
-        onChanged: (v) => setState(() => _isImportant = v),
-        activeThumbColor: AppColors.gold,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacing16,
-        ),
-        secondary: Icon(Icons.star_rounded, color: AppColors.gold),
-        title: Text(
-          CalendarStrings.importantLabel,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+      child: Column(
+        children: [
+          if (widget.allowKindChange) ...[
+            SegmentedSettingRow<EntryKind>(
+              key: const Key('kind_selector'),
+              icon: Icons.label_outline,
+              label: CalendarStrings.kindLabel,
+              segments: EntryKind.values
+                  .map((k) => ButtonSegment<EntryKind>(
+                        value: k,
+                        label: Text(k.filterLabel),
+                      ))
+                  .toList(),
+              selected: _kind,
+              onChanged: (k) => setState(() => _kind = k),
+            ),
+            Divider(height: 1, color: AppColors.border),
+          ],
+          SwitchListTile(
+            key: const Key('important_toggle'),
+            value: _isImportant,
+            onChanged: (v) => setState(() => _isImportant = v),
+            activeThumbColor: AppColors.gold,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.spacing16,
+            ),
+            secondary: Icon(Icons.star_rounded, color: AppColors.gold),
+            title: Text(
+              CalendarStrings.importantLabel,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -387,26 +409,16 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-  Future<void> _pickDate({required bool isStart}) async {
-    final initial = isStart ? _eventDate : (_endDate ?? _eventDate);
+  Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
+      initialDate: _eventDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       locale: const Locale('ko', 'KR'),
     );
     if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _eventDate = picked;
-          if (_endDate != null && _endDate!.isBefore(picked)) {
-            _endDate = picked;
-          }
-        } else {
-          _endDate = picked.isBefore(_eventDate) ? _eventDate : picked;
-        }
-      });
+      setState(() => _eventDate = picked);
     }
   }
 
@@ -425,26 +437,48 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     Navigator.pop(context);
   }
 
+  /// 저장할 이벤트를 만든다.
+  ///
+  /// 편집일 때는 **반드시 copyWith**를 쓴다. 생성자로 새로 만들면 시트가 모르는 필드가
+  /// `@Default`/null로 되돌아가고, `updateEvent`의 `toMap()`이 그 값으로 DB를 덮는다
+  /// (kind → 학교일정이 업무로, googleEventId → Google 중복 이벤트).
+  /// `CalendarEvent`에 필드가 추가돼도 여기를 고칠 필요가 없어야 한다.
   CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();
-    final dateStr = formatDate(_eventDate);
-    final endDateStr = _endDate != null ? formatDate(_endDate!) : null;
+    final existing = widget.event;
+
+    if (existing != null) {
+      // 종료 날짜 입력 UI는 없지만 endDate는 copyWith가 보존한다. 시작일을
+      // 옛 종료일보다 뒤로 옮기면 기간이 거꾸로(end < start) 남아 Google/기기
+      // 캘린더 저장이 실패한다 — UI로 고칠 방법도 없으니 모순되면 버린다.
+      final staleEnd = existing.endDate != null &&
+          existing.endDateTime.isBefore(_eventDate);
+      return existing.copyWith(
+        title: _titleController.text.trim(),
+        description: _trimmedDescription(),
+        eventDate: formatDate(_eventDate),
+        endDate: staleEnd ? null : existing.endDate,
+        isImportant: _isImportant,
+        kind: _kind,
+        updatedAt: now,
+      );
+    }
+
     return CalendarEvent(
-      id: widget.event?.id,
       title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      eventDate: dateStr,
-      endDate: endDateStr,
+      description: _trimmedDescription(),
+      eventDate: formatDate(_eventDate),
       isAllDay: true,
-      // 색상 피커 제거 — 기존 색은 보존, 신규는 미지정(eventColor가 기본색으로 폴백)
-      color: widget.event?.color,
-      scheduleId: widget.event?.scheduleId,
-      createdAt: widget.event?.createdAt ?? now,
-      updatedAt: now,
       isImportant: _isImportant,
+      kind: _kind,
+      createdAt: now,
+      updatedAt: now,
     );
   }
 
+  /// 설명은 비어 있으면 null로 저장한다(빈 문자열을 남기지 않는다).
+  String? _trimmedDescription() {
+    final text = _descriptionController.text.trim();
+    return text.isEmpty ? null : text;
+  }
 }
