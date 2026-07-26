@@ -3,7 +3,7 @@ class ImportStrings {
   ImportStrings._();
 
   /// `/import` 화면 제목. 이 화면은 **작년 업무 CSV 전용**이다 —
-  /// 학교일정 사진 AI는 입력 탭 히어로가 맡는다.
+  /// 행사 사진 AI는 입력 탭 히어로가 맡는다.
   static const screenTitle = '작년 업무 가져오기';
   static const description = '에듀파인 생산문서등록대장 CSV를 올리면 작년에 처리한 업무가 올해 일정으로 들어옵니다';
   static const selectFile = '파일 선택';

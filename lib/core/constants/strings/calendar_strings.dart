@@ -28,7 +28,7 @@ class CalendarStrings {
   static const markComplete = '일정 완료';
   static const undoComplete = '완료 취소';
 
-  // 업무 / 학교일정
+  // 업무 / 행사
   static const kindLabel = '종류';
 
   // 가져온 자료 출처

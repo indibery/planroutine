@@ -4,7 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../domain/entry_kind.dart';
 
-/// 업무 / 학교일정 배지 — 입력 탭 검토 목록과 캘린더 목록이 공유한다.
+/// 업무 / 행사 배지 — 입력 탭 검토 목록과 캘린더 목록이 공유한다.
 ///
 /// 옅은배경(15%) + 진한글씨 형이라 다크/라이트 양쪽에서 대비가 안정적이다.
 /// 골드는 오늘·중요 전용이라 쓰지 않는다.

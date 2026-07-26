@@ -590,7 +590,7 @@ void main() {
       expect(find.text(ImportStrings.aiPaste), findsNothing);
     });
 
-    testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 학교일정으로 대기',
+    testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 행사로 대기',
         (tester) async {
       await _startFresh(tester);
 
@@ -619,11 +619,11 @@ void main() {
       await tester.tap(find.text(ImportStrings.aiRegisterButton(2)));
       await tester.pumpAndSettle();
 
-      // 같은 화면 아래 검토 목록에 학교일정으로 올라온다.
+      // 같은 화면 아래 검토 목록에 행사로 올라온다.
       expect(find.text('입학식'), findsOneWidget);
       expect(find.text('봄 현장체험학습'), findsOneWidget);
       expect(find.text(EntryKind.event.label), findsWidgets,
-          reason: '사진 경로로 들어온 것은 학교일정 배지를 단다');
+          reason: '사진 경로로 들어온 것은 행사 배지를 단다');
       expect(find.text(ScheduleStrings.bulkRegisterEvent(2)), findsOneWidget);
     });
   });

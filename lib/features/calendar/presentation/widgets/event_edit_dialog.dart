@@ -28,9 +28,9 @@ class EventEditDialog extends ConsumerStatefulWidget {
   final DateTime initialDate;
   final CalendarEvent? event;
 
-  /// 종류(업무/학교일정) 선택 행을 노출할지.
+  /// 종류(업무/행사) 선택 행을 노출할지.
   ///
-  /// 오늘 탭은 업무만 담는 화면이라 `false`로 잠근다 — 거기서 학교일정을 만들면
+  /// 오늘 탭은 업무만 담는 화면이라 `false`로 잠근다 — 거기서 행사를 만들면
   /// 저장 직후 목록에서 사라져 저장 실패로 읽힌다. 잠가도 `_kind` 상태는 살아 있어
   /// 기존 이벤트를 편집할 때 원래 종류가 보존된다.
   final bool allowKindChange;
@@ -325,7 +325,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
 
   /// 성격 카드 — "이 항목이 어떤 성격인가"를 정하는 값들을 한 테두리에 묶는다.
   ///
-  /// 종류(업무/학교일정) + 중요 표시. [EventEditDialog.allowKindChange]가 false면
+  /// 종류(업무/행사) + 중요 표시. [EventEditDialog.allowKindChange]가 false면
   /// 종류 행과 구분선을 함께 뺀다 — 구분선만 남으면 뭔가 잘린 것처럼 읽힌다.
   Widget _buildAttributesCard() {
     return Container(
@@ -456,7 +456,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   ///
   /// 편집일 때는 **반드시 copyWith**를 쓴다. 생성자로 새로 만들면 시트가 모르는 필드가
   /// `@Default`/null로 되돌아가고, `updateEvent`의 `toMap()`이 그 값으로 DB를 덮는다
-  /// (kind → 학교일정이 업무로, googleEventId → Google 중복 이벤트).
+  /// (kind → 행사가 업무로, googleEventId → Google 중복 이벤트).
   /// `CalendarEvent`에 필드가 추가돼도 여기를 고칠 필요가 없어야 한다.
   CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();

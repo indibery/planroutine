@@ -14,7 +14,7 @@ void main() {
       expect(s.kind, EntryKind.task);
     });
 
-    test('toMap → fromMap 왕복에서 학교일정이 유지된다', () {
+    test('toMap → fromMap 왕복에서 행사가 유지된다', () {
       const s = Schedule(
         title: '과학의 달 행사',
         scheduledDate: '2026-04-10',
@@ -52,7 +52,7 @@ void main() {
       expect(e.kind, EntryKind.task);
     });
 
-    test('toMap → fromMap 왕복에서 학교일정이 유지된다', () {
+    test('toMap → fromMap 왕복에서 행사가 유지된다', () {
       const e = CalendarEvent(
         title: '과학의 달 행사',
         eventDate: '2026-04-10',

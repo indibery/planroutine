@@ -102,7 +102,7 @@ void main() {
   });
 
   group('일괄 등록을 종류별로 나눈다', () {
-    testWidgets('업무·학교일정 대기가 있으면 pill이 각각 건수를 달고 보인다', (tester) async {
+    testWidgets('업무·행사 대기가 있으면 pill이 각각 건수를 달고 보인다', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
         await seed('나이스 자료 정리', '2026-03-05', EntryKind.task);
@@ -153,12 +153,12 @@ void main() {
         () => repo.getSchedules(status: ScheduleStatus.pending),
       );
       expect(pending!.single.kind, EntryKind.event,
-          reason: '학교일정은 대기로 남아야 한다');
+          reason: '행사는 대기로 남아야 한다');
     });
   });
 
   group('종류 필터', () {
-    testWidgets('학교일정 칩을 누르면 업무가 빠진다', (tester) async {
+    testWidgets('행사 칩을 누르면 업무가 빠진다', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
         await seed('과학의 달 행사', '2026-04-10', EntryKind.event);
@@ -166,8 +166,8 @@ void main() {
       await pumpScreen(tester);
       await expandFilters(tester);
 
-      // 대기 뷰에서는 칩에 건수가 붙는다 (예: '학교일정 1').
-      // 히어로 제목도 '학교일정'으로 시작하므로 칩(PillChip)으로 한정한다.
+      // 대기 뷰에서는 칩에 건수가 붙는다 (예: '행사 1').
+      // 히어로 제목도 '행사'로 시작하므로 칩(PillChip)으로 한정한다.
       await tester.tap(find.descendant(
         of: find.byType(PillChip),
         matching: find.textContaining(ScheduleStrings.kindEvent),

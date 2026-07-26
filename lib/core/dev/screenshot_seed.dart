@@ -24,7 +24,7 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
 
   final now = DateTime.now();
 
-  // ── 입력 탭 검토 영역용 — 2026년 분 (확정 3 / 대기 업무 17 + 대기 학교일정 4) ──
+  // ── 입력 탭 검토 영역용 — 2026년 분 (확정 3 / 대기 업무 17 + 대기 행사 4) ──
   final schedules = <Schedule>[
     _s('2025학년도 새봄초등학교 1차 학급편성 결과 제출', '2026-01-03', '학생학적',
         ScheduleStatus.confirmed),
@@ -48,7 +48,7 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
     _s('방학 중 교직원 연수', '2026-07-25', '조직통계'),
     _s('2학기 개학 준비', '2026-08-20', '교육과정계획'),
     _s('9월 생활지도 계획', '2026-09-02', '일과운영관리'),
-    // 월간 일정표 사진(AI 변환)으로 들어오는 학교일정 — 종류 배지·일괄 행사 등록용
+    // 월간 일정표 사진(AI 변환)으로 들어오는 행사 — 종류 배지·일괄 행사 등록용
     _sKind('입학식', '2026-03-02', EntryKind.event),
     _sKind('과학의 달 행사', '2026-04-10', EntryKind.event),
     _sKind('운동회', '2026-05-15', EntryKind.event),
@@ -106,7 +106,7 @@ Schedule _s(
       status: status,
     );
 
-/// 사진 AI 경로로 들어오는 학교일정 — 그 경로는 카테고리를 매기지 않는다.
+/// 사진 AI 경로로 들어오는 행사 — 그 경로는 카테고리를 매기지 않는다.
 Schedule _sKind(String title, String date, EntryKind kind) =>
     Schedule(title: title, scheduledDate: date, kind: kind);
 

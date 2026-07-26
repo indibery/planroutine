@@ -56,7 +56,7 @@ void main() {
   group('편집 저장 — 손대지 않은 필드 보존 가드', () {
     // 이 테스트가 재발 방지선이다. _buildEvent()가 생성자로 CalendarEvent를 새로
     // 만들면 여기 적힌 필드들이 @Default/null로 되돌아가 DB를 덮는다.
-    //   - kind 유실 → 학교일정이 업무가 되어 오늘 탭에 뜬다
+    //   - kind 유실 → 행사가 업무가 되어 오늘 탭에 뜬다
     //   - googleEventId 유실 → 재저장 시 Google 캘린더에 중복 이벤트가 생긴다
     testWidgets('제목만 고쳐 저장해도 kind·googleEventId·deviceEventId·endDate가 남는다',
         (tester) async {
@@ -79,7 +79,7 @@ void main() {
 
       expect(result, isNotNull);
       expect(result!.title, '2026학년도 가을 운동회');
-      expect(result.kind, EntryKind.event, reason: '학교일정이 업무로 바뀌면 안 된다');
+      expect(result.kind, EntryKind.event, reason: '행사가 업무로 바뀌면 안 된다');
       expect(result.googleEventId, 'g-abc123');
       expect(result.deviceEventId, 'd-xyz789');
       expect(result.endDate, '2026-03-04');

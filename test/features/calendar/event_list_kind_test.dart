@@ -38,8 +38,8 @@ void main() {
     return tester.getSize(find.byKey(Key('event_card_$id'))).height;
   }
 
-  group('목록 — 업무 / 학교일정 구분', () {
-    testWidgets('업무 행과 학교일정 행에 각각 배지가 붙는다', (tester) async {
+  group('목록 — 업무 / 행사 구분', () {
+    testWidgets('업무 행과 행사 행에 각각 배지가 붙는다', (tester) async {
       await pump(tester, const [
         CalendarEvent(
           id: 1,

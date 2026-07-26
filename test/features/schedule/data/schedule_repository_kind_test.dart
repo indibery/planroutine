@@ -44,7 +44,7 @@ void main() {
       expect(list.every((s) => s.kind == EntryKind.task), isTrue);
     });
 
-    test('학교일정만 조회한다', () async {
+    test('행사만 조회한다', () async {
       final list = await repo.getSchedules(kind: EntryKind.event);
 
       expect(list.single.title, '과학의 달 행사');
@@ -56,7 +56,7 @@ void main() {
   });
 
   group('confirmAllPending(kind:)', () {
-    test('업무만 확정하면 학교일정은 대기로 남는다', () async {
+    test('업무만 확정하면 행사는 대기로 남는다', () async {
       final changed = await repo.confirmAllPending(kind: EntryKind.task);
       expect(changed, 2);
 
@@ -64,7 +64,7 @@ void main() {
       expect(pending.single.kind, EntryKind.event);
     });
 
-    test('학교일정만 확정하면 업무는 대기로 남는다', () async {
+    test('행사만 확정하면 업무는 대기로 남는다', () async {
       final changed = await repo.confirmAllPending(kind: EntryKind.event);
       expect(changed, 1);
 

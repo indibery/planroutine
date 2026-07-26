@@ -74,7 +74,7 @@ TodayView buildTodayView({
         .subtract(Duration(days: lookbackDays)),
   );
 
-  // 오늘 탭은 **업무**만 다룬다 — 학교일정(운동회 등)에는 완료 개념이 없어
+  // 오늘 탭은 **업무**만 다룬다 — 행사(운동회 등)에는 완료 개념이 없어
   // 도장·진행 링의 의미가 깨진다. 캘린더 탭에서는 둘 다 보인다.
   final tasks = events.where((e) => e.kind.showsInToday);
 

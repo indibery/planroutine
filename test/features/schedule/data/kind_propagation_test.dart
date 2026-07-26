@@ -12,7 +12,7 @@ import '../../../helpers/test_database.dart';
 
 /// 입력 경로가 종류를 결정하고, 확정할 때 그 종류가 캘린더로 승계되는지.
 ///
-/// 오늘 탭이 업무만 보여주는 근거가 이 승계다 — 여기서 끊기면 학교일정이
+/// 오늘 탭이 업무만 보여주는 근거가 이 승계다 — 여기서 끊기면 행사가
 /// 업무로 둔갑해 오늘 탭에 뜬다.
 void main() {
   setUpAll(setUpFfiForTests);
@@ -29,7 +29,7 @@ void main() {
   tearDown(() async => db.close());
 
   group('확정 시 종류 승계', () {
-    test('학교일정을 확정하면 캘린더 이벤트도 학교일정이다', () async {
+    test('행사를 확정하면 캘린더 이벤트도 행사다', () async {
       final id = await schedules.insertConfirmedOrPending(
         const Schedule(
           title: '과학의 달 행사',
@@ -58,7 +58,7 @@ void main() {
   });
 
   group('입력 경로별 종류', () {
-    test('사진 AI로 넣은 것은 학교일정이다', () async {
+    test('사진 AI로 넣은 것은 행사다', () async {
       await registerAiSchedules(schedules, const [
         AiScheduleItem(title: '운동회', date: '2026-05-15'),
       ]);

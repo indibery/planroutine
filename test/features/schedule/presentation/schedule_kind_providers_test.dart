@@ -54,7 +54,7 @@ void main() {
       expect(container.read(scheduleKindFilterProvider), isNull);
     });
 
-    test('업무로 좁히면 목록에서 학교일정이 빠진다', () async {
+    test('업무로 좁히면 목록에서 행사가 빠진다', () async {
       container.read(scheduleKindFilterProvider.notifier).state =
           EntryKind.task;
 
@@ -64,7 +64,7 @@ void main() {
       expect(list.every((s) => s.kind == EntryKind.task), isTrue);
     });
 
-    test('학교일정으로 좁히면 그것만 남는다', () async {
+    test('행사로 좁히면 그것만 남는다', () async {
       container.read(scheduleKindFilterProvider.notifier).state =
           EntryKind.event;
 
@@ -75,7 +75,7 @@ void main() {
   });
 
   group('종류별 대기 건수', () {
-    test('업무·학교일정 대기 건수를 따로 센다', () async {
+    test('업무·행사 대기 건수를 따로 센다', () async {
       final counts = await container.read(scheduleCountsProvider.future);
 
       expect(counts.pending, 3);
@@ -95,7 +95,7 @@ void main() {
   });
 
   group('종류별 일괄 확정', () {
-    test('업무만 확정하면 학교일정은 대기로 남는다', () async {
+    test('업무만 확정하면 행사는 대기로 남는다', () async {
       await container.read(schedulesProvider.future);
       await container
           .read(schedulesProvider.notifier)

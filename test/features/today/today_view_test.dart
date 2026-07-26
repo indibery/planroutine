@@ -248,7 +248,7 @@ void main() {
   });
 
   group('buildTodayView — 업무만 담는다', () {
-    test('학교일정은 오늘 목록에 들어가지 않는다', () {
+    test('행사는 오늘 목록에 들어가지 않는다', () {
       final view = buildTodayView(
         events: [
           _event(id: 1, date: _today),
@@ -260,7 +260,7 @@ void main() {
       expect(_ids(view.today), [1]);
     });
 
-    test('학교일정은 지난 목록에도 들어가지 않는다', () {
+    test('행사는 지난 목록에도 들어가지 않는다', () {
       final view = buildTodayView(
         events: [
           _event(
@@ -291,7 +291,7 @@ void main() {
       expect(view.remainingCount, 1);
     });
 
-    test('오늘 학교일정만 있는 날은 빈 상태다 (달성이 아니다)', () {
+    test('오늘 행사만 있는 날은 빈 상태다 (달성이 아니다)', () {
       final view = buildTodayView(
         events: [
           _event(id: 1, date: _today, kind: EntryKind.event, title: '운동회'),

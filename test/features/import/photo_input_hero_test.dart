@@ -134,7 +134,7 @@ void main() {
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved!.length, 2);
     expect(saved.every((s) => s.kind == EntryKind.event), isTrue,
-        reason: '사진 경로는 학교일정');
+        reason: '사진 경로는 행사');
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
   });
 

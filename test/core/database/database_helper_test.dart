@@ -149,7 +149,7 @@ void main() {
       expect(e.single['kind'], EntryKind.task.dbValue);
     });
 
-    test('학교일정으로 지정해 넣으면 그대로 저장된다', () async {
+    test('행사로 지정해 넣으면 그대로 저장된다', () async {
       final d = await db.database;
       final now = DateTime.now().toIso8601String();
       await d.insert(DatabaseHelper.tableCalendarEvents, {

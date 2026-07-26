@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 
-/// 업무 / 학교일정 구분.
+/// 업무 / 행사 구분.
 ///
 /// 업무는 내가 처리할 일 — 오늘 탭에 뜨고 체크·도장 대상이다.
-/// 학교일정은 학교에서 일어나는 일 — 캘린더에만 보이고 완료 개념이 없다.
+/// 행사는 학교에서 일어나는 일 — 캘린더에만 보이고 완료 개념이 없다.
 void main() {
   group('EntryKind 직렬화', () {
     test('DB 값으로 왕복한다', () {
@@ -15,7 +15,7 @@ void main() {
       }
     });
 
-    test('업무는 task, 학교일정은 event로 저장된다', () {
+    test('업무는 task, 행사는 event로 저장된다', () {
       expect(EntryKind.task.dbValue, 'task');
       expect(EntryKind.event.dbValue, 'event');
     });

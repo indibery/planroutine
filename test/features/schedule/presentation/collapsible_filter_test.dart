@@ -138,7 +138,7 @@ void main() {
       });
       await pumpScreen(tester);
 
-      // 펼쳐서 학교일정으로 좁힌 뒤 다시 접는다.
+      // 펼쳐서 행사로 좁힌 뒤 다시 접는다.
       await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
       await tester.pumpAndSettle();
       await tester.tap(find.text('${EntryKind.event.label} 1'));

@@ -73,7 +73,7 @@ void main() {
       expect(result!.kind, EntryKind.task);
     });
 
-    testWidgets('학교일정을 고르고 저장하면 kind=event', (tester) async {
+    testWidgets('행사를 고르고 저장하면 kind=event', (tester) async {
       final result = await openAndSave(
         tester,
         title: '가을 운동회',
@@ -87,7 +87,7 @@ void main() {
       expect(result!.kind, EntryKind.event);
     });
 
-    testWidgets('기존 학교일정을 열면 학교일정이 선택돼 있고 저장해도 유지된다',
+    testWidgets('기존 행사를 열면 행사가 선택돼 있고 저장해도 유지된다',
         (tester) async {
       final result = await openAndSave(
         tester,
@@ -105,7 +105,7 @@ void main() {
   });
 
   group('종류 선택 — 오늘 탭 경로(잠금)', () {
-    // 오늘 탭은 업무만 담는 화면이다. 여기서 학교일정을 만들면 저장 직후
+    // 오늘 탭은 업무만 담는 화면이다. 여기서 행사를 만들면 저장 직후
     // 목록에서 사라져 "저장이 안 됐나?"로 읽힌다 — 아예 못 고르게 잠근다.
     testWidgets('종류 행이 없고 신규는 업무로 저장된다', (tester) async {
       final result = await openAndSave(

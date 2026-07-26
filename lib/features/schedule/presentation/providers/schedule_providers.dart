@@ -16,7 +16,7 @@ final scheduleStatusFilterProvider = StateProvider<ScheduleStatus?>((ref) {
   return ScheduleStatus.pending;
 });
 
-/// 종류 필터. null = 전체 — 업무와 학교일정을 한 목록에서 같이 검토하는 게 기본.
+/// 종류 필터. null = 전체 — 업무와 행사를 한 목록에서 같이 검토하는 게 기본.
 final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
 
 /// 상태별 전역 건수(카테고리·종류 무관) — 칩 라벨·진행도·확정 요약·일괄 등록 pill에 사용.

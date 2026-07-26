@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../../../core/utils/date_utils.dart' as du;
 
-/// AI가 사진에서 뽑아준 학교일정 한 건.
+/// AI가 사진에서 뽑아준 행사 한 건.
 class AiScheduleItem {
   const AiScheduleItem({required this.title, required this.date, this.description});
 

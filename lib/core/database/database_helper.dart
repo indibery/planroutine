@@ -83,7 +83,7 @@ class DatabaseHelper {
       );
     }
     if (oldVersion < 7) {
-      // 업무/학교일정 구분. 기본값 task라 기존 데이터는 전부 업무가 된다 —
+      // 업무/행사 구분. 기본값 task라 기존 데이터는 전부 업무가 된다 —
       // 지금까지 들어온 것은 사실상 전부 CSV(생산문서등록대장)이므로 맞는 분류다.
       for (final table in [tableSchedules, tableCalendarEvents]) {
         await db.execute(

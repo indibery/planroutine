@@ -7,7 +7,7 @@ import 'package:planroutine/features/schedule/presentation/widgets/schedule_tile
 
 /// 검토 행의 종류 배지 — 무엇을 확정하는지 보여야 한다.
 ///
-/// 업무(내가 처리할 일)와 학교일정(학교에서 일어나는 일)이 한 목록에 섞여 있어
+/// 업무(내가 처리할 일)와 행사(학교에서 일어나는 일)가 한 목록에 섞여 있어
 /// 배지가 없으면 일괄 확정 전에 성격을 구분할 수 없다.
 void main() {
   Widget host(Schedule schedule) {
@@ -32,7 +32,7 @@ void main() {
     expect(find.text(EntryKind.event.label), findsNothing);
   });
 
-  testWidgets('학교일정 행에는 일정 배지가 붙는다', (tester) async {
+  testWidgets('행사 행에는 행사 배지가 붙는다', (tester) async {
     await tester.pumpWidget(
       host(const Schedule(
         id: 2,

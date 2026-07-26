@@ -188,7 +188,7 @@ class CalendarRepository {
       scheduleId: scheduleId,
       createdAt: now,
       updatedAt: now,
-      // 종류를 승계한다 — 끊기면 학교일정이 업무로 둔갑해 오늘 탭에 뜬다.
+      // 종류를 승계한다 — 끊기면 행사가 업무로 둔갑해 오늘 탭에 뜬다.
       kind: EntryKind.fromValue(schedule['kind'] as String?),
     );
     return createEvent(event);
