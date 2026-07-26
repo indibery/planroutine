@@ -28,6 +28,10 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'device_event_id') String? deviceEventId,
     @JsonKey(name: 'is_important') @Default(false) bool isImportant,
     @Default(EntryKind.task) EntryKind kind,
+    /// 사용자가 편집 시트에서 저장해 이 항목을 검토·정리한 시각. NULL이면 아직 손대지 않음.
+    /// 무엇을 정리했는지(연도를 밀었는지, 보고 그냥 뒀는지)는 구분하지 않는다 —
+    /// 저장했다는 것 자체가 검토의 증거다. `작년` 배지와 연도 칩이 이 값으로 함께 꺼진다.
+    @JsonKey(name: 'reviewed_at') String? reviewedAt,
     /// 에듀파인 CSV로 가져온 자료인지. **조회 시점 조인으로 채우는 파생 값**이라
     /// DB 컬럼이 아니다 — [toMap]에 넣으면 insert가 깨진다.
     @JsonKey(includeToJson: false) @Default(false) bool fromImport,
@@ -55,6 +59,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       deviceEventId: map['device_event_id'] as String?,
       isImportant: (map['is_important'] as int?) == 1,
       kind: EntryKind.fromValue(map['kind'] as String?),
+      reviewedAt: map['reviewed_at'] as String?,
       fromImport: (map['from_import'] as int?) == 1,
     );
   }
@@ -65,6 +70,10 @@ abstract class CalendarEvent with _$CalendarEvent {
   /// 중요 강조(★·골드)를 노출할지. 완료한 자료는 묻어두는 것이 규칙이라
   /// 미완료일 때만 강조한다. 캘린더 리스트와 오늘 탭이 같은 규칙을 쓴다.
   bool get showsImportant => isImportant && !isCompleted;
+
+  /// 목록에 `작년` 배지를 노출할지. 가져온 자료이면서 아직 검토하지 않은 것만.
+  /// 검토(편집 시트 저장)하면 꺼져, 남아 있는 배지가 곧 "아직 정리 안 한 목록"이 된다.
+  bool get showsImportBadge => fromImport && reviewedAt == null;
 
   /// DB 삽입용 Map 변환 (deletedAt은 repository에서 별도 관리)
   Map<String, dynamic> toMap() {
@@ -84,6 +93,7 @@ abstract class CalendarEvent with _$CalendarEvent {
       'device_event_id': deviceEventId,
       'is_important': isImportant ? 1 : 0,
       'kind': kind.dbValue,
+      'reviewed_at': reviewedAt,
     };
   }
 

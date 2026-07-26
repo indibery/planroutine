@@ -25,6 +25,7 @@ _CalendarEvent _$CalendarEventFromJson(
   deviceEventId: json['device_event_id'] as String?,
   isImportant: json['is_important'] as bool? ?? false,
   kind: $enumDecodeNullable(_$EntryKindEnumMap, json['kind']) ?? EntryKind.task,
+  reviewedAt: json['reviewed_at'] as String?,
   fromImport: json['fromImport'] as bool? ?? false,
 );
 
@@ -46,6 +47,7 @@ Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>
       'device_event_id': instance.deviceEventId,
       'is_important': instance.isImportant,
       'kind': _$EntryKindEnumMap[instance.kind]!,
+      'reviewed_at': instance.reviewedAt,
     };
 
 const _$EntryKindEnumMap = {EntryKind.task: 'task', EntryKind.event: 'event'};
