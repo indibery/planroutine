@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/event_edit_dialog.dart';
 
 void main() {
@@ -18,7 +19,15 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           home: Scaffold(
-            body: EventEditDialog(initialDate: DateTime(currentYear, 3, 2)),
+            body: EventEditDialog(
+              initialDate: DateTime(currentYear, 3, 2),
+              // 연도 칩은 수정 경로에서만 뜬다 — 기존 이벤트를 넘겨 편집 모드로 만든다.
+              event: CalendarEvent(
+                id: 1,
+                title: '초기 제목',
+                eventDate: '$currentYear-03-02',
+              ),
+            ),
           ),
         ),
       ),
@@ -95,6 +104,28 @@ void main() {
     testWidgets('색상 선택 UI가 없다', (tester) async {
       await pumpDialog(tester);
       expect(find.text('색상'), findsNothing);
+    });
+  });
+
+  group('캘린더 이벤트 편집 — 연도 칩은 수정 경로에서만', () {
+    testWidgets('신규 생성 경로에서는 연도가 있어도 칩이 없다', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventEditDialog(initialDate: DateTime(currentYear, 3, 2)),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        '$currentYear학년도 운동회',
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('year_shift_chip')), findsNothing);
     });
   });
 }

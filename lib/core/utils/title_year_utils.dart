@@ -16,7 +16,9 @@ final RegExp _yearPattern = RegExp(r'(?<!\d)20\d\d(?!\d)');
 ///
 /// 반환: 이동된 제목과, **중복을 제거한 등장 순서**의 원본 연도 목록([from]).
 /// 연도가 없으면 [from]은 빈 리스트. 호출부는 [from]의 길이로 라벨을 고른다
-/// (1개면 "2025 → 2026", 2개 이상이면 "연도 모두 +N년").
+/// (1개면 "2025 → 2026", 2개 이상이면 "연도 모두 +N년" — 단, 유일한 호출부인
+/// `EventEditDialog`는 [by] 기본값만 쓰므로 실제 라벨은 항상 `연도 모두 +1년`
+/// 고정이다. [by]는 테스트가 임의 이동값을 검증하려고 남겨둔 파라미터).
 ({String title, List<int> from}) shiftTitleYears(String title, {int by = 1}) {
   final from = <int>[];
   final newTitle = title.replaceAllMapped(_yearPattern, (match) {

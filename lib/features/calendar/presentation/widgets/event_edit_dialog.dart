@@ -204,9 +204,12 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 **모든**
   /// 연도를 +1년 하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
   ///
-  /// 조건 없이 항상 뜬다 — 편집 화면은 사용자가 일부러 연 곳이라 조를 일이 없다.
-  /// 목록 쪽에서 같은 조건을 쓰면 고칠 때마다 다시 조르는 순환이 된다.
+  /// **수정 경로에서만** 뜬다(`_isEditing`) — 편집 화면은 가져온 자료의 옛 연도를
+  /// 고치러 일부러 연 곳이라 조를 걱정이 없지만, 신규 생성은 방금 본인이 타이핑한
+  /// 연도라 밀라고 권할 이유가 없다(사용자 확인, 2026-07-26). 목록 쪽에서 같은
+  /// 조건을 쓰면 고칠 때마다 다시 조르는 순환이 되므로 목록은 출처만 본다.
   Widget _buildYearShiftChip() {
+    if (!_isEditing) return const SizedBox.shrink();
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _titleController,
       builder: (context, value, _) {
