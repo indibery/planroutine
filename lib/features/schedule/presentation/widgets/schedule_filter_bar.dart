@@ -1,30 +1,155 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/pill_chip.dart';
 import '../../domain/entry_kind.dart';
+import '../../domain/filter_summary.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import 'category_label.dart';
 
-/// 입력 탭 검토 영역 필터 바.
+/// 입력 탭 검토 영역 필터 바 — **접히는** 한 줄 + 펼친 칩 3줄.
 ///
-/// 1줄: 상태 필터 (검토 대기/확정됨)
-/// 2줄: 종류 필터 (전체/업무/학교일정) — 성격이 다른 둘을 갈라 볼 수 있게
-/// 3줄: 카테고리 필터 (전체 + DB에서 동적 추출, 빈도순). 카테고리가 0개면 줄 자체 숨김.
-class ScheduleFilterBar extends ConsumerWidget {
-  const ScheduleFilterBar({super.key});
+/// 접힌 줄: `[검토 대기 21 · 업무] [21건 삭제] [▾]`
+/// 펼친 칩: 상태(대기/확정됨) · 종류(업무/학교일정 토글) · 카테고리(동적, 없으면 숨김)
+///
+/// 히어로가 위쪽을 210px 쓰기 때문에 칩 3줄(약 166px)을 항상 펼쳐두면 iPhone에서
+/// 검토 목록에 두어 칸밖에 남지 않는다. 그렇다고 필터를 화면 밖(바텀시트)으로
+/// 보내면 지금 무엇으로 걸러졌는지 알 수 없다 — 그래서 **요약은 남기고 칩만 접는다**.
+///
+/// 초기 상태는 대기 건수로 정한다: 검토할 것이 있으면 펼침, 없으면 접힘.
+/// 이 앱은 학기 초에 검토를 몰아서 하고 그 뒤엔 조용하다.
+class ScheduleFilterBar extends ConsumerStatefulWidget {
+  const ScheduleFilterBar({super.key, this.trailing});
+
+  /// 접힌 줄 우측에 함께 놓을 위젯(일괄 삭제 pill). 진행도 행을 없앴으므로
+  /// 대기 관련 액션은 이 줄이 맡는다.
+  final Widget? trailing;
+
+  static const summaryKey = Key('filter_summary');
+  static const chipRowsKey = Key('filter_chip_rows');
+  static const toggleKey = Key('filter_toggle');
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return const Column(
+  ConsumerState<ScheduleFilterBar> createState() => _ScheduleFilterBarState();
+}
+
+class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
+  /// null = 아직 사용자가 손대지 않음 → 대기 건수로 자동 결정.
+  bool? _expandedOverride;
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
+    final status = ref.watch(scheduleStatusFilterProvider);
+    final kind = ref.watch(scheduleKindFilterProvider);
+    final category = ref.watch(scheduleCategoryFilterProvider);
+    final categoryLabel =
+        (category == null || category.isEmpty) ? null : shortenCategory(category);
+
+    // 건수를 모르는 동안 요약을 그리면 '검토 대기 0'이 잠깐 스쳐 오해를 준다.
+    if (counts == null) return const SizedBox.shrink();
+
+    final expanded = _expandedOverride ?? (counts.pending > 0);
+    final narrowed =
+        hasNarrowingFilter(kind: kind, categoryLabel: categoryLabel);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _StatusRow(),
-        _KindRow(),
-        _CategoryRow(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.spacing16,
+            AppSizes.spacing8,
+            AppSizes.spacing16,
+            AppSizes.spacing4,
+          ),
+          child: Row(
+            children: [
+              Flexible(
+                child: GestureDetector(
+                  key: ScheduleFilterBar.toggleKey,
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => _expandedOverride = !expanded),
+                  child: Container(
+                    // 접혀 있을 때는 이 줄이 유일한 필터 조작부라 눌러 보여야 한다.
+                    // 펼치면 아래 칩이 주역이므로 테두리를 벗고 조용해진다.
+                    padding: expanded
+                        ? EdgeInsets.zero
+                        : const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                    decoration: expanded
+                        ? null
+                        : BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(AppSizes.radiusPill),
+                            border: Border.all(
+                              color: narrowed ? AppColors.gold : AppColors.line,
+                              width: narrowed ? 1.0 : 0.5,
+                            ),
+                            color: narrowed
+                                ? AppColors.goldFill.withValues(alpha: 0.15)
+                                : null,
+                          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            key: ScheduleFilterBar.summaryKey,
+                            // 펼쳐져 있으면 칩이 다 보이므로 요약은 군더더기다.
+                            expanded
+                                ? ScheduleStrings.filter
+                                : buildFilterSummary(
+                                    status: status,
+                                    kind: kind,
+                                    categoryLabel: categoryLabel,
+                                    pendingCount: counts.pending,
+                                    confirmedCount: counts.confirmed,
+                                  ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: (!expanded && narrowed)
+                                  ? AppColors.gold
+                                  : AppColors.sub,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          expanded ? Icons.expand_less : Icons.expand_more,
+                          size: 18,
+                          color: narrowed && !expanded
+                              ? AppColors.gold
+                              : AppColors.faint,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.trailing case final trailing?) ...[
+                const SizedBox(width: AppSizes.spacing8),
+                trailing,
+              ],
+            ],
+          ),
+        ),
+        if (expanded)
+          const Column(
+            key: ScheduleFilterBar.chipRowsKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _StatusRow(),
+              _KindRow(),
+              _CategoryRow(),
+            ],
+          ),
       ],
     );
   }
@@ -107,13 +232,13 @@ class _KindRow extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
-            label: label(ScheduleStrings.kindTask, counts?.pendingTask),
+            label: label(EntryKind.task.filterLabel, counts?.pendingTask),
             selected: current == EntryKind.task,
             onTap: () => toggle(EntryKind.task),
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
-            label: label(ScheduleStrings.kindEvent, counts?.pendingEvent),
+            label: label(EntryKind.event.filterLabel, counts?.pendingEvent),
             selected: current == EntryKind.event,
             onTap: () => toggle(EntryKind.event),
           ),

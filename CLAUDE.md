@@ -39,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 414 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 430 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -82,7 +82,7 @@ planroutine/
 │   │   │       └── providers/                   # importStateProvider (importFromPath API)
 │   │   ├── schedule/                   # 입력 탭 (넣기 + 검토/확정)
 │   │   │   ├── data/                   # schedule_repository (soft-delete + purge, kind 필터)
-│   │   │   ├── domain/                 # schedule (status: pending/confirmed), entry_kind (task/event)
+│   │   │   ├── domain/                 # schedule, entry_kind(task/event), filter_summary(순수 함수)
 │   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, FilterBar(상태/종류/카테고리)
 │   │   ├── calendar/                   # 자체 캘린더
 │   │   │   ├── data/                   # calendar_repository
@@ -278,9 +278,15 @@ planroutine/
 - **넣기가 주인공**, 검토는 그 아래. 화면 제목 `입력`(eyebrow `INPUT`), 탭 라벨 `입력`.
 - `PhotoInputHero`(import feature) — 왕복 3단 `① 프롬프트 · AI 앱 · ② 붙여넣기`. 가운데 칸은 앱 밖에서 벌어지는 일이라 **누를 수 없다**. 작년 업무 CSV는 아래 한 줄 링크.
 - AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndPreview`에 있다 — 히어로와 가져오기 화면 섹션이 같은 로직을 공유한다.
-- 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다. 일괄 삭제 pill은 진행도 행에 남아 있다(전체 대기 대상).
-- 필터 3줄: 상태(대기/확정됨) · 종류(업무/학교일정 **토글**, '전체' 칩 없음 — 카테고리 줄의 '전체'와 헷갈린다) · 카테고리.
-- 대기가 없으면 검토 영역은 `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄로 축소된다. 넣기 CTA를 여기 또 세우지 않는다(히어로가 바로 위에 있다).
+- 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다.
+- **필터는 접힌다** — 접힘: `[검토 대기 21 · 업무] [21건 삭제] [⌄]` 한 줄(약 41px) / 펼침: 라벨 `필터` + 칩 3줄(상태 · 종류 · 카테고리). 히어로가 위쪽 210px을 쓰므로 칩을 항상 펼쳐두면 iPhone에서 목록이 두어 칸만 남는다. 그렇다고 필터를 바텀시트로 보내면 지금 무엇으로 걸러졌는지 알 수 없어, **요약은 남기고 칩만 접는다**.
+  - 초기 상태는 **대기 건수**로 정한다(대기>0이면 펼침). 학기 초엔 몰아서 검토하고 그 뒤엔 조용한 리듬에 맞춘 것. 사용자가 탭하면 그 선택이 화면 수명 동안 우선한다(저장하지 않는다).
+  - **펼친 상태에서는 요약 문구를 감춘다** — 안 감추면 요약 `검토 대기 21`과 상태 칩 `검토 대기 21`이 같은 말을 반복한다(진행도 텍스트를 없앤 이유와 같은 함정).
+  - 접힘일 때만 요약을 테두리 pill로 감싼다. 그때는 이 줄이 유일한 필터 조작부라 눌러 보여야 하고, 펼치면 칩이 주역이라 조용해져야 한다.
+  - 종류 칩은 **토글**이고 '전체' 칩이 없다 — 카테고리 줄의 '전체'와 헷갈린다.
+- **진행도는 2px 바만** 남긴다. `149 / 149 · 100% 완료` 텍스트는 필터 요약의 `확정됨 149`와 같은 말이라 43px을 중복에 쓰고 있었다. 바는 필터 요약 줄 **바로 위**에 붙이고 좌우 여백을 필터 줄과 맞춘다 — 떼어놓으면 정보가 아니라 장식으로 읽힌다.
+- 일괄 삭제 pill은 진행도 행이 사라졌으므로 **필터 요약 줄의 `trailing`** 으로 들어간다.
+- 대기 0 + 대기 뷰이면 필터 바 자체를 숨기고, 검토 영역은 `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄로 축소된다(필터 요약과 중복되지 않게). 넣기 CTA를 여기 또 세우지 않는다(히어로가 바로 위에 있다).
 
 ### 용어
 - **일정 / 학교일정 / 업무**만 쓴다. "행사"·"행사표"는 쓰지 않는다(AI 프롬프트 본문 포함).

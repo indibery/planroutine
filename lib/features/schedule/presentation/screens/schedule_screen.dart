@@ -51,13 +51,16 @@ class ScheduleScreen extends ConsumerWidget {
             onOpenCsvImport: () => context.push(AppRoutes.import),
           ),
           const Divider(height: 1),
-          _buildProgress(context, ref, schedulesAsync),
           // 스와이프 안내는 스와이프할 목록이 있을 때만
           if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
             const SlideHintBar(),
           // 검토가 모두 끝난 완료 상태에선 필터할 게 없으므로 필터 줄을 숨긴다.
           if (!_reviewComplete(ref)) ...[
-            const ScheduleFilterBar(),
+            // 진행도 바는 필터 요약 줄에 붙여야 '확정 N건'의 시각화로 읽힌다.
+            _buildProgressBar(ref),
+            ScheduleFilterBar(
+              trailing: _buildDeletePendingPill(context, ref, schedulesAsync),
+            ),
             const Divider(height: 1),
           ],
           Expanded(
@@ -149,95 +152,63 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
-  /// 확정/전체 일정 진행도 바. 오른쪽에 '전체 확정' pill 버튼을 인라인 배치한다.
-  Widget _buildProgress(
+  /// 확정 진행도 — 2px 바만 남긴다.
+  ///
+  /// `149 / 149 · 100% 완료` 텍스트는 필터 요약 줄의 `확정됨 149`와 같은 말이었다.
+  /// 같은 숫자를 두 번 말하느라 43px을 썼으므로 텍스트를 버리고 바만 남겼다.
+  Widget _buildProgressBar(WidgetRef ref) {
+    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
+    if (counts == null) return const SizedBox.shrink();
+    final total = counts.pending + counts.confirmed;
+    if (total == 0) return const SizedBox.shrink();
+
+    return Padding(
+      // 좌우는 필터 줄과 같은 16 — 눈금이 어긋나면 장식처럼 보인다.
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.spacing16,
+        AppSizes.spacing8,
+        AppSizes.spacing16,
+        0,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+        child: Stack(
+          children: [
+            Container(height: 2, color: AppColors.navySoft),
+            FractionallySizedBox(
+              widthFactor: (counts.confirmed / total).clamp(0.0, 1.0),
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(gradient: AppGradients.progress),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 검토 대기 일괄 삭제 pill — 필터 요약 줄 우측에 얹는다.
+  /// 건수는 현재 뷰(카테고리·종류 필터 반영) 기준. 대기가 없으면 아예 없다.
+  Widget? _buildDeletePendingPill(
     BuildContext context,
     WidgetRef ref,
     AsyncValue<List<Schedule>> schedulesAsync,
   ) {
-    // 진행도는 전역 건수(카테고리·상태 필터 무관) — 기본 뷰가 대기만 보여줘도
-    // "전체 중 몇 건 확정"이 유지되도록.
-    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
-    return schedulesAsync.when(
-      data: (list) {
-        final total = (counts?.pending ?? 0) + (counts?.confirmed ?? 0);
-        if (counts == null || total == 0) return const SizedBox.shrink();
-        final confirmed = counts.confirmed;
-        // 일괄 확정 pill은 현재 뷰(카테고리 필터 반영)의 대기 건수 기준
-        final pendingCount =
-            list.where((s) => s.status == ScheduleStatus.pending).length;
-        final hasPending = pendingCount > 0;
-        final category = ref.watch(scheduleCategoryFilterProvider);
-        final ratio = confirmed / total;
-        final percent = (ratio * 100).round();
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSizes.pagePadding,
-            AppSizes.spacing12,
-            AppSizes.pagePadding,
-            AppSizes.spacing4,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      // 대기가 있으면 우측 삭제 pill에 공간을 내주려 축약.
-                      hasPending
-                          ? '$confirmed / $total'
-                          : '$confirmed / $total · $percent% 완료',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.sub,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  // 확정은 하단 종류별 일괄 등록 바에서. 여기엔 삭제만 둔다.
-                  if (hasPending)
-                    _DeleteAllPill(
-                      label: ScheduleStrings.deletePending(pendingCount),
-                      onPressed: () => _showBulkDeleteDialog(
-                        context,
-                        ref,
-                        category: category,
-                        pendingCount: pendingCount,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.spacing8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 2,
-                      color: AppColors.navySoft,
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: ratio.clamp(0.0, 1.0),
-                      child: Container(
-                        height: 2,
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.progress,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+    final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
+    final pendingCount =
+        list.where((s) => s.status == ScheduleStatus.pending).length;
+    if (pendingCount == 0) return null;
+    final category = ref.watch(scheduleCategoryFilterProvider);
+
+    return _DeleteAllPill(
+      label: ScheduleStrings.deletePending(pendingCount),
+      onPressed: () => _showBulkDeleteDialog(
+        context,
+        ref,
+        category: category,
+        pendingCount: pendingCount,
+      ),
     );
   }
 

@@ -21,8 +21,8 @@ class ImportStrings {
   static const aiCopyPrompt = '① 변환 프롬프트 복사';
   static const aiPaste = '② 붙여넣기로 가져오기';
   static const aiHint =
-      '프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
-  static const aiPromptCopied = '프롬프트를 복사했어요. AI 앱에 사진과 함께 붙여넣으세요';
+      '프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 일정표 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
+  static const aiPromptCopied = '프롬프트를 복사했어요. AI 앱에 일정표 사진과 함께 붙여넣으세요';
   static const aiParseEmpty = '붙여넣은 내용에서 일정을 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
   static const aiPreviewTitle = '붙여넣기 미리보기';
   static String aiPreviewCount(int n) => '일정 $n건 인식';
@@ -37,7 +37,7 @@ class ImportStrings {
   static const heroStepAway = 'AI 앱';
   static const heroStepPaste = '② 붙여넣기';
   static const heroHint =
-      '① 프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
+      '① 프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 일정표 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
   static const heroCsvLink = '작년 업무 가져오기 (에듀파인 CSV)';
 
   // 에듀파인에서 CSV 받고 가져오는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)

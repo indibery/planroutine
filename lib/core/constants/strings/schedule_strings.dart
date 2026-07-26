@@ -34,7 +34,11 @@ class ScheduleStrings {
   static String viewConfirmed(int n) => '확정됨 $n건 보기';
   static const goImport = '일정 가져오기';
 
-  // 종류 필터 (전체 / 업무 / 학교일정)
+  /// 펼친 상태의 필터 줄 라벨. 접히면 이 자리에 현재 필터 요약이 들어간다
+  /// (펼친 상태에서 요약을 그대로 두면 아래 칩과 같은 말을 반복한다).
+  static const filter = '필터';
+
+  // 종류 필터 (업무 / 학교일정)
   static const kindTask = '업무';
   static const kindEvent = '학교일정';
 
