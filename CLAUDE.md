@@ -199,6 +199,18 @@ planroutine/
 - `createFromImported` / `insertConfirmedOrPending` / `createFromSchedule` 모두 `deleted_at IS NULL` 기준.
   즉 휴지통에 같은 항목 있어도 재생성 허용.
 
+### 편집 시트는 반드시 `copyWith` (필드 유실 방지)
+- `EventEditDialog._buildEvent()`의 **편집 분기는 `existing.copyWith(...)`** 여야 한다. 생성자로
+  `CalendarEvent`를 새로 만들면 시트가 모르는 필드가 `@Default`/null로 되돌아가고,
+  `updateEvent`의 `toMap()`이 그 값으로 DB를 덮는다.
+- 실제로 그렇게 잃었던 것: `kind`(학교일정 → 업무, 오늘 탭에 운동회가 뜬다) ·
+  `googleEventId`(연결이 끊겨 재저장 시 Google에 **중복 이벤트**) · `deviceEventId`.
+  `completedAt`은 `toMap()`에 없어 우연히 무사했을 뿐이다.
+- **원인은 필드 하나가 아니라 패턴이다** — 생성자 조립을 되살리면 다음 필드에서 재발한다.
+  `test/features/calendar/event_edit_dialog_preserve_test.dart`의 보존 가드가 이 회귀를 막는다.
+- 예외는 `endDate` 하나뿐이다: 시작일을 옛 종료일보다 뒤로 옮기면 `endDate: null`로 **정리**한다.
+  종료일 입력이 UI에서 사라져 사용자가 모순을 고칠 방법이 없기 때문(아래 참조).
+
 ### 알림
 - `computeNotifications(events, settings, now)`는 **순수 함수** — DB/플랫폼 무관, 유닛 테스트 용이.
 - `NotificationSyncer.sync()`는 이 결과를 `NotificationService.replaceAll()`로 플랫폼에 반영.
@@ -265,12 +277,35 @@ planroutine/
   묻힌다. 높이는 그대로 두고 굵기·색으로만 위계를 만든다.
 - 이벤트 점은 최대 3개까지만 표기(4개 이상도 3개로 유지).
 
+### 일정 추가/수정 시트
+- 구성: 제목 · (연도 칩) · 설명(`minLines 4 / maxLines 6`) · 날짜 · **성격 카드** · 취소/저장.
+- **성격 카드** = 종류 세그먼트(`SegmentedSettingRow<EntryKind>`) + `Divider` + 중요 스위치를
+  한 테두리에. 종류 행을 숨길 때는 **`Divider`도 함께** 뺀다 — 구분선만 남으면 잘린 것처럼 읽힌다.
+- **종료 날짜 입력은 없다.** `getEventsByDateRange`가 `event_date`만 보므로 기간은 앱 안에서
+  아무 일도 하지 않았다(3일짜리도 시작일 하루에만 점이 찍힌다). 실효는 Google/기기 캘린더로
+  기간 이벤트를 내보낼 때뿐이라 **DB 컬럼·모델·내보내기 경로는 그대로 두고 입력만** 없앴다.
+  회수한 48+8px은 설명칸이 가져갔다.
+- 중요 표시는 **두 종류 모두에서** 유지한다 — 캘린더 ★ 강조는 학교 행사에도 의미가 있다.
+
+### 목록의 중요 표시는 세로를 쓰지 않는다
+- 중요 이벤트는 골드 신호가 네 겹이었다: 레일 · 카드 배경 14% · 테두리 50% · `★ 중요` 배지.
+  앞의 셋은 세로를 안 쓰는데 배지만 약 25px을 써 중요 행이 35%쯤 높았다.
+- 배지 줄을 없애고 **★ 아이콘만 종류 배지 뒤·제목 앞 인라인**으로 둔다. 중요 행과 보통 행의
+  높이가 같아진다. 글자가 사라지므로 `Semantics(label: CalendarStrings.importantBadge)`로 감싼다
+  (상수는 스크린리더 라벨로 계속 쓰이니 지우지 말 것).
+- **★ 자체는 지우지 않는다** — 남은 신호 셋이 전부 색이라 형태(★)가 마지막 비색상 단서다.
+- `_goldPill`은 연도 배지가 계속 쓴다. E2E에서 ★를 찾을 때는 격자 셀도 같은
+  `Icons.star_rounded`를 쓰므로 `find.descendant(of: find.byType(EventListSection), ...)`로 한정한다.
+
 ### 업무 / 학교일정 (EntryKind)
 - `lib/features/schedule/domain/entry_kind.dart` — `task`(업무) / `event`(학교일정). DB 값은 `'task'`/`'event'`, 모르는 값·null은 업무로 폴백.
 - **입력 경로가 종류를 결정한다**: 작년 CSV(생산문서등록대장) → 업무 / 월간 일정표 사진 AI → 학교일정. 두 경로 모두 `status=pending`으로 들어와 같은 검토 관문을 지난다.
 - **승계 지점이 급소**: `CalendarRepository.createFromSchedule`이 `schedules.kind`를 이벤트로 옮긴다. 여기서 끊기면 데이터는 멀쩡한데 오늘 탭에 운동회가 뜨는, 원인이 두 레이어 떨어진 버그가 된다.
 - `buildTodayView`가 `e.kind.showsInToday`로 걸러 **오늘 탭은 업무만** 담는다 — 학교일정에는 완료 개념이 없어 도장·진행 링의 의미가 깨진다.
-- 캘린더는 둘 다 보여준다. 월 그리드 점의 종류별 색 구분은 하지 않는다(색 규칙이 이미 골드=오늘·중요, 붉은색=공휴일·일요일, 파랑=토요일·이벤트로 포화).
+- 캘린더는 둘 다 보여준다. 월 그리드 점의 종류별 색 구분은 하지 않는다(색 규칙이 이미 골드=오늘·중요, 붉은색=공휴일·일요일, 파랑=토요일·이벤트로 포화). **대신 목록 행에서 구분한다** — 제목 앞 인라인 `KindBadge`(업무=회색 `sub` / 일정=파랑 `info`, 옅은배경 15% + 10px w700).
+- `KindBadge`는 `features/schedule/presentation/widgets/`에 산다(`shared/widgets/`가 아니다). `EntryKind`에 종속인데 `shared/widgets/` 아래 어떤 위젯도 `features/`를 import 하지 않기 때문 — 캘린더가 schedule을 가져다 쓰는 방향은 이미 `calendar_event.dart`에 있다.
+- **시트에서 종류를 고를 수 있다**(캘린더 경로만). 손으로 넣은 항목이 전부 업무가 되던 문제를 없앤다. **오늘 탭에서 열면 종류 행을 숨긴다**(`allowKindChange: false`) — 거기서 학교일정을 만들면 저장 직후 목록에서 사라져 저장 실패로 읽힌다. 행만 숨기고 `_kind` 상태는 살려둬야 오늘 탭에서 편집해도 종류가 보존된다.
+- 캘린더에서 종류를 바꿔도 원본 `schedules.kind`는 그대로다(역방향 동기화 없음). `scheduleId`가 있는 이벤트의 종류를 뒤집으면 입력 탭 확정 목록과 캘린더의 배지가 어긋나고 CSV 내보내기는 옛 종류로 나간다. 빈도가 낮아 두고 있는 상태이지 버그가 아니다.
 
 ### 입력 탭 구조
 - **넣기가 주인공**, 검토는 그 아래. 화면 제목 `입력`(eyebrow `INPUT`), 탭 라벨 `입력`.
