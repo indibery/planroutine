@@ -425,26 +425,44 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     Navigator.pop(context);
   }
 
+  /// 저장할 이벤트를 만든다.
+  ///
+  /// 편집일 때는 **반드시 copyWith**를 쓴다. 생성자로 새로 만들면 시트가 모르는 필드가
+  /// `@Default`/null로 되돌아가고, `updateEvent`의 `toMap()`이 그 값으로 DB를 덮는다
+  /// (kind → 학교일정이 업무로, googleEventId → Google 중복 이벤트).
+  /// `CalendarEvent`에 필드가 추가돼도 여기를 고칠 필요가 없어야 한다.
   CalendarEvent _buildEvent() {
     final now = DateTime.now().toIso8601String();
-    final dateStr = formatDate(_eventDate);
-    final endDateStr = _endDate != null ? formatDate(_endDate!) : null;
+    final end = _endDate;
+    final endDateStr = end != null ? formatDate(end) : null;
+    final existing = widget.event;
+
+    if (existing != null) {
+      return existing.copyWith(
+        title: _titleController.text.trim(),
+        description: _trimmedDescription(),
+        eventDate: formatDate(_eventDate),
+        endDate: endDateStr,
+        isImportant: _isImportant,
+        updatedAt: now,
+      );
+    }
+
     return CalendarEvent(
-      id: widget.event?.id,
       title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      eventDate: dateStr,
+      description: _trimmedDescription(),
+      eventDate: formatDate(_eventDate),
       endDate: endDateStr,
       isAllDay: true,
-      // 색상 피커 제거 — 기존 색은 보존, 신규는 미지정(eventColor가 기본색으로 폴백)
-      color: widget.event?.color,
-      scheduleId: widget.event?.scheduleId,
-      createdAt: widget.event?.createdAt ?? now,
-      updatedAt: now,
       isImportant: _isImportant,
+      createdAt: now,
+      updatedAt: now,
     );
   }
 
+  /// 설명은 비어 있으면 null로 저장한다(빈 문자열을 남기지 않는다).
+  String? _trimmedDescription() {
+    final text = _descriptionController.text.trim();
+    return text.isEmpty ? null : text;
+  }
 }
