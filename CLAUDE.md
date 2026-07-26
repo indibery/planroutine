@@ -11,7 +11,7 @@
 2. **작년 업무 가져오기(보조)** — 입력 탭 히어로 아래 테두리 카드 한 줄 → `/import` 풀스크린에서 CSV 업로드. **진입점은 이 한 곳뿐**(설정 탭에서 제거). 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
 3. **업무 / 학교일정 구분** — `EntryKind`(task/event). CSV 경로 = 업무, 사진 AI 경로 = 학교일정. 오늘 탭에는 업무만, 캘린더에는 둘 다.
 4. **검토 후 확정** — 입력 탭 검토 목록에서 슬라이드로 확정(→) / 삭제(←). 하단 `일괄 업무 등록 N건` / `일괄 일정 등록 N건` pill로 종류별 일괄 확정(해당 종류 0건이면 숨김). 확정 시 캘린더 이벤트 자동 생성(종류 승계). 대기가 없으면 검토 영역은 요약 한 줄로 축소.
-5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 제목에 올해 이전 연도가 있는 이벤트는 리스트에 "이전 연도 자료" 골드 배지(`2025→2026`) 노출 → 탭 시 연도 고친 제목으로 편집 화면 진입(날짜도 함께 수정). 편집 다이얼로그 내에도 동일 연도 바꾸기 칩.
+5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 에듀파인 CSV로 가져왔고 아직 검토(편집 시트를 열어 저장)하지 않은 이벤트는 리스트에 테두리형 `작년` 출처 배지 노출(연도 자체는 보지 않는다 — 아래 "작년 배지" 참고) → 시트를 저장하면 배지가 꺼진다. 제목의 연도를 한 해씩 미는 칩은 편집 다이얼로그(수정 경로) 안에만 있고, 한 시트 안에서 한 번 누르면 다시 누를 수 없다.
 6. **휴지통** — 일정/이벤트 soft-delete, 30일 후 자동 영구 삭제.
 7. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
 8. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
@@ -29,7 +29,7 @@
 | 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
 | 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import). 초기 라우트 `/today` |
-| 로컬 DB | sqflite | 스키마 v7 (3 테이블, soft-delete + completed + google_event_id + kind) |
+| 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
@@ -39,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 429 유닛/위젯 + 20 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 465 유닛/위젯 + 20 E2E |
 
 ## 프로젝트 구조
 
@@ -158,7 +158,7 @@ planroutine/
     └── app_test.dart                   # UX E2E 20 시나리오
 ```
 
-## 데이터베이스 스키마 (v7)
+## 데이터베이스 스키마 (v8)
 
 ### schedules
 - `id`, `title`, `description`, `scheduled_date`
@@ -177,13 +177,15 @@ planroutine/
 - **`device_event_id`** (v5): 기기 캘린더 저장 식별자
 - **`is_important`** (v6): 0/1 — 미완료일 때만 골드 강조(`showsImportant`)
 - **`kind`** (v7): `task`/`event`. 확정 시 `schedules.kind`를 승계한다
+- **`reviewed_at`** (v8): NULL=아직 검토 안 함, ISO=편집 시트 저장 시각. 연도를 고쳤는지는
+  구분하지 않는다 — 저장 자체가 검토의 증거(아래 "작년 배지" 참고)
 
 ### imported_schedules
 - 원본 생산문서등록대장 CSV 보관. PlanRoutine export 포맷 임포트는 이 테이블을 건너뛰고 schedules로 직접 삽입.
 
 ### 마이그레이션
 - `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id),
-  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블).
+  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블), v7→v8(reviewed_at).
   기존 사용자도 ALTER TABLE로 데이터 유지한 채 업그레이드.
 - v7의 `DEFAULT 'task'`가 곧 제품 결정이다 — **기존 데이터는 전부 업무**(지금까지 들어온 것은
   사실상 전부 CSV). 별도 백필 스크립트가 없는 이유.
@@ -340,7 +342,21 @@ planroutine/
   - **왜 상대 기준(한 해 밀기)인가**: "올해로 맞추기"(예전 `bumpTitleYear`, 올해보다 작은 연도만 치환)는 한 제목 안의 서로 다른 연도를 뭉갠다 — `2025학년도 안건[2026학년도 개정]`이 올해(2026)로 맞추면 둘 다 2026이 돼 "올해 발의한 내년 규정"이라는 관계가 사라진다. 한 해씩 밀면 `2026학년도 안건[2027학년도 개정]`으로 간격이 그대로 보존된다. 12월 업무 제목의 "2026 졸업식"이 두 달 뒤(2월) 졸업식을 가리키는 것처럼, 연도들의 상대적 관계가 뜻을 만든다.
 - **노출 지점은 편집 칩 1곳**(`EventEditDialog` 제목 아래 실시간 칩, 입력 중 연도 감지 시 노출) — 목록의 골드 연도 배지는 없앴다(아래 "작년 배지" 참고).
   - 이 칩은 **수정 경로에서만** 뜬다(`_isEditing`). `EventEditDialog.show`는 생성에도 쓰이는데(캘린더·오늘 탭 FAB), 신규 생성 중에는 방금 본인이 타이핑한 연도라 밀라고 권할 이유가 없다(사용자 확인, 2026-07-26).
-- **작년 배지**(목록, 골드 연도 배지의 대체): 판정 기준은 `schedules.source_id != null` — **에듀파인 CSV 경로 한정**(`createFromImported`·`createBulkFromImported`만 채움). 사진 AI, 손입력, 그리고 플랜루틴 export CSV 재임포트(`_importPlanRoutineCsv`, `sourceId` 없음)는 배지를 받지 않는다. 배지는 **테두리형**(종류 배지는 채움) — 둘 다 `AppColors.sub`라 형태로만 구분된다.
+  - **칩이 꺼지는 이유는 셋, 수명은 제각각이다**: `!_isEditing`(신규 생성 — 편집 경로가 아님, 영구) /
+    `reviewedAt != null`(이미 검토해 저장한 항목, 영구·DB) / `_yearShifted`(이 시트를 여는 동안
+    이미 한 번 눌렀음, **세션 한정** — 취소하면 사라져 다시 열면 칩이 돌아온다).
+  - **"저장이 유일한 기준"의 구조적 근거**: `toMap()`을 쓰는 경로는 `createEvent`(insert)와
+    `updateEvent`(update) 둘이고, **기존 행의 `reviewed_at`을 변경**할 수 있는 것은 `updateEvent`
+    하나다. 나머지(`markCompleted`·`markIncomplete`·`_updateExternalEventId`·`deleteEvent`·
+    `restoreEvent`)는 각자 컬럼만 담은 리터럴 맵을 쓴다 — Google/기기 저장 스와이프나 완료
+    토글만으로는 `reviewed_at`이 구조적으로 바뀌지 않는다.
+- **작년 배지**(목록, 골드 연도 배지의 대체): 판정 기준은 `schedules.source_id != null && calendar_events.reviewed_at IS NULL`(DB v8) — **에듀파인 CSV 경로 한정**(`createFromImported`·`createBulkFromImported`만 `source_id`를 채움)**이면서 아직 검토(편집 시트 저장)하지 않은 것만**. 사진 AI, 손입력, 그리고 플랜루틴 export CSV 재임포트(`_importPlanRoutineCsv`, `sourceId` 없음)는 배지를 받지 않는다. 배지는 **테두리형**(종류 배지는 채움) — 둘 다 `AppColors.sub`라 형태로만 구분된다.
+  - **배지의 뜻은 "아직 검토 안 한 항목"이지 "아직 옛 연도인 항목"이 아니다.** `reviewed_at`은
+    연도를 고쳤는지와 무관하게 편집 시트의 **모든 저장**에서 기록된다(중요 스위치만 바꿔도,
+    날짜만 옮겨도 기록된다) — 그래야 연도 없는 제목(`종업식 및 졸업식 학사일정변경 안내장`)도
+    배지를 지울 방법이 생긴다. 그 대가로 연도 색인(직전 작업이 남긴 "아직 제목이 옛 연도인
+    항목을 찾을 수 없다"는 부채)은 **근사치로만 갚였다** — "아직 안 열어본 것"과 "아직 옛
+    연도인 것"은 다른 집합이고, 후자를 보려면 개별 항목을 열어 편집 칩을 확인하는 수밖에 없다.
   - `CalendarEvent.fromImport`는 `getEventsByDateRange`의 LEFT JOIN으로 채우는 **조회 시점 파생 필드**이고 **`toMap()`에 넣지 않는다** — 넣으면 `from_import` 컬럼이 없는 테이블에 insert가 깨진다. 가드 테스트가 `calendar_repository_test.dart`에 있다.
   - 목록 규칙을 연도에서 파생시키면(`<`를 `<=`로) 고칠 때마다 다시 조르는 순환이 된다 — 그래서 **조르는 쪽(목록)과 고치는 쪽(편집 칩)의 기준을 분리**했다. 목록은 출처만 보고 연도를 아예 안 본다.
   - ⚠️ **조인의 대가**: 확정된 일정을 입력 탭에서 삭제하고 30일이 지나면 `purgeOlderThan`이 `schedules` 행을 hard-delete 하는데, `PRAGMA foreign_keys`가 꺼져 있어 `calendar_events.schedule_id`는 dangling으로 남는다 → 조인 미스 → **배지가 조용히 사라진다**. 컬럼이었다면 살아남았을 유일한 케이스다. (soft-delete만으로는 안 사라진다 — 조인에 `s.deleted_at` 필터가 없어 휴지통에 든 스케줄도 배지를 유지하며, 이건 의도된 동작이다.)

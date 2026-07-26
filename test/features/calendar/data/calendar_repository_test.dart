@@ -306,7 +306,10 @@ void main() {
     });
 
     // 스와이프로 배지가 지워지지 않는다는 구조적 보장을 고정한다.
-    // toMap()을 쓰는 쓰기 경로는 updateEvent 하나뿐이고, 나머지는 각자 컬럼만 쓴다.
+    // toMap()을 쓰는 경로는 createEvent(insert)와 updateEvent(update) 둘이고,
+    // 기존 행의 reviewed_at을 변경할 수 있는 것은 updateEvent 하나다. 나머지
+    // (markCompleted·markIncomplete·_updateExternalEventId·deleteEvent·restoreEvent)는
+    // 각자 컬럼만 담은 리터럴 맵을 쓴다.
     test('markCompleted·updateGoogleEventId는 reviewed_at을 건드리지 않는다', () async {
       final id = await repo.createEvent(buildEvent(title: '스와이프 대상'));
       final loaded = (await repo.getEventsByDate(DateTime(2026, 5, 1))).single;
