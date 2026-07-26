@@ -42,7 +42,6 @@ void main() {
               onEventTap: (_) {},
               onEventSaveToGoogle: null,
               onEventToggleCompleted: (e) => toggled.add(e.id!),
-              onEventBumpYear: (_) {},
             ),
           ),
         ),
@@ -80,7 +79,6 @@ void main() {
                   calls.add(e.isCompleted);
                   onToggle();
                 },
-                onEventBumpYear: (_) {},
               ),
             ),
           ),

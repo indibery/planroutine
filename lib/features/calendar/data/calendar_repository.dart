@@ -120,18 +120,10 @@ class CalendarRepository {
     return results.map(CalendarEvent.fromMap).toList();
   }
 
-  /// 특정 날짜의 이벤트 조회 (삭제되지 않은 것만)
-  Future<List<CalendarEvent>> getEventsByDate(DateTime date) async {
-    final db = await _dbHelper.database;
-    final dateStr = formatDate(date);
-    final results = await db.query(
-      DatabaseHelper.tableCalendarEvents,
-      where: 'event_date = ? AND deleted_at IS NULL',
-      whereArgs: [dateStr],
-      orderBy: 'created_at ASC',
-    );
-    return results.map(CalendarEvent.fromMap).toList();
-  }
+  /// 특정 날짜의 이벤트 조회 (삭제되지 않은 것만).
+  /// `from_import` 조인을 함께 태우도록 [getEventsByDateRange]에 위임한다.
+  Future<List<CalendarEvent>> getEventsByDate(DateTime date) =>
+      getEventsByDateRange(date, date);
 
   /// 특정 월의 모든 이벤트 조회
   Future<List<CalendarEvent>> getEventsByMonth(int year, int month) async {
@@ -140,7 +132,10 @@ class CalendarRepository {
     return getEventsByDateRange(start, end);
   }
 
-  /// 날짜 범위 이벤트 조회 (삭제되지 않은 것만)
+  /// 날짜 범위 이벤트 조회 (삭제되지 않은 것만).
+  ///
+  /// `from_import`는 컬럼이 아니라 조인으로 만드는 파생 값이다 — 출처의 진실은
+  /// `schedules.source_id` 한 곳에만 두고, calendar_events에 복제하지 않는다.
   Future<List<CalendarEvent>> getEventsByDateRange(
     DateTime start,
     DateTime end,
@@ -148,11 +143,15 @@ class CalendarRepository {
     final db = await _dbHelper.database;
     final startStr = formatDate(start);
     final endStr = formatDate(end);
-    final results = await db.query(
-      DatabaseHelper.tableCalendarEvents,
-      where: 'event_date >= ? AND event_date <= ? AND deleted_at IS NULL',
-      whereArgs: [startStr, endStr],
-      orderBy: 'event_date ASC, created_at ASC',
+    final results = await db.rawQuery(
+      '''
+      SELECT e.*, (s.source_id IS NOT NULL) AS from_import
+      FROM ${DatabaseHelper.tableCalendarEvents} e
+      LEFT JOIN ${DatabaseHelper.tableSchedules} s ON s.id = e.schedule_id
+      WHERE e.event_date >= ? AND e.event_date <= ? AND e.deleted_at IS NULL
+      ORDER BY e.event_date ASC, e.created_at ASC
+      ''',
+      [startStr, endStr],
     );
     return results.map(CalendarEvent.fromMap).toList();
   }

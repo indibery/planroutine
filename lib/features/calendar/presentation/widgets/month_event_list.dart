@@ -20,7 +20,6 @@ class MonthEventList extends StatefulWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
-    required this.onEventBumpYear,
   });
 
   final List<MapEntry<String, List<CalendarEvent>>> groupedEntries;
@@ -28,7 +27,6 @@ class MonthEventList extends StatefulWidget {
   final ValueChanged<CalendarEvent> onEventTap;
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
-  final ValueChanged<CalendarEvent> onEventBumpYear;
 
   @override
   State<MonthEventList> createState() => _MonthEventListState();
@@ -115,7 +113,6 @@ class _MonthEventListState extends State<MonthEventList> {
                 onEventTap: widget.onEventTap,
                 onEventSaveToGoogle: widget.onEventSaveToGoogle,
                 onEventToggleCompleted: widget.onEventToggleCompleted,
-                onEventBumpYear: widget.onEventBumpYear,
               ),
             ),
         ],

@@ -38,7 +38,6 @@ void main() {
                   onEventTap: (_) {},
                   onEventSaveToGoogle: null,
                   onEventToggleCompleted: (_) {},
-                  onEventBumpYear: (_) {},
                 ),
               ),
             ],

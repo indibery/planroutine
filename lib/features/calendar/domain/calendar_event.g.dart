@@ -25,6 +25,7 @@ _CalendarEvent _$CalendarEventFromJson(
   deviceEventId: json['device_event_id'] as String?,
   isImportant: json['is_important'] as bool? ?? false,
   kind: $enumDecodeNullable(_$EntryKindEnumMap, json['kind']) ?? EntryKind.task,
+  fromImport: json['fromImport'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$CalendarEventToJson(_CalendarEvent instance) =>

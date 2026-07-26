@@ -7,7 +7,6 @@ import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/utils/title_year_utils.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
 import '../../../../shared/widgets/gold_fab.dart';
@@ -74,8 +73,6 @@ class CalendarScreen extends ConsumerWidget {
                       onEventSaveToGoogle: _resolveSaveCallback(context, ref),
                       onEventToggleCompleted: (event) =>
                           _onToggleCompleted(context, ref, event),
-                      onEventBumpYear: (event) =>
-                          _onBumpYear(context, ref, event),
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => const Center(child: Text(AppStrings.error)),
@@ -163,25 +160,6 @@ class CalendarScreen extends ConsumerWidget {
     );
     if (result != null) {
       await ref.read(selectedMonthEventsProvider.notifier).updateEvent(result);
-    }
-  }
-
-  /// "이전 연도 자료" 배지 탭 — 제목 연도를 올해로 고친 뒤 편집 화면으로 진입해
-  /// 날짜 등 나머지를 마저 수정하게 한다. (저장 시 updateEvent)
-  Future<void> _onBumpYear(
-    BuildContext context,
-    WidgetRef ref,
-    CalendarEvent event,
-  ) async {
-    final result = bumpTitleYear(event.title, DateTime.now().year);
-    if (result.from == null) return;
-    final edited = await EventEditDialog.show(
-      context,
-      initialDate: event.eventDateTime,
-      event: event.copyWith(title: result.title),
-    );
-    if (edited != null) {
-      await ref.read(selectedMonthEventsProvider.notifier).updateEvent(edited);
     }
   }
 

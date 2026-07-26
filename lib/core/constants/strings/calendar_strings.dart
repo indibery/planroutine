@@ -31,6 +31,12 @@ class CalendarStrings {
   // 업무 / 학교일정
   static const kindLabel = '종류';
 
+  // 가져온 자료 출처
+  static const fromImportBadge = '작년';
+
+  // 연도 바꾸기 칩 (연도가 둘 이상일 때)
+  static const yearShiftAll = '연도 모두 +1년';
+
   // 중요 표시
   static const importantLabel = '중요 표시';
   static const importantBadge = '중요';

@@ -278,7 +278,7 @@ planroutine/
 - 이벤트 점은 최대 3개까지만 표기(4개 이상도 3개로 유지).
 
 ### 일정 추가/수정 시트
-- 구성: 제목 · (연도 칩) · 설명(`minLines 4 / maxLines 6`) · 날짜 · **성격 카드** · 취소/저장.
+- 구성: 제목 · (연도 칩, **수정 시에만**) · 설명(`minLines 4 / maxLines 6`) · 날짜 · **성격 카드** · 취소/저장.
 - **성격 카드** = 종류 세그먼트(`SegmentedSettingRow<EntryKind>`) + `Divider` + 중요 스위치를
   한 테두리에. 종류 행을 숨길 때는 **`Divider`도 함께** 뺀다 — 구분선만 남으면 잘린 것처럼 읽힌다.
 - **종료 날짜 입력은 없다.** `getEventsByDateRange`가 `event_date`만 보므로 기간은 앱 안에서
@@ -294,8 +294,10 @@ planroutine/
   높이가 같아진다. 글자가 사라지므로 `Semantics(label: CalendarStrings.importantBadge)`로 감싼다
   (상수는 스크린리더 라벨로 계속 쓰이니 지우지 말 것).
 - **★ 자체는 지우지 않는다** — 남은 신호 셋이 전부 색이라 형태(★)가 마지막 비색상 단서다.
-- `_goldPill`은 연도 배지가 계속 쓴다. E2E에서 ★를 찾을 때는 격자 셀도 같은
-  `Icons.star_rounded`를 쓰므로 `find.descendant(of: find.byType(EventListSection), ...)`로 한정한다.
+- `_goldPill`·연도 배지(`_buildYearBadge`)는 이번에 **둘 다 없어졌다** — 목록에는 대신
+  출처 표시인 `작년` 배지(`_buildImportBadge`)가 붙는다(위 "제목 연도 바꾸기" 참고).
+  E2E에서 ★를 찾을 때는 격자 셀도 같은 `Icons.star_rounded`를 쓰므로
+  `find.descendant(of: find.byType(EventListSection), ...)`로 한정한다.
 
 ### 업무 / 학교일정 (EntryKind)
 - `lib/features/schedule/domain/entry_kind.dart` — `task`(업무) / `event`(학교일정). DB 값은 `'task'`/`'event'`, 모르는 값·null은 업무로 폴백.
@@ -334,8 +336,14 @@ planroutine/
 
 ### 제목 연도 바꾸기
 - 임포트는 날짜(scheduled_date)만 올해로 변환하고 **제목 문자열의 연도는 원본 유지**(의도적). 그래서 "2025학년도 …" 제목이 남는다.
-- `core/utils/title_year_utils.dart`의 순수 함수 `bumpTitleYear(title, currentYear)`가 치환 담당. 정규식 `(?<!\d)20\d\d(?!\d)`로 4자리 연도만 매칭(문서번호·"1000명" 등 비연도 차단), **올해보다 작은 연도만** 올해로 치환하고 **올해 이상(이미 미래 참조) 연도는 보존**. 감지된 가장 이른 옛 연도를 함께 반환.
-- 노출 지점 2곳(둘 다 같은 순수 함수 공유): ① 캘린더 리스트의 "이전 연도 자료" 골드 배지 → 탭 시 연도 고친 제목으로 `EventEditDialog` 진입(날짜 등 마저 수정) ② `EventEditDialog` 제목 아래 실시간 칩(입력 중 옛 연도 감지 시 노출).
+- `core/utils/title_year_utils.dart`의 순수 함수 `shiftTitleYears(title, {int by = 1})`가 치환 담당(`currentYear` 인자 없음). 정규식 `(?<!\d)20\d\d(?!\d)`로 4자리 연도만 매칭(문서번호·"1000명" 등 비연도 차단)하고, **크기에 따른 예외 없이 제목 안의 모든 연도를 한 해씩 민다**. 반환 `from`은 **중복 제거된 등장 순서** 원본 연도 목록 — 호출부가 이 길이로 라벨을 고른다(1개면 `2025 → 2026`, 2개 이상이면 `연도 모두 +N년`).
+  - **왜 상대 기준(한 해 밀기)인가**: "올해로 맞추기"(예전 `bumpTitleYear`, 올해보다 작은 연도만 치환)는 한 제목 안의 서로 다른 연도를 뭉갠다 — `2025학년도 안건[2026학년도 개정]`이 올해(2026)로 맞추면 둘 다 2026이 돼 "올해 발의한 내년 규정"이라는 관계가 사라진다. 한 해씩 밀면 `2026학년도 안건[2027학년도 개정]`으로 간격이 그대로 보존된다. 12월 업무 제목의 "2026 졸업식"이 두 달 뒤(2월) 졸업식을 가리키는 것처럼, 연도들의 상대적 관계가 뜻을 만든다.
+- **노출 지점은 편집 칩 1곳**(`EventEditDialog` 제목 아래 실시간 칩, 입력 중 연도 감지 시 노출) — 목록의 골드 연도 배지는 없앴다(아래 "작년 배지" 참고).
+  - 이 칩은 **수정 경로에서만** 뜬다(`_isEditing`). `EventEditDialog.show`는 생성에도 쓰이는데(캘린더·오늘 탭 FAB), 신규 생성 중에는 방금 본인이 타이핑한 연도라 밀라고 권할 이유가 없다(사용자 확인, 2026-07-26).
+- **작년 배지**(목록, 골드 연도 배지의 대체): 판정 기준은 `schedules.source_id != null` — **에듀파인 CSV 경로 한정**(`createFromImported`·`createBulkFromImported`만 채움). 사진 AI, 손입력, 그리고 플랜루틴 export CSV 재임포트(`_importPlanRoutineCsv`, `sourceId` 없음)는 배지를 받지 않는다. 배지는 **테두리형**(종류 배지는 채움) — 둘 다 `AppColors.sub`라 형태로만 구분된다.
+  - `CalendarEvent.fromImport`는 `getEventsByDateRange`의 LEFT JOIN으로 채우는 **조회 시점 파생 필드**이고 **`toMap()`에 넣지 않는다** — 넣으면 `from_import` 컬럼이 없는 테이블에 insert가 깨진다. 가드 테스트가 `calendar_repository_test.dart`에 있다.
+  - 목록 규칙을 연도에서 파생시키면(`<`를 `<=`로) 고칠 때마다 다시 조르는 순환이 된다 — 그래서 **조르는 쪽(목록)과 고치는 쪽(편집 칩)의 기준을 분리**했다. 목록은 출처만 보고 연도를 아예 안 본다.
+  - ⚠️ **조인의 대가**: 확정된 일정을 입력 탭에서 삭제하고 30일이 지나면 `purgeOlderThan`이 `schedules` 행을 hard-delete 하는데, `PRAGMA foreign_keys`가 꺼져 있어 `calendar_events.schedule_id`는 dangling으로 남는다 → 조인 미스 → **배지가 조용히 사라진다**. 컬럼이었다면 살아남았을 유일한 케이스다. (soft-delete만으로는 안 사라진다 — 조인에 `s.deleted_at` 필터가 없어 휴지통에 든 스케줄도 배지를 유지하며, 이건 의도된 동작이다.)
 
 ### CSV 라운드트립
 - **내보내기**: `schedules`의 확정(`status=confirmed`)만. 컬럼: 제목/등록일자/카테고리/설명/상태. UTF-8 BOM.
