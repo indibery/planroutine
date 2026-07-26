@@ -72,6 +72,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   late DateTime _eventDate;
   late bool _isImportant;
   late EntryKind _kind;
+
+  /// 이 시트에서 연도 칩을 이미 눌렀는지. 저장하지 않으므로 취소하면 사라진다 —
+  /// 다시 열면 칩이 돌아온다. 시트 안에서 두 번 눌러 연도가 계속 올라가는 것을 막는다.
+  bool _yearShifted = false;
   bool get _isEditing => widget.event != null;
 
   @override
@@ -202,14 +206,15 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   /// 제목에 연도가 있으면 나타나는 "연도 한 해 밀기" 원탭 칩.
   ///
   /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 **모든**
-  /// 연도를 +1년 하고 커서를 끝으로 옮긴다. (저장은 사용자가 직접)
+  /// 연도를 +1년 하고 커서를 끝으로 옮긴 뒤 **칩을 감춘다**(저장은 사용자가 직접).
   ///
-  /// **수정 경로에서만** 뜬다(`_isEditing`) — 편집 화면은 가져온 자료의 옛 연도를
-  /// 고치러 일부러 연 곳이라 조를 걱정이 없지만, 신규 생성은 방금 본인이 타이핑한
-  /// 연도라 밀라고 권할 이유가 없다(사용자 확인, 2026-07-26). 목록 쪽에서 같은
-  /// 조건을 쓰면 고칠 때마다 다시 조르는 순환이 되므로 목록은 출처만 본다.
+  /// 꺼지는 이유가 셋이고 수명이 다르다:
+  ///   - `!_isEditing` — 신규 생성은 방금 본인이 타이핑한 연도라 밀라고 권할 이유가 없다.
+  ///   - `reviewedAt != null` — 이미 저장해 정리한 항목. **영구**(DB 컬럼).
+  ///   - `_yearShifted` — 이 시트에서 이미 눌렀다. **세션 한정**이라 취소하면 돌아온다.
   Widget _buildYearShiftChip() {
-    if (!_isEditing) return const SizedBox.shrink();
+    if (!_isEditing || _yearShifted) return const SizedBox.shrink();
+    if (widget.event?.reviewedAt != null) return const SizedBox.shrink();
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _titleController,
       builder: (context, value, _) {
@@ -242,6 +247,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                   selection:
                       TextSelection.collapsed(offset: result.title.length),
                 );
+                setState(() => _yearShifted = true);
               },
             ),
           ),
@@ -469,6 +475,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         endDate: staleEnd ? null : existing.endDate,
         isImportant: _isImportant,
         kind: _kind,
+        // 저장했다는 것 자체가 검토의 증거다. 이 값이 `작년` 배지와 연도 칩을 함께 끈다.
+        reviewedAt: now,
         updatedAt: now,
       );
     }

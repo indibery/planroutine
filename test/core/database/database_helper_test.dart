@@ -212,4 +212,87 @@ void main() {
       );
     });
   });
+
+  group('마이그레이션 v7 → v8 (reviewed_at)', () {
+    late DatabaseHelper db;
+
+    setUpAll(setUpFfiForTests);
+    setUp(() => db = freshDatabaseHelper());
+    tearDown(() async => db.close());
+
+    Future<List<String>> columnsOf(String table) async {
+      final d = await db.database;
+      final rows = await d.rawQuery('PRAGMA table_info($table)');
+      return rows.map((r) => r['name'] as String).toList();
+    }
+
+    test('calendar_events가 reviewed_at 컬럼을 갖는다', () async {
+      expect(
+        await columnsOf(DatabaseHelper.tableCalendarEvents),
+        contains('reviewed_at'),
+      );
+    });
+
+    test('schedules에는 추가하지 않는다 — 캘린더 이벤트의 검토 상태다', () async {
+      expect(
+        await columnsOf(DatabaseHelper.tableSchedules),
+        isNot(contains('reviewed_at')),
+      );
+    });
+
+    test('지정하지 않고 넣으면 NULL — 아직 검토하지 않음', () async {
+      final d = await db.database;
+      final now = DateTime.now().toIso8601String();
+      await d.insert(DatabaseHelper.tableCalendarEvents, {
+        'title': '학급편성 결과 제출',
+        'event_date': '2026-03-02',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      final e = await d.query(DatabaseHelper.tableCalendarEvents);
+      expect(e.single['reviewed_at'], isNull);
+    });
+
+    test('v7 DB의 기존 행은 업그레이드 후 reviewed_at이 NULL이다', () async {
+      // :memory:는 연결을 닫으면 사라지므로 파일 DB가 필요하다.
+      final dir = await Directory.systemTemp.createTemp('planroutine_v7');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/v7.db';
+
+      final v7 = await databaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 7,
+          onCreate: (d, _) async {
+            // v8이 손대는 테이블만 최소 컬럼으로 재현한다.
+            await d.execute('''
+              CREATE TABLE ${DatabaseHelper.tableCalendarEvents} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                event_date TEXT NOT NULL
+              )
+            ''');
+            await d.insert(DatabaseHelper.tableCalendarEvents, {
+              'title': '작년에 가져온 업무',
+              'event_date': '2026-03-02',
+            });
+          },
+        ),
+      );
+      await v7.close();
+
+      final helper = DatabaseHelper.forTesting(path: path);
+      addTearDown(helper.close);
+      final d = await helper.database;
+
+      final rows = await d.query(DatabaseHelper.tableCalendarEvents);
+      expect(rows.single['title'], '작년에 가져온 업무');
+      expect(
+        rows.single['reviewed_at'],
+        isNull,
+        reason: '기존 사용자의 항목은 아직 검토하지 않은 상태라 배지가 유지돼야 한다',
+      );
+    });
+  });
 }

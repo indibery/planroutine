@@ -14,7 +14,7 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 7;
+  static const _databaseVersion = 8;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
@@ -91,6 +91,14 @@ class DatabaseHelper {
         );
       }
     }
+    if (oldVersion < 8) {
+      // 가져온 자료의 검토 상태. 편집 시트에서 저장하면 기록되고, 그때 `작년` 배지와
+      // 연도 칩이 함께 꺼진다. 기존 행은 NULL이라 아직 검토하지 않은 것으로 남는다 —
+      // 백필하지 않는 것이 곧 맞는 상태다.
+      await db.execute(
+        'ALTER TABLE $tableCalendarEvents ADD COLUMN reviewed_at TEXT',
+      );
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -149,6 +157,7 @@ class DatabaseHelper {
         device_event_id TEXT,
         is_important INTEGER NOT NULL DEFAULT 0,
         kind TEXT NOT NULL DEFAULT 'task',
+        reviewed_at TEXT,
         FOREIGN KEY (schedule_id) REFERENCES $tableSchedules(id)
       )
     ''');

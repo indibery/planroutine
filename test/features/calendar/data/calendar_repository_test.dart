@@ -271,4 +271,59 @@ void main() {
       expect(event.toMap().containsKey('from_import'), false);
     });
   });
+
+  group('reviewed_at — 검토 상태', () {
+    test('저장·조회 라운드트립에서 reviewedAt이 살아남는다', () async {
+      final id = await repo.createEvent(buildEvent(title: '검토 대상'));
+      final loaded = (await repo.getEventsByDate(DateTime(2026, 5, 1))).single;
+      expect(loaded.reviewedAt, isNull, reason: '신규 이벤트는 아직 검토 전');
+
+      await repo.updateEvent(
+        loaded.copyWith(id: id, reviewedAt: '2026-07-26T10:00:00.000'),
+      );
+
+      final again = (await repo.getEventsByDate(DateTime(2026, 5, 1))).single;
+      expect(again.reviewedAt, '2026-07-26T10:00:00.000');
+    });
+
+    test('showsImportBadge — 가져온 자료이면서 아직 검토 안 한 것만', () {
+      const notImported = CalendarEvent(title: 'a', eventDate: '2026-05-01');
+      const importedFresh = CalendarEvent(
+        title: 'b',
+        eventDate: '2026-05-01',
+        fromImport: true,
+      );
+      const importedReviewed = CalendarEvent(
+        title: 'c',
+        eventDate: '2026-05-01',
+        fromImport: true,
+        reviewedAt: '2026-07-26T10:00:00.000',
+      );
+
+      expect(notImported.showsImportBadge, false);
+      expect(importedFresh.showsImportBadge, true);
+      expect(importedReviewed.showsImportBadge, false);
+    });
+
+    // 스와이프로 배지가 지워지지 않는다는 구조적 보장을 고정한다.
+    // toMap()을 쓰는 경로는 createEvent(insert)와 updateEvent(update) 둘이고,
+    // 기존 행의 reviewed_at을 변경할 수 있는 것은 updateEvent 하나다. 나머지
+    // (markCompleted·markIncomplete·_updateExternalEventId·deleteEvent·restoreEvent)는
+    // 각자 컬럼만 담은 리터럴 맵을 쓴다.
+    test('markCompleted·updateGoogleEventId는 reviewed_at을 건드리지 않는다', () async {
+      final id = await repo.createEvent(buildEvent(title: '스와이프 대상'));
+      final loaded = (await repo.getEventsByDate(DateTime(2026, 5, 1))).single;
+      await repo.updateEvent(
+        loaded.copyWith(id: id, reviewedAt: '2026-07-26T10:00:00.000'),
+      );
+
+      await repo.markCompleted(id);
+      await repo.updateGoogleEventId(id, 'g-abc123');
+
+      final after = (await repo.getEventsByDate(DateTime(2026, 5, 1))).single;
+      expect(after.reviewedAt, '2026-07-26T10:00:00.000');
+      expect(after.completedAt, isNotNull);
+      expect(after.googleEventId, 'g-abc123');
+    });
+  });
 }

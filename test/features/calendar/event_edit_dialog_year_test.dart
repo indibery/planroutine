@@ -86,17 +86,33 @@ void main() {
       );
     });
 
-    testWidgets('두 번 탭하면 두 해 밀린다', (tester) async {
+    testWidgets('칩을 한 번 탭하면 칩이 사라진다 — 두 번 밀 수 없다', (tester) async {
       await pumpDialog(tester);
       await tester.enterText(titleField(), '$oldYear학년도 졸업식');
       await tester.pump();
 
       await tester.tap(find.byKey(const Key('year_shift_chip')));
       await tester.pump();
-      await tester.tap(find.byKey(const Key('year_shift_chip')));
+
+      expect(find.text('$currentYear학년도 졸업식'), findsOneWidget);
+      expect(
+        find.byKey(const Key('year_shift_chip')),
+        findsNothing,
+        reason: '연도 밀기는 한 번으로 끝난다 — 계속 눌러 연도가 올라가면 안 된다',
+      );
+    });
+
+    testWidgets('칩을 탭한 뒤 제목을 다시 고쳐도 칩은 돌아오지 않는다', (tester) async {
+      await pumpDialog(tester);
+      await tester.enterText(titleField(), '$oldYear학년도 졸업식');
       await tester.pump();
 
-      expect(find.text('${currentYear + 1}학년도 졸업식'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('year_shift_chip')));
+      await tester.pump();
+      await tester.enterText(titleField(), '$oldYear학년도 종업식');
+      await tester.pump();
+
+      expect(find.byKey(const Key('year_shift_chip')), findsNothing);
     });
   });
 
@@ -122,6 +138,29 @@ void main() {
       await tester.enterText(
         find.byType(TextFormField).first,
         '$currentYear학년도 운동회',
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('year_shift_chip')), findsNothing);
+    });
+
+    testWidgets('이미 검토한 항목(reviewedAt 있음)에는 칩이 없다', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventEditDialog(
+                initialDate: DateTime(currentYear, 3, 2),
+                event: CalendarEvent(
+                  id: 2,
+                  title: '$oldYear학년도 졸업식',
+                  eventDate: '$currentYear-03-02',
+                  reviewedAt: '$currentYear-03-03T10:00:00.000',
+                ),
+              ),
+            ),
+          ),
+        ),
       );
       await tester.pump();
 

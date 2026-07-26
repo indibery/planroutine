@@ -281,13 +281,14 @@ class EventListSection extends ConsumerWidget {
     );
   }
 
-  /// 에듀파인 CSV로 가져온 자료임을 알리는 출처 배지.
+  /// 가져온 자료 중 **아직 검토하지 않은** 항목에 붙는 배지.
   ///
-  /// 연도를 보지 않는다 — 제목에 연도가 없어도 붙는다. 누르는 것이 아니므로
-  /// 조용해야 하고, 종류 배지(채움)와 한 행에서 구분되도록 **테두리형**으로 그린다.
-  /// 골드는 오늘·중요 전용이라 쓰지 않는다.
+  /// 연도를 보지 않는다 — 제목에 연도가 없어도 붙는다. 편집 시트에서 저장하면
+  /// (`reviewed_at` 기록) 사라지므로, 남아 있는 배지가 곧 "아직 정리 안 한 목록"이 된다.
+  /// 누르는 것이 아니므로 조용해야 하고, 종류 배지(채움)와 한 행에서 구분되도록
+  /// **테두리형**으로 그린다. 골드는 오늘·중요 전용이라 쓰지 않는다.
   Widget _buildImportBadge(CalendarEvent event) {
-    if (!event.fromImport) return const SizedBox.shrink();
+    if (!event.showsImportBadge) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(left: AppSizes.spacing8),
       child: Container(

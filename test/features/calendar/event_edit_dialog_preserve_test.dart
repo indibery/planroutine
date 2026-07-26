@@ -190,4 +190,66 @@ void main() {
       expect(field.maxLines, 6);
     });
   });
+
+  group('편집 저장 — 검토 시각 기록', () {
+    testWidgets('칩을 누르지 않고 저장해도 reviewedAt이 채워진다', (tester) async {
+      const seed = CalendarEvent(
+        id: 11,
+        title: '2025학년도 재학생 진급 사정 협의',
+        eventDate: '2026-03-02',
+      );
+
+      final result = await editTitleAndSave(
+        tester,
+        seed: seed,
+        newTitle: '2025학년도 재학생 진급 사정 협의(수정)',
+      );
+
+      expect(result, isNotNull);
+      expect(
+        result!.reviewedAt,
+        isNotNull,
+        reason: '열어보고 고칠 게 없다고 판단한 것도 검토다 — 아니면 연도 없는 제목의 '
+            '배지를 지울 방법이 영원히 없다',
+      );
+    });
+
+    testWidgets('신규 생성 저장에는 reviewedAt이 없다', (tester) async {
+      CalendarEvent? captured;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async {
+                    captured = await EventEditDialog.show(
+                      context,
+                      initialDate: DateTime(2026, 3, 2),
+                    );
+                  },
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField).first, '새 일정');
+      await tester.ensureVisible(find.text('저장'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('저장'));
+      await tester.pumpAndSettle();
+
+      expect(captured, isNotNull);
+      expect(
+        captured!.reviewedAt,
+        isNull,
+        reason: '생성 시점에 검토란 개념이 없다',
+      );
+    });
+  });
 }

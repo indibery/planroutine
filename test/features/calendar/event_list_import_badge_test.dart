@@ -93,6 +93,47 @@ void main() {
       expect(find.byKey(const Key('event_import_badge_3')), findsNothing);
       expect(find.text('작년'), findsNothing);
     });
+
+    testWidgets('검토한 항목(reviewedAt 있음)에는 배지가 없다', (tester) async {
+      await pumpEvents(tester, [
+        CalendarEvent(
+          id: 5,
+          title: '$oldYear학년도 재학생 진급 사정 협의',
+          eventDate: '$currentYear-01-03',
+          fromImport: true,
+          reviewedAt: '$currentYear-01-04T10:00:00.000',
+        ),
+      ]);
+
+      expect(find.byKey(const Key('event_import_badge_5')), findsNothing);
+      expect(find.text('작년'), findsNothing);
+    });
+
+    testWidgets('같은 목록에서 미검토는 배지, 검토 완료는 배지 없음', (tester) async {
+      await pumpEvents(tester, [
+        CalendarEvent(
+          id: 6,
+          title: '아직 안 본 항목',
+          eventDate: '$currentYear-01-03',
+          fromImport: true,
+        ),
+        CalendarEvent(
+          id: 7,
+          title: '정리한 항목',
+          eventDate: '$currentYear-01-03',
+          fromImport: true,
+          reviewedAt: '$currentYear-01-04T10:00:00.000',
+        ),
+      ]);
+
+      expect(find.byKey(const Key('event_import_badge_6')), findsOneWidget);
+      expect(find.byKey(const Key('event_import_badge_7')), findsNothing);
+      expect(
+        find.text('작년'),
+        findsOneWidget,
+        reason: '남아 있는 배지가 곧 아직 정리 안 한 목록이다',
+      );
+    });
   });
 
   group('캘린더 리스트 — 골드 연도 배지 제거', () {
