@@ -27,6 +27,15 @@ void main() {
       expect(r.from, [2027]);
     });
 
+    test('먼 과거·먼 미래도 예외 없이 한 해씩 — 크기에 따른 분기가 없다', () {
+      expect(shiftTitleYears('2009 자료').title, '2010 자료');
+      expect(shiftTitleYears('2030 로드맵').title, '2031 로드맵');
+      // 2100은 매칭 패턴(20\d\d) 밖이지만, 치환은 원본 문자열의 매치(2099)에
+      // 대해 한 번만 일어나고 결과 문자열을 다시 정규식으로 스캔하지 않는다.
+      // 그래서 출력이 패턴 밖 값이어도 정상 동작이다.
+      expect(shiftTitleYears('2099 비전').title, '2100 비전');
+    });
+
     test('연도 없는 제목은 그대로, from은 빈 리스트', () {
       final r = shiftTitleYears('종업식 및 졸업식 안내장');
       expect(r.title, '종업식 및 졸업식 안내장');
