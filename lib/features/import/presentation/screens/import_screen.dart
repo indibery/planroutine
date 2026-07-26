@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
@@ -26,6 +28,27 @@ class ImportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final importState = ref.watch(importStateProvider);
     final activeStep = _stepFor(importState);
+
+    // 등록이 끝나면 이 화면에 머물 이유가 없다 — 검토 목록으로 바로 돌려보낸다.
+    // 건수는 입력 탭의 `검토 대기 N`이 이미 말해주므로 스낵바로만 알린다.
+    ref.listen<ImportState>(importStateProvider, (prev, next) {
+      if (next is! ImportRegistered) return;
+      final messenger = ScaffoldMessenger.of(context);
+      ref.read(importStateProvider.notifier).reset();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        // 공유시트로 곧바로 열린 경우엔 pop할 스택이 없다.
+        context.go(AppRoutes.schedule);
+      }
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(
+            ImportStrings.registeredSnack(next.created, next.skipped),
+          ),
+        ));
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -64,18 +87,8 @@ class ImportScreen extends ConsumerWidget {
                     sourceYear,
                     nonProductionSkipped,
                   ),
-                ImportRegistered(
-                  :final created,
-                  :final skipped,
-                  :final sourceYear,
-                ) =>
-                  _buildRegisteredView(
-                    context,
-                    ref,
-                    created,
-                    skipped,
-                    sourceYear,
-                  ),
+                // 등록 직후 위 listen이 pop하므로 그릴 것이 없다.
+                ImportRegistered() => const SizedBox.shrink(),
                 ImportError(:final message) =>
                   _buildErrorView(context, ref, message),
               },
@@ -217,77 +230,6 @@ class ImportScreen extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildRegisteredView(
-    BuildContext context,
-    WidgetRef ref,
-    int created,
-    int skipped,
-    int sourceYear,
-  ) {
-    final skippedMessage = skipped > 0 ? ' (중복 $skipped건 제외)' : '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
-        vertical: AppSizes.spacing8,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(AppSizes.cardPadding),
-        decoration: BoxDecoration(
-          color: AppColors.glass,
-          borderRadius: BorderRadius.circular(AppSizes.radius14),
-          border: Border.all(
-            color: AppColors.inkGreen.withValues(alpha: 0.35),
-            width: 0.8,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: AppColors.inkGreen,
-                ),
-                const SizedBox(width: AppSizes.spacing8),
-                Text(
-                  '$sourceYear${AppStrings.compareYearFormat} 일정 $created${ImportStrings.registerCount}',
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ],
-            ),
-            if (skippedMessage.isNotEmpty) ...[
-              const SizedBox(height: AppSizes.spacing4),
-              Text(
-                skippedMessage.trim(),
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 12,
-                  color: AppColors.sub,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSizes.spacing12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () =>
-                    ref.read(importStateProvider.notifier).reset(),
-                icon: const Icon(Icons.file_open, size: 16),
-                label: const Text(ImportStrings.selectFileAgain),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

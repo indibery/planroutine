@@ -53,7 +53,9 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
     // 건수를 모르는 동안 요약을 그리면 '검토 대기 0'이 잠깐 스쳐 오해를 준다.
     if (counts == null) return const SizedBox.shrink();
 
-    final expanded = _expandedOverride ?? (counts.pending > 0);
+    // 기본은 접힘. 넣기(히어로)와 검토 목록에 높이를 내주는 것이 이 탭의 목적이고,
+    // 필터를 쓰는 순간은 그보다 드물다. 접힌 줄이 현재 필터를 말해주므로 정보 손실도 없다.
+    final expanded = _expandedOverride ?? false;
     final narrowed =
         hasNarrowingFilter(kind: kind, categoryLabel: categoryLabel);
 

@@ -39,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 428 유닛/위젯 + 20 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 429 유닛/위젯 + 20 E2E |
 
 ## 프로젝트 구조
 
@@ -278,7 +278,7 @@ planroutine/
 - AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndPreview`에 있다 — 히어로와 가져오기 화면 섹션이 같은 로직을 공유한다.
 - 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 일정 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다.
 - **필터는 접힌다** — 접힘: `[검토 대기 21 · 업무] [21건 삭제] [⌄]` 한 줄(약 41px) / 펼침: 라벨 `필터` + 칩 3줄(상태 · 종류 · 카테고리). 히어로가 위쪽 210px을 쓰므로 칩을 항상 펼쳐두면 iPhone에서 목록이 두어 칸만 남는다. 그렇다고 필터를 바텀시트로 보내면 지금 무엇으로 걸러졌는지 알 수 없어, **요약은 남기고 칩만 접는다**.
-  - 초기 상태는 **대기 건수**로 정한다(대기>0이면 펼침). 학기 초엔 몰아서 검토하고 그 뒤엔 조용한 리듬에 맞춘 것. 사용자가 탭하면 그 선택이 화면 수명 동안 우선한다(저장하지 않는다).
+  - **기본은 접힘**(대기가 있어도). 이 탭의 목적은 넣기와 검토 목록에 높이를 내주는 것이고, 필터를 쓰는 순간은 그보다 드물다. 접힌 줄이 현재 필터를 말해주므로 정보 손실이 없다. 사용자가 탭하면 그 선택이 화면 수명 동안 우선한다(저장하지 않는다).
   - **펼친 상태에서는 요약 문구를 감춘다** — 안 감추면 요약 `검토 대기 21`과 상태 칩 `검토 대기 21`이 같은 말을 반복한다(진행도 텍스트를 없앤 이유와 같은 함정).
   - 접힘일 때만 요약을 테두리 pill로 감싼다. 그때는 이 줄이 유일한 필터 조작부라 눌러 보여야 하고, 펼치면 칩이 주역이라 조용해져야 한다.
   - 종류 칩은 **토글**이고 '전체' 칩이 없다 — 카테고리 줄의 '전체'와 헷갈린다.
@@ -316,6 +316,7 @@ planroutine/
 - **이 화면에 사진 AI를 두지 않는다.** '작년 업무 가져오기'를 눌러 들어온 사람에게 "학교일정을 사진으로"가 크게 뜨면 엉뚱한 화면이 된다(실기기 피드백). 사진 AI는 입력 탭 히어로가 맡는다.
 - 화면 제목은 `ImportStrings.screenTitle`(`작년 업무 가져오기`). 진입점은 입력 탭 히어로의 CSV 카드 하나뿐 — **설정 탭의 가져오기 섹션은 제거**(히어로와 중복).
 - 탭 시 `/import`로 push (ShellRoute 내부라 탭바 유지).
+- **등록이 끝나면 자동으로 입력 탭으로 돌아간다.** `ImportScreen`이 `importStateProvider`를 listen해 `ImportRegistered`가 되면 `reset()` → `pop()`(공유시트로 곧바로 열려 pop할 스택이 없으면 `go(/schedule)`) → 스낵바로 건수 안내. 등록 완료 화면에는 할 일이 없다 — 대기 건수는 입력 탭의 `검토 대기 N`이 이미 말해주고, 다음 행동은 그 목록에서 확정하는 것이다. 그래서 `ImportRegistered` 뷰는 그리지 않는다(`SizedBox.shrink`).
 - `ImportScreen`의 AppBar 바로 아래에 `ImportSteps` 스테퍼가 sticky로 고정돼, Initial/Loading/Success/Registered 모든 상태에서 현재 단계가 보인다.
 - Initial 뷰에 `EdufineGuideSection` 접힘 안내 (① CSV 다운받기: 번호 4단계 + annotation 스크린샷 / ② 아이폰으로 가져오기: A. 공유시트 / B. 파일 앱 택1 + "더 보기" 팁 박스).
 

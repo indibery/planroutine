@@ -13,6 +13,7 @@ import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
+import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
 import 'package:planroutine/shared/widgets/pill_chip.dart';
 
 import '../../../helpers/test_database.dart';
@@ -67,6 +68,14 @@ void main() {
       }
     });
     await tester.pumpAndSettle();
+  }
+
+  /// 필터는 접힘이 기본 — 칩을 만지는 테스트는 먼저 펼친다.
+  Future<void> expandFilters(WidgetTester tester) async {
+    if (find.byKey(ScheduleFilterBar.chipRowsKey).evaluate().isEmpty) {
+      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
+      await tester.pumpAndSettle();
+    }
   }
 
   group('입력이 주인공', () {
@@ -152,6 +161,7 @@ void main() {
         await seed('과학의 달 행사', '2026-04-10', EntryKind.event);
       });
       await pumpScreen(tester);
+      await expandFilters(tester);
 
       // 대기 뷰에서는 칩에 건수가 붙는다 (예: '학교일정 1').
       // 히어로 제목도 '학교일정'으로 시작하므로 칩(PillChip)으로 한정한다.

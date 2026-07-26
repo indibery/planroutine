@@ -12,6 +12,12 @@ class ImportStrings {
   static const success = '가져오기 완료';
   static const failed = '가져오기 실패';
   static const registerAll = '전체 등록';
+
+  /// 등록 직후 입력 탭으로 돌아가며 띄우는 안내. 등록 완료 화면에 머물 이유가
+  /// 없다 — 대기 건수는 입력 탭 검토 목록이 이미 말해준다.
+  static String registeredSnack(int created, int skipped) => skipped > 0
+      ? '$created건을 검토 목록에 등록했어요 (중복 $skipped건 제외)'
+      : '$created건을 검토 목록에 등록했어요';
   static const registerCount = '건 등록됨';
 
   // AI 사진 변환 (붙여넣기 가져오기)

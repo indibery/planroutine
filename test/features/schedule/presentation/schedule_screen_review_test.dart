@@ -61,6 +61,13 @@ void main() {
       }
     });
     await tester.pumpAndSettle();
+
+    // 필터는 접힘이 기본 — 칩을 보는 테스트는 펼쳐서 시작한다.
+    if (find.byKey(ScheduleFilterBar.toggleKey).evaluate().isNotEmpty &&
+        find.byKey(ScheduleFilterBar.chipRowsKey).evaluate().isEmpty) {
+      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
+      await tester.pumpAndSettle();
+    }
   }
 
   group('입력 탭 검토 영역 — 대기 중심 뷰', () {

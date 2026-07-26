@@ -19,8 +19,8 @@ import '../../../helpers/test_database.dart';
 
 /// 필터를 요약 한 줄로 접는다(3안).
 ///
-/// 검토 중에는 칩이 펼쳐져 있어야 편하고, 검토가 끝나면 방해가 된다 —
-/// 그래서 초기 상태를 대기 건수로 결정하고, 탭으로 뒤집을 수 있게 둔다.
+/// **기본은 접힘.** 넣기(히어로)와 검토 목록에 높이를 내주는 것이 이 탭의 목적이고,
+/// 필터를 쓰는 순간은 그보다 드물다. 접힌 줄이 현재 필터를 말해주므로 정보 손실도 없다.
 void main() {
   setUpAll(setUpFfiForTests);
 
@@ -120,13 +120,15 @@ void main() {
   });
 
   group('검토할 것이 있을 때', () {
-    testWidgets('칩이 기본으로 펼쳐져 있다', (tester) async {
+    testWidgets('대기가 있어도 칩은 접혀 있다 (기본 접힘)', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02');
       });
       await pumpScreen(tester);
 
-      expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsOneWidget);
+      expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsNothing);
+      expect(find.text(ScheduleStrings.chipPending(1)), findsOneWidget,
+          reason: '접힌 줄이 대기 건수를 말한다');
     });
 
     testWidgets('접으면 요약이 현재 필터를 말한다', (tester) async {
@@ -136,7 +138,9 @@ void main() {
       });
       await pumpScreen(tester);
 
-      // 학교일정으로 좁힌 뒤 접는다.
+      // 펼쳐서 학교일정으로 좁힌 뒤 다시 접는다.
+      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('${EntryKind.event.filterLabel} 1'));
       await tester.runAsync(() async {
         for (var i = 0;
@@ -171,9 +175,6 @@ void main() {
       });
       await pumpScreen(tester);
 
-      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
-      await tester.pumpAndSettle();
-
       expect(find.text(ScheduleStrings.deletePending(2)), findsOneWidget);
     });
   });
@@ -184,8 +185,10 @@ void main() {
         await seed('학급편성 결과 제출', '2026-03-02');
       });
       await pumpScreen(tester);
+      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
+      await tester.pumpAndSettle();
 
-      // 기본 펼침 상태 — 줄 라벨은 '필터', 건수는 칩만 말한다.
+      // 펼친 상태 — 줄 라벨은 '필터', 건수는 칩만 말한다.
       expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsOneWidget);
       expect(find.text(ScheduleStrings.filter), findsOneWidget);
       expect(find.text(ScheduleStrings.chipPending(1)), findsOneWidget,
