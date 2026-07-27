@@ -331,7 +331,8 @@ platform :ios do
     # [가드] 그 빌드가 ASC에 VALID로 있어야 승격 가능.
     # 방금 beta로 올렸으면 처리(40~60분)가 끝나야 VALID가 된다.
     builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, limit: 20, sort: "-uploadedDate")
-    unless builds.any? { |b| b.version.to_i == target && b.processing_state == "VALID" }
+    target_build = builds.find { |b| b.version.to_i == target && b.processing_state == "VALID" }
+    if target_build.nil?
       UI.user_error!(
         "build #{target}이 App Store Connect에 VALID로 없습니다(처리 중일 수 있음). " \
         "`check_builds`로 VALID 확인 후 재실행하세요."
@@ -379,6 +380,24 @@ platform :ios do
 
     # 업로드 직후 중복 정리 — deliver의 병렬 업로드가 같은 파일을 두 번 올릴 수 있다.
     dedupe_screenshots!(edit) if with_shots
+
+    # [승격의 본체] 빌드 연결을 deliver에 맡기지 않는다.
+    #
+    # deliver는 `build_number`를 받아도 **제출 흐름 안에서만** 빌드를 고른다 —
+    # `submit_for_review: false`면 그 단계를 통째로 건너뛴다. 그래서 로그에는
+    # `build_number | 124`가 찍히고 deliver도 성공으로 끝나는데, 편집 버전의
+    # 선택된 빌드는 옛것 그대로 남는다(실측: v124를 넘겼는데 v115 유지).
+    # "제출은 사람이 누른다"가 이 레인의 기본값이므로 그 경로가 곧 정상 경로다 —
+    # 여기서 직접 붙이지 않으면 release는 사실상 메타데이터만 동기화한다.
+    selected = begin
+      (edit_version(app) || edit).select_build(build_id: target_build.id)
+    rescue StandardError => e
+      UI.user_error!(
+        "빌드 연결 실패(#{e.class}: #{e.message}) — " \
+        "ASC → 공직플랜 → #{edit.version_string} → '빌드' 에서 직접 고르세요."
+      )
+    end
+    UI.success("빌드 연결: v#{selected&.build&.version || target}")
 
     # 의도가 아니라 **실제 상태**를 다시 읽어 보고한다.
     #
