@@ -39,7 +39,7 @@
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 465 유닛/위젯 + 20 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 480 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -331,6 +331,7 @@ planroutine/
 - **진행도는 2px 바만** 남긴다. `149 / 149 · 100% 완료` 텍스트는 필터 요약의 `확정됨 149`와 같은 말이라 43px을 중복에 쓰고 있었다. 바는 필터 요약 줄 **바로 위**에 붙이고 좌우 여백을 필터 줄과 맞춘다 — 떼어놓으면 정보가 아니라 장식으로 읽힌다.
 - 일괄 삭제 pill은 진행도 행이 사라졌으므로 **필터 요약 줄의 `trailing`** 으로 들어간다.
   - **삭제 범위는 확정과 대칭이어야 한다** — `deleteAllPending`도 `confirmAllPending`처럼 카테고리·종류를 **둘 다** 받는다. 건수는 좁힌 뷰에서 나오는데 삭제만 종류를 무시하던 시절엔 `행사 4건 삭제`를 눌러 대기 21건이 전부 휴지통으로 갔고, 스낵바는 `4건을 옮겼어요`라 사라진 사실조차 알리지 않았다. 다이얼로그 범위 이름도 같은 두 값에서 만든다(`buildScopeLabel`) — 문구와 쿼리가 어긋나면 되돌리기 어려운 삭제가 조용히 커진다.
+  - 그 대칭은 **코드로** 강제한다: 두 메서드는 `ScheduleRepository._updateAllPending(values, {category, kind})` 하나를 감싼 3줄 wrapper이고, WHERE 조립은 그 안에만 있다. 한쪽에만 필터를 추가해 어긋난 것이 바로 위 버그였으므로 doc 주석으로 지키지 않는다 — 다음 필터(subCategory·기간)도 한 곳만 고치면 양쪽에 걸린다.
 - 대기 0 + 대기 뷰이면 필터 바 자체를 숨기고, 검토 영역은 `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄로 축소된다(필터 요약과 중복되지 않게). 넣기 CTA를 여기 또 세우지 않는다(히어로가 바로 위에 있다).
 
 ### 용어
