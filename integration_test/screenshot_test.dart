@@ -72,6 +72,11 @@ void main() {
     await tester.tap(scheduleTab.first);
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
+    // convert 직후 한 프레임 더 돌린다 — IntegrationTestWidgetsFlutterBinding은
+    // LiveTestWidgetsFlutterBinding이라 **마지막 테스트 포인터 위치에 라임색 조준선**을
+    // 그린다. 이 pump가 없으면 그 프레임이 그대로 캡처돼 방금 누른 탭 아이콘 위에
+    // 십자선이 박힌 채 App Store에 올라간다(실측: 6.9_3_input).
+    await tester.pumpAndSettle();
     await binding.takeScreenshot('3_input');
 
     // 5. 설정 탭
@@ -82,6 +87,7 @@ void main() {
     await tester.tap(settingsTab.first);
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
+    await tester.pumpAndSettle();
     await binding.takeScreenshot('5_settings');
 
     // 4. 입력 탭 히어로의 CSV 링크 → Import 풀스크린 + 에듀파인 가이드 펼침
@@ -93,6 +99,7 @@ void main() {
     await tester.tap(find.text(ImportStrings.edufineGuideTitle));
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
+    await tester.pumpAndSettle();
     await binding.takeScreenshot('4_import');
   });
 }
