@@ -42,13 +42,12 @@ class ScheduleStrings {
   static const kindTask = '업무';
   static const kindEvent = '행사';
 
-  // 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
-  // 접두 상수를 따로 두는 이유: 건수까지 박은 문자열로 findsNothing을 검사하면
-  // 가드가 깨져 '…0건'으로 렌더돼도 특정 건수만 찾다 통과해버린다(테스트에서 접두만 본다).
-  static const bulkRegisterTaskPrefix = '일괄 업무 등록';
-  static const bulkRegisterEventPrefix = '일괄 행사 등록';
-  static String bulkRegisterTask(int n) => '$bulkRegisterTaskPrefix $n건';
-  static String bulkRegisterEvent(int n) => '$bulkRegisterEventPrefix $n건';
+  /// 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
+  ///
+  /// 종류 이름은 **인자로 받는다**([EntryKind.label]). 여기에 `업무`/`행사`를 다시
+  /// 박으면 다음 용어 변경 때 배지·필터 칩만 따라가고 이 pill만 옛 이름으로 남는다 —
+  /// 직전 main이 정확히 그 상태였다(`kindEvent`는 `학교일정`, pill은 `일괄 일정 등록`).
+  static String bulkRegister(String kindLabel, int n) => '일괄 $kindLabel 등록 $n건';
 
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>

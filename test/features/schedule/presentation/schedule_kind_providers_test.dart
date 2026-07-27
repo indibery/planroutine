@@ -92,6 +92,22 @@ void main() {
       expect(counts.pendingTask, 2);
       expect(counts.pendingEvent, 1);
     });
+
+    /// 칩이 약속한 건수와 눌렀을 때 나오는 목록이 다르면 칩이 거짓말을 한 게 된다.
+    test('카테고리로 좁히면 종류 칩 건수도 그 카테고리 기준이다', () async {
+      await repo.insertConfirmedOrPending(const Schedule(
+        title: '체육대회 준비',
+        scheduledDate: '2026-05-01',
+        category: '교육과정',
+      ));
+      container.read(scheduleCategoryFilterProvider.notifier).state = '교육과정';
+
+      final counts = await container.read(scheduleCountsProvider.future);
+
+      expect(counts.pendingTask, 1, reason: '교육과정 업무는 1건뿐');
+      expect(counts.pendingEvent, 0, reason: '교육과정 행사는 없다');
+      expect(counts.pending, 4, reason: '상태 칩 건수는 전역 그대로');
+    });
   });
 
   group('종류별 일괄 확정', () {
@@ -117,6 +133,33 @@ void main() {
       );
       expect(events, hasLength(2));
       expect(events.every((e) => e.kind == EntryKind.task), isTrue);
+    });
+  });
+
+  /// 일괄 삭제 pill의 건수는 **종류 필터가 반영된 현재 뷰**에서 나온다.
+  /// 삭제가 그 필터를 안 보면 화면에 없던 항목까지 조용히 휴지통으로 간다.
+  group('종류별 일괄 삭제', () {
+    test('행사로 좁힌 상태에서 일괄 삭제하면 업무는 대기로 남는다', () async {
+      container.read(scheduleKindFilterProvider.notifier).state =
+          EntryKind.event;
+      await container.read(schedulesProvider.future);
+
+      await container.read(schedulesProvider.notifier).deleteAllPending();
+
+      final pending = await repo.getSchedules(status: ScheduleStatus.pending);
+      expect(pending, hasLength(2), reason: '업무 2건은 남아야 한다');
+      expect(pending.every((s) => s.kind == EntryKind.task), isTrue);
+    });
+
+    test('종류 필터가 없으면 대기 전체가 삭제된다 (기존 동작)', () async {
+      await container.read(schedulesProvider.future);
+
+      await container.read(schedulesProvider.notifier).deleteAllPending();
+
+      expect(
+        await repo.getSchedules(status: ScheduleStatus.pending),
+        isEmpty,
+      );
     });
   });
 }

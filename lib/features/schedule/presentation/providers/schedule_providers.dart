@@ -19,25 +19,34 @@ final scheduleStatusFilterProvider = StateProvider<ScheduleStatus?>((ref) {
 /// 종류 필터. null = 전체 — 업무와 행사를 한 목록에서 같이 검토하는 게 기본.
 final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
 
-/// 상태별 전역 건수(카테고리·종류 무관) — 칩 라벨·진행도·확정 요약·일괄 등록 pill에 사용.
+/// 상태 칩 건수(`pending`/`confirmed`)는 **전역**(카테고리·종류 무관) — 진행도 바와
+/// 확정 요약이 쓰고, 다른 상태로 넘어갈지 판단하려면 거기 몇 건이 있는지 보여야 한다.
 /// schedulesProvider 변경(확정/삭제/등록)에 반응해 갱신.
 ///
-/// 대기는 종류별로도 센다 — `일괄 업무 등록 N건`/`일괄 행사 등록 N건` pill이
-/// 각자의 건수를 달고, 0이면 숨어야 한다. 대기 목록을 한 번만 조회해 나눈다.
+/// 반면 종류별 대기(`pendingTask`/`pendingEvent`)는 **카테고리 필터를 반영**한다.
+/// 이 둘은 종류 칩 라벨로만 쓰이는데, 칩이 약속한 건수와 눌렀을 때 나오는 목록이
+/// 다르면(`행사 4`를 눌렀는데 빈 화면) 칩이 거짓말을 한 게 된다.
+/// 종류 필터 자체는 반영하지 않는다 — 지금 안 보는 종류가 몇 건인지 알아야 넘어간다.
 final scheduleCountsProvider = FutureProvider<
     ({int pending, int confirmed, int pendingTask, int pendingEvent})>(
         (ref) async {
   await ref.watch(schedulesProvider.future);
   final repository = ref.watch(scheduleRepositoryProvider);
+  final category = ref.watch(scheduleCategoryFilterProvider);
   final pending =
       await repository.getSchedules(status: ScheduleStatus.pending);
   final confirmed =
       await repository.getSchedules(status: ScheduleStatus.confirmed);
+  // 리포지토리의 `if (category != null)`과 같은 규칙이어야 한다 — 건수와 쿼리가
+  // "카테고리 없음"을 다르게 해석하면 칩이 약속한 수와 실제 대상이 갈린다.
+  final inCategory = category == null
+      ? pending
+      : pending.where((s) => s.category == category).toList();
   return (
     pending: pending.length,
     confirmed: confirmed.length,
-    pendingTask: pending.where((s) => s.kind == EntryKind.task).length,
-    pendingEvent: pending.where((s) => s.kind == EntryKind.event).length,
+    pendingTask: inCategory.where((s) => s.kind == EntryKind.task).length,
+    pendingEvent: inCategory.where((s) => s.kind == EntryKind.event).length,
   );
 });
 
@@ -152,12 +161,14 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
-  /// 검토 대기 일정 일괄 삭제(휴지통). 카테고리 필터가 켜져 있으면 그 카테고리만.
+  /// 검토 대기 일정 일괄 삭제(휴지통). 카테고리·종류 필터가 켜져 있으면 거기에 한정.
   /// 확정본은 건드리지 않으며 캘린더 이벤트에도 영향 없음.
+  /// 두 필터를 모두 봐야 하는 이유는 `ScheduleRepository.deleteAllPending` 참고.
   Future<void> deleteAllPending() async {
     final repository = ref.read(scheduleRepositoryProvider);
     final category = ref.read(scheduleCategoryFilterProvider);
-    await repository.deleteAllPending(category: category);
+    final kind = ref.read(scheduleKindFilterProvider);
+    await repository.deleteAllPending(category: category, kind: kind);
     ref.invalidateSelf();
   }
 

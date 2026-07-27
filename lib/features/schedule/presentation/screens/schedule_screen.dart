@@ -11,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../import/presentation/widgets/photo_input_hero.dart';
 import '../../domain/entry_kind.dart';
+import '../../domain/filter_summary.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 import '../widgets/category_label.dart';
@@ -25,6 +26,12 @@ import '../widgets/slide_hint_bar.dart';
 /// 히어로를 맨 위에 두고, 검토 영역은 대기가 있을 때만 아래에서 커진다.
 class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key});
+
+  /// 종류별 일괄 등록 pill — 테스트가 문구가 아니라 **정체**로 찾게 한다.
+  /// "해당 종류 0건이면 숨는다"를 문자열로 검사하면, 다음 문구 개편에서 그 문자열이
+  /// 아무 데서도 렌더되지 않는 순간 `findsNothing`이 0건 pill을 보고도 통과한다.
+  static const bulkRegisterTaskKey = Key('bulk_register_task');
+  static const bulkRegisterEventKey = Key('bulk_register_event');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,12 +126,19 @@ class ScheduleScreen extends ConsumerWidget {
         AppSizes.pagePadding,
         AppSizes.spacing12,
       ),
+      // spacing은 **렌더된** 자식 사이에만 들어간다 — 한쪽 pill이 숨어도
+      // 빈 간격이 남지 않으므로 "둘 다 있을 때만 간격" 조건이 필요 없다.
       child: Row(
+        spacing: AppSizes.spacing8,
         children: [
           if (taskCount > 0)
             Expanded(
               child: _BulkRegisterPill(
-                label: ScheduleStrings.bulkRegisterTask(taskCount),
+                key: bulkRegisterTaskKey,
+                label: ScheduleStrings.bulkRegister(
+                  EntryKind.task.label,
+                  taskCount,
+                ),
                 onPressed: () => _showBulkConfirmDialog(
                   context,
                   ref,
@@ -133,12 +147,14 @@ class ScheduleScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          if (taskCount > 0 && eventCount > 0)
-            const SizedBox(width: AppSizes.spacing8),
           if (eventCount > 0)
             Expanded(
               child: _BulkRegisterPill(
-                label: ScheduleStrings.bulkRegisterEvent(eventCount),
+                key: bulkRegisterEventKey,
+                label: ScheduleStrings.bulkRegister(
+                  EntryKind.event.label,
+                  eventCount,
+                ),
                 onPressed: () => _showBulkConfirmDialog(
                   context,
                   ref,
@@ -200,6 +216,7 @@ class ScheduleScreen extends ConsumerWidget {
         list.where((s) => s.status == ScheduleStatus.pending).length;
     if (pendingCount == 0) return null;
     final category = ref.watch(scheduleCategoryFilterProvider);
+    final kind = ref.watch(scheduleKindFilterProvider);
 
     return _DeleteAllPill(
       label: ScheduleStrings.deletePending(pendingCount),
@@ -207,6 +224,7 @@ class ScheduleScreen extends ConsumerWidget {
         context,
         ref,
         category: category,
+        kind: kind,
         pendingCount: pendingCount,
       ),
     );
@@ -466,9 +484,9 @@ class ScheduleScreen extends ConsumerWidget {
     required EntryKind kind,
     required int pendingCount,
   }) async {
-    final scope = kind == EntryKind.task
-        ? ScheduleStrings.kindTask
-        : ScheduleStrings.kindEvent;
+    // 확정 범위의 종류는 필터가 아니라 눌린 pill에서 온다 — `buildScopeLabel`이
+    // 아니라 라벨 하나면 된다(표시 이름의 단일 출처는 `EntryKind.label`).
+    final scope = kind.label;
     final confirmed = await ConfirmDialog.show(
       context: context,
       title: ScheduleStrings.bulkConfirmTitle,
@@ -480,15 +498,19 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   /// 남은 검토 대기를 한 번에 휴지통으로 (일괄 확정 대칭). soft-delete라 복구 가능.
+  /// 범위 문구와 쿼리가 같은 두 필터에서 나와야 하는 이유는
+  /// `ScheduleRepository.deleteAllPending` 참고.
   Future<void> _showBulkDeleteDialog(
     BuildContext context,
     WidgetRef ref, {
     required String? category,
+    required EntryKind? kind,
     required int pendingCount,
   }) async {
-    final scope = (category == null || category.isEmpty)
-        ? ScheduleStrings.all
-        : shortenCategory(category);
+    final scope = buildScopeLabel(
+      kind: kind,
+      categoryLabel: shortenCategoryOrNull(category),
+    );
     final ok = await ConfirmDialog.show(
       context: context,
       title: ScheduleStrings.bulkDeleteTitle,
@@ -528,7 +550,11 @@ class ScheduleScreen extends ConsumerWidget {
 
 /// 하단 종류별 일괄 등록 pill — 골드 채움 + onGold 글씨.
 class _BulkRegisterPill extends StatelessWidget {
-  const _BulkRegisterPill({required this.label, required this.onPressed});
+  const _BulkRegisterPill({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
 
   final String label;
   final VoidCallback onPressed;

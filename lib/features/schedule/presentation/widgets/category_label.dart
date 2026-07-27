@@ -23,6 +23,11 @@ String shortenCategory(String raw) {
   return '${raw.substring(0, 4)}…';
 }
 
+/// 필터 값(원본 또는 null) → 표시용 짧은 라벨 또는 null.
+/// 필터가 꺼진 상태를 `null`로 통일해 호출부가 빈 문자열 처리를 반복하지 않게 한다.
+String? shortenCategoryOrNull(String? raw) =>
+    (raw == null || raw.isEmpty) ? null : shortenCategory(raw);
+
 /// 일괄 확정 pill 라벨. 카테고리 필터가 없으면(전체) 스코프 생략, 있으면 짧은 이름 접두.
 /// 건수는 실제 확정될 검토 대기 일정 수.
 String confirmAllPillLabel(String? category, int pendingCount) {

@@ -33,6 +33,12 @@ class ScheduleFilterBar extends ConsumerStatefulWidget {
   static const chipRowsKey = Key('filter_chip_rows');
   static const toggleKey = Key('filter_toggle');
 
+  /// 종류 칩 — 테스트가 문구가 아니라 **정체**로 찾게 한다.
+  /// `행사` ⊂ `학교행사`(에듀파인 카테고리 칩)라 문자열로 찾으면 같은 패널의
+  /// 카테고리 줄과 충돌하고, 건수까지 박으면 시드가 바뀔 때 finder 오류로 죽는다.
+  static const kindTaskKey = Key('filter_kind_task');
+  static const kindEventKey = Key('filter_kind_event');
+
   @override
   ConsumerState<ScheduleFilterBar> createState() => _ScheduleFilterBarState();
 }
@@ -44,14 +50,14 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
   @override
   Widget build(BuildContext context) {
     final counts = ref.watch(scheduleCountsProvider).valueOrNull;
+    final visible = ref.watch(schedulesProvider).valueOrNull;
     final status = ref.watch(scheduleStatusFilterProvider);
     final kind = ref.watch(scheduleKindFilterProvider);
     final category = ref.watch(scheduleCategoryFilterProvider);
-    final categoryLabel =
-        (category == null || category.isEmpty) ? null : shortenCategory(category);
+    final categoryLabel = shortenCategoryOrNull(category);
 
     // 건수를 모르는 동안 요약을 그리면 '검토 대기 0'이 잠깐 스쳐 오해를 준다.
-    if (counts == null) return const SizedBox.shrink();
+    if (counts == null || visible == null) return const SizedBox.shrink();
 
     // 기본은 접힘. 넣기(히어로)와 검토 목록에 높이를 내주는 것이 이 탭의 목적이고,
     // 필터를 쓰는 순간은 그보다 드물다. 접힌 줄이 현재 필터를 말해주므로 정보 손실도 없다.
@@ -108,8 +114,7 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
                                     status: status,
                                     kind: kind,
                                     categoryLabel: categoryLabel,
-                                    pendingCount: counts.pending,
-                                    confirmedCount: counts.confirmed,
+                                    visibleCount: visible.length,
                                   ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -234,12 +239,14 @@ class _KindRow extends ConsumerWidget {
       child: Row(
         children: [
           PillChip(
+            key: ScheduleFilterBar.kindTaskKey,
             label: label(EntryKind.task.label, counts?.pendingTask),
             selected: current == EntryKind.task,
             onTap: () => toggle(EntryKind.task),
           ),
           const SizedBox(width: AppSizes.spacing8),
           PillChip(
+            key: ScheduleFilterBar.kindEventKey,
             label: label(EntryKind.event.label, counts?.pendingEvent),
             selected: current == EntryKind.event,
             onTap: () => toggle(EntryKind.event),

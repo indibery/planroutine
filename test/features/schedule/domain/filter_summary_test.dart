@@ -13,15 +13,13 @@ void main() {
     ScheduleStatus? status = ScheduleStatus.pending,
     EntryKind? kind,
     String? categoryLabel,
-    int pending = 21,
-    int confirmed = 128,
+    int visible = 21,
   }) {
     return buildFilterSummary(
       status: status,
       kind: kind,
       categoryLabel: categoryLabel,
-      pendingCount: pending,
-      confirmedCount: confirmed,
+      visibleCount: visible,
     );
   }
 
@@ -31,11 +29,22 @@ void main() {
     });
 
     test('확정됨 뷰는 확정 건수를 말한다', () {
-      expect(summary(status: ScheduleStatus.confirmed), '확정됨 128');
+      expect(summary(status: ScheduleStatus.confirmed, visible: 128), '확정됨 128');
     });
 
     test('상태 필터가 없으면 전체 건수를 말한다', () {
-      expect(summary(status: null), '전체 149');
+      expect(summary(status: null, visible: 149), '전체 149');
+    });
+  });
+
+  /// 요약이 말하는 숫자는 **지금 목록에 보이는 건수**다.
+  /// 전역 건수를 쓰면 좁혀서 빈 화면인데 `검토 대기 21`이라고 우기게 된다.
+  group('건수는 좁힌 목록을 따라간다', () {
+    test('좁혀서 0건이면 0을 말한다', () {
+      expect(
+        summary(kind: EntryKind.event, categoryLabel: '학교행사', visible: 0),
+        '검토 대기 0 · 행사 · 학교행사',
+      );
     });
   });
 
@@ -58,6 +67,30 @@ void main() {
 
     test('빈 카테고리 문자열은 붙이지 않는다', () {
       expect(summary(categoryLabel: ''), '검토 대기 21');
+    });
+  });
+
+  /// 일괄 확정·삭제 다이얼로그의 범위 이름. 실제 쿼리 범위와 같은 두 값에서 나온다 —
+  /// 어긋나면 `전체 검토 대기 4건`이라고 묻고 21건을 지우는 일이 생긴다.
+  group('범위 이름', () {
+    test('아무 필터도 없으면 전체', () {
+      expect(buildScopeLabel(kind: null, categoryLabel: null), '전체');
+      expect(buildScopeLabel(kind: null, categoryLabel: ''), '전체');
+    });
+
+    test('종류만 걸리면 종류 이름', () {
+      expect(buildScopeLabel(kind: EntryKind.event, categoryLabel: null), '행사');
+    });
+
+    test('카테고리만 걸리면 카테고리 이름', () {
+      expect(buildScopeLabel(kind: null, categoryLabel: '일과운영'), '일과운영');
+    });
+
+    test('둘 다 걸리면 종류 · 카테고리', () {
+      expect(
+        buildScopeLabel(kind: EntryKind.task, categoryLabel: '일과운영'),
+        '업무 · 일과운영',
+      );
     });
   });
 

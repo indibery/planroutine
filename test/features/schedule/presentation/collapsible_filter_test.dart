@@ -141,7 +141,7 @@ void main() {
       // 펼쳐서 행사로 좁힌 뒤 다시 접는다.
       await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('${EntryKind.event.label} 1'));
+      await tester.tap(find.byKey(ScheduleFilterBar.kindEventKey));
       await tester.runAsync(() async {
         for (var i = 0;
             i < 100 &&
@@ -162,9 +162,9 @@ void main() {
 
       expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsNothing);
       expect(
-        find.text('검토 대기 2 · ${EntryKind.event.label}'),
+        find.text('검토 대기 1 · ${EntryKind.event.label}'),
         findsOneWidget,
-        reason: '접어도 무엇으로 걸러졌는지 남아야 한다',
+        reason: '접어도 무엇으로 걸러졌는지 남아야 한다 — 건수는 좁힌 목록(행사 1건) 기준',
       );
     });
 

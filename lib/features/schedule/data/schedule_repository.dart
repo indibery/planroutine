@@ -301,7 +301,39 @@ class ScheduleRepository {
   /// 검토 대기 상태 일정 일괄 확정.
   /// [category]·[kind]가 null이면 전체, 값이 있으면 거기에 한정.
   /// 입력 탭은 `일괄 업무 등록`/`일괄 행사 등록`으로 나눠 부르므로 [kind]가 필요하다.
-  Future<int> confirmAllPending({String? category, EntryKind? kind}) async {
+  Future<int> confirmAllPending({String? category, EntryKind? kind}) {
+    return _updateAllPending(
+      {
+        'status': ScheduleStatus.confirmed.value,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      category: category,
+      kind: kind,
+    );
+  }
+
+  /// 검토 대기 상태 일정 일괄 삭제(soft-delete → 휴지통).
+  /// [category]·[kind]가 null이면 전체, 값이 있으면 거기에 한정.
+  /// 확정된 일정(status=confirmed)은 건드리지 않는다. 반환: 삭제된 건수.
+  ///
+  /// [kind]는 [confirmAllPending]과의 **대칭**이다. 입력 탭은 종류로 좁힌 목록의
+  /// 건수로 삭제 pill을 그리므로, 여기서 종류를 무시하면 화면에 없던 항목까지 지운다.
+  Future<int> deleteAllPending({String? category, EntryKind? kind}) {
+    return _updateAllPending(
+      {'deleted_at': DateTime.now().toIso8601String()},
+      category: category,
+      kind: kind,
+    );
+  }
+
+  /// 위 둘의 공통 범위. 확정과 삭제가 **같은 항목 집합**을 잡는다는 보장을 산문이
+  /// 아니라 코드로 둔다 — 한쪽에만 필터를 추가해 어긋났던 것이 이 버그였다.
+  /// 다음 필터(subCategory·기간)도 여기 한 곳만 고치면 양쪽에 동시에 걸린다.
+  Future<int> _updateAllPending(
+    Map<String, Object?> values, {
+    String? category,
+    EntryKind? kind,
+  }) async {
     final db = await _dbHelper.database;
     final where = <String>[
       'status = ?',
@@ -318,32 +350,7 @@ class ScheduleRepository {
     }
     return db.update(
       DatabaseHelper.tableSchedules,
-      {
-        'status': ScheduleStatus.confirmed.value,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: where.join(' AND '),
-      whereArgs: whereArgs,
-    );
-  }
-
-  /// 검토 대기 상태 일정 일괄 삭제(soft-delete → 휴지통).
-  /// [category]가 null이면 전체, 값이 있으면 그 카테고리에 한정.
-  /// 확정된 일정(status=confirmed)은 건드리지 않는다. 반환: 삭제된 건수.
-  Future<int> deleteAllPending({String? category}) async {
-    final db = await _dbHelper.database;
-    final where = <String>[
-      'status = ?',
-      'deleted_at IS NULL',
-    ];
-    final whereArgs = <dynamic>[ScheduleStatus.pending.value];
-    if (category != null) {
-      where.add('category = ?');
-      whereArgs.add(category);
-    }
-    return db.update(
-      DatabaseHelper.tableSchedules,
-      {'deleted_at': DateTime.now().toIso8601String()},
+      values,
       where: where.join(' AND '),
       whereArgs: whereArgs,
     );

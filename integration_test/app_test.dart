@@ -13,6 +13,7 @@ import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/event_list_section.dart';
+import 'package:planroutine/features/import/presentation/widgets/photo_input_hero.dart';
 import 'package:planroutine/shared/widgets/floating_tab_bar.dart';
 
 /// 설정 탭 내부에서 target이 화면에 보일 때까지 스크롤한 뒤 다음 액션을 허용한다.
@@ -585,9 +586,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // ImportScreen은 작년 업무 CSV 전용 — 제목·파일 선택이 보이고 AI는 없다.
+      // AI 진입은 히어로 위젯이 통째로 맡으므로 그 존재로 검사한다(문구가 바뀌어도 산다).
       expect(find.text(ImportStrings.screenTitle), findsWidgets);
       expect(find.text(ImportStrings.selectFile), findsWidgets);
-      expect(find.text(ImportStrings.aiPaste), findsNothing);
+      expect(find.byType(PhotoInputHero), findsNothing);
     });
 
     testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 행사로 대기',
@@ -624,7 +626,10 @@ void main() {
       expect(find.text('봄 현장체험학습'), findsOneWidget);
       expect(find.text(EntryKind.event.label), findsWidgets,
           reason: '사진 경로로 들어온 것은 행사 배지를 단다');
-      expect(find.text(ScheduleStrings.bulkRegisterEvent(2)), findsOneWidget);
+      expect(
+        find.text(ScheduleStrings.bulkRegister(EntryKind.event.label, 2)),
+        findsOneWidget,
+      );
     });
   });
 }

@@ -109,23 +109,36 @@ void main() {
       });
       await pumpScreen(tester);
 
-      expect(find.text(ScheduleStrings.bulkRegisterTask(2)), findsOneWidget);
-      expect(find.text(ScheduleStrings.bulkRegisterEvent(1)), findsOneWidget);
+      expect(
+        find.text(ScheduleStrings.bulkRegister(EntryKind.task.label, 2)),
+        findsOneWidget,
+      );
+      expect(
+        find.text(ScheduleStrings.bulkRegister(EntryKind.event.label, 1)),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('해당 종류 대기가 0이면 그 pill은 숨는다', (tester) async {
+    // pill의 **존재 여부**는 문구가 아니라 Key로 본다. 문자열로 검사하면 라벨을
+    // 한 번만 손봐도 findsNothing이 '0건' pill을 보고도 통과한다.
+    testWidgets('업무 대기가 0이면 업무 pill은 숨는다', (tester) async {
+      await tester.runAsync(() async {
+        await seed('과학의 달 행사', '2026-04-10', EntryKind.event);
+      });
+      await pumpScreen(tester);
+
+      expect(find.byKey(ScheduleScreen.bulkRegisterEventKey), findsOneWidget);
+      expect(find.byKey(ScheduleScreen.bulkRegisterTaskKey), findsNothing);
+    });
+
+    testWidgets('행사 대기가 0이면 행사 pill은 숨는다', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
       });
       await pumpScreen(tester);
 
-      expect(find.text(ScheduleStrings.bulkRegisterTask(1)), findsOneWidget);
-      // 건수까지 특정하면 가드가 깨져 '…0건'으로 렌더돼도 findsNothing이 통과해버린다
-      // (0건은 이 매처가 찾는 문자열과 다르므로). 접두만 봐서 pill의 존재 자체를 검사한다.
-      expect(
-        find.textContaining(ScheduleStrings.bulkRegisterEventPrefix),
-        findsNothing,
-      );
+      expect(find.byKey(ScheduleScreen.bulkRegisterTaskKey), findsOneWidget);
+      expect(find.byKey(ScheduleScreen.bulkRegisterEventKey), findsNothing);
     });
 
     testWidgets('일괄 업무 등록은 업무만 확정한다', (tester) async {
@@ -135,7 +148,7 @@ void main() {
       });
       await pumpScreen(tester);
 
-      await tester.tap(find.text(ScheduleStrings.bulkRegisterTask(1)));
+      await tester.tap(find.byKey(ScheduleScreen.bulkRegisterTaskKey));
       await tester.pumpAndSettle();
       await tester.tap(
         find.widgetWithText(TextButton, ScheduleStrings.confirm),
@@ -167,10 +180,10 @@ void main() {
       await pumpScreen(tester);
       await expandFilters(tester);
 
-      // 대기 뷰에서는 칩에 건수가 붙는다 — '행사 1'.
-      // '행사' ⊂ '학교행사'라 부분 일치로 찾으면 카테고리 칩(에듀파인 분류명)과
-      // 충돌할 수 있다 — 건수까지 포함한 정확 매칭으로 칩 자체를 특정한다.
-      await tester.tap(find.text('${EntryKind.event.label} 1'));
+      // 칩은 Key로 찾는다. 라벨은 대기 뷰에서만 건수가 붙고('행사 1') `행사`는
+      // 카테고리 칩 `학교행사`의 부분 문자열이라, 문구로 찾으면 이 테스트가
+      // 지키려는 종류 필터가 아니라 건수 포맷·카테고리 목록에 묶인다.
+      await tester.tap(find.byKey(ScheduleFilterBar.kindEventKey));
       // 필터 변경 → 실제 DB 재조회. 로딩 스피너가 남은 채 pumpAndSettle하면
       // fake-async가 DB future를 못 끝내 영원히 안 멎는다 → runAsync에서 대기.
       await tester.runAsync(() async {

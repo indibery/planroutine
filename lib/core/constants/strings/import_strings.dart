@@ -20,19 +20,17 @@ class ImportStrings {
       : '$created건을 검토 목록에 등록했어요';
   static const registerCount = '건 등록됨';
 
-  // AI 사진 변환 (붙여넣기 가져오기)
   static const csvTitle = '작년 업무 CSV 올리기';
-  static const aiTitle = '행사를 사진으로';
-  static const aiDescription =
-      '월간·연간 일정표를 찍어 AI에게 변환을 맡기고, 결과를 붙여넣으면 검토 목록에 올라갑니다.';
-  static const aiCopyPrompt = '① 변환 프롬프트 복사';
-  static const aiPaste = '② 붙여넣기로 가져오기';
-  static const aiHint =
-      '프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 일정표 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
+
+  // AI 사진 변환 (붙여넣기 가져오기).
+  //
+  // 이 경로로 들어온 것은 **전부 행사**다(`registerAiSchedules`가 EntryKind.event를
+  // 박는다). 그러니 히어로 제목부터 미리보기·실패 문구까지 한 낱말로 부른다 —
+  // 중간에 우산말 `일정`이 끼면 같은 흐름에서 대상을 두 이름으로 부르게 된다.
   static const aiPromptCopied = '프롬프트를 복사했어요. AI 앱에 일정표 사진과 함께 붙여넣으세요';
-  static const aiParseEmpty = '붙여넣은 내용에서 일정을 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
+  static const aiParseEmpty = '붙여넣은 내용에서 행사를 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
   static const aiPreviewTitle = '붙여넣기 미리보기';
-  static String aiPreviewCount(int n) => '일정 $n건 인식';
+  static String aiPreviewCount(int n) => '행사 $n건 인식';
   static String aiPreviewDup(int n) => '중복 $n건 제외';
   static String aiRegisterButton(int n) => '$n건 검토 목록에 등록';
   static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';

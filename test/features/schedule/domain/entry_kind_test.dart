@@ -46,8 +46,11 @@ void main() {
       expect(EntryKind.event.label, ScheduleStrings.kindEvent);
     });
 
-    test('두 종류의 라벨이 서로 다르다 — 대비가 라벨 하나로 서야 한다', () {
-      expect(EntryKind.task.label, isNot(EntryKind.event.label));
+    test('종류마다 라벨이 서로 다르다 — 대비가 라벨 하나로 서야 한다', () {
+      // 두 값을 직접 지목하면 종류가 늘어날 때 중복 라벨을 놓친다. 글자가 같은
+      // 칩 두 개가 나란히 서면 사용자는 무엇을 고르는지 구분할 수 없다.
+      final labels = EntryKind.values.map((k) => k.label).toList();
+      expect(labels.toSet(), hasLength(labels.length));
     });
 
     test('오늘 탭에 나타나는 것은 업무뿐이다', () {

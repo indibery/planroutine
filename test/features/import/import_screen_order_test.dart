@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/import/presentation/screens/import_screen.dart';
+import 'package:planroutine/features/import/presentation/widgets/photo_input_hero.dart';
 import 'package:planroutine/features/schedule/data/schedule_repository.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 
@@ -45,8 +46,10 @@ void main() {
 
     // 사진 AI는 입력 탭 히어로가 맡는다 — 여기서 또 권하면
     // '작년 업무 가져오기'를 누르고 들어온 사람에게 엉뚱한 화면이 된다.
-    expect(find.text(ImportStrings.aiPaste), findsNothing);
-    expect(find.text(ImportStrings.aiCopyPrompt), findsNothing);
-    expect(find.text(ImportStrings.aiTitle), findsNothing);
+    //
+    // 문구가 아니라 **위젯 정체**로 검사한다. 예전 가드는 이 화면에서 걷어낸
+    // 섹션의 상수(`aiTitle` 등)를 찾았는데, 그 상수는 lib 어디에서도 렌더되지
+    // 않아 무엇을 하든 통과하는 빈 검사였다 — 사진 AI가 되돌아와도 잡지 못한다.
+    expect(find.byType(PhotoInputHero), findsNothing);
   });
 }

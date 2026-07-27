@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/schedule/data/schedule_repository.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
@@ -219,7 +220,10 @@ void main() {
 
       expect(find.text(ScheduleStrings.deletePending(2)), findsOneWidget);
       // 확정은 하단 종류별 일괄 등록 pill로 옮겼다.
-      expect(find.text(ScheduleStrings.bulkRegisterTask(2)), findsOneWidget);
+      expect(
+        find.text(ScheduleStrings.bulkRegister(EntryKind.task.label, 2)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('일괄 삭제 → 대기는 휴지통으로, 확정은 유지', (tester) async {
