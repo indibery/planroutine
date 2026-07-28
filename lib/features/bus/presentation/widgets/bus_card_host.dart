@@ -242,7 +242,10 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         direction: display.direction,
         stopName: '',
         expanded: true,
-        onToggleExpanded: () {},
+        // **접을 수 없는 카드다.** 빈 콜백을 넘기면 눌러도 아무 일이 없는 chevron이
+        // 그려지고 스크린리더가 `접기`라고 읽는다 — 기능을 켠 사용자가 가장 먼저
+        // 보는 화면에서 죽은 컨트롤이 된다.
+        onToggleExpanded: null,
         onFlipDirection: _flip,
         // **`?slot=`을 반드시 붙인다.** 검색 화면은 쿼리가 없으면 출근 슬롯으로
         // 조용히 떨어지므로, 퇴근 카드에서 등록하면 학교 앞 정류장이 출발지에

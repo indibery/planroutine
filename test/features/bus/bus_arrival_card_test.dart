@@ -33,6 +33,9 @@ Future<void> _pump(
   bool expanded = true,
   VoidCallback? onToggle,
   VoidCallback? onFlip,
+  String stopName = '수원시청',
+  // false면 `onToggleExpanded`로 null을 넘긴다 = 접을 수 없는 카드(정류장 미등록).
+  bool collapsible = true,
 }) {
   return tester.pumpWidget(MaterialApp(
     home: Scaffold(
@@ -40,9 +43,9 @@ Future<void> _pump(
         view: view,
         style: style,
         direction: CommuteDirection.toWork,
-        stopName: '수원시청',
+        stopName: stopName,
         expanded: expanded,
-        onToggleExpanded: onToggle ?? () {},
+        onToggleExpanded: collapsible ? (onToggle ?? () {}) : null,
         onFlipDirection: onFlip ?? () {},
       ),
     ),
@@ -117,6 +120,43 @@ void main() {
     await _pump(tester, view: _view(), onFlip: () => flipped++);
     await tester.tap(find.byKey(BusArrivalCard.flipKey));
     expect(flipped, 1);
+  });
+
+  group('정류장 미등록 카드 — 기능을 켠 사용자가 가장 먼저 보는 화면', () {
+    testWidgets('이름이 비면 매달린 구분점이 없다', (tester) async {
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.noStop, items: const []),
+        stopName: '',
+        collapsible: false,
+      );
+      expect(find.text('· '), findsNothing,
+          reason: '제목줄이 `출근   · `로 끝나면 잘린 것처럼 보인다');
+      expect(find.textContaining('·'), findsNothing);
+      expect(find.text('🏠→🏫 출근'), findsOneWidget);
+    });
+
+    testWidgets('접을 수 없으면 chevron도 탭 대상도 없다', (tester) async {
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.noStop, items: const []),
+        stopName: '',
+        collapsible: false,
+      );
+      expect(find.byIcon(Icons.expand_less), findsNothing,
+          reason: '눌러도 아무 일이 없는데 스크린리더가 `접기`라고 읽는다');
+      expect(find.byIcon(Icons.expand_more), findsNothing);
+      expect(find.byKey(BusArrivalCard.headerKey), findsNothing);
+      // 등록 유도와 방향 토글은 그대로 남는다 — 카드가 죽는 것이 아니다.
+      expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
+      expect(find.textContaining('퇴근 보기'), findsOneWidget);
+    });
+
+    testWidgets('이름이 있으면 구분점과 chevron이 그대로다', (tester) async {
+      await _pump(tester, view: _view());
+      expect(find.text('· 수원시청'), findsOneWidget);
+      expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    });
   });
 
   group('실패 계약 — 다섯 상태가 서로 다르게 읽힌다', () {

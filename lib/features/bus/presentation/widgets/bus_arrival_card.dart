@@ -36,9 +36,17 @@ class BusArrivalCard extends StatelessWidget {
   final BusCardView view;
   final BusCardStyle style;
   final CommuteDirection direction;
+
+  /// 빈 문자열이면 제목줄의 `· 정류장` 세그먼트를 그리지 않는다(정류장 미등록 카드).
   final String stopName;
   final bool expanded;
-  final VoidCallback onToggleExpanded;
+
+  /// null이면 제목줄이 **정보 줄**이 된다 — 탭도, chevron도 없다.
+  ///
+  /// 정류장 미등록 카드가 `expanded: true` + 빈 콜백을 넘기던 시절에는 눌러도 아무
+  /// 일이 없는 `Icons.expand_less`가 그려지고 스크린리더가 `접기`라고 읽었다.
+  /// nullable로 두어 "접을 수 없는 카드"를 타입으로 표현한다.
+  final VoidCallback? onToggleExpanded;
   final VoidCallback onFlipDirection;
   final VoidCallback? onRetry;
   final VoidCallback? onRegister;
@@ -82,24 +90,27 @@ class BusArrivalCard extends StatelessWidget {
   }
 
   Widget _header() {
-    return GestureDetector(
-      key: headerKey,
-      behavior: HitTestBehavior.opaque,
-      onTap: onToggleExpanded,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Text(
-            direction.label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-            ),
+    final toggle = onToggleExpanded;
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          direction.label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
           ),
-          const SizedBox(width: AppSizes.spacing8),
+        ),
+        const SizedBox(width: AppSizes.spacing8),
+        // 이름이 없으면 세그먼트를 통째로 생략한다 — `'· $stopName'`을 무조건 그리면
+        // 정류장을 등록하기 전 첫 카드의 제목줄이 `출근   · `로 끝나 잘린 것처럼 보인다.
+        // 자리는 Spacer가 지켜 오른쪽 끝 요소가 움직이지 않는다.
+        if (stopName.isEmpty)
+          const Spacer()
+        else
           Expanded(
             child: Text(
               '· $stopName',
@@ -112,28 +123,38 @@ class BusArrivalCard extends StatelessWidget {
               ),
             ),
           ),
-          // 접히면 기준시각도 사라진다 — 폴링을 멈추니 신선도를 말할 근거가 없다.
-          if (expanded && _stamp() != null) ...[
-            Text(
-              _stamp() ?? '',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 10,
-                color: view.state == BusCardState.stale
-                    ? AppColors.inkRed
-                    : AppColors.faint,
-              ),
+        // 접히면 기준시각도 사라진다 — 폴링을 멈추니 신선도를 말할 근거가 없다.
+        if (expanded && _stamp() != null) ...[
+          Text(
+            _stamp() ?? '',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 10,
+              color: view.state == BusCardState.stale
+                  ? AppColors.inkRed
+                  : AppColors.faint,
             ),
-            const SizedBox(width: AppSizes.spacing8),
-          ],
+          ),
+          const SizedBox(width: AppSizes.spacing8),
+        ],
+        if (toggle != null)
           Icon(
             expanded ? Icons.expand_less : Icons.expand_more,
             size: AppSizes.iconSmall,
             color: AppColors.gold,
             semanticLabel: expanded ? BusStrings.collapse : BusStrings.expand,
           ),
-        ],
-      ),
+      ],
+    );
+
+    // 콜백이 없으면 탭 대상도 아니다. `headerKey`도 함께 사라지므로 테스트가
+    // 실수로 죽은 컨트롤을 두드리지 않는다.
+    if (toggle == null) return row;
+    return GestureDetector(
+      key: headerKey,
+      behavior: HitTestBehavior.opaque,
+      onTap: toggle,
+      child: row,
     );
   }
 
