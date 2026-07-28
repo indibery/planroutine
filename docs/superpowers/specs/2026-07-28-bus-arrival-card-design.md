@@ -341,7 +341,10 @@ SSL connection using TLSv1.3   ssl_verify_result=0
 `--dart-define` 선례가 이미 있다 — `main.dart:13`의 `bool.fromEnvironment('SCREENSHOT_MODE')`.
 같은 패턴으로 `String.fromEnvironment('TAGO_KEY')`를 쓴다.
 
-- **리포에 커밋하지 않는다.** 로컬 보관은 리포 밖(`~/.planroutine/tago_key`).
+- **리포에 커밋하지 않는다.** 로컬 보관은 리포 밖 `~/.planroutine/tago.env`이고, 레인이 읽는
+  줄은 **`TAGO_KEY_DECODING=`** 이다(파일에는 원본·Encoding·Decoding 세 형태가 함께 있다 —
+  아래 "Decoding 키를 넣는다" 참고). 소비자는 `Fastfile`의 `tago_key` 헬퍼 하나뿐이라 키를
+  재발급하면 이 파일 한 곳만 갱신한다.
 - `Fastfile:272`의 `sh("flutter", "build", "ipa", ...)`에 `--dart-define=TAGO_KEY=#{key}`를
   추가하고, **키를 못 읽으면 레인을 실패시킨다.** 키 없이 빌드하면 기능이 조용히 죽은 앱이
   스토어에 올라간다 — 조용한 실패를 막는 가드다.
@@ -655,11 +658,15 @@ lib/core/constants/strings/bus_strings.dart   # app_strings.dart가 barrel expor
 우리 서버가 없으니 우리가 수집하는 데이터는 0이다. 다만 앱이 **국토교통부 TAGO API로 직접
 요청**하므로 정류장 ID와 기기 IP가 `data.go.kr`에 남는다.
 
-이 기능은 앱의 **첫 네트워크 사용**이다. `docs/privacy_policy.md`에 한 문단을 추가한다 —
-"버스 도착 조회 시 정류장 ID가 국토교통부 국가대중교통정보센터(TAGO) 서버로 전송된다. 앱은
-이용자를 식별하는 정보를 전송하지 않으며, 별도 서버에 저장하지 않는다."
+이 기능은 **Google 캘린더 연동에 이어 두 번째 외부 통신 경로**다(앱의 첫 네트워크 사용이 아니다 —
+`google_calendar_service.dart`가 이미 `http.Client`로 직접 HTTPS를 낸다). `docs/privacy_policy.md`에
+한 문단을 추가한다 — "버스 도착 조회 시 정류장 ID가 국토교통부 국가대중교통정보센터(TAGO)
+서버로 전송된다. 앱은 이용자를 식별하는 정보를 전송하지 않으며, 별도 서버에 저장하지 않는다."
 
-App Store 개인정보 설문의 "데이터 수집 없음"은 유지된다(우리가 수집하지 않는다).
+App Store 개인정보 설문의 **수집 항목에는 변화가 없다**. 이미 `Contact Info → Email Address`를
+선언한 상태이고(`docs/release_checklist.md` §3.2, Google 로그인 건), TAGO 전송에는 이용자를
+식별하는 정보가 없어 새 항목이 생기지 않는다. — "데이터 수집 없음이 유지된다"고 쓰지 않는다.
+그 상태가 아니다.
 
 ## 8. 테스트
 

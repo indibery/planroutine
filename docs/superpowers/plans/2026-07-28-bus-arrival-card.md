@@ -5477,7 +5477,12 @@ Expected: PASS (7 tests)
 - [ ] **Step 7: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/bus_card_host_test.dart`
-Expected: PASS (9 tests)
+Expected: PASS (11 tests) — Step 1·6의 9개 + 리뷰가 요구한 2개(30초 폴링 · 캐시 만료 후 복귀 촉발).
+
+> 그 2개가 왜 필요했는지: 픽스처가 host·client 양쪽에 **고정 clock**을 주면 `busCacheTtl`이
+> 절대 만료되지 않아 두 번째 조회부터 요청 카운터 **앞에서** 캐시가 반환한다 — `expect(count, 1)`
+> 단정들이 어떤 회귀에도 실패하지 않고, 폴링 타이머와 복귀 촉발은 **분기를 통째로 지워도 초록**
+> 이었다. clock을 가변으로 만들고(`now = now.add(...)`) 그 두 촉발을 각각 고정했다.
 
 - [ ] **Step 8: 오늘 탭 기존 테스트가 안 깨졌는지 본다**
 
@@ -5522,10 +5527,10 @@ override는 항상 '시간대 판정의 반대'만 담는다. 같은 방향으�
 ### Task 15: 키 주입 + 문서
 
 **Files:**
-- Modify: `ios/fastlane/Fastfile` (`beta` 레인의 `flutter build ipa`)
+- Modify: `ios/fastlane/Fastfile` — `tago_key` 헬퍼 + `check_tago_key` 레인 + `beta`의 키 읽기(clean 앞) · `--dart-define`
 - Modify: `docs/privacy_policy.md`
 - Modify: `docs/release_checklist.md`
-- Test: 없음 (배포 스크립트 — `beta` 레인 실행이 검증이다)
+- Test: 없음 (배포 스크립트 — `check_tago_key` 레인이 가드 검증이다. **`beta`는 돌리지 않는다** — 배포 트리거는 사용자 사전확인 사안이다)
 
 **Interfaces:**
 - Consumes: `~/.planroutine/tago.env`의 `TAGO_KEY_DECODING`
@@ -5559,14 +5564,39 @@ def tago_key
 end
 ```
 
-- [ ] **Step 2: 빌드 명령에 주입한다**
-
-`Fastfile:272` 부근의 `sh("flutter", "build", "ipa", ...)`를 고친다:
+그리고 **키만 확인하는 레인**을 하나 추가한다(`beta` 레인 정의 앞):
 
 ```ruby
-    # Flutter 빌드
+  # 키 가드만 밟아 본다 — 배포를 트리거하지 않고 확인할 수 있어야 한다.
+  #
+  # beta로 확인하면 ASC 인증 + 버전 가드 + TestFlight 조회 + 파괴적 clean을 전부
+  # 지난 뒤에야 키에 도달한다(수 분 + Pods 삭제). 값싼 가드는 값싸게 밟을 수 있어야
+  # 실제로 밟힌다.
+  lane :check_tago_key do
+    key = tago_key
+    UI.success("TAGO 키 OK: #{key.length}자")
+  end
+```
+
+- [ ] **Step 2: 키를 레인 앞쪽에서 읽고 빌드 명령에 주입한다**
+
+**두 곳을 고친다.** 키 읽기는 `beta` 레인 **앞쪽**(`assert_version_bumped` 직후, `reset_ios_caches`
+**앞**)이고, 주입은 `Fastfile:272` 부근의 `sh("flutter", "build", "ipa", ...)`다.
+
+**(1)** `Fastfile:261`의 `assert_version_bumped(asc_app(api_key))` **다음**에:
+
+```ruby
+    # 키를 clean 앞에서 읽는다 — 값싼 가드를 파괴적 단계 앞에 모으는 이 레인의 규칙
+    # 그대로다(`reset_ios_caches`는 flutter clean + Pods/Podfile.lock/ios/build 삭제라
+    # 수 분이 걸리고 되돌릴 수 없다). 키를 깜빡한 배포가 캐시를 날린 뒤 실패하면
+    # 가드가 있는 의미가 없다.
     key = tago_key
     UI.message("TAGO 키: #{key.length}자 주입")
+```
+
+**(2)** `Dir.chdir("..")` 안의 빌드 명령에 `--dart-define`만 추가한다(키는 이미 위에서 읽었다):
+
+```ruby
     Dir.chdir("..") do
       sh("flutter", "build", "ipa",
         "--release",
@@ -5578,15 +5608,21 @@ end
 
 > `UI.message`는 **길이만** 찍는다. 키 자체를 로그에 남기면 fastlane 로그 파일에 평문으로 남는다.
 
-- [ ] **Step 3: 키 없이 레인이 실패하는지 확인한다**
+- [ ] **Step 3: 키 없이 가드가 걸리는지 확인한다**
 
 ```bash
 mv ~/.planroutine/tago.env ~/.planroutine/tago.env.bak
-./ios/bin/fastlane.sh beta   # 즉시 실패해야 한다
+./ios/bin/fastlane.sh check_tago_key   # 여기서 실패해야 한다
 mv ~/.planroutine/tago.env.bak ~/.planroutine/tago.env
+./ios/bin/fastlane.sh check_tago_key   # 복구 확인: "TAGO 키 OK: N자"
 ```
 
-Expected: `TAGO 키 파일이 없습니다: ...`로 빌드 시작 전에 중단된다.
+Expected: 첫 실행이 `TAGO 키 파일이 없습니다: ...`로 실패하고, 복구 후에는 키 길이가 찍힌다.
+
+> **`beta`를 돌려 확인하지 않는다.** beta는 배포 레인이라 ASC에 접속하고(인증·버전 가드·TestFlight
+> 조회) 그 뒤 파괴적 clean을 지난다 — 가드 하나를 보려고 밟을 값이 아니고, 이 리포에서 fastlane
+> 트리거는 사용자 사전확인 사안이다. `beta` 안에서 키를 clean **앞**에서 읽게 만든 것이 Step 2(1)이고,
+> 그 배치가 맞는지는 코드 순서로 확인한다(`assert_version_bumped` → `key = tago_key` → `reset_ios_caches`).
 
 - [ ] **Step 4: 개인정보 처리방침에 문단을 추가한다**
 
@@ -5614,11 +5650,15 @@ Expected: `TAGO 키 파일이 없습니다: ...`로 빌드 시작 전에 중단�
       검토한다(스펙 §5). 기억에 의존하면 점검하지 않으므로 여기 둔다.
 ```
 
-- [ ] **Step 6: 시뮬레이터로 실제 동작을 확인한다**
+- [ ] **Step 6: 시뮬레이터로 실제 동작을 확인한다 — 구현자 범위 밖(컨트롤러/사용자가 실행)**
 
 ```bash
 flutter run --dart-define=TAGO_KEY=$(grep TAGO_KEY_DECODING ~/.planroutine/tago.env | cut -d= -f2)
 ```
+
+> 이 Step은 **대화형 실행 + 실제 네트워크**라 구현자 서브에이전트가 밟지 않는다. Task 15의
+> 커밋(Step 7)까지 마친 뒤 컨트롤러가 띄우거나 사용자가 확인한다. 위젯 테스트로는 실제 TAGO
+> 왕복·폴링 갱신·라이트 팔레트의 세 점 구별을 볼 수 없다.
 
 확인할 것:
 1. `설정 > 버스 도착`이 **꺼져 있고** 오늘 탭이 지금과 같다
@@ -5635,15 +5675,22 @@ flutter run --dart-define=TAGO_KEY=$(grep TAGO_KEY_DECODING ~/.planroutine/tago.
 git add ios/fastlane/Fastfile docs/privacy_policy.md docs/release_checklist.md
 git commit -m "chore(bus): 빌드 시 TAGO 키를 주입하고 없으면 레인을 실패시킨다
 
-키를 못 읽으면 빌드 시작 전에 중단한다. 키 없이 빌드하면 버스 기능이 조용히
-죽은 앱이 스토어에 올라가고, 화면에는 '버스 정보를 불러올 수 없어요'만 떠
-사용자는 원인을 알 수 없다.
+키를 clean 앞에서 읽는다 — 값싼 가드를 파괴적 단계 앞에 모으는 이 레인의 규칙
+그대로다. 키를 깜빡한 배포가 Pods/빌드 캐시를 날리고 수 분을 버린 뒤 실패하면
+가드가 있는 의미가 없다. 키 없이 빌드하면 버스 기능이 조용히 죽은 앱이 스토어에
+올라가고, 화면에는 '버스 정보를 불러올 수 없어요'만 떠 사용자는 원인을 알 수 없다.
+
+check_tago_key 레인을 따로 뒀다. 가드를 확인하려고 beta를 돌리면 ASC 인증·버전
+가드·TestFlight 조회·clean을 전부 지나야 한다 — 값싼 가드는 값싸게 밟을 수 있어야
+실제로 밟힌다.
 
 로그에는 키 길이만 찍는다 — 키 자체를 남기면 fastlane 로그 파일에 평문으로
 남는다.
 
-개인정보 처리방침에 TAGO 전송 문단을 넣었다. 이 기능은 앱의 첫 네트워크
-사용이지만 우리 서버가 없어 '데이터 수집 없음'은 유지된다.
+개인정보 처리방침에 TAGO 전송 문단을 넣었다. 이 기능은 Google 캘린더 연동에 이어
+두 번째 외부 통신 경로이고, 우리 서버는 여전히 없다. TAGO로는 이용자를 식별하는
+정보를 보내지 않으므로 개인정보 설문의 수집 항목(Contact Info → Email Address,
+Google 로그인 한정)에는 변화가 없다.
 
 릴리즈 체크리스트에 일일 호출량 점검을 넣었다. 서버가 없으니 자동으로 볼
 방법이 없고 기억에 의존하면 점검하지 않는다."
