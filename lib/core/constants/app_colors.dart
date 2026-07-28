@@ -34,6 +34,10 @@ class _Palette {
     required this.calendarSaturdayTint,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
+    required this.busSignalNear,
+    required this.busSignalSoon,
+    required this.busSignalFar,
+    required this.busSignalOff,
   });
 
   /// 브랜드 네이비 — 배경이 아니라 "골드/밝은 면 위의 전경 텍스트·아이콘" 의미.
@@ -71,6 +75,18 @@ class _Palette {
   final Color calendarSaturdayTint;
   final Color categoryDailyOps;
   final Color categoryCurriculum;
+
+  /// 버스 도착 신호색 — `시간 축` 카드 모양에서만 쓰인다.
+  ///
+  /// 기본 모양(`간단히`)은 이 토큰을 하나도 참조하지 않는다. 이름에 `bus`를 박은
+  /// 이유가 있다 — 이 색들은 축 위 위치가 문맥을 줄 때만 유효하고, 다른 곳에서
+  /// 강조색으로 갖다 쓰면 골드·붉은색·파랑이 이미 포화된 팔레트가 무너진다.
+  final Color busSignalNear;
+  final Color busSignalSoon;
+  final Color busSignalFar;
+
+  /// 시간 축의 레일 색.
+  final Color busSignalOff;
 }
 
 const _dark = _Palette(
@@ -102,6 +118,10 @@ const _dark = _Palette(
   calendarSaturdayTint: Color(0x1F8BA8D4), // 토요일 열 — 파란 기 12%
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
+  busSignalNear: Color(0xFFEF5F52),
+  busSignalSoon: Color(0xFFF2B23C),
+  busSignalFar: Color(0xFF5FC98A),
+  busSignalOff: Color(0x33F0EAD9),
 );
 
 /// 라이트 팔레트 — 쿨 미스트 화이트(옅은 블루톤 화이트 + 네이비 잉크 + 골드 포인트).
@@ -135,6 +155,12 @@ const _light = _Palette(
   calendarSaturdayTint: Color(0x143F5F94), // 토요일 열 — 파란 기 8%
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
+  // 라이트 노랑은 흰 배경 대비가 없어 딥 앰버로 잡는다. 라이트 gold(#9A7415)와
+  // 색상이 인접하지만 축 위 위치가 문맥을 주므로 수용한다(실기기 확인 완료).
+  busSignalNear: Color(0xFFCF3A2A),
+  busSignalSoon: Color(0xFFC98A0E),
+  busSignalFar: Color(0xFF1E9E63),
+  busSignalOff: Color(0xFFD4DBE6),
 );
 
 /// 앱 전체 색상 팔레트 (다크 네이비+골드 / 라이트 크림+네이비 전환).
@@ -203,6 +229,10 @@ class AppColors {
 
   static Color get categoryDailyOps => _current.categoryDailyOps;
   static Color get categoryCurriculum => _current.categoryCurriculum;
+  static Color get busSignalNear => _current.busSignalNear;
+  static Color get busSignalSoon => _current.busSignalSoon;
+  static Color get busSignalFar => _current.busSignalFar;
+  static Color get busSignalOff => _current.busSignalOff;
   static Color get categoryOrganization => _current.inkRed;
   static Color get categoryStudentRecord => _current.inkGreen;
   static Color get categoryDefault => _current.sub;
