@@ -132,6 +132,8 @@ Sanctum 토큰·계정 삭제 기능(App Store 심사 필수)을 전부 끌고 �
 
 - 축 범위는 0~15분, 위치는 3~97%로 clamp한다 — 양 끝에서 점이 반쯤 잘리지 않게.
 - `07:32 기준`은 마지막 조회 시각이다 (§2 경과 보정 참조).
+- 방향 토글은 **화면 수명**이다. 누르면 그 화면이 살아있는 동안 유지되고 저장하지 않는다.
+- **두 모양은 실패 계약(§3)·접기·시간대를 전부 공유한다.** 다른 것은 본문 렌더뿐이다.
 
 ### 몇 개까지 보여주나 — 필터를 걸었는지에 따라 다르다
 
@@ -146,8 +148,6 @@ Sanctum 토큰·계정 삭제 기능(App Store 심사 필수)을 전부 끌고 �
 필터를 걸었다는 것은 "이것들이 내 버스다"라는 뜻이므로 자르면 안 된다. 안 걸었다는 것은
 "아무거나"라는 뜻이니 빠른 것 위주로 충분하다. 3이라는 수는 월 그리드가 이벤트 점을 3개로
 자르는 것과 같은 값이다.
-- 방향 토글은 **화면 수명**이다. 누르면 그 화면이 살아있는 동안 유지되고 저장하지 않는다.
-- **두 모양은 실패 계약(§3)·접기·시간대를 전부 공유한다.** 다른 것은 본문 렌더뿐이다.
 
 ### 접기는 제목줄에서, 접어도 제목줄은 제자리
 
@@ -538,9 +538,9 @@ lib/features/bus/
 │   ├── bus_api_client.dart         # TAGO 직접 호출 + 키 주입 + 메모리 캐시
 │   └── tago_response_parser.dart   # 순수 함수: JSON → 모델 + 5상태 판정
 ├── domain/
-│   ├── bus_stop.dart               # freezed: nodeId, nodeNm, nodeNo, cityCode, routeIds
-│   ├── bus_arrival.dart            # freezed: routeNo, arrMin, prevCnt, lowFloor
-│   ├── bus_settings.dart           # freezed: 2슬롯 + cityCode + enabled + 시간대 2개 + override
+│   ├── bus_stop.dart               # plain class: nodeId, nodeNm, nodeNo, cityCode, routeIds
+│   ├── bus_arrival.dart            # plain class: routeNo, arrMin, prevCnt, lowFloor
+│   ├── bus_settings.dart           # plain class: 2슬롯 + cityCode + enabled + 시간대 2개 + override
 │   ├── commute_direction.dart      # enum toWork/toHome
 │   ├── bus_card_style.dart         # enum text/axis — 모양 규칙을 enum이 든다(SealStyle 패턴)
 │   ├── bus_display.dart            # 순수 함수 resolveBusDisplay — 시간대·override → 방향·펼침
