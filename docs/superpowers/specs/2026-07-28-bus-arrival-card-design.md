@@ -408,8 +408,21 @@ final displayMin = ((arrival.arrMin * 60 - elapsed) / 60).ceil();
 
 실측으로 확인한 응답 형태를 그대로 받는다.
 
-- **`items`가 세 형태로 온다**: `Map`(단건) · `List`(복수) · `""`(없음). 셋을 모두 받아
-  `List<BusArrival>`로 정규화한다. 빈 문자열을 빈 목록으로 바꾸는 것이 빈 상태 판정이다.
+- **`body.items`의 raw 구조를 정확히 적어둔다** — 앞선 리비전이 "`items`가 Map·List·`""` 세
+  형태로 온다"고 뭉개 적었는데, 그것은 **`item` 언랩 이후의 논리적 형태**이고 raw JSON 구조가
+  아니다. 구현자가 그 문구를 raw 구조로 읽어 `items['item']`을 없애려 했고, 그러면 테스트는
+  전부 초록인데 실제 API에서 모든 조회가 빈 결과가 된다(2026-07-28 실제 발생).
+
+  ```
+  복수:      body.items = {'item': [ {...}, {...} ]}    ← Map, item 키, 값은 List
+  단건:      body.items = {'item': {...} }              ← Map, item 키, 값은 Map
+  데이터 없음: body.items = ''                            ← 빈 문자열. Map이 아니다
+  ```
+
+  따라서 파서는 `items`가 Map인지 먼저 보고(빈 문자열이면 여기서 걸린다), Map이면
+  `items['item']`이 List냐 Map이냐로 갈라야 한다. `items['item']`으로 바로 들어가면 빈
+  문자열일 때 String에 인덱스 접근이라 깨진다. 빈 문자열을 빈 목록으로 바꾸는 것이 빈 상태
+  판정이다.
 - **`routeno`는 `int`와 `String`이 섞여 온다** — `92`(int) / `"92-1"`(String). 하이픈이 있는
   노선번호만 문자열이다. **반드시 `.toString()`으로 받는다.** `as String` 캐스트는 숫자
   노선번호에서 크래시한다.
