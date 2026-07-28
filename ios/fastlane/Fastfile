@@ -1,5 +1,7 @@
 default_platform(:ios)
 
+require "tmpdir"
+
 # ── 공통 헬퍼 ──
 # TAGO 인증키를 리포 밖에서 읽는다.
 #
@@ -279,6 +281,7 @@ platform :ios do
   # beta로 확인하면 ASC 인증 + 버전 가드 + TestFlight 조회 + 파괴적 clean을 전부
   # 지난 뒤에야 키에 도달한다(수 분 + Pods 삭제). 값싼 가드는 값싸게 밟을 수 있어야
   # 실제로 밟힌다.
+  desc "TAGO 키 파일만 확인한다 (배포·빌드·clean 없음)"
   lane :check_tago_key do
     key = tago_key
     UI.success("TAGO 키 OK: #{key.length}자")
@@ -307,12 +310,25 @@ platform :ios do
     reset_ios_caches
 
     # Flutter 빌드
-    Dir.chdir("..") do
-      sh("flutter", "build", "ipa",
-        "--release",
-        "--build-number=#{new_build_number}",
-        "--dart-define=TAGO_KEY=#{key}",
-      )
+    Dir.mktmpdir do |tmp|
+      # 키를 argv에 실으면 fastlane이 그대로 로그에 남긴다 — `sh`는 기본이
+      # `log: true`이고 실행 **전에** 명령 문자열을 그대로 찍는다(sh_helper의
+      # `UI.command(shell_command)`), 실패 시 에러 메시지에도 같은 문자열이 들어간다.
+      # 이 리포의 배포 관례가 전문 로그를 파일로 남기므로 그대로 두면 64자 키가
+      # 평문으로 보관된다. 파일 경로만 넘기면 echo·에러 양쪽에서 키가 사라지고
+      # 빌드 출력은 그대로 보인다(`log: false`는 출력까지 함께 끈다).
+      #
+      # 파일은 리포 밖 시스템 임시 디렉터리(0700)에 만들고 블록이 끝나면 지워진다.
+      define_file = File.join(tmp, "tago.json")
+      File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
+
+      Dir.chdir("..") do
+        sh("flutter", "build", "ipa",
+          "--release",
+          "--build-number=#{new_build_number}",
+          "--dart-define-from-file=#{define_file}",
+        )
+      end
     end
 
     # IPA 파일명이 한글(공직플랜.ipa)이라 Ruby Dir[] glob이 매치 못함. Dir.entries로
