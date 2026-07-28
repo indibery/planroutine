@@ -5594,17 +5594,37 @@ end
     UI.message("TAGO 키: #{key.length}자 주입")
 ```
 
-**(2)** `Dir.chdir("..")` 안의 빌드 명령에 `--dart-define`만 추가한다(키는 이미 위에서 읽었다):
+**(2)** 빌드 명령에 키를 넘긴다. **커맨드라인에 키를 싣지 않는다** — 임시 JSON 파일 경로만 싣고
+`--dart-define-from-file`로 읽게 한다:
 
 ```ruby
-    Dir.chdir("..") do
-      sh("flutter", "build", "ipa",
-        "--release",
-        "--build-number=#{new_build_number}",
-        "--dart-define=TAGO_KEY=#{key}",
-      )
+    Dir.mktmpdir do |tmp|
+      # 키를 argv에 실으면 fastlane이 그대로 로그에 남긴다 — `sh`는 기본이
+      # `log: true`이고 실행 **전에** 명령 문자열을 그대로 찍는다(sh_helper의
+      # `UI.command(shell_command)`), 실패 시 에러 메시지에도 같은 문자열이 들어간다.
+      # 이 리포의 배포 관례가 전문 로그를 파일로 남기므로 그대로 두면 64자 키가
+      # 평문으로 보관된다. 파일 경로만 넘기면 echo·에러 양쪽에서 키가 사라지고
+      # 빌드 출력은 그대로 보인다(`log: false`는 출력까지 함께 끈다).
+      #
+      # 파일은 리포 밖 시스템 임시 디렉터리(0700)에 만들고 블록이 끝나면 지워진다.
+      define_file = File.join(tmp, "tago.json")
+      File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
+
+      Dir.chdir("..") do
+        sh("flutter", "build", "ipa",
+          "--release",
+          "--build-number=#{new_build_number}",
+          "--dart-define-from-file=#{define_file}",
+        )
+      end
     end
 ```
+
+파일 상단(`fastlane_require` 부근 또는 첫 `def` 앞)에 `require "tmpdir"`를 추가한다(`json`은
+fastlane이 이미 로드한다).
+
+> `--dart-define-from-file`은 `.json`/`.env`를 받아 `String.fromEnvironment`로 읽히게 한다
+> (`flutter build ipa -h`로 확인). `Dir.chdir("..")` 안에서 쓰므로 **절대 경로**여야 한다.
 
 > `UI.message`는 **길이만** 찍는다. 키 자체를 로그에 남기면 fastlane 로그 파일에 평문으로 남는다.
 
