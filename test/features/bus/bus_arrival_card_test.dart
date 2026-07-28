@@ -143,6 +143,18 @@ void main() {
       expect(find.textContaining('기준'), findsNothing);
     });
 
+    testWidgets('고른 노선만 안 오면 막차 문구가 아니라 별 문구다', (tester) async {
+      await _pump(tester, view: _view(
+        state: BusCardState.filteredOut,
+        items: const [],
+        fetchedAt: DateTime(2026, 7, 28, 7, 30),
+      ));
+      expect(find.text('고른 노선은 지금 오지 않아요'), findsOneWidget);
+      expect(find.text('오늘 운행이 끝났어요'), findsNothing,
+          reason: '정류장에는 다른 버스가 오고 있다 — 정반대의 행동을 부르는 정보다');
+      expect(find.textContaining('설정에서 고를 수 있어요'), findsOneWidget);
+    });
+
     testWidgets('stale + 필터로 목록이 비면 막차 문구가 아니라 못 받았어요다', (tester) async {
       // 와일드카드 분기가 있으면 여기서 '오늘 운행이 끝났어요'가 나온다.
       await _pump(tester, view: _view(

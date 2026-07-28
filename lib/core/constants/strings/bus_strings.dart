@@ -50,6 +50,11 @@ class BusStrings {
   /// 조회 전에만 쓰인다 — 조회 후 빈 목록은 buildBusCardView가 closed로 바꾼다.
   static const emptyLoading = '도착시간을 확인하고 있어요';
   static const emptyClosed = '오늘 운행이 끝났어요';
+
+  /// 정류장에는 버스가 오는데 골라둔 노선만 지금 안 올 때. **막차 종료와 다른 말이어야
+  /// 한다** — 기다릴지 다른 수단을 찾을지가 갈린다.
+  static const emptyFiltered = '고른 노선은 지금 오지 않아요';
+  static const emptyFilteredHint = '이 정류장에 오는 다른 버스는 설정에서 고를 수 있어요';
   static const emptyDown = '지금 정보를 못 받았어요';
   static const emptyDownAction = '다시 시도';
   static const emptyKey = '버스 정보를 불러올 수 없어요';

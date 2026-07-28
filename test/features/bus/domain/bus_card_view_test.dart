@@ -64,10 +64,19 @@ void main() {
       expect(v.visible.map((e) => e.routeNo).toList(), ['1', '3']);
     });
 
-    test('골라둔 노선이 지금 안 오면 운행 종료로 읽힌다', () {
+    test('골라둔 노선만 안 오면 막차 종료와 구별한다', () {
+      // 이 단정은 **뒤집힌 계약이다.** 예전에는 closed(= `오늘 운행이 끝났어요`)를
+      // 정답으로 고정했는데, 평일 아침 07:30에 정류장으로 다른 버스가 오고 있는데도
+      // 막차가 끝났다고 단정하는 화면이 된다 — 기다릴지 다른 수단을 찾을지가 갈리는
+      // 정보라 뭉개면 안 된다(스펙 §3의 '신뢰의 급소').
       final v = _build(arrivals: [_a('A', '1', 2)], routeIds: {'Z'});
-      expect(v.state, BusCardState.closed);
+      expect(v.state, BusCardState.filteredOut);
       expect(v.visible, isEmpty);
+    });
+
+    test('필터가 걸려 있어도 정류장 자체가 비면 막차 종료다', () {
+      final v = _build(arrivals: const [], routeIds: {'Z'});
+      expect(v.state, BusCardState.closed);
     });
   });
 

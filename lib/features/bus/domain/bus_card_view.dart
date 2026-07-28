@@ -22,8 +22,15 @@ enum BusCardState {
   /// 갱신에 실패했지만 캐시된 목록은 있다. 목록 + "07:30 기준 · 갱신 실패".
   stale,
 
-  /// 오는 버스가 없다. 막차 후이거나 고른 노선이 지금 안 온다.
+  /// 이 정류장에 오는 버스가 하나도 없다 — 막차 후다.
   closed,
+
+  /// 정류장에는 버스가 오는데 **고른 노선만** 지금 안 온다.
+  ///
+  /// [closed]와 쪼개 둔다: "막차 끝남"과 "내 노선만 안 옴"은 정류장에서 기다릴지
+  /// 다른 수단을 찾을지를 가르는 정반대의 정보다. 같은 문구로 뭉개면 평일 아침
+  /// 07:30에 `오늘 운행이 끝났어요`가 떠 다른 버스가 오는 것을 숨긴다.
+  filteredOut,
 
   /// 조회 실패 + 캐시 없음.
   down,
@@ -97,9 +104,17 @@ BusCardView buildBusCardView({
 
   // 빈 목록은 closed로 바꾼다. 다만 장애·키 오류는 막차와 구별해야 하므로
   // 그대로 남긴다 — 정류장에서 기다릴지 택시를 부를지가 갈린다.
-  final resolved = limited.isEmpty && state == BusCardState.ok
-      ? BusCardState.closed
-      : state;
+  //
+  // 그리고 **필터가 비운 것과 막차가 비운 것을 구별한다.** 판단 재료는 이미
+  // 손에 있다: 응답에 버스가 있었는데(`arrivals.isNotEmpty`) 내가 고른 노선만
+  // (`routeIds.isNotEmpty`) 걸러져 비었으면 정류장에는 다른 버스가 오고 있다.
+  final resolved = switch (state) {
+    BusCardState.ok
+        when limited.isEmpty && routeIds.isNotEmpty && arrivals.isNotEmpty =>
+      BusCardState.filteredOut,
+    BusCardState.ok when limited.isEmpty => BusCardState.closed,
+    _ => state,
+  };
 
   return BusCardView(
     state: resolved,

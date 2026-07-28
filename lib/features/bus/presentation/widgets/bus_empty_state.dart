@@ -34,6 +34,15 @@ class BusEmptyState extends StatelessWidget {
     final (title, hint, action, onAction) = switch (state) {
       BusCardState.ok => (BusStrings.emptyLoading, null, null, null),
       BusCardState.closed => (BusStrings.emptyClosed, null, null, null),
+      // 막차 종료(closed)와 **다른 문구**를 쓴다 — 정류장에 다른 버스가 오는 상황이라
+      // 사용자의 다음 행동이 정반대다. 노선을 바꾸는 경로는 확인 시트뿐이므로
+      // 액션 대신 힌트로 안내한다.
+      BusCardState.filteredOut => (
+          BusStrings.emptyFiltered,
+          BusStrings.emptyFilteredHint,
+          null,
+          null,
+        ),
       // stale이 빈 목록으로 여기까지 오면 갱신 실패와 구분할 정보가 없다 —
       // down과 같은 문구를 **의도적으로** 공유한다(와일드카드가 아니라 이름을 둘 다 적는다).
       BusCardState.stale || BusCardState.down => (
