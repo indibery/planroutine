@@ -753,7 +753,7 @@ class TimeRange {
 - [ ] **Step 4: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/domain/time_range_test.dart`
-Expected: PASS (8 tests)
+Expected: PASS (9 tests — 그룹 안 7 + 최상위 2)
 
 - [ ] **Step 5: 커밋**
 
