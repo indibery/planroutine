@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 import 'package:planroutine/features/bus/domain/bus_card_style.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
@@ -156,6 +157,49 @@ void main() {
       await _pump(tester, view: _view());
       expect(find.text('· 수원시청'), findsOneWidget);
       expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    });
+  });
+
+  group('모양을 바꿔도 같은 정보가 보인다 — 두 본문의 공유 계약', () {
+    // 5노선 정류장 + 필터 없음(= 확인 시트의 기본 저장값)에서 상한이 3개를 남긴 모습.
+    const visible = [
+      BusArrival(routeId: 'A', routeNo: '720', arrMin: 2),
+      BusArrival(routeId: 'B', routeNo: '150', arrMin: 5),
+      BusArrival(routeId: 'C', routeNo: '92', arrMin: 9),
+    ];
+
+    // **모양별로 따로 쓰지 않고 순회한다.** `hiddenCount`가 `간단히`에만 있었던 것이
+    // I5의 원인이므로, 새 모양을 더할 때 자동으로 같은 계약이 걸리게 둔다.
+    for (final style in BusCardStyle.values) {
+      testWidgets('${style.label} — 감춘 개수를 말한다', (tester) async {
+        await _pump(tester, style: style, view: _view(items: visible, hidden: 2));
+        expect(find.text('2개 더'), findsOneWidget,
+            reason: '한 모양에만 없으면 그 모양을 고른 사용자는 이 정류장에 '
+                '버스가 3대만 온다고 읽는다 — 자기 노선이 4·5번째면 포기한다');
+      });
+
+      testWidgets('${style.label} — 보이는 노선번호가 모두 있다', (tester) async {
+        await _pump(tester, style: style, view: _view(items: visible, hidden: 2));
+        for (final a in visible) {
+          expect(find.textContaining(a.routeNo), findsWidgets,
+              reason: '${a.routeNo}번이 ${style.label}에서 사라졌다');
+        }
+      });
+
+      testWidgets('${style.label} — 감춘 개수가 0이면 그 줄이 없다', (tester) async {
+        await _pump(tester, style: style, view: _view(items: visible));
+        expect(find.textContaining('개 더'), findsNothing);
+      });
+    }
+
+    testWidgets('N개 더는 골드가 아니다 — 카드 안 골드는 전부 탭 대상이다', (tester) async {
+      // `다시 시도`·`정류장 등록`·`퇴근 보기`가 모두 골드 + 탭이라 카드 안에서
+      // 골드 = 행동으로 굳었다. 탭할 수 없는 라벨에 같은 색을 쓰면 눌러도 아무 일이
+      // 없는 링크가 된다(리뷰 M2).
+      await _pump(tester, view: _view(items: visible, hidden: 2));
+      final more = tester.widget<Text>(find.text('2개 더'));
+      expect(more.style?.color, isNot(AppColors.gold));
+      expect(more.style?.color, AppColors.sub);
     });
   });
 

@@ -5,6 +5,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
+import 'bus_more_count.dart';
 
 /// `간단히` 본문 — 한 줄에 노선을 나열한다. **기본 모양.**
 ///
@@ -28,16 +29,9 @@ class BusBodyText extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.end,
       children: [
         ...view.visible.map(_entry),
-        if (view.hiddenCount > 0)
-          Text(
-            BusStrings.moreCount(view.hiddenCount),
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gold,
-            ),
-          ),
+        // 감춘 개수는 `시간 축`과 **같은 위젯**으로 그린다 — 인라인으로 두면
+        // 한쪽에만 있는 상태가 다시 만들어진다(`BusMoreCount`의 주석 참고).
+        if (view.hiddenCount > 0) BusMoreCount(hiddenCount: view.hiddenCount),
       ],
     );
   }

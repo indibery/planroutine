@@ -4,12 +4,16 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
+import 'bus_more_count.dart';
 
 /// `시간 축` 본문 — 0~15분 축에 버스를 점으로 놓는다.
 ///
 /// 간격이 공간으로 보여 "이거 놓치면 6분 더"가 숫자 없이 읽힌다. 대신 두 버스가
 /// 3분 안으로 붙으면 점과 라벨이 겹치고 15분 넘는 버스는 오른쪽 끝에 몰린다 —
 /// 그래서 기본값이 아니라 선택지다.
+///
+/// **`간단히`와 같은 정보를 그린다.** 다른 것은 배치뿐이다 — 감춘 개수를 축에만
+/// 빼면 모양을 바꾼 사용자만 조용히 손해를 본다([BusMoreCount] 주석 참고).
 class BusBodyAxis extends StatelessWidget {
   const BusBodyAxis({super.key, required this.view});
 
@@ -43,6 +47,17 @@ class BusBodyAxis extends StatelessWidget {
         SizedBox(height: 14, child: _rail()),
         const SizedBox(height: 2),
         SizedBox(height: 15, child: _labels()),
+        // **라벨 행(Stack) 안에 우측 정렬로 넣지 않는다.** 15분을 넘긴 버스의 라벨은
+        // `dotPosition`이 0.97로 clamp해 오른쪽 끝에 고정되는데, 상한이 걸릴 만큼
+        // 노선이 많은 정류장에서는 보이는 3개 중 하나가 15분 이상인 일이 흔하다
+        // (예: 18·20·22분) — 겹치면 감추려던 정보가 또 안 읽힌다. 별 줄로 둔다.
+        if (view.hiddenCount > 0) ...[
+          const SizedBox(height: 2),
+          Align(
+            alignment: Alignment.centerRight,
+            child: BusMoreCount(hiddenCount: view.hiddenCount),
+          ),
+        ],
       ],
     );
   }

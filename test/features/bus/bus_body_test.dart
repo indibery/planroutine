@@ -88,6 +88,34 @@ void main() {
       expect(find.text('15분'), findsOneWidget);
       expect(find.text('720'), findsOneWidget);
     });
+
+    testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
+      // 축은 `hiddenCount`를 아예 참조하지 않아 5노선 중 2개를 조용히 버렸다.
+      // 화면에는 점 3개뿐이라 사용자는 이 정류장에 버스가 3대만 온다고 읽는다.
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)], hidden: 2)));
+      expect(find.text('2개 더'), findsOneWidget);
+    });
+
+    testWidgets('감춘 개수가 0이면 더 보기가 없다', (tester) async {
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
+      expect(find.textContaining('개 더'), findsNothing);
+    });
+
+    testWidgets('15분을 넘긴 라벨과 겹치지 않는다 — 우측 정렬이 아니라 별 줄이다', (tester) async {
+      // 상한이 걸릴 만큼 노선이 많으면 보이는 3개 중 하나가 15분 이상인 일이 흔하다.
+      // 그 라벨은 0.97로 clamp돼 오른쪽 끝에 고정되므로, `N개 더`를 라벨 행 우측에
+      // 넣으면 겹쳐서 감추려던 정보가 또 안 읽힌다.
+      await _pump(
+        tester,
+        BusBodyAxis(
+          view: _view([_a('A', '720', 2), _a('B', '61', 31)], hidden: 2),
+        ),
+      );
+      final more = tester.getRect(find.text('2개 더'));
+      final farLabel = tester.getRect(find.text('61'));
+      expect(more.top, greaterThanOrEqualTo(farLabel.bottom),
+          reason: '감춘 개수는 라벨 행 아래에 있어야 겹치지 않는다');
+    });
   });
 
   test('가드 — 기본 모양 소스가 busSignal 토큰을 참조하지 않는다', () {
