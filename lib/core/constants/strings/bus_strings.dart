@@ -43,6 +43,9 @@ class BusStrings {
   static const arrivingNow = '곧 도착';
   static const lowFloor = '저상';
 
+  /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
+  static const axisNow = '지금';
+
   // ── 실패 계약 5상태 (§3) ───────────────────────────────────
   static const emptyClosed = '오늘 운행이 끝났어요';
   static const emptyDown = '지금 정보를 못 받았어요';
