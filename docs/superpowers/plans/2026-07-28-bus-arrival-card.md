@@ -4120,7 +4120,8 @@ git commit -m "feat(bus): 설정 탭에 버스 도착 섹션을 넣는다
 - Consumes: `BusApiClient`·`busSettingsProvider` (Task 8·9), `BusStop`·`CommuteDirection` (Task 2), `BusStrings` (Task 1)
 - Produces:
   - `class BusStopSearchScreen extends ConsumerStatefulWidget { const BusStopSearchScreen({super.key, this.slot}); static const cityFieldKey = Key('bus_city_field'); static const stopFieldKey = Key('bus_stop_field'); static const confirmAcceptKey = Key('bus_confirm_accept'); }`
-  - `class BusStopConfirmSheet extends StatefulWidget { static Future<BusStop?> show(BuildContext, {required BusStop stop, required List<BusArrival> arrivals}); }`
+  - `class BusStopConfirmSheet extends StatefulWidget { static Future<BusStop?> show(BuildContext, {required BusStop stop, required List<BusArrival> arrivals, required BusCardState state}); }`
+    - `state`는 **빈 목록의 이유를 구분**하는 데만 쓴다 — `down`·`keyError`면 저장을 막는다(아래 Step 3 주석).
 
 **핵심(스펙 §4):** 정류장을 탭하면 바로 저장하지 않고 **그 정류장에 오는 버스를 조회해** 보여준다. 방향은 이름·좌표로 판별 불가하고(실측: 같은 이름 두 개, 좌표 60m 차이) 사용자는 자기가 타는 노선 번호를 안다. 같은 시트에서 노선도 고른다 — **전부 체크면 빈 집합으로 저장**한다.
 
@@ -4132,6 +4133,7 @@ git commit -m "feat(bus): 설정 탭에 버스 도착 섹션을 넣는다
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
+import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/presentation/screens/bus_stop_search_screen.dart';
 
@@ -4148,23 +4150,27 @@ final _arrivals = [
   const BusArrival(routeId: 'R3', routeNo: '92-1', arrMin: 10),
 ];
 
-/// 확인 시트만 띄워 노선 선택 규칙을 검사한다.
-Future<BusStop?> _showSheet(
+/// 확인 시트를 **띄운 상태로** 둔다 — 시트 안에 무엇이 그려졌는지 검사할 때 쓴다.
+///
+/// 반환값이 없는 이유: `showModalBottomSheet`의 Future는 시트가 pop될 때까지 완료되지
+/// 않으므로, 시트가 열린 채로 값을 돌려주면 그것은 **항상 null**이다. 저장 결과가
+/// 필요한 테스트는 `_tapAccept`를 쓴다(null을 돌려주는 헬퍼를 남기면 나중에
+/// `expect(await _showSheet(...), isNull)`처럼 아무것도 검증하지 않는 테스트가 생긴다).
+Future<void> _showSheet(
   WidgetTester tester, {
   List<BusArrival>? arrivals,
+  BusCardState state = BusCardState.ok,
 }) async {
-  BusStop? result;
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
       body: Builder(
         builder: (context) => ElevatedButton(
-          onPressed: () async {
-            result = await BusStopConfirmSheet.show(
-              context,
-              stop: _stop,
-              arrivals: arrivals ?? _arrivals,
-            );
-          },
+          onPressed: () => BusStopConfirmSheet.show(
+            context,
+            stop: _stop,
+            arrivals: arrivals ?? _arrivals,
+            state: state,
+          ),
           child: const Text('열기'),
         ),
       ),
@@ -4172,7 +4178,6 @@ Future<BusStop?> _showSheet(
   ));
   await tester.tap(find.text('열기'));
   await tester.pumpAndSettle();
-  return result;
 }
 
 void main() {
@@ -4210,16 +4215,37 @@ void main() {
       final saved = await _tapAccept(
         tester,
         uncheck: ['82-1번', '92번', '92-1번'],
-        expectBlocked: true,
       );
       expect(saved, isNull);
       expect(find.text('버스를 하나 이상 남겨주세요'), findsOneWidget);
     });
 
-    testWidgets('오는 버스가 없으면 안내하고 노선 없이 저장할 수 있다', (tester) async {
-      final saved = await _tapAccept(tester, arrivals: const []);
+    // 아래 두 개는 원래 한 테스트였다 — `_tapAccept`가 시트를 pop시킨 **뒤에** 시트
+    // 안의 문구를 찾아 구조적으로 통과할 수 없었다(트리가 이미 사라졌다). 안내는
+    // 띄운 상태에서, 저장 결과는 누른 뒤에 본다.
+    testWidgets('오는 버스가 없으면 안내한다', (tester) async {
+      await _showSheet(tester, arrivals: const []);
       expect(find.text('지금 이 정류장에 오는 버스가 없어요'), findsOneWidget);
-      expect(saved?.routeIds, isEmpty);
+    });
+
+    testWidgets('오는 버스가 없어도 노선 없이 저장된다', (tester) async {
+      final saved = await _tapAccept(tester, arrivals: const []);
+      expect(saved?.routeIds, isEmpty,
+          reason: '막차 후·주말이라 정말 안 오는 것은 등록을 막을 이유가 아니다');
+    });
+
+    testWidgets('조회 실패는 안 오는 것과 다르게 말하고 저장을 막는다', (tester) async {
+      await _showSheet(tester, arrivals: const [], state: BusCardState.down);
+
+      expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
+      expect(find.text('지금 이 정류장에 오는 버스가 없어요'), findsNothing,
+          reason: '못 물어본 것을 안 온다고 말하면 시트가 통과 도장이 된다');
+
+      final accept = tester.widget<ElevatedButton>(
+        find.byKey(BusStopSearchScreen.confirmAcceptKey),
+      );
+      expect(accept.onPressed, isNull,
+          reason: '방향을 확인할 재료가 0인데 저장을 허용하면 반대편 정류장이 저장된다');
     });
   });
 }
@@ -4229,7 +4255,7 @@ Future<BusStop?> _tapAccept(
   WidgetTester tester, {
   List<String> uncheck = const [],
   List<BusArrival>? arrivals,
-  bool expectBlocked = false,
+  BusCardState state = BusCardState.ok,
 }) async {
   BusStop? result;
   await tester.pumpWidget(MaterialApp(
@@ -4241,6 +4267,7 @@ Future<BusStop?> _tapAccept(
               context,
               stop: _stop,
               arrivals: arrivals ?? _arrivals,
+              state: state,
             );
           },
           child: const Text('열기'),
@@ -4282,6 +4309,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/tago_response_parser.dart';
 import '../../domain/bus_arrival.dart';
+import '../../domain/bus_card_view.dart';
 import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
 import '../providers/bus_providers.dart';
@@ -4373,9 +4401,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       context,
       stop: stop,
       arrivals: fetch.arrivals,
+      // 빈 목록의 이유를 시트가 알아야 한다 — `fetchArrivals`는 예외를 던지지 않고
+      // 실패를 상태로 돌려주므로, state를 버리면 장애와 막차 후가 구별되지 않는다.
+      state: fetch.state,
     );
     if (confirmed == null || !mounted) return;
 
+    // 쿼리가 없으면 출근 슬롯 — 호출부는 전부 `?slot=`을 붙인다(Task 12·14).
+    // 이 폴백은 라우트를 손으로 열었을 때의 마지막 안전망이다.
     final slot = widget.slot ?? CommuteDirection.toWork;
     await ref.read(busSettingsProvider.notifier).setStop(slot, confirmed);
     if (mounted) context.pop();
@@ -4431,7 +4464,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
           Wrap(
             spacing: AppSizes.spacing8,
             runSpacing: AppSizes.spacing4,
-            children: cities.take(20).map((c) {
+            children: _chipCities(cities).map((c) {
               final selected = c.code == _city?.code;
               return ChoiceChip(
                 label: Text(c.name),
@@ -4443,6 +4476,27 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
         ],
       ),
     );
+  }
+
+  /// 칩으로 그릴 도시 — **선택된 도시는 항상 맨 앞에 남긴다.**
+  ///
+  /// 138개를 다 그리면 화면이 칩으로 덮이므로 상한(20)을 둔다. 그런데 목록이
+  /// citycode 오름차순 원본이라 상한만 두면 경기 후반(31110~)·강원 이남은 구조적으로
+  /// 밖으로 밀린다 — 마지막으로 쓴 도시를 복원해 놓고도 선택된 칩이 화면에 없어
+  /// "안 골라졌다"고 읽히고, 사용자가 엉뚱한 칩으로 갈아치운다. 선택된 것을 앞으로
+  /// 끌어올리면 "다시 고르지 않는다"는 약속이 실제로 지켜진다.
+  List<CityCode> _chipCities(List<CityCode> cities) {
+    const limit = 20;
+    final selected = _city;
+    // 선택된 도시가 지금 목록(= 필터 결과)에 없으면 끌어오지 않는다 — 필터에 맞지도
+    // 않는 칩이 맨 앞에 뜨면 그것이 검색 결과처럼 읽힌다.
+    if (selected == null || !cities.any((c) => c.code == selected.code)) {
+      return cities.take(limit).toList();
+    }
+    return [
+      selected,
+      ...cities.where((c) => c.code != selected.code).take(limit - 1),
+    ];
   }
 
   Widget _stopSearchField() {
@@ -4512,20 +4566,36 @@ class BusStopConfirmSheet extends StatefulWidget {
     super.key,
     required this.stop,
     required this.arrivals,
+    required this.state,
   });
 
   final BusStop stop;
   final List<BusArrival> arrivals;
 
+  /// 조회 결과 상태. **빈 목록의 이유를 구분하는 데만 쓴다.**
+  ///
+  /// `arrivals`가 비는 경로는 두 가지고 뜻이 정반대다: 막차 후처럼 **정말 안 오는
+  /// 경우**(`ok`·`closed`)와 네트워크·키 문제로 **못 물어본 경우**(`down`·`keyError`).
+  /// 뭉개면 조회 실패 순간 사용자는 "이 정류장에 오는 버스가 없어요"를 읽고 방향을
+  /// 전혀 확인하지 못한 채 저장한다 — 시트를 만든 이유가 실패 경로에서 정확히
+  /// 무너진다(반대 방향 정류장이 저장되고, 사용자는 앱이 아니라 자기가 늦었다고
+  /// 생각한다).
+  final BusCardState state;
+
   static Future<BusStop?> show(
     BuildContext context, {
     required BusStop stop,
     required List<BusArrival> arrivals,
+    required BusCardState state,
   }) {
     return showModalBottomSheet<BusStop>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => BusStopConfirmSheet(stop: stop, arrivals: arrivals),
+      builder: (_) => BusStopConfirmSheet(
+        stop: stop,
+        arrivals: arrivals,
+        state: state,
+      ),
     );
   }
 
@@ -4535,6 +4605,10 @@ class BusStopConfirmSheet extends StatefulWidget {
 
 class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
   late Set<String> _checked;
+
+  /// 못 물어본 것인가. 이때는 확인할 재료가 0이므로 저장을 막는다.
+  bool get _fetchFailed =>
+      widget.state == BusCardState.down || widget.state == BusCardState.keyError;
 
   @override
   void initState() {
@@ -4580,7 +4654,21 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
               ),
             ),
             const SizedBox(height: AppSizes.spacing16),
-            if (widget.arrivals.isEmpty)
+            if (_fetchFailed)
+              // 못 물어본 경우 — 카드의 실패 문구를 그대로 쓴다. 시트용 문구를
+              // 따로 만들지 않는 이유: 사용자가 읽는 사실이 같다("지금 정보를 못
+              // 받았어요"), 그리고 문구가 갈라지면 둘 중 하나만 손보게 된다.
+              Text(
+                widget.state == BusCardState.keyError
+                    ? BusStrings.emptyKey
+                    : BusStrings.emptyDown,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 14,
+                  color: AppColors.sub,
+                ),
+              )
+            else if (widget.arrivals.isEmpty)
               Text(
                 BusStrings.confirmNoRoutes,
                 style: TextStyle(
@@ -4612,7 +4700,10 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
                 Expanded(
                   child: ElevatedButton(
                     key: BusStopSearchScreen.confirmAcceptKey,
-                    onPressed: _accept,
+                    // 조회 실패면 저장할 수 없다 — 방향을 확인할 재료가 없는데
+                    // 저장을 허용하면 시트가 통과 도장이 된다. 사용자는 `아니에요`로
+                    // 닫고 다시 고르면 그때 새로 조회한다.
+                    onPressed: _fetchFailed ? null : _accept,
                     child: const Text(BusStrings.confirmAccept),
                   ),
                 ),
@@ -4691,7 +4782,7 @@ import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 - [ ] **Step 5: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/bus_stop_search_test.dart`
-Expected: PASS (6 tests)
+Expected: PASS (8 tests) — 원래 6개였는데 통과 불가였던 1개를 2개로 쪼개고 조회 실패 케이스를 더했다.
 
 - [ ] **Step 6: analyze**
 
@@ -5154,7 +5245,13 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         expanded: true,
         onToggleExpanded: () {},
         onFlipDirection: _flip,
-        onRegister: () => context.push(AppRoutes.busStops),
+        // **`?slot=`을 반드시 붙인다.** 검색 화면은 쿼리가 없으면 출근 슬롯으로
+        // 조용히 떨어지므로, 퇴근 카드에서 등록하면 학교 앞 정류장이 출발지에
+        // 저장된다 — 화면은 여전히 `정류장을 등록하면…`이라 저장 실패로 읽히고,
+        // 다음 아침 출근 카드에 학교 앞 정류장이 뜬다. 원인이 쿼리 한 개라
+        // 추적이 어렵다. 방향은 지금 손에 들고 있다(`display.direction`).
+        onRegister: () =>
+            context.push('${AppRoutes.busStops}?slot=${display.direction.name}'),
       );
     }
 
@@ -5200,7 +5297,11 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       onToggleExpanded: () => _toggleExpanded(display),
       onFlipDirection: _flip,
       onRetry: _tick,
-      onRegister: () => context.push(AppRoutes.busStops),
+      // 위 noStop 분기와 같은 이유로 슬롯을 붙인다. 이 경로의 `onRegister`는
+      // `BusEmptyState`가 noStop에서만 쓰므로 실질 도달하지 않지만, 형태가 갈라져
+      // 있으면 나중에 도달하게 될 때 조용히 틀린다.
+      onRegister: () =>
+          context.push('${AppRoutes.busStops}?slot=${display.direction.name}'),
     );
   }
 
