@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -406,6 +407,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(count, 2, reason: '폴링 타이머가 실제로 걸려 있다');
+    });
+
+    testWidgets('폴링이 도는 동안 목록이 사라지지 않는다', (tester) async {
+      // 표시 드롭 임계값을 `busCacheTtl`(30초)로 두면 `fetchedAt`이 요청 **시작**
+      // 시각이고 폴링은 응답 **뒤** 30초라 `d+30 > 30`이 항상 참이 되어, 정상
+      // 폴링마다 목록이 사라지고 `도착시간을 확인하고 있어요`가 떴다. 두 번째
+      // 응답을 붙잡아 그 중간 프레임을 관찰한다 — 붙잡지 않으면 pumpAndSettle이
+      // 목록을 되살려 드롭이 보이지 않는다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = inRange;
+      final hold = Completer<void>();
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          if (count == 2) await hold.future;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('720번'), findsOneWidget);
+
+      now = now.add(const Duration(seconds: 31));
+      await tester.pump(busPollInterval); // 타이머 발화 → 두 번째 요청이 비행 중
+      await tester.pump(); // 드롭이 있었다면 이 프레임에서 보인다
+
+      expect(count, 2);
+      expect(find.text('720번'), findsOneWidget,
+          reason: '갱신 중에도 직전 목록을 유지한다 — 3분을 넘긴 값만 내린다');
+      expect(find.text(BusStrings.emptyLoading), findsNothing);
+
+      hold.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('720번'), findsOneWidget);
     });
   });
 }

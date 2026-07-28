@@ -16,6 +16,20 @@ const tagoBaseUrl = 'https://apis.data.go.kr/1613000';
 /// 메모리 캐시 수명. 폴링 주기와 같게 두어 방향 토글 왕복과 탭 재진입만 흡수한다.
 const busCacheTtl = Duration(seconds: 30);
 
+/// 화면에 띄울 수 있는 목록의 나이 상한. **이 상수 하나가 두 곳을 정의한다** —
+/// [BusApiClient._fallback]의 stale 상한과 `BusCardHost._tick`의 표시 드롭.
+///
+/// 나이 상한이 없으면 통신이 끊긴 뒤 수십 분 묵은 목록이 그대로 남고, 경과 보정이
+/// 그 목록의 arrMin을 전부 0으로 깎아 **38분 전에 지나간 버스가 `곧 도착`으로**
+/// 뜬다(반증 단서는 10px `07:32 기준 · 갱신 실패` 하나뿐이다). 캐시는
+/// `busApiClientProvider`가 autoDispose가 아니라 앱 프로세스 수명만큼 살아 있어
+/// "한 시간 뒤 네트워크 없이 오늘 탭 재진입" 한 번으로 재현된다.
+///
+/// `busCacheTtl`과 다른 값이어야 한다 — 표시 드롭을 TTL과 같게 두면 `fetchedAt`이
+/// 요청 **시작** 시각이고 폴링은 응답 **뒤** 30초라 `d+30 > 30`이 구조적으로 항상
+/// 참이 되어 정상 폴링마다 목록이 사라진다.
+const busMaxDisplayAge = Duration(minutes: 3);
+
 /// 빌드 시 주입되는 인증키. 소스와 git 히스토리에 남지 않는다.
 ///
 /// `--dart-define=TAGO_KEY=...`로 넣는다(`main.dart`의 `SCREENSHOT_MODE`와 같은
@@ -122,14 +136,14 @@ class BusApiClient {
           );
         case TagoOutcome.keyError:
         case TagoOutcome.malformed:
-          return _fallback(cached, BusCardState.keyError);
+          return _fallback(key, cached, BusCardState.keyError);
       }
     } on _KeyRejected {
-      return _fallback(cached, BusCardState.keyError);
+      return _fallback(key, cached, BusCardState.keyError);
     } catch (_) {
       // 네트워크·타임아웃·JSON 파손. 캐시가 있으면 옛 목록을 보여주고 갱신
       // 실패를 고백한다 — 실시간인 척하면 버스를 놓친 사용자가 앱을 불신한다.
-      return _fallback(cached, BusCardState.down);
+      return _fallback(key, cached, BusCardState.down);
     }
   }
 
@@ -166,8 +180,19 @@ class BusApiClient {
     }
   }
 
-  BusFetch _fallback(_CacheEntry? cached, BusCardState failure) {
-    if (cached == null || cached.arrivals.isEmpty) {
+  /// 조회가 실패했을 때 캐시로 버틸지, 실패를 그대로 말할지 고른다.
+  ///
+  /// `cached.arrivals.isEmpty` 절은 **load-bearing이다.** 빼면 '막차 후(closed로
+  /// 빈 목록이 캐시됨) → 다음 폴링 실패'에서 `down`/`keyError`가 fetchedAt 있는
+  /// `stale`로 잘못 승격돼, 본문은 `지금 정보를 못 받았어요`인데 제목줄은
+  /// `07:32 기준 · 갱신 실패`를 붉게 쓰는 부정확한 조합이 된다.
+  BusFetch _fallback(String key, _CacheEntry? cached, BusCardState failure) {
+    if (cached == null ||
+        cached.arrivals.isEmpty ||
+        _now().difference(cached.fetchedAt) > busMaxDisplayAge) {
+      // 나이 상한을 넘긴 엔트리는 버린다 — 남겨두면 폴링마다 같은 판정을 되풀이하고,
+      // 통신이 돌아오기 전까지 프로세스 수명 내내 메모리에 남는다.
+      _cache.remove(key);
       return BusFetch(state: failure, arrivals: const [], fetchedAt: null);
     }
     return BusFetch(

@@ -141,6 +141,44 @@ void main() {
       expect(r.fetchedAt, DateTime(2026, 7, 28, 7, 32));
     });
 
+    test('상한을 넘게 묵은 캐시는 stale로도 쓰지 않는다 — down + 기준시각 없음', () async {
+      // 위의 31초 테스트는 arrMin 4가 4로 나오는 무해한 구간만 본다. 나이 상한이
+      // 없으면 38분 묵은 목록이 계속 stale로 나가고 경과 보정이 arrMin을 전부 0으로
+      // 깎아 **이미 지나간 버스가 `곧 도착`으로** 뜬다.
+      var fail = false;
+      final c = clientWith((_) async {
+        if (fail) throw const _Boom();
+        return _json(_body([_arr(1, 'A', 240)]));
+      });
+      await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
+
+      fail = true;
+      now = now.add(const Duration(minutes: 40));
+      final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
+
+      expect(r.state, BusCardState.down);
+      expect(r.arrivals, isEmpty);
+      expect(r.fetchedAt, isNull, reason: '기준시각이 남으면 화면이 옛 목록을 그린다');
+    });
+
+    test('상한을 넘긴 캐시는 버려진다 — 통신이 돌아와도 되살아나지 않는다', () async {
+      var fail = false;
+      final c = clientWith((_) async {
+        if (fail) throw const _Boom();
+        return _json(_body([_arr(1, 'A', 240)]));
+      });
+      await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
+
+      fail = true;
+      now = now.add(const Duration(minutes: 40));
+      await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
+
+      // 상한 판정 직후 다시 실패해도 옛 목록이 남아 있지 않아야 한다.
+      final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
+      expect(r.state, BusCardState.down);
+      expect(r.arrivals, isEmpty);
+    });
+
     test('HTTP 401이면 keyError', () async {
       final c = clientWith((_) async => _json('Unauthorized', 401));
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');

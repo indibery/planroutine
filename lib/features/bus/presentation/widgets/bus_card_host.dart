@@ -135,10 +135,14 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     // 목록이 비지 않아 state는 ok로 남는다). 조회 전 경로가 emptyLoading을 그리는
     // 것과 같은 논리다.
     //
-    // 기준을 `busCacheTtl`로 쓰는 이유: 그 창 안에서는 클라이언트가 캐시로 **같은
-    // 값**을 돌려주므로 버릴 이유가 없다. 창을 넘긴 값만 화면에서 내린다.
+    // 기준은 `busMaxDisplayAge`(3분)다 — **`busCacheTtl`(30초)이면 안 된다.**
+    // `fetchedAt`은 요청 **시작** 시각인데 폴링 타이머는 응답이 돌아온 뒤에 걸려
+    // 다음 tick이 `T+d+30초`에 오므로, TTL을 기준으로 쓰면 `d+30 > 30`이 구조적으로
+    // 항상 참이 되어 **정상 폴링마다** 목록과 기준시각이 사라지고 로딩 문구가 떴다
+    // (실패 구간에서는 stale의 fetchedAt이 항상 옛 시각이라 확정적으로 매 tick).
+    // 경과 보정이 수십 초 오차를 이미 흡수하므로 30초 초과로 목록을 버릴 이유가 없다.
     final last = _fetch?.fetchedAt;
-    if (last != null && _now().difference(last) > busCacheTtl) {
+    if (last != null && _now().difference(last) > busMaxDisplayAge) {
       setState(() => _fetch = null);
     }
 
