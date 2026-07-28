@@ -3655,7 +3655,7 @@ class BusArrivalCard extends StatelessWidget {
 - [ ] **Step 5: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/bus_arrival_card_test.dart`
-Expected: PASS (10 tests)
+Expected: PASS (11 tests) — Step 1의 `testWidgets`가 11개다(계획 초안의 10은 오산이었다).
 
 - [ ] **Step 6: analyze**
 
