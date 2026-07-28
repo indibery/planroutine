@@ -222,6 +222,7 @@ class BusStrings {
 
   // ── 설정 섹션 ──────────────────────────────────────────────
   static const section = '버스 도착';
+  static const sectionDescription = '오늘 탭 맨 위에 출퇴근 버스 도착시간을 보여줍니다';
   static const showTitle = '표시';
   static const showSubtitleOn = '지정한 시간대에만 펼쳐집니다';
   static const showSubtitleOff = '꺼져 있어 오늘 탭이 지금과 같습니다';
@@ -3957,7 +3958,7 @@ class BusSettingsTiles extends ConsumerWidget {
 ```dart
           const SettingsSection(
             title: BusStrings.section,
-            subtitle: '오늘 탭 맨 위에 출퇴근 버스 도착시간을 보여줍니다',
+            subtitle: BusStrings.sectionDescription,
             child: BusSettingsTiles(),
           ),
 ```
@@ -4879,6 +4880,7 @@ import '../../../../core/router/app_router.dart';
 import '../../data/bus_api_client.dart';
 import '../../domain/bus_card_view.dart';
 import '../../domain/bus_display.dart';
+import '../../domain/bus_settings.dart';
 import '../../domain/commute_direction.dart';
 import '../providers/bus_providers.dart';
 import 'bus_arrival_card.dart';
@@ -4946,9 +4948,8 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 
     final display = _display(settings);
     final stop = settings.stopFor(display.direction);
-    final expanded = _expanded(settings, display);
 
-    final shouldPoll = settings.enabled && stop != null && expanded;
+    final shouldPoll = settings.enabled && stop != null && display.expanded;
     if (!shouldPoll) {
       _timer?.cancel();
       _timer = null;
@@ -4965,13 +4966,11 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   }
 
   /// 시간대 판정 + 화면 수명 방향 토글.
-  BusDisplay _display(dynamic settings) {
+  BusDisplay _display(BusSettings settings) {
     final resolved = resolveBusDisplay(now: _now(), settings: settings);
     final direction = _flipped ?? resolved.direction;
     return BusDisplay(direction: direction, expanded: resolved.expanded);
   }
-
-  bool _expanded(dynamic settings, BusDisplay display) => display.expanded;
 
   Future<void> _toggleExpanded(BusDisplay display) async {
     final notifier = ref.read(busSettingsProvider.notifier);
@@ -5054,17 +5053,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 }
 ```
 
-- [ ] **Step 4: `_display`·`_expanded`의 `dynamic`을 없앤다**
-
-`dynamic`은 이 리포에서 쓰지 않는다. `import '../../domain/bus_settings.dart';`를 추가하고 두 시그니처를 고친다:
-
-```dart
-  BusDisplay _display(BusSettings settings) {
-```
-
-`_expanded`는 `display.expanded`를 그대로 돌려주기만 하므로 **삭제**하고, `_tick()`의 `final expanded = _expanded(settings, display);`를 `final expanded = display.expanded;`로 바꾼다.
-
-- [ ] **Step 5: 오늘 탭에 얹는다**
+- [ ] **Step 4: 오늘 탭에 얹는다**
 
 `lib/features/today/presentation/widgets/today_body.dart`의 `ListView` `children` **첫 줄**에 추가한다:
 
@@ -5080,12 +5069,12 @@ import '../../../bus/presentation/widgets/bus_card_host.dart';
 
 > `buildTodayView`와 `TodayView`는 건드리지 않는다. 카드는 형제 위젯이고, 꺼져 있으면 `SizedBox.shrink()`라 기존 레이아웃이 1픽셀도 안 바뀐다.
 
-- [ ] **Step 6: 테스트가 통과한다**
+- [ ] **Step 5: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/bus_card_host_test.dart`
 Expected: PASS (7 tests)
 
-- [ ] **Step 7: 백그라운드 복귀 가드를 추가한다**
+- [ ] **Step 6: 백그라운드 복귀 가드를 추가한다**
 
 이 구멍은 **테스트 없이는 다시 열린다.** 접힌 채 앱을 내렸다 올리면 화면은 아무것도
 바뀌지 않는데 조회가 한 번 나가는, 눈에 안 보이는 누수다. 화면으로는 잡히지 않는다.
@@ -5165,22 +5154,22 @@ Expected: PASS (7 tests)
   });
 ```
 
-- [ ] **Step 8: 테스트가 통과한다**
+- [ ] **Step 7: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/bus_card_host_test.dart`
 Expected: PASS (9 tests)
 
-- [ ] **Step 9: 오늘 탭 기존 테스트가 안 깨졌는지 본다**
+- [ ] **Step 8: 오늘 탭 기존 테스트가 안 깨졌는지 본다**
 
 Run: `flutter test test/features/today/`
 Expected: 기존 오늘 탭 테스트 전부 PASS (카드가 기본 OFF라 렌더되지 않는다)
 
-- [ ] **Step 10: 전체 테스트 + analyze**
+- [ ] **Step 9: 전체 테스트 + analyze**
 
 Run: `flutter test && flutter analyze`
 Expected: 전부 PASS, `No issues found!`
 
-- [ ] **Step 11: 커밋**
+- [ ] **Step 10: 커밋**
 
 ```bash
 git add lib/features/bus/presentation/widgets/bus_card_host.dart \
