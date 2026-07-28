@@ -2726,12 +2726,13 @@ setRange는 겹치거나 뒤집히면 저장하지 않는다. 겹치면 방향 �
 **Files:**
 - Create: `lib/features/bus/presentation/widgets/bus_body_text.dart`
 - Create: `lib/features/bus/presentation/widgets/bus_body_axis.dart`
+- Modify: `lib/core/constants/strings/bus_strings.dart` — `axisNow` 한 줄 **추가**(기존 값 불변)
 - Test: `test/features/bus/bus_body_test.dart`
 
 **Interfaces:**
 - Consumes: `BusCardView`·`isUrgent`·`isSoon`·`busSoonMinutes` (Task 7), `BusStrings`·`AppColors` (Task 1)
 - Produces:
-  - `class BusBodyText extends StatelessWidget { const BusBodyText({super.key, required this.view}); static const urgentKeyPrefix = 'bus_urgent_'; }`
+  - `class BusBodyText extends StatelessWidget { const BusBodyText({super.key, required this.view}); }`
   - `class BusBodyAxis extends StatelessWidget { const BusBodyAxis({super.key, required this.view}); static const axisRange = 15; static double dotPosition(int arrMin); }`
 
 `dotPosition`은 순수 함수로 노출해 위젯을 띄우지 않고도 clamp를 검사한다.
@@ -2920,6 +2921,19 @@ class BusBodyText extends StatelessWidget {
 
 - [ ] **Step 4: `BusBodyAxis`를 만든다**
 
+먼저 `lib/core/constants/strings/bus_strings.dart`의 `arrivingNow` 옆에 눈금 상수 한 줄을
+**추가**한다(기존 값은 건드리지 않는다):
+
+```dart
+  /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
+  static const axisNow = '지금';
+```
+
+눈금 라벨을 `BusStrings`에서 파생시키는 이유: 리터럴로 박으면 `axisRange`를 15에서
+바꿀 때 라벨만 옛 숫자로 남아 점 위치(`dotPosition`)와 눈금이 갈라진다. 겸해서
+`app_strings.dart` import가 실제로 쓰여야 `flutter analyze`가 깨끗하다 —
+이 파일은 `AppColors` 말고는 문자열을 쓸 곳이 눈금뿐이다.
+
 `lib/features/bus/presentation/widgets/bus_body_axis.dart`:
 
 ```dart
@@ -2980,13 +2994,13 @@ class BusBodyAxis extends StatelessWidget {
         );
     return Row(
       children: [
-        Text('지금', style: style()),
+        Text(BusStrings.axisNow, style: style()),
         const Spacer(),
-        Text('5분', style: style()),
+        Text(BusStrings.minutes(axisRange ~/ 3), style: style()),
         const Spacer(),
-        Text('10분', style: style()),
+        Text(BusStrings.minutes(axisRange * 2 ~/ 3), style: style()),
         const Spacer(),
-        Text('15분', style: style()),
+        Text(BusStrings.minutes(axisRange), style: style()),
       ],
     );
   }
@@ -3027,7 +3041,10 @@ class BusBodyAxis extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: _dotColor(arrival.arrMin),
-          // 카드 배경색으로 테두리를 둘러 레일과 겹칠 때 형태가 유지된다.
+          // 화면 배경색으로 테두리를 둘러 레일과 겹칠 때 형태가 유지된다.
+          // 카드 면 토큰(`glass`)을 쓰지 않는 이유: 다크에서 흰색 6% 반투명이라
+          // 테두리로 쓰면 링으로 레일이 비쳐 형태 유지 목적이 되레 깨진다.
+          // 카드 면에 해당하는 불투명 토큰이 팔레트에 없어 근사치를 쓴다.
           border: Border.all(color: AppColors.background, width: 2),
         ),
       ),
@@ -3089,16 +3106,24 @@ Expected: PASS (10 tests)
 
 파일 상단 import에 `import 'dart:io';`를 추가한다.
 
-- [ ] **Step 6: 테스트가 통과한다**
+- [ ] **Step 7: 테스트와 analyze가 통과한다**
 
 Run: `flutter test test/features/bus/bus_body_test.dart`
 Expected: PASS (11 tests)
+
+Run: `flutter analyze`
+Expected: `No issues found!`
+
+이 Task에 analyze를 명시하는 이유: 위젯 파일은 import를 하나만 남겨도 `unused_import`
+warning이 나고 `flutter analyze`는 warning에도 exit 1이다. 다음 Task의 게이트에서 처음
+터지면 원인이 엉뚱한 곳에서 잡힌다.
 
 - [ ] **Step 8: 커밋**
 
 ```bash
 git add lib/features/bus/presentation/widgets/bus_body_text.dart \
         lib/features/bus/presentation/widgets/bus_body_axis.dart \
+        lib/core/constants/strings/bus_strings.dart \
         test/features/bus/bus_body_test.dart
 git commit -m "feat(bus): 카드 본문 두 모양을 만든다 — 간단히 / 시간 축
 
@@ -3109,7 +3134,10 @@ busSignal 문자열이 없다는 가드를 붙였다: 위젯 렌더로는 '색�
 
 시간 축은 dotPosition을 순수 static으로 노출해 위젯을 띄우지 않고 clamp를
 검사한다. 0~15분을 3~97%로 clamp해 양 끝에서 점이 반쯤 잘리지 않게 하고,
-점에 카드 배경색 테두리를 둘러 레일과 겹칠 때 형태가 유지되게 한다."
+점에 화면 배경색 테두리를 둘러 레일과 겹칠 때 형태가 유지되게 한다.
+
+눈금 라벨은 BusStrings.axisNow + minutes(axisRange…)로 파생시킨다. 리터럴로
+박으면 축 범위를 바꿀 때 라벨만 옛 숫자로 남아 점 위치와 갈라진다."
 ```
 
 ---
