@@ -63,7 +63,8 @@
 | `lib/core/constants/app_strings.dart` | `bus_strings.dart` barrel export |
 | `lib/core/router/app_router.dart` | `AppRoutes.busStops = '/bus/stops'` + `GoRoute` |
 | `lib/features/settings/presentation/screens/settings_screen.dart` | `완료 도장` 다음에 섹션 1개 |
-| `lib/features/today/presentation/widgets/today_body.dart` | 최상단에 카드 조건부 삽입 |
+| `lib/features/today/presentation/widgets/today_body.dart` | `busCard` 파라미터 추가 — 받은 위젯을 목록 첫 줄에 (provider는 읽지 않는다) |
+| `lib/features/today/presentation/screens/today_screen.dart` | `busCard: const BusCardHost()` 배선 (ProviderScope 아래) |
 | `ios/fastlane/Fastfile` | `--dart-define=TAGO_KEY` + 키 없으면 레인 실패 |
 | `docs/privacy_policy.md` | TAGO 전송 문단 |
 | `docs/release_checklist.md` | 호출량 점검 한 줄 |
@@ -5317,12 +5318,54 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 }
 ```
 
-- [ ] **Step 4: 오늘 탭에 얹는다**
+- [ ] **Step 4: 오늘 탭에 얹는다 — 카드를 위젯으로 주입한다**
 
-`lib/features/today/presentation/widgets/today_body.dart`의 `ListView` `children` **첫 줄**에 추가한다:
+`today_body.dart`는 **provider를 읽지 않는 순수 위젯**이다(CLAUDE.md가 그렇게 못박았고
+`today_body_test.dart`의 20개가 `ProviderScope` 없이 pump한다). `BusCardHost`를 그 `ListView`에
+직접 넣으면 **카드가 꺼져 있어도 그 20개가 전부 실패**한다 — `SizedBox.shrink()`는 build 안에서
+결정되고, 그 build 자체가 `ProviderScope.containerOf`에서 던지기 때문이다.
+
+그래서 **배선은 `TodayScreen`**(이미 ProviderScope 아래, 이 리포에서 provider 배선을 맡는 층)이
+하고 `TodayBody`는 받은 위젯을 목록 첫 줄에 놓기만 한다. 순수성·목록과 함께 스크롤되는 동작·
+기존 20개 픽스처가 **모두** 그대로다.
+
+**(1)** `lib/features/today/presentation/widgets/today_body.dart` — 생성자에 파라미터 하나:
 
 ```dart
-        const BusCardHost(),
+    this.busCard,
+```
+
+필드 선언(`stampSettings` 아래):
+
+```dart
+  /// 목록 맨 위에 얹을 위젯. **null이면 아무것도 그리지 않는다.**
+  ///
+  /// 여기서 provider를 읽지 않는 이유: 이 위젯은 `today_body_test.dart`의 20개가
+  /// `ProviderScope` 없이 pump하는 순수 위젯이다. `BusCardHost`는 `ConsumerStatefulWidget`
+  /// 이라 직접 넣으면 카드가 꺼져 있어도 그 20개가 `No ProviderScope found`로 죽는다.
+  /// 배선은 `TodayScreen`이 하고 여기는 받은 것을 놓기만 한다.
+  final Widget? busCard;
+```
+
+`build` 안, `final view = widget.view;` 다음:
+
+```dart
+    final busCard = widget.busCard;
+```
+
+`ListView`의 `children` **첫 줄**:
+
+```dart
+        if (busCard != null) busCard,
+```
+
+> 지역 변수를 거치는 이유는 `!` 금지 규칙이다 — `final` 지역 변수는 null 검사로 승격되지만
+> `widget.busCard`는 매번 getter라 승격되지 않아 `!`가 필요해진다.
+
+**(2)** `lib/features/today/presentation/screens/today_screen.dart` — `TodayBody(...)` 호출에 추가:
+
+```dart
+          busCard: const BusCardHost(),
 ```
 
 import 추가:
@@ -5331,7 +5374,8 @@ import 추가:
 import '../../../bus/presentation/widgets/bus_card_host.dart';
 ```
 
-> `buildTodayView`와 `TodayView`는 건드리지 않는다. 카드는 형제 위젯이고, 꺼져 있으면 `SizedBox.shrink()`라 기존 레이아웃이 1픽셀도 안 바뀐다.
+> `buildTodayView`와 `TodayView`는 건드리지 않는다. 카드는 형제 위젯이고, 꺼져 있으면
+> `SizedBox.shrink()`라 기존 레이아웃이 1픽셀도 안 바뀐다.
 
 - [ ] **Step 5: 테스트가 통과한다**
 
@@ -5426,7 +5470,11 @@ Expected: PASS (9 tests)
 - [ ] **Step 8: 오늘 탭 기존 테스트가 안 깨졌는지 본다**
 
 Run: `flutter test test/features/today/`
-Expected: 기존 오늘 탭 테스트 전부 PASS (카드가 기본 OFF라 렌더되지 않는다)
+Expected: 기존 오늘 탭 테스트 전부 PASS — **픽스처를 한 줄도 고치지 않는다.**
+
+`today_body_test.dart`의 `pumpBody`는 `busCard`를 넘기지 않으므로 기본값 null이고, `TodayBody`는
+provider를 읽지 않는다. 여기서 실패가 나면 Step 4의 주입 구조가 아니라 **`BusCardHost`를
+`TodayBody`에 직접 넣은 것**이니 Step 4로 돌아갈 것(`No ProviderScope found`가 그 신호다).
 
 - [ ] **Step 9: 전체 테스트 + analyze**
 
