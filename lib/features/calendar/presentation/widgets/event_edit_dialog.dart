@@ -355,7 +355,11 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             key: const Key('important_toggle'),
             value: _isImportant,
             onChanged: (v) => setState(() => _isImportant = v),
-            activeThumbColor: AppColors.gold,
+            // **썸 색을 지정하지 않는다.** `app_theme`의 `switchTheme`이 ON 썸을
+            // navy, 트랙을 gold로 잡아 대비를 맞춰 뒀다. 여기서 `activeThumbColor`를
+            // gold로 주면 트랙과 같은 색이 돼 **ON이 썸 없는 단색 골드 알약**이
+            // 된다(두 팔레트 모두 트랙=`gold`라 다크·라이트 둘 다 재현). 같은 결함을
+            // 버스 표시 스위치(I12)에서 고친 것과 같은 이유로 지운다.
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSizes.spacing16,
             ),
