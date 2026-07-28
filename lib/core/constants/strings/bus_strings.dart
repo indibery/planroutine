@@ -47,6 +47,8 @@ class BusStrings {
   static const axisNow = '지금';
 
   // ── 실패 계약 5상태 (§3) ───────────────────────────────────
+  /// 조회 전에만 쓰인다 — 조회 후 빈 목록은 buildBusCardView가 closed로 바꾼다.
+  static const emptyLoading = '도착시간을 확인하고 있어요';
   static const emptyClosed = '오늘 운행이 끝났어요';
   static const emptyDown = '지금 정보를 못 받았어요';
   static const emptyDownAction = '다시 시도';
