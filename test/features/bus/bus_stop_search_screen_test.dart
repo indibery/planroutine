@@ -250,4 +250,91 @@ void main() {
     });
   });
 
+  group('도시를 고르기 전 (I6) — 검색은 죽은 컨트롤이 아니다', () {
+    testWidgets('먼저 도시를 골라주세요라고 말한다 — 이름을 넣으라고 하지 않는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      expect(find.text(BusStrings.cityFirst), findsOneWidget);
+      expect(find.text(BusStrings.searchPrompt), findsNothing,
+          reason: '이름이 아니라 도시가 빠졌는데 이름을 넣으라고 하면 사용자는 이미 넣은 것을 다시 넣는다');
+    });
+
+    testWidgets('돋보기가 비활성이고 눌러도 요청이 나가지 않는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _typeStop(tester, '시청');
+      final button = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.search),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(button.onPressed, isNull, reason: '누를 수 있어 보이는데 아무 일도 없는 것이 최악이다');
+
+      await _tapSearch(tester);
+      expect(tago.stopCalls, 0);
+      expect(find.text(BusStrings.cityFirst), findsOneWidget,
+          reason: '눌렀는데도 화면이 이름을 넣으라고 하면 몇 번을 더 누른다');
+      expect(find.text(BusStrings.searchPrompt), findsNothing);
+      expect(find.text(BusStrings.searchEmpty), findsNothing);
+    });
+  });
+
+  group('조회 실패 (M6) — 결과 없음과 다르게 말한다', () {
+    testWidgets('도시 목록 실패는 실패라고 말하고 다시 시도를 준다', (tester) async {
+      final tago = _Tago()..cityFails = true;
+      await _pumpScreen(tester, tago);
+
+      expect(find.text(BusStrings.emptyDown), findsOneWidget);
+      expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
+      expect(find.text(BusStrings.searchEmpty), findsNothing);
+      expect(find.text(BusStrings.cityFirst), findsNothing,
+          reason: '고를 도시가 없는 것은 안 고른 것이 아니다');
+    });
+
+    testWidgets('다시 시도를 누르면 도시를 다시 불러온다', (tester) async {
+      final tago = _Tago()..cityFails = true;
+      await _pumpScreen(tester, tago);
+      expect(tago.cityCalls, 1);
+
+      tago.cityFails = false;
+      await tester.tap(find.text(BusStrings.emptyDownAction));
+      await tester.pumpAndSettle();
+
+      expect(tago.cityCalls, 2);
+      expect(find.text('수원시'), findsOneWidget);
+      expect(find.text(BusStrings.emptyDown), findsNothing);
+    });
+
+    testWidgets('정류장 검색 실패를 검색 결과가 없어요로 뭉개지 않는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _tapCity(tester, '수원시');
+      tago.stopFails = true;
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+
+      expect(find.text(BusStrings.emptyDown), findsOneWidget);
+      expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
+      expect(find.text(BusStrings.searchEmpty), findsNothing,
+          reason: '못 물어본 것을 없다고 말하면 사용자가 이름을 고치며 헛수고한다');
+    });
+
+    testWidgets('정말 없으면 검색 결과가 없어요다 — 실패로 말하지 않는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '없는이름');
+      await _tapSearch(tester);
+
+      expect(find.text(BusStrings.searchEmpty), findsOneWidget);
+      expect(find.text(BusStrings.emptyDown), findsNothing,
+          reason: 'empty를 실패로 말하면 이름을 고치는 대신 무한히 재시도한다');
+    });
+  });
+
 }

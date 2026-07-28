@@ -70,6 +70,10 @@ class BusStrings {
   static const searchEmpty = '검색 결과가 없어요';
   static const searchPrompt = '정류장 이름을 입력해 주세요';
 
+  /// 도시를 고르기 전에 검색을 누른 사람에게. **`searchPrompt`를 쓰면 안 된다** —
+  /// 방금 이름을 넣은 사용자에게 이름을 넣으라고 말하는 셈이 된다.
+  static const cityFirst = '먼저 도시를 골라주세요';
+
   // ── 확인 시트 (§4) ─────────────────────────────────────────
   static const confirmTitle = '이 정류장이 맞나요?';
   static const confirmRoutesTitle = '타는 버스만 남겨주세요';

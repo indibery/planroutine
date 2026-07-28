@@ -42,6 +42,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   bool _loading = false;
   bool _searched = false;
 
+  /// 조회가 **실패**한 이유. null이면 실패하지 않았다.
+  ///
+  /// `outcome`을 버리면 네트워크·키 장애가 `검색 결과가 없어요`로 뭉개져, 사용자는
+  /// 이름을 고치며 헛수고한다 — 확인 시트가 `state`로 실패를 구분하게 만든 것과
+  /// 같은 이유다. `empty`는 실패가 아니다(정말 그 이름의 정류장이 없다).
+  TagoOutcome? _cityFailure;
+  TagoOutcome? _stopFailure;
+
   @override
   void initState() {
     super.initState();
@@ -56,12 +64,19 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   }
 
   Future<void> _loadCities() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _cityFailure = null;
+    });
     final result = await ref.read(busApiClientProvider).fetchCities();
     if (!mounted) return;
     setState(() {
       _cities = result.items;
       _loading = false;
+      // 칩이 0개인 이유가 '도시가 없다'가 아니라 '못 물어봤다'일 수 있다. 도시를
+      // 못 고르면 이 화면에서 할 수 있는 일이 없으므로 ok가 아닌 모든 결과를
+      // 실패로 말하고 재시도를 준다(TAGO는 정상이면 전국 138개를 준다).
+      _cityFailure = result.outcome == TagoOutcome.ok ? null : result.outcome;
       // 마지막으로 쓴 도시를 기본 선택으로 — 교체할 때 다시 고르지 않는다.
       final saved = ref.read(busSettingsProvider).valueOrNull;
       final code = saved?.departure?.cityCode ?? saved?.arrival?.cityCode;
@@ -73,9 +88,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   Future<void> _search() async {
     final city = _city;
     final name = _stopQuery.text.trim();
+    // 도시를 고르기 전에는 돋보기가 비활성이고 화면이 `먼저 도시를 골라주세요`를
+    // 띄우므로, 여기서 조용히 return해도 사용자는 이유를 읽는다.
     if (city == null || name.isEmpty) return;
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _stopFailure = null;
+    });
     final result = await ref
         .read(busApiClientProvider)
         .searchStops(cityCode: city.code, name: name);
@@ -84,6 +104,11 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       _results = result.items;
       _loading = false;
       _searched = true;
+      // `empty`를 실패로 말하면 사용자가 이름을 고치는 대신 무한히 재시도한다.
+      _stopFailure = switch (result.outcome) {
+        TagoOutcome.ok || TagoOutcome.empty => null,
+        TagoOutcome.keyError || TagoOutcome.malformed => result.outcome,
+      };
     });
   }
 
@@ -209,7 +234,9 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
           hintText: BusStrings.stopSearchHint,
           suffixIcon: IconButton(
             icon: const Icon(Icons.search),
-            onPressed: _search,
+            // 도시를 고르기 전에는 조회가 나갈 수 없다 — 활성처럼 보이면 눌러도
+            // 아무 일이 없는 죽은 컨트롤이 되고, 첫 등록은 반드시 이 상태를 지난다.
+            onPressed: _city == null ? null : _search,
           ),
         ),
         onSubmitted: (_) => _search(),
@@ -218,8 +245,21 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   }
 
   List<Widget> _resultRows() {
+    // 순서가 계약이다: 못 물어본 것 → 고를 수 없는 것 → 아직 안 찾은 것 →
+    // 찾았지만 실패 → 정말 없음. 뒤섞으면 각 문구가 다른 상황을 덮는다.
+    final cityFailure = _cityFailure;
+    if (cityFailure != null) {
+      return [_notice(_failureMessage(cityFailure), onRetry: _loadCities)];
+    }
+    if (_city == null) {
+      return [_notice(BusStrings.cityFirst)];
+    }
     if (!_searched) {
       return [_notice(BusStrings.searchPrompt)];
+    }
+    final stopFailure = _stopFailure;
+    if (stopFailure != null) {
+      return [_notice(_failureMessage(stopFailure), onRetry: _search)];
     }
     if (_results.isEmpty) {
       return [_notice(BusStrings.searchEmpty)];
@@ -234,21 +274,47 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
         .toList();
   }
 
-  Widget _notice(String message) {
+  /// 키 문제와 그 밖의 장애를 갈라 말한다 — 확인 시트와 같은 문구를 쓴다.
+  /// 사용자가 읽는 사실이 같은데 문구를 따로 만들면 둘 중 하나만 손보게 된다.
+  String _failureMessage(TagoOutcome outcome) =>
+      outcome == TagoOutcome.keyError
+          ? BusStrings.emptyKey
+          : BusStrings.emptyDown;
+
+  Widget _notice(String message, {VoidCallback? onRetry}) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.pagePadding,
         vertical: AppSizes.spacing24,
       ),
-      child: Center(
-        child: Text(
-          message,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 14,
-            color: AppColors.sub,
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.sub,
+            ),
           ),
-        ),
+          if (onRetry != null) ...[
+            const SizedBox(height: AppSizes.spacing8),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onRetry,
+              child: Text(
+                BusStrings.emptyDownAction,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
