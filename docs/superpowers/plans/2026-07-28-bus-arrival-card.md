@@ -262,6 +262,8 @@ class BusStrings {
   static const lowFloor = '저상';
 
   // ── 실패 계약 5상태 (§3) ───────────────────────────────────
+  /// 조회 전에만 쓰인다 — 조회 후 빈 목록은 buildBusCardView가 closed로 바꾼다.
+  static const emptyLoading = '도착시간을 확인하고 있어요';
   static const emptyClosed = '오늘 운행이 끝났어요';
   static const emptyDown = '지금 정보를 못 받았어요';
   static const emptyDownAction = '다시 시도';
@@ -2056,6 +2058,16 @@ Map<String, dynamic> _arr(Object routeno, String routeid, int arrtime) => {
       'vehicletp': '일반버스',
     };
 
+/// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
+/// `_encodingForHeaders`로 인코딩을 유도하고 헤더가 없으면 latin1로 떨어져,
+/// 픽스처의 한글(`수원시청`)에서 `MockClient` 핸들러 안에서 터진다(구현이 아니라
+/// 픽스처의 함정 — 실제로 한 번 발생했다). 구현은 utf8.decode(bodyBytes)로 맞다.
+http.Response _json(String body, [int status = 200]) => http.Response(
+      body,
+      status,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+
 void main() {
   var now = DateTime(2026, 7, 28, 7, 32);
 
@@ -2077,7 +2089,7 @@ void main() {
       Uri? seen;
       final c = clientWith((req) async {
         seen = req.url;
-        return http.Response(_body([_arr(92, 'A', 600)]), 200);
+        return _json(_body([_arr(92, 'A', 600)]));
       });
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'GGB201000156');
 
@@ -2091,7 +2103,7 @@ void main() {
     });
 
     test('fetchedAt은 조회 시각이다', () async {
-      final c = clientWith((_) async => http.Response(_body([_arr(1, 'A', 60)]), 200));
+      final c = clientWith((_) async => _json(_body([_arr(1, 'A', 60)])));
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       expect(r.fetchedAt, DateTime(2026, 7, 28, 7, 32));
     });
@@ -2099,14 +2111,14 @@ void main() {
 
   group('메모리 캐시 — TTL 30초', () {
     test('같은 정류장을 연달아 조회하면 요청이 1회다', () async {
-      final c = clientWith((_) async => http.Response(_body([_arr(1, 'A', 60)]), 200));
+      final c = clientWith((_) async => _json(_body([_arr(1, 'A', 60)])));
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       expect(c.requestCount, 1);
     });
 
     test('31초 뒤에는 다시 요청한다', () async {
-      final c = clientWith((_) async => http.Response(_body([_arr(1, 'A', 60)]), 200));
+      final c = clientWith((_) async => _json(_body([_arr(1, 'A', 60)])));
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       now = now.add(const Duration(seconds: 31));
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
@@ -2114,14 +2126,14 @@ void main() {
     });
 
     test('다른 정류장은 별 캐시다', () async {
-      final c = clientWith((_) async => http.Response(_body([_arr(1, 'A', 60)]), 200));
+      final c = clientWith((_) async => _json(_body([_arr(1, 'A', 60)])));
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N1');
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N2');
       expect(c.requestCount, 2);
     });
 
     test('invalidate 후에는 다시 요청한다 — 슬롯 교체 경로', () async {
-      final c = clientWith((_) async => http.Response(_body([_arr(1, 'A', 60)]), 200));
+      final c = clientWith((_) async => _json(_body([_arr(1, 'A', 60)])));
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       c.invalidate();
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
@@ -2131,7 +2143,7 @@ void main() {
 
   group('실패 계약', () {
     test('items가 빈 문자열이면 closed', () async {
-      final c = clientWith((_) async => http.Response(_body(''), 200));
+      final c = clientWith((_) async => _json(_body('')));
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       expect(r.state, BusCardState.closed);
     });
@@ -2147,7 +2159,7 @@ void main() {
       var fail = false;
       final c = clientWith((_) async {
         if (fail) throw const _Boom();
-        return http.Response(_body([_arr(1, 'A', 240)]), 200);
+        return _json(_body([_arr(1, 'A', 240)]));
       });
       await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
 
@@ -2161,13 +2173,13 @@ void main() {
     });
 
     test('HTTP 401이면 keyError', () async {
-      final c = clientWith((_) async => http.Response('Unauthorized', 401));
+      final c = clientWith((_) async => _json('Unauthorized', 401));
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       expect(r.state, BusCardState.keyError);
     });
 
     test('resultCode가 00이 아니면 keyError', () async {
-      final c = clientWith((_) async => http.Response(_body('', code: '30'), 200));
+      final c = clientWith((_) async => _json(_body('', code: '30')));
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
       expect(r.state, BusCardState.keyError);
     });
@@ -2176,7 +2188,7 @@ void main() {
   group('키가 없으면 요청조차 하지 않는다', () {
     test('빈 키면 keyError이고 requestCount는 0이다', () async {
       final c = clientWith(
-        (_) async => http.Response(_body([_arr(1, 'A', 60)]), 200),
+        (_) async => _json(_body([_arr(1, 'A', 60)])),
         key: '',
       );
       final r = await c.fetchArrivals(cityCode: 31010, nodeId: 'N');
@@ -2191,10 +2203,7 @@ void main() {
       Uri? seen;
       final c = clientWith((req) async {
         seen = req.url;
-        return http.Response(
-          _body({'nodeid': 'N1', 'nodenm': '수원시청', 'nodeno': 2251}),
-          200,
-        );
+        return _json(_body({'nodeid': 'N1', 'nodenm': '수원시청', 'nodeno': 2251}));
       });
       final r = await c.searchStops(cityCode: 31010, name: '시청');
       expect(r.items.single.nodeNo, 2251);
@@ -2202,10 +2211,8 @@ void main() {
     });
 
     test('fetchCities는 도시코드를 int로 읽는다', () async {
-      final c = clientWith((_) async => http.Response(
-            _body([{'citycode': 31010, 'cityname': '수원시'}]),
-            200,
-          ));
+      final c = clientWith((_) async =>
+          _json(_body([{'citycode': 31010, 'cityname': '수원시'}])));
       final r = await c.fetchCities();
       expect(r.items.single.code, 31010);
     });
@@ -2661,13 +2668,18 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
         : _current.copyWith(arrival: stop));
   }
 
-  /// 시간대 변경. **겹치거나 뒤집히면 저장하지 않는다.**
-  Future<void> setRange(CommuteDirection direction, TimeRange range) {
+  /// 시간대 변경. **겹치거나 뒤집히면 저장하지 않고 false를 돌려준다.**
+  ///
+  /// bool을 돌려주는 이유: 설정 화면이 거부 여부를 알아야 스낵바를 띄울 수 있는데,
+  /// `notifier.state`는 riverpod 2.6.1에서 @protected라 위젯에서 읽으면 analyze가
+  /// 깨진다. 저장한 쪽이 결과를 말해주는 편이 라벨을 비교하는 것보다 정확하다.
+  Future<bool> setRange(CommuteDirection direction, TimeRange range) async {
     final next = direction == CommuteDirection.toWork
         ? _current.copyWith(toWorkRange: range)
         : _current.copyWith(toHomeRange: range);
-    if (!next.rangesValid) return Future<void>.value();
-    return _save(next);
+    if (!next.rangesValid) return false;
+    await _save(next);
+    return true;
   }
 
   Future<void> setOverride({required bool expanded, required DateTime at}) =>
@@ -3132,6 +3144,10 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_arrival_card.d
 import 'package:planroutine/features/bus/presentation/widgets/bus_body_axis.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_body_text.dart';
 
+/// `fetchedAt`은 **기본이 null**이다 — 앱은 `down`·`keyError`·`noStop`을 항상
+/// `fetchedAt: null`로 만든다(조회가 실패했거나 아예 안 했다). 기본값을 시각으로 두면
+/// 제목줄에 `07:32 기준`을 달고 본문에 `지금 정보를 못 받았어요`를 쓰는, 앱에 존재하지
+/// 않는 자기모순 카드를 테스트가 축복한다. 시각이 필요한 테스트만 명시로 넘긴다.
 BusCardView _view({
   BusCardState state = BusCardState.ok,
   List<BusArrival>? items,
@@ -3142,7 +3158,7 @@ BusCardView _view({
     state: state,
     visible: items ?? [const BusArrival(routeId: 'A', routeNo: '720', arrMin: 2)],
     hiddenCount: hidden,
-    fetchedAt: fetchedAt ?? DateTime(2026, 7, 28, 7, 32),
+    fetchedAt: fetchedAt,
   );
 }
 
@@ -3172,7 +3188,7 @@ Future<void> _pump(
 void main() {
   group('펼침', () {
     testWidgets('방향·정류장·기준시각·본문·방향토글이 모두 보인다', (tester) async {
-      await _pump(tester, view: _view());
+      await _pump(tester, view: _view(fetchedAt: DateTime(2026, 7, 28, 7, 32)));
       expect(find.text('🏠→🏫 출근'), findsOneWidget);
       expect(find.textContaining('수원시청'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
@@ -3253,10 +3269,28 @@ void main() {
 
       await _pump(tester, view: _view(state: BusCardState.noStop, items: const []));
       expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
+
+      // 이 세 상태는 앱이 항상 fetchedAt: null로 만든다 — 제목줄에 기준시각이
+      // 붙으면 "정보를 못 받았는데 07:32 기준"이라는 자기모순이 된다.
+      expect(find.textContaining('기준'), findsNothing);
+    });
+
+    testWidgets('stale + 필터로 목록이 비면 막차 문구가 아니라 못 받았어요다', (tester) async {
+      // 와일드카드 분기가 있으면 여기서 '오늘 운행이 끝났어요'가 나온다.
+      await _pump(tester, view: _view(
+        state: BusCardState.stale,
+        items: const [],
+        fetchedAt: DateTime(2026, 7, 28, 7, 30),
+      ));
+      expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
+      expect(find.text('오늘 운행이 끝났어요'), findsNothing);
     });
 
     testWidgets('stale은 목록을 유지하고 갱신 실패를 고백한다', (tester) async {
-      await _pump(tester, view: _view(state: BusCardState.stale));
+      await _pump(tester, view: _view(
+        state: BusCardState.stale,
+        fetchedAt: DateTime(2026, 7, 28, 7, 32),
+      ));
       expect(find.byType(BusBodyText), findsOneWidget);
       expect(find.text('07:32 기준 · 갱신 실패'), findsOneWidget);
     });
@@ -3299,7 +3333,22 @@ class BusEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // **와일드카드를 두지 않는다.** `_ => emptyClosed`로 두면 `stale`(갱신 실패)이
+    // 막차 문구로 뭉개진다 — 조회 실패 + 캐시 있음인데 사용자의 routeIds로 걸러
+    // visible이 비면 state는 `stale`로 남고, 그때 제목줄은 `07:32 기준 · 갱신 실패`를
+    // 붉게 쓰면서 본문은 `오늘 운행이 끝났어요`라고 단정하는 자기모순 카드가 된다.
+    // 스펙 §3과 커밋된 buildBusCardView가 정면으로 금지한 것이다.
+    //
+    // `ok`는 **조회 전에만** 도달한다 — 조회 후에는 buildBusCardView가 `ok` + 빈 목록을
+    // `closed`로 바꾸므로 이 분기로 오지 않는다. 그래서 로딩 문구가 맞다.
     final (title, hint, action, onAction) = switch (state) {
+      BusCardState.ok => (BusStrings.emptyLoading, null, null, null),
+      BusCardState.stale => (
+          BusStrings.emptyDown,
+          null,
+          BusStrings.emptyDownAction,
+          onRetry,
+        ),
       BusCardState.closed => (BusStrings.emptyClosed, null, null, null),
       BusCardState.down => (
           BusStrings.emptyDown,
@@ -3319,7 +3368,6 @@ class BusEmptyState extends StatelessWidget {
           BusStrings.emptyNoStopAction,
           onRegister,
         ),
-      _ => (BusStrings.emptyClosed, null, null, null),
     };
 
     return Column(
@@ -3442,10 +3490,13 @@ class BusArrivalCard extends StatelessWidget {
           if (expanded) ...[
             const SizedBox(height: AppSizes.spacing8),
             _body(),
-            if (view.hasRows) ...[
-              const SizedBox(height: AppSizes.spacing4),
-              _flip(),
-            ],
+            const SizedBox(height: AppSizes.spacing4),
+            // **`view.hasRows` 게이트를 두지 않는다.** 사라지는 조건은 접힘 하나다
+            // (스펙 §1). 목록이 비었을 때도 토글을 지우면, 출근 정류장만 등록한
+            // 사용자가 퇴근 시간대에 열었을 때 `정류장을 등록하면 도착시간이
+            // 보여요`만 있고 이미 등록해 둔 반대 방향으로 갈 길이 없는 막힌 카드가
+            // 된다. 막차 후(`오늘 운행이 끝났어요`)에 다음 방향을 볼 길도 막힌다.
+            _flip(),
           ],
         ],
       ),
@@ -3634,6 +3685,8 @@ void main() {
     expect(find.byKey(BusSettingsTiles.arrivalKey), findsNothing);
     expect(find.byKey(BusSettingsTiles.styleKey), findsNothing);
     expect(find.byKey(BusSettingsTiles.rangeToWorkKey), findsNothing);
+    // 다섯째 줄도 검사한다 — 빠뜨리면 _rangeTile이 enabled 블록 밖으로 새도 통과한다.
+    expect(find.byKey(BusSettingsTiles.rangeToHomeKey), findsNothing);
   });
 
   testWidgets('켜면 다섯 줄이 나타난다', (tester) async {
@@ -3699,24 +3752,15 @@ Expected: 컴파일 실패 — `bus_settings_tiles.dart`가 없다.
   static const busStops = '/bus/stops';
 ```
 
-`GoRoute(path: AppRoutes.import, ...)` 블록 다음에 추가한다(import 문도 함께 추가):
+**이 Step은 상수 한 줄뿐이다.** `GoRoute`와 import는 넣지 않는다.
 
-```dart
-            GoRoute(
-              path: AppRoutes.busStops,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: BusStopSearchScreen(),
-              ),
-            ),
-```
-
-파일 상단 import에 추가:
-
-```dart
-import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
-```
-
-> Task 13에서 `BusStopSearchScreen`을 만든다. **이 Step은 Task 13과 함께 커밋한다** — 지금 넣으면 컴파일이 깨진다. Task 12에서는 `AppRoutes.busStops` 상수만 추가하고 `GoRoute`와 import는 Task 13에서 붙인다.
+> `BusStopSearchScreen`은 Task 13에서 만든다. 지금 `GoRoute`와 import를 넣으면 존재하지 않는
+> 클래스를 참조해 **앱 전체 컴파일이 깨지고** Step 7의 `flutter test` 게이트가 무의미해진다
+> (549개가 전부 실패한다). `GoRoute`의 유일한 출처는 **Task 13 Step 4**다.
+>
+> Task 12의 `_slotTile`이 `context.push('${AppRoutes.busStops}?slot=...')`를 부르는 것은
+> 괜찮다 — 문자열 상수만 쓰고 라우트가 없으면 런타임에 실패할 뿐 컴파일은 된다. Task 12의
+> 위젯 테스트는 탭 동작을 검사하지 않으므로 그 경로를 밟지 않는다.
 
 - [ ] **Step 4: `BusSettingsTiles`를 만든다**
 
@@ -3765,7 +3809,7 @@ class BusSettingsTiles extends ConsumerWidget {
           key: switchKey,
           value: settings.enabled,
           onChanged: notifier.setEnabled,
-          activeColor: AppColors.goldFill,
+          activeThumbColor: AppColors.goldFill,
           title: Text(BusStrings.showTitle, style: _titleStyle),
           subtitle: Text(
             settings.enabled
@@ -3950,14 +3994,12 @@ class BusSettingsTiles extends ConsumerWidget {
       _toast(context, BusStrings.rangeInverted);
       return;
     }
-    await notifier.setRange(direction, next);
-    if (!context.mounted) return;
 
-    // setRange가 겹침을 거부했으면 값이 그대로다 — 사용자에게 알린다.
-    final saved = notifier.state.valueOrNull;
-    final applied = saved == null
-        ? false
-        : saved.rangeFor(direction).label == next.label;
+    // `notifier.state`를 읽지 않는다 — riverpod 2.6.1에서 @protected +
+    // @visibleForTesting이라 위젯에서 읽으면 flutter analyze가 깨진다.
+    // setRange가 저장 여부를 직접 돌려주게 해 라벨 비교 자체를 없앤다.
+    final applied = await notifier.setRange(direction, next);
+    if (!context.mounted) return;
     if (!applied) _toast(context, BusStrings.rangeOverlap);
   }
 
@@ -4708,6 +4750,16 @@ String _body() => jsonEncode({
       },
     });
 
+/// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
+/// `_encodingForHeaders`로 인코딩을 유도하고 헤더가 없으면 latin1로 떨어져,
+/// 픽스처의 한글(`수원시청`)에서 `MockClient` 핸들러 안에서 터진다(구현이 아니라
+/// 픽스처의 함정 — 실제로 한 번 발생했다). 구현은 utf8.decode(bodyBytes)로 맞다.
+http.Response _json(String body, [int status = 200]) => http.Response(
+      body,
+      status,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+
 /// 지정한 시각으로 고정한 채 카드를 띄우고, 나간 요청 수를 돌려준다.
 Future<int> _pumpHost(
   WidgetTester tester, {
@@ -4722,7 +4774,7 @@ Future<int> _pumpHost(
   final client = BusApiClient(
     client: MockClient((_) async {
       count++;
-      return http.Response(_body(), 200);
+      return _json(_body());
     }),
     serviceKey: 'TESTKEY',
     clock: () => now,
@@ -4798,7 +4850,7 @@ void main() {
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
-          return http.Response(_body(), 200);
+          return _json(_body());
         }),
         serviceKey: 'TESTKEY',
         clock: () => inRange,
@@ -4827,7 +4879,7 @@ void main() {
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
-          return http.Response(_body(), 200);
+          return _json(_body());
         }),
         serviceKey: 'TESTKEY',
         clock: () => outOfRange,
@@ -4859,7 +4911,7 @@ void main() {
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
-          return http.Response(_body(), 200);
+          return _json(_body());
         }),
         serviceKey: '',
         clock: () => inRange,
@@ -4937,7 +4989,11 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tick());
+    // 여기서 _tick()을 부르면 안 된다 — 그 시점 busSettingsProvider는 아직
+    // AsyncLoading이라 settings == null로 즉시 return하고, 설정이 도착해도 다시
+    // 부르는 곳이 없어 **첫 조회가 영구히 나가지 않는다.** 타이머도 성공한 tick
+    // 뒤에만 생기므로(`_timer ??=`) 30초 폴링조차 시작되지 않는다.
+    // 촉발은 build의 ref.listen이 맡는다(아래).
   }
 
   @override
@@ -5013,6 +5069,24 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 
   @override
   Widget build(BuildContext context) {
+    // 설정이 도착하거나 바뀔 때가 유일한 최초 촉발점이다 — 로딩 완료·스위치 ON·
+    // 슬롯 교체·시간대 변경이 모두 여기로 들어온다. initState에서 부르면 그때는
+    // 아직 AsyncLoading이라 아무 일도 일어나지 않는다.
+    ref.listen<AsyncValue<BusSettings>>(busSettingsProvider, (prev, next) {
+      final before = prev?.valueOrNull;
+      final after = next.valueOrNull;
+      if (after == null) return;
+
+      // 정류장이 바뀌었으면 옛 목록을 즉시 버린다. 남기면 제목줄은 새 정류장인데
+      // 본문은 옛 정류장의 도착 목록인 상태가 남는다 — 펼침이면 최대 30초, 접힘이면
+      // 타이머가 없어 무기한이다(CLAUDE.md의 push 함정이 여기 성립한다).
+      final beforeId = before?.stopFor(_display(before).direction)?.nodeId;
+      final afterId = after.stopFor(_display(after).direction)?.nodeId;
+      if (beforeId != afterId) _fetch = null;
+
+      _tick();
+    });
+
     final settings = ref.watch(busSettingsProvider).valueOrNull;
     if (settings == null || !settings.enabled) return const SizedBox.shrink();
 
@@ -5038,10 +5112,34 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     }
 
     final fetch = _fetch;
+
+    // 조회 전(`_fetch == null`)을 `ok` + 빈 목록으로 넘기면 buildBusCardView가 그
+    // 조합을 `closed`로 바꿔 **아직 아무것도 조회하지 않았는데 "오늘 운행이
+    // 끝났어요"** 를 낸다. 스펙 §3이 막차 종료와 장애를 뭉개지 말라고 한 그 지점이다.
+    // buildBusCardView의 `ok + 빈 = closed` 규칙은 실제 응답에 대한 계약이므로
+    // 건드리지 않고, 조회 전에는 그 함수를 부르지 않는다.
+    if (fetch == null) {
+      return BusArrivalCard(
+        view: BusCardView(
+          state: BusCardState.ok,
+          visible: const [],
+          hiddenCount: 0,
+          fetchedAt: null,
+        ),
+        style: settings.style,
+        direction: display.direction,
+        stopName: stop.nodeNm,
+        expanded: display.expanded,
+        onToggleExpanded: () => _toggleExpanded(display),
+        onFlipDirection: _flip,
+        onRetry: _tick,
+      );
+    }
+
     final view = buildBusCardView(
-      state: fetch?.state ?? BusCardState.ok,
-      arrivals: fetch?.arrivals ?? const [],
-      fetchedAt: fetch?.fetchedAt,
+      state: fetch.state,
+      arrivals: fetch.arrivals,
+      fetchedAt: fetch.fetchedAt,
       now: _now(),
       routeIds: stop.routeIds,
     );
@@ -5109,7 +5207,7 @@ Expected: PASS (7 tests)
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
-          return http.Response(_body(), 200);
+          return _json(_body());
         }),
         serviceKey: 'TESTKEY',
         clock: () => outOfRange, // 시간대 밖 → 접힘
@@ -5145,7 +5243,7 @@ Expected: PASS (7 tests)
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
-          return http.Response(_body(), 200);
+          return _json(_body());
         }),
         serviceKey: 'TESTKEY',
         clock: () => inRange, // 시간대 안 → 펼침
