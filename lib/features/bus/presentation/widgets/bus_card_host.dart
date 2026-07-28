@@ -47,11 +47,29 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // 여기서 _tick()을 부르면 안 된다 — 그 시점 busSettingsProvider는 아직
+    // **촉발점은 이 리스너 하나다.**
+    //
+    // 여기서 `_tick()`을 직접 부르면 안 된다 — 그 시점 busSettingsProvider는 아직
     // AsyncLoading이라 settings == null로 즉시 return하고, 설정이 도착해도 다시
-    // 부르는 곳이 없어 **첫 조회가 영구히 나가지 않는다.** 타이머도 성공한 tick
-    // 뒤에만 생기므로(`_timer ??=`) 30초 폴링조차 시작되지 않는다.
-    // 촉발은 build의 ref.listen이 맡는다(아래).
+    // 부르는 곳이 없어 **첫 조회가 영구히 나가지 않는다**(cold mount).
+    //
+    // 그렇다고 `build`의 `ref.listen`에 맡기면 반대편이 죽는다 — `ref.listen`은
+    // **변화만** 받는다(riverpod 2.6.1은 `fireImmediately`를 지원하지 않는다,
+    // `consumer.dart:604`의 주석). `busSettingsProvider`는 autoDispose가 아니라
+    // 아무도 invalidate하지 않으므로, 설정 탭에서 켜고 오늘 탭으로 오거나 탭을
+    // 왕복하면(이 앱은 `ShellRoute`라 화면이 dispose된다) **이미 AsyncData인
+    // provider 위에서 마운트돼 리스너가 한 번도 울지 않는다** → 카드가 영구 로딩
+    // (warm mount). 타이머도 성공한 tick 뒤에만 생기므로(`_timer ??=`) 30초 폴링조차
+    // 시작되지 않는다.
+    //
+    // `listenManual`은 `fireImmediately`를 지원하고(`consumer.dart:98-103`) State
+    // 수명에 맞춰 자동 해제된다. cold는 `settings == null`로 조용히 지나가고 warm은
+    // 즉시 첫 조회를 띄운다 — 두 경로가 한 촉발점으로 모인다.
+    ref.listenManual<AsyncValue<BusSettings>>(
+      busSettingsProvider,
+      _onSettings,
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -71,6 +89,30 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       _timer?.cancel();
       _timer = null;
     }
+  }
+
+  /// 설정이 도착하거나 바뀔 때의 촉발 — 로딩 완료·스위치 ON·슬롯 교체·시간대
+  /// 변경이 모두 여기로 들어온다. `initState`의 `listenManual`이 부른다.
+  void _onSettings(AsyncValue<BusSettings>? prev, AsyncValue<BusSettings> next) {
+    final before = prev?.valueOrNull;
+    final after = next.valueOrNull;
+    if (after == null) return;
+
+    // 정류장이 바뀌었으면 옛 목록을 즉시 버린다. 남기면 제목줄은 새 정류장인데
+    // 본문은 옛 정류장의 도착 목록인 상태가 남는다 — 펼침이면 최대 30초, 접힘이면
+    // 타이머가 없어 무기한이다(CLAUDE.md의 push 함정이 여기 성립한다).
+    final beforeId = before?.stopFor(_display(before).direction)?.nodeId;
+    final afterId = after.stopFor(_display(after).direction)?.nodeId;
+    if (beforeId != afterId) _fetch = null;
+
+    // **`_tick()`은 마이크로태스크로 미룬다.** `fireImmediately`가 이 콜백을
+    // `initState` 안에서 **동기적으로** 부르는데, `_tick`은 첫 await 전에
+    // `setState`(묵은 결과 드롭)를 할 수 있어 프레임을 만드는 도중에 걸린다.
+    // 미루면 그 동기 호출 스택이 끝난 뒤에 돈다. 그 사이 화면이 사라질 수 있으므로
+    // `mounted`로 막는다 — `_tick`의 `ref.read`는 dispose 뒤에 부르면 던진다.
+    Future.microtask(() {
+      if (mounted) _tick();
+    });
   }
 
   /// 조건을 통과하면 조회하고 타이머를 유지한다. 아니면 타이머를 끈다.
@@ -151,7 +193,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     }
 
     // **여기서 `_tick()`을 부르지 않는다.** 위 두 저장이 모두 설정을 바꾸므로
-    // `build`의 `ref.listen`이 이미 조회를 띄운다 — 여기서 한 번 더 부르면 펼치기
+    // `initState`의 리스너(`_onSettings`)가 이미 조회를 띄운다 — 한 번 더 부르면 펼치기
     // 탭마다 TAGO 요청이 **2건** 나간다(`_save`가 prefs 저장 전에 동기적으로
     // `state = AsyncData(next)`를 하고, 30초 캐시는 **완료된** 응답만 담아 비행 중인
     // 첫 요청이 두 번째를 흡수하지 못한다).
@@ -163,24 +205,10 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 
   @override
   Widget build(BuildContext context) {
-    // 설정이 도착하거나 바뀔 때가 유일한 최초 촉발점이다 — 로딩 완료·스위치 ON·
-    // 슬롯 교체·시간대 변경이 모두 여기로 들어온다. initState에서 부르면 그때는
-    // 아직 AsyncLoading이라 아무 일도 일어나지 않는다.
-    ref.listen<AsyncValue<BusSettings>>(busSettingsProvider, (prev, next) {
-      final before = prev?.valueOrNull;
-      final after = next.valueOrNull;
-      if (after == null) return;
-
-      // 정류장이 바뀌었으면 옛 목록을 즉시 버린다. 남기면 제목줄은 새 정류장인데
-      // 본문은 옛 정류장의 도착 목록인 상태가 남는다 — 펼침이면 최대 30초, 접힘이면
-      // 타이머가 없어 무기한이다(CLAUDE.md의 push 함정이 여기 성립한다).
-      final beforeId = before?.stopFor(_display(before).direction)?.nodeId;
-      final afterId = after.stopFor(_display(after).direction)?.nodeId;
-      if (beforeId != afterId) _fetch = null;
-
-      _tick();
-    });
-
+    // **여기에 `ref.listen`을 두지 않는다.** 촉발은 `initState`의 `listenManual`
+    // 하나가 맡는다 — 둘 다 두면 설정을 바꿀 때마다 두 번 촉발돼 펼치기 탭마다
+    // TAGO 요청이 2건 나간다(30초 캐시는 **완료된** 응답만 담아 비행 중인 첫
+    // 요청이 두 번째를 흡수하지 못한다).
     final settings = ref.watch(busSettingsProvider).valueOrNull;
     if (settings == null || !settings.enabled) return const SizedBox.shrink();
 

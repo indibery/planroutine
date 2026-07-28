@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
@@ -131,6 +132,45 @@ void main() {
       expect(find.text('2분'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(n, 1);
+    });
+
+    testWidgets('이미 해석된 설정 위에서 마운트해도 첫 조회가 나간다 — warm mount', (tester) async {
+      // 위의 `_pumpHost`는 항상 새 ProviderScope에서 AsyncLoading부터 출발하므로
+      // 리스너가 반드시 한 번 발화한다 — 실사용의 두 경로(설정 탭에서 켠 직후,
+      // 오늘↔캘린더 탭 왕복)는 **이미 AsyncData인 provider 위에서** 마운트되는데
+      // 그 경로가 이 파일에 없었다. `ref.listen`은 변화만 받으므로 그때는 조회가
+      // 영구히 나가지 않았다(카드가 `도착시간을 확인하고 있어요`로 얼어붙는다).
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => inRange,
+      );
+      final container = ProviderContainer(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+      );
+      addTearDown(container.dispose);
+
+      // = 설정 탭에서 스위치를 켠 시점. 이 뒤로 provider는 AsyncData다.
+      await container.read(busSettingsProvider.future);
+
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(body: BusCardHost(clock: () => inRange)),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(count, 1, reason: '이미 data인 설정 위에서 마운트해도 첫 조회는 나간다');
+      expect(find.text('720번'), findsOneWidget);
+      expect(find.text(BusStrings.emptyLoading), findsNothing);
     });
   });
 
