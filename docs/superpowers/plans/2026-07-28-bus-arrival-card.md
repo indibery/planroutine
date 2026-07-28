@@ -1938,11 +1938,15 @@ BusCardView buildBusCardView({
 }) {
   // 1) 경과 보정 — 캐시가 묵은 만큼 차감한다. 서버가 "4분"이라고 준 값이 50초
   //    묵었으면 화면에는 3분으로 나가야 한다.
+  //
+  //    round를 쓰는 이유: floor는 조회 1초 뒤에 239초를 3분으로 떨어뜨려 표시가
+  //    튄다. ceil은 반대로 최대 59초를 과대 표시해 사용자가 버스를 놓칠 수 있다.
+  //    (`parseArrivals`의 초→분 최초 변환은 ceil이고 그것과는 별개다.)
   final elapsed = fetchedAt == null ? 0 : now.difference(fetchedAt).inSeconds;
   final adjusted = arrivals.map((a) {
     if (elapsed <= 0) return a;
     final remaining = a.arrMin * 60 - elapsed;
-    return a.copyWith(arrMin: remaining <= 0 ? 0 : (remaining / 60).ceil());
+    return a.copyWith(arrMin: remaining <= 0 ? 0 : (remaining / 60).round());
   });
 
   // 2) 노선 필터 — 비어 있으면 "필터 없음"이라 전부 통과한다.

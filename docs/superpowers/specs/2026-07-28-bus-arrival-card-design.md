@@ -362,11 +362,21 @@ SSL connection using TLSv1.3   ssl_verify_result=0
 ```dart
 // bus_card_view.dart
 final elapsed = now.difference(fetchedAt).inSeconds;
-final displayMin = ((arrival.arrMin * 60 - elapsed) / 60).ceil();
+final displayMin = ((arrival.arrMin * 60 - elapsed) / 60).round();
 ```
 
 "4분"으로 받은 값이 50초 묵었으면 화면에는 **3분**으로 나간다. 캐시가 30초 TTL이라 오차는
 30초 이내지만, 보정은 폴링이 늦어졌을 때(백그라운드 복귀 직후 등)도 함께 지킨다.
+
+**`round`인 이유** — 앞선 리비전이 `ceil`이라 적었는데 바로 위 서술("3분으로 나간다")과
+어긋났다(구현 중 발견, 2026-07-28). `ceil`은 190초를 4분으로 올려 서술을 배반한다.
+`floor`는 서술은 만족하지만 조회 **1초** 뒤에 239초를 3분으로 떨어뜨려 표시가 튄다.
+`round`는 과대 표시를 30초로 묶고(`ceil`은 59초) 표시가 매끄럽게 내려간다.
+
+⚠️ **`arrMin`이 분 단위라 보정에 정밀도 손실이 있다.** `arrMin * 60`으로 원래 초를
+복원하는데 `parseArrivals`가 이미 `ceil`로 올려놨으므로 그 값이 원본 초가 아니다. 정확히
+하려면 `BusArrival`이 `arrSec`을 들고 표시 시점에만 분으로 바꿔야 한다 — 오차가 1분 이내라
+지금은 두고 있다. (`parseArrivals`의 `ceil`은 초→분 최초 변환이고 이 보정과 별개다.)
 
 ### 프록시로 승격할 때 앱 변경이 작게 유지되도록 짠다
 
