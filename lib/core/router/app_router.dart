@@ -20,6 +20,7 @@ class AppRoutes {
   static const settings = '/settings';
   static const trash = '/trash';
   static const import = '/import';
+  static const busStops = '/bus/stops';
 }
 
 /// GoRouter 팩토리 — 부팅 시 onboarding 완료 여부에 따라 initial 라우트 결정.
