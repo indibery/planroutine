@@ -3151,6 +3151,7 @@ busSignal 문자열이 없다는 가드를 붙였다: 위젯 렌더로는 '색�
 **Files:**
 - Create: `lib/features/bus/presentation/widgets/bus_empty_state.dart`
 - Create: `lib/features/bus/presentation/widgets/bus_arrival_card.dart`
+- Modify: `lib/core/constants/strings/bus_strings.dart` — `emptyLoading` 한 줄 **추가**(기존 값 불변)
 - Test: `test/features/bus/bus_arrival_card_test.dart`
 
 **Interfaces:**
@@ -3336,6 +3337,19 @@ Run: `flutter test test/features/bus/bus_arrival_card_test.dart`
 Expected: 컴파일 실패 — 두 위젯 파일이 없다.
 
 - [ ] **Step 3: `BusEmptyState`를 만든다**
+
+먼저 `lib/core/constants/strings/bus_strings.dart`의 실패 계약 블록 맨 위에 상수 한 줄을
+**추가**한다(기존 값은 건드리지 않는다):
+
+```dart
+  /// 조회 전에만 쓰인다 — 조회 후 빈 목록은 buildBusCardView가 closed로 바꾼다.
+  static const emptyLoading = '도착시간을 확인하고 있어요';
+```
+
+이 상수가 Task 1에 없는 이유: Task 1은 이미 커밋된 뒤(`2d1eb92`) 감사 결과를 반영하며
+계획의 Task 1 텍스트에만 추가됐다 — 커밋된 `bus_strings.dart`에는 없다. `ok`를 조회 전
+전용으로 못박은 것이 그 감사 지적이었다(조회 전 `ok` + 빈 목록에 막차 문구를 띄우면
+사용자는 켜자마자 "오늘 운행이 끝났어요"를 본다).
 
 `lib/features/bus/presentation/widgets/bus_empty_state.dart`:
 
@@ -3653,6 +3667,7 @@ Expected: `No issues found!`
 ```bash
 git add lib/features/bus/presentation/widgets/bus_arrival_card.dart \
         lib/features/bus/presentation/widgets/bus_empty_state.dart \
+        lib/core/constants/strings/bus_strings.dart \
         test/features/bus/bus_arrival_card_test.dart
 git commit -m "feat(bus): 카드를 조립한다 — 제목줄 접기 + 실패 계약 5상태
 
