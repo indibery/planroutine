@@ -36,11 +36,17 @@ class BusSettingsTiles extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // **썸 색을 지정하지 않는다.** `app_theme`의 `switchTheme`이 ON 썸을 navy,
+        // 트랙을 gold로 잡아 대비를 맞춰 뒀다. 여기서 `activeThumbColor`를 주면
+        // Flutter의 해상 순서(위젯 > 테마)가 그 navy를 밀어내는데, 다크에서는
+        // `goldFill`과 `gold`가 같은 값(#E0B96A)이라 **ON이 썸 없는 단색 골드 알약**이
+        // 된다(M3 스위치는 selected 그림자·외곽선이 없어 형태 단서도 0이다).
+        // 같은 ListView의 형제 스위치(도장·알림)는 지정하지 않아 정상으로 보였다 —
+        // 기능 전체를 켜는 유일한 관문만 다르게 보이던 셈이다.
         SwitchListTile(
           key: switchKey,
           value: settings.enabled,
           onChanged: notifier.setEnabled,
-          activeThumbColor: AppColors.goldFill,
           title: Text(BusStrings.showTitle, style: _titleStyle),
           subtitle: Text(
             settings.enabled
