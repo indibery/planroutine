@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gold_fab.dart';
+import '../../../bus/presentation/widgets/bus_card_host.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../calendar/presentation/widgets/event_edit_dialog.dart';
@@ -53,6 +54,7 @@ class TodayScreen extends ConsumerWidget {
           view: data,
           today: today,
           stampSettings: stampSettings,
+          busCard: const BusCardHost(),
           onToggle: (event) =>
               ref.read(todayViewProvider.notifier).toggleCompleted(event),
           onEventTap: (event) => _onEditEvent(context, ref, event),

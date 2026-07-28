@@ -22,6 +22,7 @@ class TodayBody extends StatefulWidget {
     required this.onToggle,
     required this.onEventTap,
     this.stampSettings = StampSettings.defaults,
+    this.busCard,
   });
 
   final TodayView view;
@@ -29,6 +30,14 @@ class TodayBody extends StatefulWidget {
 
   /// 도장 모양 + "이미 찍은 도장 흐리게" 설정.
   final StampSettings stampSettings;
+
+  /// 목록 맨 위에 얹을 위젯. **null이면 아무것도 그리지 않는다.**
+  ///
+  /// 여기서 provider를 읽지 않는 이유: 이 위젯은 `today_body_test.dart`의 20개가
+  /// `ProviderScope` 없이 pump하는 순수 위젯이다. `BusCardHost`는 `ConsumerStatefulWidget`
+  /// 이라 직접 넣으면 카드가 꺼져 있어도 그 20개가 `No ProviderScope found`로 죽는다.
+  /// 배선은 `TodayScreen`이 하고 여기는 받은 것을 놓기만 한다.
+  final Widget? busCard;
   final ValueChanged<CalendarEvent> onToggle;
   final ValueChanged<CalendarEvent> onEventTap;
 
@@ -46,10 +55,14 @@ class _TodayBodyState extends State<TodayBody> {
   @override
   Widget build(BuildContext context) {
     final view = widget.view;
+    final busCard = widget.busCard;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSizes.spacing48),
       children: [
+        // `?`는 null-aware element — null이면 자리째 사라진다. `if (x != null) x`로
+        // 쓰면 use_null_aware_elements가 info를 내고 analyze가 exit 1이 된다.
+        ?busCard,
         // 제목은 AppBar가 담당한다(다른 탭과 동일 구조).
         if (view.hasToday) _progressHero(view) else _emptyToday(),
         if (view.overdue.isNotEmpty) ...[
