@@ -451,5 +451,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('720번'), findsOneWidget);
     });
+
+    testWidgets('시간대가 끝나면 다음 tick이 카드를 접고 옛 목록을 버린다', (tester) async {
+      // 타이머만 끊고 setState 없이 return하면 카드를 리빌드시키는 신호가 없어
+      // 펼친 카드가 마지막 프레임(옛 도착 분)에 얼어붙는다 — 폴링이 멈춘 카드가
+      // 살아 있는 것처럼 보이는, 이 카드에서 가장 위험한 실패다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = DateTime(2026, 7, 28, 8, 29); // 출근 시간대(07:00–08:30) 끝자락
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('720번'), findsOneWidget);
+      expect(count, 1);
+
+      now = DateTime(2026, 7, 28, 8, 31); // 시간대 종료
+      await tester.pump(busPollInterval);
+      await tester.pumpAndSettle();
+
+      expect(find.text('720번'), findsNothing,
+          reason: '시간대가 끝나면 카드가 접히고 옛 도착 분이 남지 않는다');
+      expect(find.textContaining('기준'), findsNothing);
+      expect(find.textContaining('수원시청'), findsOneWidget,
+          reason: '접힌 줄은 남는다 — 카드가 사라지는 것이 아니다');
+      expect(count, 1, reason: '접힌 뒤에는 요청이 늘지 않는다');
+    });
   });
 }

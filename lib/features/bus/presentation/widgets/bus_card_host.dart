@@ -127,6 +127,17 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     if (!shouldPoll) {
       _timer?.cancel();
       _timer = null;
+      // **화면도 정리한다.** 타이머만 끊고 돌아가면 카드를 리빌드시키는 신호가
+      // 없어(설정은 안 바뀌고 `today_screen`이 watch하는 provider 셋은 주기 신호가
+      // 아니다) 마지막 프레임이 그대로 남는다 — 시간대가 끝났는데 카드는 여전히
+      // 펼쳐진 채 `720번 2분`을 보여주고 그 값은 다시 계산되지 않는다(리뷰 재현:
+      // 08:31로 밀어도 `list=1 stamp=1`). 펼치기 override 만료도 같은 경로다.
+      //
+      // 여기서 `_fetch`를 비우면 리빌드가 돌아 `_display`가 새 `now`로 접힘을
+      // 반환하고 묵은 목록도 사라진다. 본문은 `expanded`로만 게이트되므로
+      // (`bus_arrival_card.dart`의 `if (expanded)`) 접힌 카드에 로딩 문구가
+      // 노출되지는 않는다.
+      if (mounted && _fetch != null) setState(() => _fetch = null);
       return;
     }
 
