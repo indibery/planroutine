@@ -140,21 +140,28 @@ void main() {
         'bus_settings_v1': jsonEncode(onWithStop.toJson()),
       });
       var count = 0;
+      // **시계는 가변이어야 한다.** 고정하면 첫 조회가 캐시를 채운 뒤 busCacheTtl이
+      // 영원히 만료되지 않아, 이후 어떤 조회도 MockClient 앞에서 캐시로 끝난다 —
+      // `_tick`의 expanded 가드를 지워도 count가 1이라 이 단정이 반증 불가가 된다.
+      var now = inRange;
       final client = BusApiClient(
         client: MockClient((_) async {
           count++;
           return _json(_body());
         }),
         serviceKey: 'TESTKEY',
-        clock: () => inRange,
+        clock: () => now,
       );
 
       await tester.pumpWidget(ProviderScope(
         overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
       ));
       await tester.pumpAndSettle();
       expect(count, 1);
+
+      // 캐시를 넘긴다 — 이제 조회가 나가면 실제 요청이 되어 count에 잡힌다.
+      now = now.add(const Duration(seconds: 31));
 
       await tester.tap(find.byKey(BusArrivalCard.headerKey));
       await tester.pumpAndSettle();
@@ -289,6 +296,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(count, 1, reason: '30초 캐시가 복귀 조회를 흡수한다');
+    });
+  });
+
+  group('폴링 — busPollInterval', () {
+    testWidgets('30초마다 다시 조회한다', (tester) async {
+      // 첫 조회 1건 → 시계를 31초 밀고 타이머를 발화시키면 캐시가 만료돼 2건이 된다.
+      // 시계를 밀지 않으면 tick이 캐시 히트로 끝나 이 테스트는 아무것도 증명하지 못한다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = inRange;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(count, 1);
+
+      now = now.add(const Duration(seconds: 31));
+      await tester.pump(busPollInterval);
+      await tester.pumpAndSettle();
+
+      expect(count, 2, reason: '폴링 타이머가 실제로 걸려 있다');
     });
   });
 }

@@ -88,12 +88,39 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       return;
     }
 
+    // 묵은 결과는 그리지 않는다 — 복귀 직후 한 프레임이라도 40분 전 목록을 `ok`로
+    // 그리면 이미 지나간 버스가 `곧`으로 표시된다(경과 보정이 arrMin을 0으로 깎지만
+    // 목록이 비지 않아 state는 ok로 남는다). 조회 전 경로가 emptyLoading을 그리는
+    // 것과 같은 논리다.
+    //
+    // 기준을 `busCacheTtl`로 쓰는 이유: 그 창 안에서는 클라이언트가 캐시로 **같은
+    // 값**을 돌려주므로 버릴 이유가 없다. 창을 넘긴 값만 화면에서 내린다.
+    final last = _fetch?.fetchedAt;
+    if (last != null && _now().difference(last) > busCacheTtl) {
+      setState(() => _fetch = null);
+    }
+
     final fetch = await ref
         .read(busApiClientProvider)
         .fetchArrivals(cityCode: stop.cityCode, nodeId: stop.nodeId);
     if (!mounted) return;
     setState(() => _fetch = fetch);
 
+    // 조건 5를 여기서도 본다 — 비행 중에 앱이 내려가면 응답이 돌아와 타이머를
+    // 백그라운드에서 새로 걸어버린다(라이프사이클 콜백은 이미 지나갔다).
+    //
+    // **`== resumed`가 아니라 배경 상태를 열거해 막는다.** `lifecycleState`는
+    // nullable이고 바인딩이 첫 라이프사이클 메시지를 받기 전에는 null이다
+    // (`SchedulerBinding.resetInternalState`가 테스트마다 null로 돌린다) — `!= resumed`로
+    // 쓰면 그 null까지 배경으로 취급해 **위젯 테스트에서는 타이머가 아예 걸리지 않는다**
+    // (실측: `30초마다 다시 조회한다`가 count 1로 실패). 실제 누수는 `paused`·`detached`가
+    // 종착 배경 상태라 이 형태로도 막힌다 — `inactive`·`hidden`을 지나 내려가는 경우는
+    // 뒤따라 오는 `didChangeAppLifecycleState`의 else 분기가 타이머를 끊는다.
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle == AppLifecycleState.paused ||
+        lifecycle == AppLifecycleState.detached) {
+      return;
+    }
     _timer ??= Timer.periodic(busPollInterval, (_) => _tick());
   }
 
