@@ -3691,7 +3691,7 @@ y좌표가 같다는 테스트가 이것을 지킨다.
 **Files:**
 - Create: `lib/features/settings/presentation/widgets/bus_settings_tiles.dart`
 - Modify: `lib/features/settings/presentation/screens/settings_screen.dart` (`완료 도장` 섹션 다음에 1개 삽입)
-- Modify: `lib/core/router/app_router.dart` (`AppRoutes.busStops` + `GoRoute`)
+- Modify: `lib/core/router/app_router.dart` (`AppRoutes.busStops` 상수 한 줄만 — `GoRoute`는 Task 13)
 - Test: `test/features/bus/bus_settings_tiles_test.dart`
 
 **Interfaces:**
