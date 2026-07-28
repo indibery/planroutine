@@ -481,7 +481,8 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
 
 ### 알려진 빌드 이슈
-- 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관). 레인 밖 수동 빌드 시에는 `flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build && flutter build ipa`.
+- 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
+- **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).
 
 ## 샘플 데이터
 - `data/sample/2025_생산문서등록대장.csv` — **합성** 생산문서등록대장 20건 (가상 학교·가명, 실제 PII 없음)
