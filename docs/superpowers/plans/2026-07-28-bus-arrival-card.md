@@ -1083,10 +1083,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/features/bus/data/tago_response_parser.dart';
 
 /// TAGO 응답 껍데기 — resultCode는 데이터가 없어도 "00"이다(실측).
-Map<String, dynamic> _envelope(Object? items, {String code = '00'}) => {
+///
+/// 실제 구조: `body.items`는 `{'item': ...}` 형태의 Map이거나, 데이터가 없을 때
+/// 빈 문자열 `''`이다(Phase 0 실측). [inner]에 Map(단건)이나 List(복수)를 주면
+/// `item` 래퍼를 씌우고, `''`를 주면 그대로 둔다.
+Map<String, dynamic> _envelope(Object? inner, {String code = '00'}) => {
       'response': {
         'header': {'resultCode': code, 'resultMsg': 'NORMAL SERVICE.'},
-        'body': {'items': items, 'numOfRows': 30, 'pageNo': 1},
+        'body': {
+          'items': inner == '' ? '' : {'item': inner},
+          'numOfRows': 30,
+          'pageNo': 1,
+        },
       },
     };
 
@@ -2021,10 +2029,16 @@ import 'package:http/testing.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 
-String _body(Object? items, {String code = '00'}) => jsonEncode({
+/// 실제 구조: `body.items`는 `{'item': ...}` 형태의 Map이거나, 데이터가 없을 때
+/// 빈 문자열 `''`이다(Phase 0 실측). `''`를 줄 때만 래퍼를 씌우지 않는다.
+String _body(Object? inner, {String code = '00'}) => jsonEncode({
       'response': {
         'header': {'resultCode': code, 'resultMsg': 'NORMAL SERVICE.'},
-        'body': {'items': items, 'numOfRows': 30, 'pageNo': 1},
+        'body': {
+          'items': inner == '' ? '' : {'item': inner},
+          'numOfRows': 30,
+          'pageNo': 1,
+        },
       },
     });
 
