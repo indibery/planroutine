@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/bus/domain/commute_direction.dart';
+import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -90,7 +92,23 @@ GoRouter createRouter({
                 child: ImportScreen(),
               ),
             ),
+            GoRoute(
+              path: AppRoutes.busStops,
+              pageBuilder: (context, state) => NoTransitionPage(
+                child: BusStopSearchScreen(
+                  slot: _busSlot(state.uri.queryParameters['slot']),
+                ),
+              ),
+            ),
           ],
         ),
       ],
     );
+
+/// `?slot=toWork` 쿼리를 방향으로. 모르는 값이면 null(화면이 기본 슬롯을 쓴다).
+CommuteDirection? _busSlot(String? raw) {
+  for (final direction in CommuteDirection.values) {
+    if (direction.name == raw) return direction;
+  }
+  return null;
+}
