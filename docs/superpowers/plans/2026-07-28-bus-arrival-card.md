@@ -2856,7 +2856,11 @@ import '../../domain/bus_card_view.dart';
 ///
 /// 새 색 토큰을 하나도 참조하지 않는다. 임박은 굵기·크기로만 낸다 — 요일 헤더를
 /// `본문색 + w700`으로 해결한 것과 같은 수법이다. 가드 테스트가 이 위젯이
-/// `AppColors.busSignal*`을 쓰지 않는다는 사실을 지킨다.
+/// **신호색 토큰을 쓰지 않는다**는 사실을 소스 문자열 검사로 지킨다.
+///
+/// 그 가드가 주석까지 통째로 훑기 때문에 **이 주석은 토큰 이름을 적지 않는다** —
+/// 적으면 설명하려던 가드에 자기가 걸린다. 가드를 멍청하게 두는 편이 값이 크다:
+/// `// TODO: busSignal 써보자` 같은 주석도 같이 잡힌다.
 class BusBodyText extends StatelessWidget {
   const BusBodyText({super.key, required this.view});
 
