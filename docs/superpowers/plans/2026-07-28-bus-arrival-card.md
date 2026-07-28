@@ -4818,10 +4818,13 @@ git commit -m "feat(bus): 정류장 검색과 확인 시트 — 반대 방향을
 ### Task 14: 오늘 탭 배선 + 폴링 + 요청 0 가드
 
 **Files:**
-- Modify: `lib/features/bus/presentation/providers/bus_providers.dart` (`busCardProvider` 추가)
 - Create: `lib/features/bus/presentation/widgets/bus_card_host.dart`
-- Modify: `lib/features/today/presentation/widgets/today_body.dart` (최상단에 1줄)
+- Modify: `lib/features/today/presentation/widgets/today_body.dart` (`busCard` 파라미터 + 목록 첫 줄)
+- Modify: `lib/features/today/presentation/screens/today_screen.dart` (`busCard: const BusCardHost()`)
 - Test: `test/features/bus/bus_card_host_test.dart`
+
+> `bus_providers.dart`는 **건드리지 않는다.** 초안의 `busCardProvider`는 어느 Step도 만들지 않고
+> 쓰는 곳도 없다 — 호스트가 `StatefulWidget`의 상태로 `_fetch`를 들고 있어 provider가 필요없다.
 
 **Interfaces:**
 - Consumes: `resolveBusDisplay` (Task 6), `buildBusCardView` (Task 7), `BusApiClient` (Task 8), `busSettingsProvider`·`busApiClientProvider` (Task 9), `BusArrivalCard` (Task 11)
@@ -5203,7 +5206,15 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     } else {
       await notifier.setOverride(expanded: wantExpanded, at: _now());
     }
-    if (mounted) await _tick();
+    // **여기서 `_tick()`을 부르지 않는다.** 위 두 저장이 모두 설정을 바꾸므로
+    // `build`의 `ref.listen`이 이미 조회를 띄운다 — 여기서 한 번 더 부르면 펼치기
+    // 탭마다 TAGO 요청이 **2건** 나간다(`_save`가 prefs 저장 전에 동기적으로
+    // `state = AsyncData(next)`를 하고, 30초 캐시는 **완료된** 응답만 담아 비행 중인
+    // 첫 요청이 두 번째를 흡수하지 못한다).
+    //
+    // 반대로 `_flip`은 설정을 건드리지 않고 `_flipped`만 바꾸므로 리스너가 울지
+    // 않는다 — 그래서 거기서는 `_tick()`을 직접 부른다. 촉발의 규칙은 하나다:
+    // **설정을 저장하면 리스너에 맡기고, 로컬 상태만 바꾸면 직접 부른다.**
   }
 
   @override
@@ -5356,11 +5367,12 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 `ListView`의 `children` **첫 줄**:
 
 ```dart
-        if (busCard != null) busCard,
+        ?busCard,
 ```
 
-> 지역 변수를 거치는 이유는 `!` 금지 규칙이다 — `final` 지역 변수는 null 검사로 승격되지만
-> `widget.busCard`는 매번 getter라 승격되지 않아 `!`가 필요해진다.
+> null-aware element(`?`)를 쓴다. `if (busCard != null) busCard,`로 쓰면 linter가
+> `use_null_aware_elements`(info)를 내고 이 리포의 `flutter analyze`는 info에도 exit 1이다.
+> `busCard!`는 `!` 금지 규칙에 걸린다 — 세 형태 중 이것만 두 규칙을 동시에 만족한다.
 
 **(2)** `lib/features/today/presentation/screens/today_screen.dart` — `TodayBody(...)` 호출에 추가:
 
@@ -5485,8 +5497,8 @@ Expected: 전부 PASS, `No issues found!`
 
 ```bash
 git add lib/features/bus/presentation/widgets/bus_card_host.dart \
-        lib/features/bus/presentation/providers/bus_providers.dart \
         lib/features/today/presentation/widgets/today_body.dart \
+        lib/features/today/presentation/screens/today_screen.dart \
         test/features/bus/bus_card_host_test.dart
 git commit -m "feat(bus): 오늘 탭에 카드를 얹고 요청 조건을 한곳에서 판정한다
 
