@@ -50,6 +50,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   TagoOutcome? _cityFailure;
   TagoOutcome? _stopFailure;
 
+  /// 채울 슬롯. **표시와 저장이 같은 값을 본다** — 화면이 `출발지`라고 말하면서
+  /// 도착지에 저장하는 어긋남이 구조적으로 생기지 않는다.
+  ///
+  /// 쿼리가 없으면 출근 슬롯이다. 호출부는 전부 `?slot=`을 붙이므로(Task 12·14)
+  /// 이 폴백은 라우트를 손으로 열었을 때의 마지막 안전망이고, 그때도 제목과 시트가
+  /// 같은 이름을 말한다.
+  CommuteDirection get _slot => widget.slot ?? CommuteDirection.toWork;
+
   @override
   void initState() {
     super.initState();
@@ -128,13 +136,13 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       // 빈 목록의 이유를 시트가 알아야 한다 — `fetchArrivals`는 예외를 던지지 않고
       // 실패를 상태로 돌려주므로, state를 버리면 장애와 막차 후가 구별되지 않는다.
       state: fetch.state,
+      // 저장 대상을 시트도 말한다 — `맞아요`를 누르는 순간이 되돌리기 가장 어려운
+      // 지점이고, 이 값이 곧 아래 `setStop`의 대상이다.
+      slot: _slot,
     );
     if (confirmed == null || !mounted) return;
 
-    // 쿼리가 없으면 출근 슬롯 — 호출부는 전부 `?slot=`을 붙인다(Task 12·14).
-    // 이 폴백은 라우트를 손으로 열었을 때의 마지막 안전망이다.
-    final slot = widget.slot ?? CommuteDirection.toWork;
-    await ref.read(busSettingsProvider.notifier).setStop(slot, confirmed);
+    await ref.read(busSettingsProvider.notifier).setStop(_slot, confirmed);
     if (mounted) context.pop();
   }
 
@@ -148,7 +156,10 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(BusStrings.searchTitle, style: AppTextStyles.heading),
+        title: Text(
+          BusStrings.searchTitleFor(_slotLabelOf(_slot)),
+          style: AppTextStyles.heading,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing48),
@@ -320,6 +331,12 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   }
 }
 
+/// 슬롯 이름 — `출발지`/`도착지`. 화면 제목과 확인 시트가 **같은 값**을 쓴다.
+String _slotLabelOf(CommuteDirection slot) =>
+    slot == CommuteDirection.toWork
+        ? BusStrings.slotDeparture
+        : BusStrings.slotArrival;
+
 /// 저장 직전 확인 — 방향이 조용히 틀리는 것을 막는다.
 ///
 /// 실측: `수원시청.수원일자리센터`가 `GGB201000156`과 `GGB202000003` 두 개이고
@@ -332,10 +349,18 @@ class BusStopConfirmSheet extends StatefulWidget {
     required this.stop,
     required this.arrivals,
     required this.state,
+    required this.slot,
   });
 
   final BusStop stop;
   final List<BusArrival> arrivals;
+
+  /// 저장 대상 슬롯. **required다** — 옵션으로 두면 문구를 빼먹은 호출부가 조용히
+  /// 생기는데, 이 시트가 저장 직전 마지막 화면이라 그때는 알릴 방법이 없다.
+  ///
+  /// 카드에서 들어오면 슬롯이 시계로 결정되므로(기본 시간대에서 08:31–15:59는
+  /// 도착지) 사용자가 알 수 있는 곳이 제목줄과 이 줄뿐이다.
+  final CommuteDirection slot;
 
   /// 조회 결과 상태. **빈 목록의 이유를 구분하는 데만 쓴다.**
   ///
@@ -352,6 +377,7 @@ class BusStopConfirmSheet extends StatefulWidget {
     required BusStop stop,
     required List<BusArrival> arrivals,
     required BusCardState state,
+    required CommuteDirection slot,
   }) {
     return showModalBottomSheet<BusStop>(
       context: context,
@@ -360,6 +386,7 @@ class BusStopConfirmSheet extends StatefulWidget {
         stop: stop,
         arrivals: arrivals,
         state: state,
+        slot: slot,
       ),
     );
   }
@@ -422,6 +449,18 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacing4),
+            // 이 정류장이 **어느 슬롯으로** 가는지. 시트는 nodeId 방향(상행/하행)만
+            // 확인시키고 슬롯 방향(출발지/도착지)은 말하지 않아, 일과시간에 카드에서
+            // 들어온 사용자가 집 앞 정류장을 도착지에 넣고도 알지 못했다.
+            Text(
+              BusStrings.savesTo(_slotLabelOf(widget.slot)),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                color: AppColors.sub,
               ),
             ),
             const SizedBox(height: AppSizes.spacing16),

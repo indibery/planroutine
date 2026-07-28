@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
@@ -152,6 +153,40 @@ Future<ProviderContainer> _pumpScreen(
   return container;
 }
 
+/// `?slot=`으로 push해서 연다. 저장까지 밟으려면 GoRouter가 있어야 한다 —
+/// `_pick` 끝의 `context.pop()`이 go_router 확장이라 라우터 없이는 던진다.
+Future<ProviderContainer> _pumpRouted(
+  WidgetTester tester,
+  _Tago tago, {
+  required CommuteDirection slot,
+  BusSettings settings = BusSettings.defaults,
+}) async {
+  final container = _container(tago, settings);
+  await container.read(busSettingsProvider.future);
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(path: '/', builder: (_, _) => const Scaffold(body: Text('오늘'))),
+      GoRoute(
+        path: '/bus/stops',
+        builder: (_, state) => BusStopSearchScreen(
+          slot: state.uri.queryParameters['slot'] == CommuteDirection.toHome.name
+              ? CommuteDirection.toHome
+              : CommuteDirection.toWork,
+        ),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+  await tester.pumpWidget(UncontrolledProviderScope(
+    container: container,
+    child: MaterialApp.router(routerConfig: router),
+  ));
+  await tester.pumpAndSettle();
+  router.push('/bus/stops?slot=${slot.name}');
+  await tester.pumpAndSettle();
+  return container;
+}
 
 Future<void> _typeStop(WidgetTester tester, String name) async {
   await tester.enterText(find.byKey(BusStopSearchScreen.stopFieldKey), name);
@@ -334,6 +369,64 @@ void main() {
       expect(find.text(BusStrings.searchEmpty), findsOneWidget);
       expect(find.text(BusStrings.emptyDown), findsNothing,
           reason: 'empty를 실패로 말하면 이름을 고치는 대신 무한히 재시도한다');
+    });
+  });
+
+  group('어느 슬롯에 저장하는지 말한다 (I7)', () {
+    testWidgets('출발지 슬롯이면 제목이 출발지다', (tester) async {
+      await _pumpScreen(tester, _Tago(), slot: CommuteDirection.toWork);
+      expect(find.text('출발지 정류장 찾기'), findsOneWidget);
+    });
+
+    testWidgets('도착지 슬롯이면 제목이 도착지다 — 일과시간에 카드에서 들어오는 경로', (tester) async {
+      await _pumpScreen(tester, _Tago(), slot: CommuteDirection.toHome);
+      expect(find.text('도착지 정류장 찾기'), findsOneWidget);
+      expect(find.text('출발지 정류장 찾기'), findsNothing);
+    });
+
+    testWidgets('쿼리가 없는 폴백에서도 슬롯을 말한다', (tester) async {
+      await _pumpScreen(tester, _Tago());
+      expect(find.text('출발지 정류장 찾기'), findsOneWidget,
+          reason: '라우트를 손으로 열었을 때의 결과도 화면에 보여야 한다');
+    });
+
+    testWidgets('확인 시트도 저장 대상을 말한다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago, slot: CommuteDirection.toHome);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(BusStrings.confirmTitle), findsOneWidget);
+      expect(find.text('도착지에 저장합니다'), findsOneWidget,
+          reason: '맞아요를 누르는 순간이 되돌리기 가장 어려운 지점이다');
+    });
+
+    testWidgets('저장은 화면이 말한 슬롯으로 간다', (tester) async {
+      final tago = _Tago();
+      final container = await _pumpRouted(
+        tester,
+        tago,
+        slot: CommuteDirection.toHome,
+      );
+
+      expect(find.text('도착지 정류장 찾기'), findsOneWidget);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(BusStopSearchScreen.confirmAcceptKey));
+      await tester.pumpAndSettle();
+
+      final saved = container.read(busSettingsProvider).valueOrNull;
+      expect(saved?.arrival?.nodeNm, '수원시청.수원일자리센터');
+      expect(saved?.departure, isNull,
+          reason: '제목이 도착지라고 말했으면 출발지는 건드리지 않는다');
     });
   });
 

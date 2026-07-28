@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
+import 'package:planroutine/features/bus/domain/commute_direction.dart';
 import 'package:planroutine/features/bus/presentation/screens/bus_stop_search_screen.dart';
 
 const _stop = BusStop(
@@ -28,6 +29,7 @@ Future<void> _showSheet(
   WidgetTester tester, {
   List<BusArrival>? arrivals,
   BusCardState state = BusCardState.ok,
+  CommuteDirection slot = CommuteDirection.toWork,
 }) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
@@ -38,6 +40,7 @@ Future<void> _showSheet(
             stop: _stop,
             arrivals: arrivals ?? _arrivals,
             state: state,
+            slot: slot,
           ),
           child: const Text('열기'),
         ),
@@ -140,6 +143,7 @@ Future<BusStop?> _tapAccept(
   List<String> uncheck = const [],
   List<BusArrival>? arrivals,
   BusCardState state = BusCardState.ok,
+  CommuteDirection slot = CommuteDirection.toWork,
 }) async {
   BusStop? result;
   await tester.pumpWidget(MaterialApp(
@@ -152,6 +156,7 @@ Future<BusStop?> _tapAccept(
               stop: _stop,
               arrivals: arrivals ?? _arrivals,
               state: state,
+              slot: slot,
             );
           },
           child: const Text('열기'),
