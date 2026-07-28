@@ -28,6 +28,7 @@ class BusArrivalCard extends StatelessWidget {
     required this.onFlipDirection,
     this.onRetry,
     this.onRegister,
+    this.retrying = false,
   });
 
   static const headerKey = Key('bus_card_header');
@@ -50,6 +51,9 @@ class BusArrivalCard extends StatelessWidget {
   final VoidCallback onFlipDirection;
   final VoidCallback? onRetry;
   final VoidCallback? onRegister;
+
+  /// [onRetry]로 시작한 조회가 비행 중인가 — [BusEmptyState]에 그대로 넘긴다.
+  final bool retrying;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +179,7 @@ class BusArrivalCard extends StatelessWidget {
         state: view.state,
         onRetry: onRetry,
         onRegister: onRegister,
+        retrying: retrying,
       );
     }
     return switch (style) {

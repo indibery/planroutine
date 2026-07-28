@@ -15,11 +15,19 @@ class BusEmptyState extends StatelessWidget {
     required this.state,
     this.onRetry,
     this.onRegister,
+    this.retrying = false,
   });
 
   final BusCardState state;
   final VoidCallback? onRetry;
   final VoidCallback? onRegister;
+
+  /// `다시 시도`로 시작한 조회가 아직 비행 중인가.
+  ///
+  /// true면 그 자리에 진행 문구를 놓고 탭을 뗀다. 조회는 최대 10초 걸리는데 그동안
+  /// 화면이 안 바뀌면 사용자는 버튼이 안 먹은 줄 알고 다시 누르고, 실패는 캐시되지
+  /// 않으므로 **탭 N번 = 동시 HTTP 요청 N건**이 된다.
+  final bool retrying;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +53,14 @@ class BusEmptyState extends StatelessWidget {
         ),
       // stale이 빈 목록으로 여기까지 오면 갱신 실패와 구분할 정보가 없다 —
       // down과 같은 문구를 **의도적으로** 공유한다(와일드카드가 아니라 이름을 둘 다 적는다).
+      // 비행 중이면 라벨을 진행 문구로 바꾸고 콜백을 뗀다. **문구만 바꾸고 콜백을
+      // 남기면 안 된다** — 리빌드가 오기 전에 도착한 탭이 그대로 요청을 만든다.
+      // (호스트의 `_retrying` 가드가 그 창까지 막지만, 두 겹을 함께 둔다.)
       BusCardState.stale || BusCardState.down => (
           BusStrings.emptyDown,
           null,
-          BusStrings.emptyDownAction,
-          onRetry,
+          retrying ? BusStrings.emptyDownRetrying : BusStrings.emptyDownAction,
+          retrying ? null : onRetry,
         ),
       BusCardState.keyError => (
           BusStrings.emptyKey,
@@ -90,19 +101,34 @@ class BusEmptyState extends StatelessWidget {
         ],
         if (action != null) ...[
           const SizedBox(height: AppSizes.spacing4),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onAction,
-            child: Text(
+          // **콜백이 없으면 탭 대상도 아니다.** 골드는 이 카드 안에서 행동을 뜻하고
+          // `GestureDetector`는 누를 수 있다는 신호이므로, 둘 다 떼어 진행 문구가
+          // 링크로 보이지 않게 한다 — `bus_arrival_card._header()`가
+          // `onToggleExpanded == null`에서 chevron과 탭을 함께 빼는 것과 같은 규칙이다.
+          if (onAction == null)
+            Text(
               action,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.gold,
+                fontWeight: FontWeight.w600,
+                color: AppColors.sub,
+              ),
+            )
+          else
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onAction,
+              child: Text(
+                action,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
               ),
             ),
-          ),
         ],
       ],
     );

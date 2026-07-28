@@ -41,6 +41,15 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   /// 방향 토글은 **화면 수명**이다 — 저장하지 않는다.
   CommuteDirection? _flipped;
 
+  /// `다시 시도`로 시작한 조회가 비행 중인가.
+  ///
+  /// **이 가드는 재시도 버튼에만 걸린다.** `_tick` 전체에 in-flight 가드를 두는
+  /// 안(모든 촉발에 거는 전역 가드)은 Task 14에서 기각됐다 — 비행 중에 도착한
+  /// 폴링·복귀·슬롯 교체 tick을 버리면 방향 전환이 최대 30초 빈 카드로 남는다.
+  /// 재시도 버튼은 그 사유가 성립하지 않는다: `down`/`stale`+빈 목록 상태라
+  /// **가려질 콘텐츠가 애초에 없다**(빈 카드로 남을 목록 자체가 없다).
+  bool _retrying = false;
+
   DateTime _now() => (widget.clock ?? DateTime.now)();
 
   @override
@@ -113,6 +122,25 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     Future.microtask(() {
       if (mounted) _tick();
     });
+  }
+
+  /// `다시 시도` 탭. 비행 중이면 두 번째 탭을 버리고, 그동안 진행 문구를 띄운다.
+  ///
+  /// 없으면 탭한 뒤 최대 10초(`_get`의 timeout) 동안 화면이 **전혀** 바뀌지 않는다 —
+  /// `_tick`은 fetch 앞에서 setState를 하지 않고(이 상태의 `fetchedAt`은 null이라
+  /// 표시 드롭 분기도 건너뛴다) 스피너도 없다. 그래서 사용자는 다시 누르고,
+  /// 실패 결과는 `_fallback`이 캐시에 쓰지 않으므로 매 탭이 캐시 미스가 되어
+  /// **탭 N번 = 동시 HTTP 요청 N건**이 된다. 키는 IPA에 하나뿐이라 개발계정
+  /// 10,000/일 한도를 전 사용자가 공유한다(스펙 §5의 호출 회계).
+  Future<void> _retry() async {
+    if (_retrying) return;
+    setState(() => _retrying = true);
+    try {
+      await _tick();
+    } finally {
+      // 화면이 사라진 뒤 setState를 부르면 던진다 — 응답이 10초 뒤에 올 수 있다.
+      if (mounted) setState(() => _retrying = false);
+    }
   }
 
   /// 조건을 통과하면 조회하고 타이머를 유지한다. 아니면 타이머를 끈다.
@@ -278,7 +306,11 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         expanded: display.expanded,
         onToggleExpanded: () => _toggleExpanded(display),
         onFlipDirection: _flip,
-        onRetry: _tick,
+        // **`onRetry`를 넘기지 않는다.** 이 분기는 `state: ok` + 빈 목록이고
+        // `BusEmptyState`의 ok 튜플은 action이 null이라 재시도 줄이 아예 그려지지
+        // 않는다 — 도달하지 않는 콜백이다. 형태를 맞추려고 남겨두면 재시도 경로가
+        // 두 개(여기 `_tick`, 아래 `_retry`)로 갈려 어느 쪽이 in-flight 가드를
+        // 지나는지 읽어서는 알 수 없게 된다.
       );
     }
 
@@ -298,12 +330,14 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       expanded: display.expanded,
       onToggleExpanded: () => _toggleExpanded(display),
       onFlipDirection: _flip,
-      onRetry: _tick,
-      // 위 noStop 분기와 같은 이유로 슬롯을 붙인다. 이 경로의 `onRegister`는
-      // `BusEmptyState`가 noStop에서만 쓰므로 실질 도달하지 않지만, 형태가 갈라져
-      // 있으면 나중에 도달하게 될 때 조용히 틀린다.
-      onRegister: () =>
-          context.push('${AppRoutes.busStops}?slot=${display.direction.name}'),
+      // 재시도가 실제로 도달하는 유일한 경로다(`stale`·`down` + 빈 목록).
+      // `_tick`이 아니라 `_retry`를 넘긴다 — 가드와 진행 문구가 거기 있다.
+      onRetry: _retry,
+      retrying: _retrying,
+      // **`onRegister`를 넘기지 않는다.** 여기 `view.state`는 `fetch.state`에서
+      // 오고 `BusApiClient`가 낼 수 있는 값은 ok·closed·stale·down·keyError
+      // 다섯뿐이다(`noStop`을 만드는 곳은 위 분기 하나뿐이고 소비처도
+      // `BusEmptyState`의 noStop 분기뿐이다) — 도달하지 않는 콜백이다.
     );
   }
 

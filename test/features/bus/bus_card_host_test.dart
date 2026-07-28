@@ -377,6 +377,174 @@ void main() {
     });
   });
 
+  group('다시 시도 — 비행 중 가드 (I11)', () {
+    /// 첫 조회부터 실패시키고, `hold`가 완료될 때까지 두 번째 요청을 붙잡는다.
+    /// 실패 경로는 캐시에 쓰지 않으므로 탭마다 캐시 미스 = 실제 요청이 된다.
+    Future<int Function()> pumpDownCard(
+      WidgetTester tester,
+      Completer<void> hold,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          if (count >= 2) await hold.future;
+          throw http.ClientException('네트워크 없음');
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => inRange,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text(BusStrings.emptyDown), findsOneWidget);
+      expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
+      expect(count, 1);
+      return () => count;
+    }
+
+    testWidgets('연달아 두 번 눌러도 요청은 한 번만 늘어난다', (tester) async {
+      final hold = Completer<void>();
+      final count = await pumpDownCard(tester, hold);
+
+      // **두 탭 사이에 pump를 넣지 않는다.** 리빌드가 오기 전이라 두 번째 탭도 같은
+      // GestureDetector에 닿는다 — 라벨 교체가 아니라 `_retrying` 가드만이 막는다.
+      // pump를 넣으면 버튼이 이미 진행 문구로 바뀌어 가드를 지워도 통과한다.
+      await tester.tap(find.text(BusStrings.emptyDownAction));
+      await tester.tap(find.text(BusStrings.emptyDownAction));
+
+      expect(count(), 2,
+          reason: '비행 중 두 번째 탭은 요청을 만들지 않는다 — 실패는 캐시되지 '
+              '않으므로 가드가 없으면 탭 N번 = 동시 요청 N건이다');
+
+      hold.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('비행 중에는 다시 시도 자리에 진행 문구가 뜬다', (tester) async {
+      final hold = Completer<void>();
+      await pumpDownCard(tester, hold);
+
+      await tester.tap(find.text(BusStrings.emptyDownAction));
+      await tester.pump();
+
+      expect(find.text(BusStrings.emptyDownRetrying), findsOneWidget,
+          reason: '조회는 최대 10초 걸린다 — 화면이 안 바뀌면 사용자는 '
+              '버튼이 안 먹은 줄 알고 다시 누른다');
+      expect(find.text(BusStrings.emptyDownAction), findsNothing);
+
+      hold.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text(BusStrings.emptyDownAction), findsOneWidget,
+          reason: '끝나면 다시 누를 수 있어야 한다 — 영구 비활성이 아니다');
+      expect(find.text(BusStrings.emptyDownRetrying), findsNothing);
+    });
+
+    testWidgets('재시도 가드는 폴링·복귀 촉발을 막지 않는다', (tester) async {
+      // 전역 in-flight 가드는 이전 라운드에서 기각됐다(비행 중 도착한 tick을 버리면
+      // 방향 전환이 최대 30초 빈 카드로 남는다). 가드가 `다시 시도`에만 걸려 있는지
+      // 여기서 고정한다 — 재시도를 한 번 끝낸 뒤 폴링과 복귀가 그대로 도는지 본다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = inRange;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          throw http.ClientException('네트워크 없음');
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(count, 1);
+
+      await tester.tap(find.text(BusStrings.emptyDownAction));
+      await tester.pumpAndSettle();
+      expect(count, 2, reason: '재시도 1회는 나간다');
+
+      now = now.add(const Duration(seconds: 31));
+      await tester.pump(busPollInterval);
+      await tester.pumpAndSettle();
+      expect(count, 3, reason: '재시도가 끝난 뒤에도 폴링 타이머는 살아 있다');
+
+      now = now.add(const Duration(seconds: 31));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(count, 4, reason: '복귀 촉발도 그대로다 — 가드는 버튼에만 걸린다');
+    });
+  });
+
+  group('도달하지 않는 콜백은 넘기지 않는다 (M25)', () {
+    testWidgets('조회 전 로딩 카드에는 다시 시도가 없다', (tester) async {
+      // 이 분기는 `state: ok` + 빈 목록이라 BusEmptyState의 ok 튜플이 action을
+      // null로 준다 — 넘긴 `onRetry`가 도달할 자리가 없다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      final hold = Completer<void>();
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          await hold.future;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => inRange,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text(BusStrings.emptyLoading), findsOneWidget);
+      expect(find.text(BusStrings.emptyDownAction), findsNothing);
+      expect(find.text(BusStrings.emptyNoStopAction), findsNothing);
+
+      hold.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('조회 실패 카드에는 정류장 등록이 없다', (tester) async {
+      // `fetch.state`가 낼 수 있는 값에 noStop이 없으므로 `onRegister`도 도달하지
+      // 않는다. 슬롯이 비었을 때만 등록 유도가 뜬다(위의 `슬롯이 비면…` 테스트).
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      final client = BusApiClient(
+        client: MockClient((_) async => throw http.ClientException('네트워크 없음')),
+        serviceKey: 'TESTKEY',
+        clock: () => inRange,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text(BusStrings.emptyDown), findsOneWidget);
+      expect(find.text(BusStrings.emptyNoStopAction), findsNothing);
+    });
+  });
+
   group('폴링 — busPollInterval', () {
     testWidgets('30초마다 다시 조회한다', (tester) async {
       // 첫 조회 1건 → 시계를 31초 밀고 타이머를 발화시키면 캐시가 만료돼 2건이 된다.

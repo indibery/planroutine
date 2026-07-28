@@ -57,6 +57,13 @@ class BusStrings {
   static const emptyFilteredHint = '이 정류장에 오는 다른 버스는 설정에서 고를 수 있어요';
   static const emptyDown = '지금 정보를 못 받았어요';
   static const emptyDownAction = '다시 시도';
+
+  /// `다시 시도`가 비행 중일 때 같은 자리에 놓는 진행 문구.
+  ///
+  /// 없으면 탭한 뒤 최대 10초(타임아웃) 동안 화면이 **전혀** 바뀌지 않는다 —
+  /// 실패는 캐시되지 않으므로 사용자가 다시 누르는 만큼 동시 요청이 늘어난다.
+  /// 키는 IPA에 하나뿐이라 개발계정 10,000/일 한도를 전 사용자가 공유한다.
+  static const emptyDownRetrying = '다시 확인하고 있어요';
   static const emptyKey = '버스 정보를 불러올 수 없어요';
   static const emptyKeyHint = '잠시 뒤 다시 열어주세요';
   static const emptyNoStop = '정류장을 등록하면 도착시간이 보여요';
