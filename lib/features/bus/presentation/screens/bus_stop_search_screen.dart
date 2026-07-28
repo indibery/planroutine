@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/pill_chip.dart';
 import '../../data/tago_response_parser.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
@@ -85,12 +86,30 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       // 못 고르면 이 화면에서 할 수 있는 일이 없으므로 ok가 아닌 모든 결과를
       // 실패로 말하고 재시도를 준다(TAGO는 정상이면 전국 138개를 준다).
       _cityFailure = result.outcome == TagoOutcome.ok ? null : result.outcome;
-      // 마지막으로 쓴 도시를 기본 선택으로 — 교체할 때 다시 고르지 않는다.
+      // **편집 중인 슬롯의** 도시를 먼저, 없으면 반대 슬롯 — 두 슬롯이 다 등록된
+      // 뒤 도착지를 고치는데 출발지의 도시가 복원되면, 잘못된 cityCode는 오류가
+      // 아니라 빈 응답으로 와서 `검색 결과가 없어요` 한 번을 헛치게 된다.
       final saved = ref.read(busSettingsProvider).valueOrNull;
-      final code = saved?.departure?.cityCode ?? saved?.arrival?.cityCode;
+      final code = saved?.stopFor(_slot)?.cityCode ??
+          saved?.stopFor(_slot.flipped)?.cityCode;
       final matched = _cities.where((c) => c.code == code).toList();
       _city = matched.isEmpty ? null : matched.first;
     });
+  }
+
+  /// 도시를 바꾼다 — **옛 도시의 결과를 함께 버린다.**
+  ///
+  /// 안 버리면 성남시가 강조된 칩 아래 수원시 목록이 깔린다. 검색어가 남아 있으면
+  /// 곧바로 새 도시로 다시 찾는다(그러지 않으면 이름을 넣어둔 채 `정류장 이름을
+  /// 입력해 주세요`가 떠, 도시를 고르기 전 검색과 같은 종류의 거짓말이 된다).
+  void _selectCity(CityCode city) {
+    setState(() {
+      _city = city;
+      _results = const [];
+      _searched = false;
+      _stopFailure = null;
+    });
+    if (_stopQuery.text.trim().isNotEmpty) _search();
   }
 
   Future<void> _search() async {
@@ -187,7 +206,9 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(BusStrings.cityLabel, style: AppTextStyles.eyebrow),
+          // eyebrow(자간 2.5 + 골드)는 영문 대문자 소제목용이다 — 한글 두 글자에
+          // 쓰면 `도 시`처럼 벌어진다.
+          Text(BusStrings.cityLabel, style: AppTextStyles.label),
           const SizedBox(height: AppSizes.spacing8),
           TextField(
             key: BusStopSearchScreen.cityFieldKey,
@@ -199,12 +220,15 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
           Wrap(
             spacing: AppSizes.spacing8,
             runSpacing: AppSizes.spacing4,
+            // 리포의 선택 가능한 칩은 전부 `PillChip`이다. raw `ChoiceChip`은
+            // `chipTheme.labelStyle`이 선택/비선택 구분 없는 `sub` 상수라 선택 채움
+            // (골드) 위에 크림 글씨가 얹혀 다크에서 대비 1.10:1로 사라진다 —
+            // 방금 고른 도시 이름이 안 읽힌다.
             children: _chipCities(cities).map((c) {
-              final selected = c.code == _city?.code;
-              return ChoiceChip(
-                label: Text(c.name),
-                selected: selected,
-                onSelected: (_) => setState(() => _city = c),
+              return PillChip(
+                label: c.name,
+                selected: c.code == _city?.code,
+                onTap: () => _selectCity(c),
               );
             }).toList(),
           ),
@@ -488,8 +512,10 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
                 ),
               )
             else ...[
-              Text(BusStrings.confirmRoutesTitle,
-                  style: AppTextStyles.eyebrow),
+              // 시트 안에서 사용자가 할 일을 말하는 **유일한 지시문**이다.
+              // eyebrow(10px·자간 2.5·골드)로 그리면 본문보다 작아 장식 라벨로
+              // 읽히고, 방향 확인이라는 이 시트의 존재 이유가 가장 약한 위계에 놓인다.
+              Text(BusStrings.confirmRoutesTitle, style: AppTextStyles.bodyL),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,

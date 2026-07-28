@@ -6,13 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/theme/app_text_styles.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
 import 'package:planroutine/features/bus/presentation/providers/bus_providers.dart';
 import 'package:planroutine/features/bus/presentation/screens/bus_stop_search_screen.dart';
+import 'package:planroutine/shared/widgets/pill_chip.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 화면(`_loadCities`·`_search`·`_pick`·`_chipCities`·`?slot=`)을 밟는 테스트다.
@@ -29,6 +32,12 @@ const _savedSuwon = BusStop(
   nodeNm: '수원시청.수원일자리센터',
   nodeNo: 2251,
   cityCode: _suwon,
+);
+const _savedHwaseong = BusStop(
+  nodeId: 'N4401',
+  nodeNm: '화성시청',
+  nodeNo: 4401,
+  cityCode: _hwaseong,
 );
 
 /// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
@@ -203,6 +212,12 @@ Future<void> _tapCity(WidgetTester tester, String name) async {
   await tester.pumpAndSettle();
 }
 
+/// 지금 선택된 도시 칩. 없으면 null.
+PillChip? _selectedChip(WidgetTester tester) {
+  final chips =
+      tester.widgetList<PillChip>(find.byType(PillChip)).where((c) => c.selected);
+  return chips.isEmpty ? null : chips.first;
+}
 
 void main() {
   group('화면 기본 배선', () {
@@ -430,4 +445,119 @@ void main() {
     });
   });
 
+  group('도시를 바꾸면 (M1) 옛 도시의 결과가 남지 않는다', () {
+    testWidgets('검색어를 지운 뒤 도시를 바꾸면 옛 목록이 사라진다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      expect(find.text('수원시청.수원일자리센터'), findsOneWidget);
+
+      await _typeStop(tester, '');
+      await _tapCity(tester, '성남시');
+
+      expect(find.text('수원시청.수원일자리센터'), findsNothing,
+          reason: '성남시가 강조된 칩 아래 수원시 목록이 깔려서는 안 된다');
+      expect(find.text(BusStrings.searchPrompt), findsOneWidget);
+    });
+
+    testWidgets('검색어가 남아 있으면 새 도시로 다시 찾는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      expect(tago.stopCalls, 1);
+
+      await _tapCity(tester, '화성시');
+
+      expect(tago.stopCalls, 2);
+      expect(find.text('화성시청'), findsOneWidget);
+      expect(find.text('수원시청.수원일자리센터'), findsNothing,
+          reason: '이름을 넣어둔 채 칩만 바꿨는데 옛 목록이 남으면 그 행을 탭한다');
+    });
+  });
+
+  group('도시 칩 (I13) — 공용 PillChip을 쓴다', () {
+    testWidgets('raw ChoiceChip이 아니라 PillChip이다', (tester) async {
+      await _pumpScreen(tester, _Tago());
+
+      expect(find.byType(ChoiceChip), findsNothing,
+          reason: 'chipTheme.labelStyle이 선택/비선택 구분 없는 sub라 골드 채움 위에서 사라진다');
+      expect(find.byType(PillChip), findsNWidgets(3));
+    });
+
+    testWidgets('선택된 도시 이름은 골드로 뒤집혀 읽힌다', (tester) async {
+      await _pumpScreen(tester, _Tago());
+      await _tapCity(tester, '성남시');
+
+      expect(_selectedChip(tester)?.label, '성남시');
+      final label = tester.widget<Text>(
+        find.descendant(
+          of: find.byWidgetPredicate((w) => w is PillChip && w.selected),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(label.style?.color, AppColors.gold,
+          reason: '다크에서 크림 글씨가 골드 채움에 얹히면 대비 1.10:1로 사라진다');
+    });
+  });
+
+  group('도시 복원 (M13) — 편집 중인 슬롯을 본다', () {
+    testWidgets('도착지를 고치면 도착지의 도시가 복원된다', (tester) async {
+      await _pumpScreen(
+        tester,
+        _Tago(),
+        slot: CommuteDirection.toHome,
+        settings: BusSettings.defaults.copyWith(
+          departure: _savedSuwon,
+          arrival: _savedHwaseong,
+        ),
+      );
+
+      expect(_selectedChip(tester)?.label, '화성시',
+          reason: '출발지의 도시를 복원하면 잘못된 cityCode가 빈 응답으로 와 헛치게 된다');
+    });
+
+    testWidgets('편집 중인 슬롯이 비어 있으면 반대 슬롯의 도시를 쓴다', (tester) async {
+      await _pumpScreen(
+        tester,
+        _Tago(),
+        slot: CommuteDirection.toHome,
+        settings: BusSettings.defaults.copyWith(departure: _savedSuwon),
+      );
+
+      expect(_selectedChip(tester)?.label, '수원시',
+          reason: '첫 등록의 두 번째 슬롯에서 도시를 다시 고르게 하지 않는다');
+    });
+  });
+
+  group('한글 라벨에 영문 장식용 eyebrow를 쓰지 않는다 (M14)', () {
+    testWidgets('도시 라벨은 label 스타일이다', (tester) async {
+      await _pumpScreen(tester, _Tago());
+
+      final style = tester.widget<Text>(find.text(BusStrings.cityLabel)).style;
+      expect(style, AppTextStyles.label);
+      expect(style?.letterSpacing, isNull, reason: '자간 2.5는 `도 시`처럼 벌어진다');
+    });
+
+    testWidgets('확인 시트의 지시문은 본문 위계로 그린다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+
+      final style =
+          tester.widget<Text>(find.text(BusStrings.confirmRoutesTitle)).style;
+      expect(style, AppTextStyles.bodyL,
+          reason: '시트 안 유일한 지시문이 장식 라벨보다 약하게 읽히면 방향 확인이 무너진다');
+    });
+  });
 }
