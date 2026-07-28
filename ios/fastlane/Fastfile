@@ -1,6 +1,28 @@
 default_platform(:ios)
 
 # ── 공통 헬퍼 ──
+# TAGO 인증키를 리포 밖에서 읽는다.
+#
+# 키를 못 읽으면 레인을 실패시킨다 — 키 없이 빌드하면 버스 기능이 조용히 죽은
+# 앱이 스토어에 올라간다. 화면에는 "버스 정보를 불러올 수 없어요"만 뜨고
+# 사용자는 원인을 알 수 없다.
+def tago_key
+  path = File.expand_path("~/.planroutine/tago.env")
+  UI.user_error!("TAGO 키 파일이 없습니다: #{path}") unless File.exist?(path)
+
+  key = File.readlines(path)
+           .map(&:strip)
+           .find { |l| l.start_with?("TAGO_KEY_DECODING=") }
+           &.split("=", 2)
+           &.last
+           &.strip
+
+  if key.nil? || key.empty?
+    UI.user_error!("TAGO_KEY_DECODING 이 비어 있습니다: #{path}")
+  end
+  key
+end
+
 # 함정 #6 회피: 통합 테스트(시뮬 빌드)가 남긴 native_assets 시뮬 슬라이스가
 # 디바이스 IPA에 묶이면 altool 91169("Simulator platforms aren't permitted")로
 # 거부된다. flutter clean + Pods/build 제거로 캐시를 비우고, 이어지는
@@ -252,6 +274,16 @@ platform :ios do
     )
   end
 
+  # 키 가드만 밟아 본다 — 배포를 트리거하지 않고 확인할 수 있어야 한다.
+  #
+  # beta로 확인하면 ASC 인증 + 버전 가드 + TestFlight 조회 + 파괴적 clean을 전부
+  # 지난 뒤에야 키에 도달한다(수 분 + Pods 삭제). 값싼 가드는 값싸게 밟을 수 있어야
+  # 실제로 밟힌다.
+  lane :check_tago_key do
+    key = tago_key
+    UI.success("TAGO 키 OK: #{key.length}자")
+  end
+
   # ── TestFlight 배포 ──
   desc "TestFlight에 새 빌드 업로드"
   lane :beta do
@@ -259,6 +291,13 @@ platform :ios do
 
     # 승인본 이하 버전이면 clean 빌드 전에 중단
     assert_version_bumped(asc_app(api_key))
+
+    # 키를 clean 앞에서 읽는다 — 값싼 가드를 파괴적 단계 앞에 모으는 이 레인의 규칙
+    # 그대로다(`reset_ios_caches`는 flutter clean + Pods/Podfile.lock/ios/build 삭제라
+    # 수 분이 걸리고 되돌릴 수 없다). 키를 깜빡한 배포가 캐시를 날린 뒤 실패하면
+    # 가드가 있는 의미가 없다.
+    key = tago_key
+    UI.message("TAGO 키: #{key.length}자 주입")
 
     # 빌드 번호 자동 증가 (TestFlight 최신 빌드 + 1)
     latest = latest_testflight_build_number(app_identifier: APP_BUNDLE_ID)
@@ -272,6 +311,7 @@ platform :ios do
       sh("flutter", "build", "ipa",
         "--release",
         "--build-number=#{new_build_number}",
+        "--dart-define=TAGO_KEY=#{key}",
       )
     end
 
