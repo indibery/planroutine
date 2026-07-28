@@ -297,6 +297,43 @@ void main() {
 
       expect(count, 1, reason: '30초 캐시가 복귀 조회를 흡수한다');
     });
+
+    testWidgets('캐시가 만료된 뒤 복귀하면 다시 조회한다', (tester) async {
+      // 위의 `펼친 채 복귀…`는 캐시 흡수를 검사한다 — 그래서 복귀가 tick조차 하지
+      // 않아도 통과한다. 촉발 자체를 고정하는 것은 이 테스트다: 시계를 밀어 캐시를
+      // 만료시키면 복귀 tick이 네트워크까지 도달해야 한다.
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = inRange;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(count, 1);
+
+      now = now.add(const Duration(seconds: 31));
+      tester.binding
+          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding
+          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(count, 2,
+          reason: '복귀가 조회를 촉발한다 — 이 단정이 그 분기의 유일한 가드다');
+    });
   });
 
   group('폴링 — busPollInterval', () {
