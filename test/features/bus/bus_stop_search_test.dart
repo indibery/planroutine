@@ -102,6 +102,22 @@ void main() {
           reason: '막차 후·주말이라 정말 안 오는 것은 등록을 막을 이유가 아니다');
     });
 
+    testWidgets('막차 후(closed)는 안 오는 것이므로 저장을 막지 않는다', (tester) async {
+      final saved = await _tapAccept(
+        tester,
+        arrivals: const [],
+        state: BusCardState.closed,
+      );
+      expect(saved?.routeIds, isEmpty,
+          reason: 'closed를 실패로 취급하면 막차 후 등록이 영구 불가가 된다');
+    });
+
+    testWidgets('키 문제는 키 문구를 쓴다 — 장애 문구와 섞지 않는다', (tester) async {
+      await _showSheet(tester, arrivals: const [], state: BusCardState.keyError);
+      expect(find.text('버스 정보를 불러올 수 없어요'), findsOneWidget);
+      expect(find.text('지금 정보를 못 받았어요'), findsNothing);
+    });
+
     testWidgets('조회 실패는 안 오는 것과 다르게 말하고 저장을 막는다', (tester) async {
       await _showSheet(tester, arrivals: const [], state: BusCardState.down);
 

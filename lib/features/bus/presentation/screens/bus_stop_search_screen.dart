@@ -305,6 +305,14 @@ class BusStopConfirmSheet extends StatefulWidget {
 class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
   late Set<String> _checked;
 
+  /// 전부 해제한 채 `맞아요`를 눌렀는가 — 시트 **안에** 경고를 띄운다.
+  ///
+  /// 스낵바를 쓰지 않는다. `ScaffoldMessenger`는 루트 Scaffold에 그리는데 시트는 그
+  /// 위에 푸시된 라우트라, 스낵바가 시트와 scrim에 정확히 덮여 보이지 않는다 —
+  /// 저장은 막혔는데 아무 일도 없는 것처럼 읽혀 `맞아요`가 죽은 버튼이 된다.
+  /// 시트 안에서 벌어진 일은 시트 안에서 말한다.
+  bool _needRoute = false;
+
   /// 못 물어본 것인가. 이때는 확인할 재료가 0이므로 저장을 막는다.
   bool get _fetchFailed =>
       widget.state == BusCardState.down || widget.state == BusCardState.keyError;
@@ -318,9 +326,7 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
 
   void _accept() {
     if (widget.arrivals.isNotEmpty && _checked.isEmpty) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text(BusStrings.confirmNeedRoute)));
+      setState(() => _needRoute = true);
       return;
     }
 
@@ -386,6 +392,19 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
                 ),
               ),
             ],
+            if (_needRoute)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSizes.spacing8),
+                child: Text(
+                  BusStrings.confirmNeedRoute,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.inkRed,
+                  ),
+                ),
+              ),
             const SizedBox(height: AppSizes.spacing16),
             Row(
               children: [
@@ -422,6 +441,8 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
       onChanged: (on) => setState(() {
         if (on ?? false) {
           _checked.add(arrival.routeId);
+          // 하나라도 다시 켜졌으면 경고를 내린다 — 이미 고친 것을 계속 꾸짖지 않는다.
+          _needRoute = false;
         } else {
           _checked.remove(arrival.routeId);
         }
