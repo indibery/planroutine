@@ -2859,8 +2859,8 @@ import '../../domain/bus_card_view.dart';
 /// **신호색 토큰을 쓰지 않는다**는 사실을 소스 문자열 검사로 지킨다.
 ///
 /// 그 가드가 주석까지 통째로 훑기 때문에 **이 주석은 토큰 이름을 적지 않는다** —
-/// 적으면 설명하려던 가드에 자기가 걸린다. 가드를 멍청하게 두는 편이 값이 크다:
-/// `// TODO: busSignal 써보자` 같은 주석도 같이 잡힌다.
+/// 적으면 설명하려던 가드에 자기가 걸린다(이 문단을 고쳐 쓰다 두 번 걸렸다).
+/// 가드를 멍청하게 두는 편이 값이 크다: 주석에 이름만 적어둔 미래 계획까지 잡힌다.
 class BusBodyText extends StatelessWidget {
   const BusBodyText({super.key, required this.view});
 
