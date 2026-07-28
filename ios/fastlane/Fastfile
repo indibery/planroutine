@@ -25,6 +25,27 @@ def tago_key
   key
 end
 
+# 빌드가 끝나면 키가 되돌아온 두 파일을 지운다.
+#
+# `--dart-define-from-file`로 넘겨 argv·로그 echo에서는 키가 사라지지만, flutter는
+# **모든 dart-define을 base64 CSV로 리포 안 두 파일에 다시 쓴다** —
+# `ios/Flutter/Generated.xcconfig`(0644)와 `ios/Flutter/flutter_export_environment.sh`(0755).
+# 즉 0700 임시 디렉터리의 보호는 빌드 시점까지이고, 그 뒤에는 world-readable 파일 2개가
+# 다음 `flutter clean`(= 다음 beta의 `reset_ios_caches`)까지 키를 들고 있다.
+# 폴더 압축·백업·에이전트 grep·실수로 `git add -f` 하는 순간이 곧 유출이다.
+#
+# 다음 flutter 명령이 어차피 재생성하므로 지우는 비용은 0이다. IPA는 이미 만들어졌고
+# 이 레인의 남은 단계(IPA 탐색·업로드)는 이 파일들을 읽지 않는다.
+def strip_dart_defines
+  ios_dir = File.expand_path("..", __dir__)
+  targets = [
+    File.join(ios_dir, "Flutter/Generated.xcconfig"),
+    File.join(ios_dir, "Flutter/flutter_export_environment.sh"),
+  ]
+  removed = targets.count { |f| File.exist?(f) && (File.delete(f) == 1) }
+  UI.message("키가 재기록되는 빌드 설정 파일 #{removed}개를 지웠다")
+end
+
 # 함정 #6 회피: 통합 테스트(시뮬 빌드)가 남긴 native_assets 시뮬 슬라이스가
 # 디바이스 IPA에 묶이면 altool 91169("Simulator platforms aren't permitted")로
 # 거부된다. flutter clean + Pods/build 제거로 캐시를 비우고, 이어지는
@@ -319,6 +340,8 @@ platform :ios do
       # 빌드 출력은 그대로 보인다(`log: false`는 출력까지 함께 끈다).
       #
       # 파일은 리포 밖 시스템 임시 디렉터리(0700)에 만들고 블록이 끝나면 지워진다.
+      # **다만 그 보호는 빌드 시점까지다** — flutter가 키를 리포 안으로 되돌려
+      # 쓰므로 블록 뒤의 정리가 짝이다(아래 `strip_dart_defines`).
       define_file = File.join(tmp, "tago.json")
       File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
 
@@ -330,6 +353,8 @@ platform :ios do
         )
       end
     end
+
+    strip_dart_defines
 
     # IPA 파일명이 한글(공직플랜.ipa)이라 Ruby Dir[] glob이 매치 못함. Dir.entries로
     # 직접 순회해 찾는다. 파일명이 또 바뀌어도 깨지지 않는다.
