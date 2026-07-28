@@ -1671,7 +1671,7 @@ bool _sameDay(DateTime a, DateTime b) =>
 - [ ] **Step 4: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/domain/bus_display_test.dart`
-Expected: PASS (14 tests)
+Expected: PASS (15 tests — 정렬 검증 테스트 포함)
 
 - [ ] **Step 5: 커밋**
 
@@ -1981,7 +1981,7 @@ BusCardView buildBusCardView({
 - [ ] **Step 4: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/domain/bus_card_view_test.dart`
-Expected: PASS (15 tests)
+Expected: PASS (15 tests — 정렬 검증 테스트 포함)
 
 - [ ] **Step 5: 커밋**
 
