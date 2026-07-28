@@ -1,7 +1,7 @@
 # 공직플랜(PlanRoutine) 개인정보 처리방침
 
 > 이 문서는 앱 출시 전 웹에 호스팅되어 App Store 지원 URL과 Google OAuth
-> 동의 화면에서 링크로 참조됩니다. 초안 기준 최종 개정일: 2026-04-22.
+> 동의 화면에서 링크로 참조됩니다. 최종 개정일: 2026-07-29.
 
 ## 1. 개요
 
@@ -117,6 +117,8 @@ User Data Policy](https://developers.google.com/terms/api-services-user-data-pol
 - 2026-04-22: 초안 작성
 - 2026-05-04: Google API Services User Data Policy의 Limited Use 준수 항목(§5-1)
   + 이벤트 ID 로컬 보관(§5-2) 명시 추가
+- 2026-07-29: 버스 도착 정보 조회(§ 버스 도착 정보 조회) 추가 — 국토교통부
+  TAGO 서버로 정류장 ID·도시코드가 전송되는 경로 명시. 기본 꺼짐.
 
 ## 10. 연락처
 
