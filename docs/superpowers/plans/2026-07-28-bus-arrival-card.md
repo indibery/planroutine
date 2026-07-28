@@ -2439,7 +2439,7 @@ class _KeyRejected implements Exception {
 - [ ] **Step 4: 테스트가 통과한다**
 
 Run: `flutter test test/features/bus/data/bus_api_client_test.dart`
-Expected: PASS (13 tests)
+Expected: PASS (14 tests)
 
 - [ ] **Step 5: analyze**
 
