@@ -33,14 +33,10 @@ class BusEmptyState extends StatelessWidget {
     // `closed`로 바꾸므로 이 분기로 오지 않는다. 그래서 로딩 문구가 맞다.
     final (title, hint, action, onAction) = switch (state) {
       BusCardState.ok => (BusStrings.emptyLoading, null, null, null),
-      BusCardState.stale => (
-          BusStrings.emptyDown,
-          null,
-          BusStrings.emptyDownAction,
-          onRetry,
-        ),
       BusCardState.closed => (BusStrings.emptyClosed, null, null, null),
-      BusCardState.down => (
+      // stale이 빈 목록으로 여기까지 오면 갱신 실패와 구분할 정보가 없다 —
+      // down과 같은 문구를 **의도적으로** 공유한다(와일드카드가 아니라 이름을 둘 다 적는다).
+      BusCardState.stale || BusCardState.down => (
           BusStrings.emptyDown,
           null,
           BusStrings.emptyDownAction,

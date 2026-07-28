@@ -124,18 +124,22 @@ void main() {
       await _pump(tester, view: _view(state: BusCardState.closed, items: const []));
       expect(find.text('오늘 운행이 끝났어요'), findsOneWidget);
 
+      // down·keyError·noStop 세 상태는 앱이 항상 fetchedAt: null로 만든다 — 제목줄에
+      // 기준시각이 붙으면 "정보를 못 받았는데 07:32 기준"이라는 자기모순이 된다.
+      // 각 상태의 트리가 살아 있는 동안(다음 _pump로 교체되기 전에) 바로 확인한다 —
+      // 마지막에 한 번만 확인하면 그 시점에 남아 있는 트리(noStop)만 검증된다.
+      // closed는 막차 후 조회 성공이라 기준시각이 붙는 것이 정상이라 제외한다.
       await _pump(tester, view: _view(state: BusCardState.down, items: const []));
       expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
       expect(find.text('다시 시도'), findsOneWidget);
+      expect(find.textContaining('기준'), findsNothing);
 
       await _pump(tester, view: _view(state: BusCardState.keyError, items: const []));
       expect(find.text('버스 정보를 불러올 수 없어요'), findsOneWidget);
+      expect(find.textContaining('기준'), findsNothing);
 
       await _pump(tester, view: _view(state: BusCardState.noStop, items: const []));
       expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
-
-      // 이 세 상태는 앱이 항상 fetchedAt: null로 만든다 — 제목줄에 기준시각이
-      // 붙으면 "정보를 못 받았는데 07:32 기준"이라는 자기모순이 된다.
       expect(find.textContaining('기준'), findsNothing);
     });
 
