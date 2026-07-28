@@ -1,0 +1,156 @@
+import '../domain/bus_arrival.dart';
+import '../domain/bus_stop.dart';
+
+/// TAGO 응답을 읽은 결과.
+enum TagoOutcome {
+  /// 정상 — 항목이 하나 이상 있다.
+  ok,
+
+  /// 데이터 없음. 막차 후이거나 도시코드를 잘못 골랐다.
+  ///
+  /// TAGO는 이 경우에도 `resultCode "00"`을 주고 `items`를 **빈 문자열**로 준다
+  /// (실측 확인). `resultCode '03'`(NODATA)은 관측되지 않았다.
+  empty,
+
+  /// 인증키 문제 등 — `resultCode`가 `"00"`이 아니다.
+  keyError,
+
+  /// 응답 껍데기가 예상과 다르다.
+  malformed,
+}
+
+/// 파싱 결과 — 결과 종류와 항목을 함께 든다.
+class TagoResult<T> {
+  const TagoResult(this.outcome, [this.items = const []]);
+
+  final TagoOutcome outcome;
+  final List<T> items;
+
+  bool get isOk => outcome == TagoOutcome.ok;
+}
+
+/// 도시코드 1건.
+class CityCode {
+  const CityCode({required this.code, required this.name});
+
+  /// `citycode` — **int로 온다**(실측). 시·도가 아니라 시·군 단위다.
+  final int code;
+
+  final String name;
+}
+
+/// 도착정보 응답 → 노선별 1건으로 축약된 목록(빠른 순).
+TagoResult<BusArrival> parseArrivals(Map<String, dynamic> json) {
+  return _parse(json, (rows) {
+    // 같은 노선이 다음 차·그다음 차로 여러 건 온다(실측: 5노선 10항목).
+    // 축약하지 않으면 카드에 `92번 10분 · 92번 25분`이 나란히 떠 한 노선이
+    // 두 줄을 쓴다.
+    final fastest = <String, BusArrival>{};
+    for (final row in rows) {
+      final arrival = _arrival(row);
+      final prev = fastest[arrival.routeId];
+      if (prev == null || arrival.arrMin < prev.arrMin) {
+        fastest[arrival.routeId] = arrival;
+      }
+    }
+    final list = fastest.values.toList()
+      ..sort((a, b) => a.arrMin.compareTo(b.arrMin));
+    return list;
+  });
+}
+
+/// 정류장 검색 응답 → 정류장 목록.
+///
+/// `cityCode`는 응답에 없어 호출자가 넘긴다 — 이후 도착정보 조회에 필요하다.
+TagoResult<BusStop> parseStops(
+  Map<String, dynamic> json, {
+  required int cityCode,
+}) {
+  return _parse(json, (rows) {
+    return rows
+        .map((row) => BusStop(
+              nodeId: row['nodeid']?.toString() ?? '',
+              nodeNm: row['nodenm']?.toString() ?? '',
+              nodeNo: _int(row['nodeno']),
+              cityCode: cityCode,
+            ))
+        .where((s) => s.nodeId.isNotEmpty)
+        .toList();
+  });
+}
+
+/// 도시코드 목록 응답.
+TagoResult<CityCode> parseCities(Map<String, dynamic> json) {
+  return _parse(json, (rows) {
+    return rows
+        .map((row) => CityCode(
+              code: _int(row['citycode']),
+              name: row['cityname']?.toString() ?? '',
+            ))
+        .where((c) => c.code > 0)
+        .toList();
+  });
+}
+
+/// 껍데기 해석 + `items` 세 형태 정규화를 한곳에 모은다.
+///
+/// 세 엔드포인트가 같은 껍데기를 쓰므로 판정을 복제하지 않는다 — 복제하면
+/// 한쪽만 고쳐 어긋난다.
+TagoResult<T> _parse<T>(
+  Map<String, dynamic> json,
+  List<T> Function(List<Map<String, dynamic>> rows) build,
+) {
+  final response = json['response'];
+  if (response is! Map) return const TagoResult(TagoOutcome.malformed);
+
+  final header = response['header'];
+  final body = response['body'];
+  if (header is! Map || body is! Map) {
+    return const TagoResult(TagoOutcome.malformed);
+  }
+
+  if (header['resultCode']?.toString() != '00') {
+    return const TagoResult(TagoOutcome.keyError);
+  }
+
+  final rows = _rows(body['items']);
+  if (rows.isEmpty) return const TagoResult(TagoOutcome.empty);
+
+  final built = build(rows);
+  if (built.isEmpty) return const TagoResult(TagoOutcome.empty);
+  return TagoResult(TagoOutcome.ok, built);
+}
+
+/// `items`는 Map(단건) · List(복수) · ""(없음) 세 형태로 온다.
+///
+/// 빈 문자열이 오는 것이 핵심이다 — `items['item']`으로 바로 들어가면 String에
+/// 인덱스 접근이라 파싱이 깨진다.
+List<Map<String, dynamic>> _rows(Object? items) {
+  if (items is! Map) return const [];
+  final item = items['item'];
+  if (item is List) {
+    return item.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  }
+  if (item is Map) return [item.cast<String, dynamic>()];
+  return const [];
+}
+
+BusArrival _arrival(Map<String, dynamic> row) {
+  final seconds = _int(row['arrtime']);
+  return BusArrival(
+    routeId: row['routeid']?.toString() ?? '',
+    // routeno가 int와 String으로 섞여 온다(`92` / `"92-1"`). `as String` 캐스트는
+    // 숫자 노선번호에서 크래시하므로 반드시 toString으로 받는다.
+    routeNo: row['routeno']?.toString() ?? '',
+    arrMin: seconds <= 0 ? 0 : (seconds / 60).ceil(),
+    prevCnt: _int(row['arrprevstationcnt']),
+    lowFloor: row['vehicletp']?.toString() == '저상버스',
+  );
+}
+
+/// int로 오는 값이 문자열로 바뀌어도 읽는다(포맷 변경 내성).
+int _int(Object? raw) {
+  if (raw is int) return raw;
+  if (raw is num) return raw.toInt();
+  return int.tryParse(raw?.toString() ?? '') ?? 0;
+}
