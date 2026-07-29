@@ -15,14 +15,40 @@ void main() {
       expect(p, contains('시작일 기준'));
     });
 
-    test('업무는 쪽지에서 기한을 찾는 지시다', () {
+    test('업무는 날짜 있는 할 일을 찾는 지시다', () {
       final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
 
-      expect(p, contains('쪽지'));
-      expect(p, contains('마감'));
-      expect(p, contains('기한'));
+      expect(p, contains('내가 해야 할 일'));
+      expect(p, contains('기억해야 할 날'));
       // 기간은 **마지막 날** 기준 — 마감은 끝나는 날이 중요하다. 행사와 반대다.
       expect(p, contains('마지막 날'));
+    });
+
+    test('학교에 묶이지 않는다 — 소스를 좁히면 그 밖의 사진이 걸러진다', () {
+      // 실사용 예: 도서관 대출 화면의 `반납예정일`(사용자 사진 2026-07-29).
+      // 학교 문서라고 못박으면 AI가 "대상이 아니다"로 판단할 수 있다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, isNot(contains('학교에서 받은')));
+      expect(p, contains('무엇이든 될 수 있습니다'));
+    });
+
+    test('학교 밖 기한 낱말들을 예시로 준다', () {
+      // 낱말을 열거하지 않으면 `반납예정일`·`납부기한`처럼 `마감`이라는 말이 없는
+      // 표현을 AI가 놓친다 — 도서관 화면이 정확히 그 경우였다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      for (final word in ['반납예정일', '납부기한', '유효기간', '예약일']) {
+        expect(p, contains(word), reason: '$word이 예시에 없다');
+      }
+    });
+
+    test('같은 날짜 여러 항목은 한 건으로 묶으라고 말한다', () {
+      // 도서관 화면은 책 2권이 같은 반납일이었다. 2건으로 넣으면 오늘 탭에 같은
+      // 일이 두 줄로 뜬다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, contains('한 건으로 묶고'));
     });
 
     test('두 프롬프트가 기간 규칙을 서로 반대로 말한다', () {
@@ -60,13 +86,14 @@ void main() {
       expect(p, contains('1~2월은 2027년'));
     });
 
-    test('업무 프롬프트는 기한 없는 행사를 걸러내라고 말한다', () {
-      // 쪽지에 운동회 안내만 있고 내가 할 일이 없으면 아무것도 뽑지 않아야 한다 —
-      // 안 그러면 오늘 탭에 완료할 수 없는 항목이 쌓인다.
+    test('업무 프롬프트는 내 일이 아닌 것을 걸러내라고 말한다', () {
+      // 안내만 있고 내가 할 일이 없으면 아무것도 뽑지 않아야 한다 — 안 그러면
+      // 오늘 탭에 완료할 수 없는 항목이 쌓인다. 남이 하는 일·끝난 일도 같다.
       final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
 
       expect(p, contains('건너뜁니다'));
       expect(p, contains('빈 배열'));
+      expect(p, contains('남이 하는 일'));
     });
   });
 }

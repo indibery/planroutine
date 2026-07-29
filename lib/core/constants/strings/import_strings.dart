@@ -32,13 +32,18 @@ class ImportStrings {
   ///
   /// 한 문구로 `일정표 사진`이라고만 하면 쪽지를 고른 사용자가 일정표를 찾아 헤맨다.
   static String aiPromptCopiedFor(EntryKind kind) => kind == EntryKind.task
-      ? '프롬프트를 복사했어요. AI 앱에 쪽지·안내문 사진과 함께 붙여넣으세요'
+      ? '프롬프트를 복사했어요. AI 앱에 사진과 함께 붙여넣으세요 (쪽지·영수증·확인 화면 등)'
       : '프롬프트를 복사했어요. AI 앱에 일정표 사진과 함께 붙여넣으세요';
 
   /// 히어로의 종류 칩 라벨. `EntryKind.label`(업무·행사)만으로는 **무엇을 찍어야
-  /// 하는지**가 안 드러나 소스 문서를 말한다 — 그래서 별도 안내 줄이 필요 없다.
+  /// 하는지**가 안 드러나 무엇을 찍는지를 말한다 — 그래서 별도 안내 줄이 필요 없다.
+  ///
+  /// **`쪽지`라고 못박지 않는다.** 이 경로가 받는 것은 학교 문서만이 아니다 —
+  /// 도서관 반납예정일, 납부기한, 유효기간처럼 **날짜가 있고 내가 해야 하는 일**이면
+  /// 무엇이든 된다(사용자 요청 2026-07-29: 도서관 대출 화면 사진). 라벨이 좁으면
+  /// 사용자가 그것을 찍어도 되는지 모른다.
   static const aiSourceEvent = '행사 일정표';
-  static const aiSourceTask = '업무 쪽지';
+  static const aiSourceTask = '내 할 일·기한';
 
   static const aiParseEmpty = '붙여넣은 내용에서 행사를 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
   static const aiPreviewTitle = '붙여넣기 미리보기';
@@ -51,7 +56,7 @@ class ImportStrings {
   /// **`행사`를 떼었다.** 쪽지의 마감 기한도 이 경로로 들어오므로(업무로 저장된다)
   /// 제목이 행사라고 못박으면 사용자가 쪽지를 넣을 수 있다는 것을 모른다.
   static const heroTitle = '사진으로 넣기';
-  static const heroSubtitle = '일정표나 쪽지를 찍어 AI에게 맡기세요';
+  static const heroSubtitle = '일정표나 할 일이 적힌 걸 찍어 AI에게 맡기세요';
   static const heroStepCopy = '① 프롬프트';
   static const heroStepAway = 'AI 앱';
   static const heroStepPaste = '② 붙여넣기';

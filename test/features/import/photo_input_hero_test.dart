@@ -162,8 +162,8 @@ void main() {
     await tester.tap(find.text(ImportStrings.heroStepCopy));
     await tester.pumpAndSettle();
 
-    expect(clipboardText, contains('쪽지'));
-    expect(clipboardText, contains('마감'));
+    expect(clipboardText, contains('내가 해야 할 일'));
+    expect(clipboardText, contains('반납예정일'), reason: '학교 밖 낱말도 예시에 있어야 한다');
     expect(clipboardText, isNot(contains('표에 있는 모든 일정')));
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
   });
