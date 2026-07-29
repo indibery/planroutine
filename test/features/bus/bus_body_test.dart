@@ -103,6 +103,24 @@ void main() {
       expect(find.text('720'), findsOneWidget);
     });
 
+    testWidgets('라벨이 스크린리더에 도착 시각을 준다 — 눈금은 읽지 않는다', (tester) async {
+      // 이 모양은 분을 **화면 위치로만** 인코딩한다(점은 색뿐, 라벨은 노선번호뿐).
+      // 감싸지 않으면 `720`·`61`이 맥락 없이 읽혀 화면을 못 보는 사용자에게
+      // 정보가 0이 된다 — `간단히`는 같은 데이터를 `720번` + `2분`으로 읽어 준다.
+      final handle = tester.ensureSemantics();
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('A', '720', 2), _a('B', '61', 0)])),
+      );
+
+      expect(find.bySemanticsLabel('720번 2분'), findsOneWidget);
+      expect(find.bySemanticsLabel('61번 곧 도착'), findsOneWidget);
+      // 눈금은 좌표계일 뿐이라 라벨의 분과 섞이면 숫자가 두 배로 들린다.
+      expect(find.bySemanticsLabel('15분'), findsNothing);
+
+      handle.dispose();
+    });
+
     testWidgets('점과 라벨이 분에 비례한 x좌표에 놓인다', (tester) async {
       // 위 테스트처럼 **존재만** 보면 무검증이다 — `_dot`의 `left` 식을 아무렇게나
       // 바꾸거나 `_labels`의 `- 14` 중심 보정을 지워도 `find.text`는 통과한다

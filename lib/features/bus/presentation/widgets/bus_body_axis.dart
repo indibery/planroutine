@@ -42,7 +42,9 @@ class BusBodyAxis extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _scale(),
+        // 눈금(`지금 · 5분 · 10분 · 15분`)은 **눈으로만** 읽는 좌표계다. 스크린리더가
+        // 이것까지 읽으면 라벨의 실제 도착 시각과 섞여 숫자가 두 배로 들린다.
+        ExcludeSemantics(child: _scale()),
         const SizedBox(height: 2),
         SizedBox(height: 14, child: _rail()),
         const SizedBox(height: 2),
@@ -138,16 +140,27 @@ class BusBodyAxis extends StatelessWidget {
               left: (dotPosition(a.arrMin) * width) - 14,
               top: 0,
               width: 28,
-              child: Text(
-                a.routeNo,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.visible,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: urgent ? AppColors.ink : AppColors.sub,
+              // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
+              // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
+              // 스크린리더에는 `720`·`150`이 맥락 없이 읽혀 정보가 0이 된다 —
+              // `간단히`가 `720번` + `2분`을 읽어 주는 것과 같은 사실을 말해야 한다.
+              // 문구는 `간단히`와 **같은 상수**를 쓴다(두 모양이 갈라지지 않게).
+              // 목록의 중요 ★를 `Semantics`로 감싼 것과 같은 수법이다.
+              child: Semantics(
+                label: '${BusStrings.routeLabel(a.routeNo)} '
+                    '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
+                excludeSemantics: true,
+                child: Text(
+                  a.routeNo,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: urgent ? AppColors.ink : AppColors.sub,
+                  ),
                 ),
               ),
             );
