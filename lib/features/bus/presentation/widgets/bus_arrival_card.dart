@@ -117,7 +117,7 @@ class BusArrivalCard extends StatelessWidget {
         else
           Expanded(
             child: Text(
-              '· $stopName',
+              BusStrings.stopSegment(stopName),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -196,7 +196,7 @@ class BusArrivalCard extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onFlipDirection,
         child: Text(
-          '${direction.otherLabel} ⌄',
+          BusStrings.flip(direction.otherLabel),
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 12,

@@ -2,6 +2,12 @@
 class BusStrings {
   BusStrings._();
 
+  // ── 카드 모양 이름 (BusCardStyle) ─────────────────────────
+  /// `SealStyle`이 `TodayStrings`를 참조하는 것과 같은 형태다 — enum에 한글을 박으면
+  /// 문구를 찾을 때 도메인까지 훑어야 한다.
+  static const styleText = '간단히';
+  static const styleAxis = '시간 축';
+
   // ── 설정 섹션 ──────────────────────────────────────────────
   static const section = '버스 도착';
   static const sectionDescription = '오늘 탭 맨 위에 출퇴근 버스 도착시간을 보여줍니다';
@@ -26,6 +32,18 @@ class BusStrings {
   static const routeToWork = '🏠→🏫 출근';
   static const routeToHome = '🏫→🏠 퇴근';
 
+  /// "720번" — 노선번호에 붙는 조사. **카드와 확인 시트가 같은 함수를 쓴다.**
+  ///
+  /// 인라인으로 두면 표기를 손볼 때 한쪽만 따라간다(`시간 축`은 폭이 없어 번을
+  /// 붙이지 않으므로 이 함수를 쓰지 않는다 — 의도된 예외다).
+  static String routeLabel(String routeNo) => '$routeNo번';
+
+  /// "· 수원시청" — 제목줄에서 방향 이름 뒤에 붙는 정류장 세그먼트.
+  static String stopSegment(String stopName) => '· $stopName';
+
+  /// "퇴근 보기 ⌄" — 반대 방향으로 넘어가는 링크. 글리프를 문구와 함께 든다.
+  static String flip(String otherLabel) => '$otherLabel ⌄';
+
   static const seeToWork = '출근 보기';
   static const seeToHome = '퇴근 보기';
   static const collapse = '접기';
@@ -41,6 +59,13 @@ class BusStrings {
   static String moreCount(int n) => '$n개 더';
 
   static String minutes(int n) => '$n분';
+
+  /// "2분 후" — 확인 시트처럼 도착 시각을 **문장으로** 말하는 자리에서만 쓴다.
+  ///
+  /// 카드는 좁아서 [minutes]만 쓴다. 두 표기가 갈라져 있던 것이 아니라 같은 값을
+  /// 두 방식으로 조립하고 있었으므로, `후`를 붙이는 규칙도 여기 한 곳에 둔다.
+  static String minutesLater(int n) => '${minutes(n)} 후';
+
   static const arrivingNow = '곧 도착';
 
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.

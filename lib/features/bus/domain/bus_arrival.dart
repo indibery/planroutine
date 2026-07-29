@@ -1,3 +1,5 @@
+import '../../../core/constants/app_strings.dart';
+
 /// 도착 예정 버스 1건 — TAGO 응답 1항목을 정규화한 결과.
 ///
 /// DB에 저장되지 않는 계산 결과이므로 freezed 없이 plain class로 둔다
@@ -35,6 +37,8 @@ class BusArrival {
     );
   }
 
+  /// 디버그용이지만 분 표기는 화면과 **같은 함수**로 만든다 — 같은 값을 두 방식으로
+  /// 조립하면 단위를 바꿀 때 한쪽만 따라간다.
   @override
-  String toString() => 'BusArrival($routeNo, $arrMin분)';
+  String toString() => 'BusArrival($routeNo, ${BusStrings.minutes(arrMin)})';
 }

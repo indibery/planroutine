@@ -44,7 +44,7 @@ class BusBodyText extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          '${arrival.routeNo}번',
+          BusStrings.routeLabel(arrival.routeNo),
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,

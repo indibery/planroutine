@@ -234,11 +234,11 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
           _checked.remove(arrival.routeId);
         }
       }),
-      title: Text('${arrival.routeNo}번'),
+      title: Text(BusStrings.routeLabel(arrival.routeNo)),
       secondary: Text(
         arrival.arrMin == 0
             ? BusStrings.arrivingNow
-            : '${BusStrings.minutes(arrival.arrMin)} 후',
+            : BusStrings.minutesLater(arrival.arrMin),
         style: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 13,

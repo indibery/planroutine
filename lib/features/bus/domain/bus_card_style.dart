@@ -1,3 +1,5 @@
+import '../../../core/constants/app_strings.dart';
+
 /// 카드 본문 모양. 설정 탭에서 고른다.
 ///
 /// 값 자체가 모양을 뜻하고 `BusArrivalCard._body()`의 `switch`가 위젯을 고른다 —
@@ -10,14 +12,14 @@ enum BusCardStyle {
   /// **기본 모양은 신호색을 쓰지 않는다** — `bus_body_test.dart`가 `bus_body_text.dart`
   /// 소스에 신호색 토큰 이름이 없는지 검사하는 가드로 그 사실을 지킨다(enum 필드로
   /// 적어두는 것은 선언을 되읽는 항진 단정일 뿐 화면을 지키지 못한다).
-  text('간단히'),
+  text(BusStrings.styleText),
 
   /// 시간 축 — 0~15분 축에 점으로. 간격이 공간으로 보인다.
   ///
   /// 두 버스가 3분 안으로 붙으면 점과 라벨이 겹치고 15분 넘는 버스는 오른쪽 끝에
   /// 몰리므로 조건이 맞는 사람이 고르는 선택지다. 신호색은 `BusBodyAxis`가 직접
   /// 참조한다.
-  axis('시간 축');
+  axis(BusStrings.styleAxis);
 
   const BusCardStyle(this.label);
 
