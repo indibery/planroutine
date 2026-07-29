@@ -9,7 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/ai_task_share_tile.dart';
 import '../widgets/app_info_list_tile.dart';
-import '../widgets/bus_settings_tiles.dart';
+import '../widgets/bus_summary_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
 import '../widgets/export_list_tile.dart';
 import '../widgets/calendar_integration_section.dart';
@@ -74,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(
             title: BusStrings.section,
             subtitle: BusStrings.sectionDescription,
-            child: BusSettingsTiles(),
+            child: BusSummaryListTile(),
           ),
           const SettingsSection(
             title: SettingsStrings.exportSection,
