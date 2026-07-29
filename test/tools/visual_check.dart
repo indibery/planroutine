@@ -235,6 +235,20 @@ http.Response _sweepTago(http.Request request) {
 }
 
 void main() {
+  // **폭을 재는 모든 검사가 실제 Pretendard를 쓴다.** 기본 테스트 폰트는 모든 글자가
+  // 1em(고정폭)이라 숫자·마침표·공백·괄호를 실기기보다 두 배 가까이 넓게 잡는다
+  // (같은 문자열 실측 173pt vs 폴백 305pt = 1.76배, ③의 첫 테스트가 그 수치를 찍는다).
+  //
+  // 이 로더를 ③에만 두었던 동안 ②가 `stale` 제목줄에서 **없는 오버플로 21px**을 만들어
+  // 실제로 오진을 하나 낳았다(수정까지 넣고 되돌렸다 — 헤더의 기록 참고). 폭 검사에서
+  // 폰트는 픽스처이고, 픽스처를 한 곳만 맞춰두면 나머지가 거짓말한다.
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final loader = FontLoader('Pretendard')
+      ..addFont(rootBundle.load('assets/fonts/PretendardVariable.ttf'));
+    await loader.load();
+  });
+
   group('① 대비·색 거리', () {
     for (final b in [Brightness.dark, Brightness.light]) {
       test('$b 대비', () {
@@ -386,14 +400,6 @@ void main() {
     setUpAll(() async {
       setUpFfiForTests();
       await initializeDateFormatting('ko_KR', null);
-      // **실제 Pretendard를 올린다.** 기본 테스트 폰트는 모든 글자가 1em(고정폭)이라
-      // 숫자·마침표·공백·괄호가 실기기보다 두 배 가까이 넓게 잡힌다. 그 상태로 재면
-      // 없는 오버플로를 만들고(`2026.05.05 (화)` 같은 날짜줄) 반대로 한글 옆의
-      // 좁은 글자가 만드는 실제 여유를 못 본다 — 폭 검사에서 폰트는 픽스처다.
-      TestWidgetsFlutterBinding.ensureInitialized();
-      final loader = FontLoader('Pretendard')
-        ..addFont(rootBundle.load('assets/fonts/PretendardVariable.ttf'));
-      await loader.load();
     });
 
     setUp(() => SharedPreferences.setMockInitialValues({}));
