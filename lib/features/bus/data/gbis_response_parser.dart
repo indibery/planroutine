@@ -1,5 +1,6 @@
 import '../domain/bus_arrival.dart';
 import '../domain/bus_route.dart';
+import '../domain/bus_stop.dart';
 import 'tago_response_parser.dart';
 
 /// 경기도 식별자 접두. **`TAGO nodeId` = `'GGB'` + `GBIS stationId`**이고 노선 ID도
@@ -73,6 +74,47 @@ TagoResult<BusRoute> parseGbisViaRoutes(Map<String, dynamic> json) {
   final list = _rows(json, 'busRouteList').map(_route).toList();
   if (list.isEmpty) return const TagoResult(TagoOutcome.empty);
   return TagoResult(TagoOutcome.ok, list);
+}
+
+/// 정류소명 검색 응답 → 정류장 목록.
+///
+/// **도시코드를 요구하지 않는다.** TAGO 검색(`getSttnNoList`)은 `cityCode`가 필수라
+/// 화면이 도시를 먼저 고르게 해야 했는데(전국 138개 칩), GBIS는 이름만으로
+/// **서울·경기·인천**을 한 번에 답한다(실측 `강남역` → 서울 16건, `장미아파트` →
+/// 의왕·인천·군포·시흥 9건). 그 밖의 지역은 0건이므로 TAGO가 계속 필요하다
+/// (실측 `제주공항` → `resultCode 4`, `서면` → 부산 없음).
+///
+/// `nodeId`에 [gbisIdPrefix]를 붙인다 — 저장·조회 경로가 그 접두로 소스를 가른다.
+/// 경기 정류장은 그 값이 실제 TAGO nodeId와 같지만(실측), 서울·인천은 대응하는 TAGO
+/// nodeId가 아예 없다. **접두의 뜻은 "TAGO ID"가 아니라 "GBIS로 조회한다"다.**
+TagoResult<BusStop> parseGbisStops(Map<String, dynamic> json) {
+  final failure = _envelopeFailure(json);
+  if (failure != null) return TagoResult(failure);
+
+  final list = _rows(json, 'busStationList')
+      .map(_stop)
+      // 접두만 남은 것은 stationId가 없는 행이다.
+      .where((s) => s.nodeId.length > gbisIdPrefix.length)
+      .toList();
+  if (list.isEmpty) return const TagoResult(TagoOutcome.empty);
+  return TagoResult(TagoOutcome.ok, list);
+}
+
+/// 한 행 → 정류장 1건.
+BusStop _stop(Map<String, dynamic> row) {
+  final id = _intOrNull(row['stationId']);
+
+  return BusStop(
+    nodeId: id == null ? gbisIdPrefix : '$gbisIdPrefix$id',
+    nodeNm: row['stationName']?.toString() ?? '',
+    // `mobileNo`는 **앞에 공백이 붙어** 온다(실측 `" 27302"`). Dart의 `int.tryParse`는
+    // 공백을 허용하지 않아 trim 없이는 전부 0이 된다 — 정류소번호가 화면에서 같은
+    // 이름을 가진 정류장을 구별하는 둘째 단서인데 조용히 사라진다.
+    nodeNo: _intOrNull(row['mobileNo']?.toString().trim()) ?? 0,
+    // GBIS 경로는 도시코드를 쓰지 않는다([BusStop.cityCode] 참고).
+    cityCode: 0,
+    regionName: row['regionName']?.toString(),
+  );
 }
 
 /// 두 GBIS 응답이 공유하는 껍데기·`resultCode` 판정. **null이면 정상이다.**

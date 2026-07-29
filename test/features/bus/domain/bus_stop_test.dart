@@ -41,6 +41,58 @@ void main() {
     });
   });
 
+  group('BusStop.regionName — 도시 선택을 없앤 대가로 필요해진 필드', () {
+    test('왕복해도 지역명이 남는다', () {
+      const stop = BusStop(
+        nodeId: 'GGB225000100',
+        nodeNm: '장미아파트',
+        nodeNo: 26044,
+        cityCode: 0,
+        regionName: '군포',
+      );
+
+      expect(BusStop.fromJson(stop.toJson()).regionName, '군포');
+    });
+
+    test('지역명이 없으면 키를 넣지 않는다 — TAGO 경로의 저장 모양을 바꾸지 않는다', () {
+      const stop = BusStop(
+        nodeId: 'BSB223000123',
+        nodeNm: '서면',
+        nodeNo: 1234,
+        cityCode: 21,
+      );
+
+      expect(stop.toJson().containsKey('regionName'), isFalse);
+    });
+
+    test('옛 저장 데이터(지역명 없음)도 그대로 읽힌다 — 마이그레이션이 없다', () {
+      final stop = BusStop.fromJson(const {
+        'nodeId': 'GGB201000156',
+        'nodeNm': '수원시청.수원일자리센터',
+        'nodeNo': 2251,
+        'cityCode': 31010,
+        'routeIds': <String>[],
+      });
+
+      expect(stop.regionName, isNull);
+      expect(stop.nodeNm, '수원시청.수원일자리센터');
+    });
+
+    test('copyWith가 지역명을 잃지 않는다', () {
+      // 확인 시트가 `copyWith(routeIds:)`로 노선만 갈아끼운다. 여기서 지역명이
+      // 떨어지면 저장된 정류장의 지역 표시가 등록 직후 사라진다.
+      const stop = BusStop(
+        nodeId: 'GGB225000100',
+        nodeNm: '장미아파트',
+        nodeNo: 26044,
+        cityCode: 0,
+        regionName: '군포',
+      );
+
+      expect(stop.copyWith(routeIds: {'GGB1'}).regionName, '군포');
+    });
+  });
+
   group('CommuteDirection', () {
     test('flipped는 서로를 가리킨다', () {
       expect(CommuteDirection.toWork.flipped, CommuteDirection.toHome);

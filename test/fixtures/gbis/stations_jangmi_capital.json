@@ -1,0 +1,131 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 16:37:05.530",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busStationList": [
+        {
+          "centerYn": "N",
+          "mobileNo": " 27302",
+          "regionName": "의왕",
+          "stationId": 226000312,
+          "stationName": "대우.장미아파트",
+          "x": 126.95515,
+          "y": 37.3227667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 27301",
+          "regionName": "의왕",
+          "stationId": 226000311,
+          "stationName": "대우.장미아파트",
+          "x": 126.95505,
+          "y": 37.3228667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 37044",
+          "regionName": "인천",
+          "stationId": 163000044,
+          "stationName": "장미아파트",
+          "x": 126.6560833,
+          "y": 37.4435
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 26044",
+          "regionName": "군포",
+          "stationId": 225000100,
+          "stationName": "장미아파트",
+          "x": 126.9312,
+          "y": 37.3680833
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 25332",
+          "regionName": "시흥",
+          "stationId": 224000346,
+          "stationName": "장미아파트",
+          "x": 126.7826667,
+          "y": 37.4387333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 25329",
+          "regionName": "시흥",
+          "stationId": 224000341,
+          "stationName": "장미아파트",
+          "x": 126.7825833,
+          "y": 37.4386333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 37540",
+          "regionName": "인천",
+          "stationId": 163000540,
+          "stationName": "장미아파트(19동)앞",
+          "x": 126.6564,
+          "y": 37.4457333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 37474",
+          "regionName": "인천",
+          "stationId": 163000474,
+          "stationName": "장미아파트(19동)앞",
+          "x": 126.6562,
+          "y": 37.4457167
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 02897",
+          "regionName": "수원",
+          "stationId": 201000398,
+          "stationName": "장미아파트.버드내도서관",
+          "x": 127.0117,
+          "y": 37.2574667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 37092",
+          "regionName": "인천",
+          "stationId": 163000092,
+          "stationName": "장미아파트.학익초등학교",
+          "x": 126.6575667,
+          "y": 37.44545
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 37094",
+          "regionName": "인천",
+          "stationId": 163000094,
+          "stationName": "장미아파트.학익초등학교",
+          "x": 126.6577,
+          "y": 37.4456833
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 11448",
+          "regionName": "서울",
+          "stationId": 110000347,
+          "stationName": "하계장미아파트",
+          "x": 127.0687667,
+          "y": 37.6340833
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 11455",
+          "regionName": "서울",
+          "stationId": 110000354,
+          "stationName": "하계장미아파트",
+          "x": 127.0669167,
+          "y": 37.6349667
+        }
+      ]
+    }
+  }
+}

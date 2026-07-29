@@ -5,6 +5,7 @@ class BusStop {
     required this.nodeNm,
     required this.nodeNo,
     required this.cityCode,
+    this.regionName,
     this.routeIds = const {},
   });
 
@@ -18,7 +19,22 @@ class BusStop {
   final int nodeNo;
 
   /// 도시코드. **시·도가 아니라 시·군 단위**다(경기도는 31010~31380).
+  ///
+  /// TAGO 조회에만 쓰인다. GBIS로 찾은 정류장은 이 값이 없어 `0`이고, 그래도 문제가
+  /// 없다 — `BusApiClient`가 `nodeId` 접두로 소스를 가르고 GBIS 쿼리에는 도시코드가
+  /// 실리지 않는다.
   final int cityCode;
+
+  /// 지역 이름(`군포`·`서울`·`인천`). GBIS 검색 결과에만 있고 TAGO 경로는 null이다.
+  ///
+  /// **검색 범위가 수도권 전체로 넓어진 뒤로는 없으면 고를 수 없다** — 실측 `장미아파트`
+  /// 는 의왕·인천·군포·시흥에 모두 있고 이름도 정류소번호도 화면에서 구별에 도움이
+  /// 되지 않는다. TAGO 시절에는 도시를 먼저 골라 검색했으므로 이 정보가 화면 위쪽에
+  /// 이미 있었다.
+  ///
+  /// 저장도 한다 — 설정 탭의 `출발지 · 장미아파트`만으로는 어느 장미아파트인지 알 수
+  /// 없다. 옛 데이터에는 없으므로 nullable이다(마이그레이션 없음).
+  final String? regionName;
 
   /// 사용자가 고른 노선.
   ///
@@ -33,6 +49,7 @@ class BusStop {
       nodeNm: nodeNm,
       nodeNo: nodeNo,
       cityCode: cityCode,
+      regionName: regionName,
       routeIds: routeIds ?? this.routeIds,
     );
   }
@@ -42,6 +59,8 @@ class BusStop {
         'nodeNm': nodeNm,
         'nodeNo': nodeNo,
         'cityCode': cityCode,
+        // 없으면 키를 넣지 않는다 — TAGO 경로 정류장의 저장 모양을 바꾸지 않는다.
+        if (regionName != null) 'regionName': regionName,
         'routeIds': routeIds.toList(),
       };
 
@@ -52,6 +71,7 @@ class BusStop {
       nodeNm: json['nodeNm'] as String? ?? '',
       nodeNo: json['nodeNo'] as int? ?? 0,
       cityCode: json['cityCode'] as int? ?? 0,
+      regionName: json['regionName'] as String?,
       routeIds: raw is List ? raw.map((e) => e.toString()).toSet() : const {},
     );
   }

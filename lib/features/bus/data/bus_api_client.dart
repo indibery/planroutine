@@ -38,6 +38,14 @@ const gbisArrivalUrl =
 const gbisViaRouteUrl =
     'https://apis.data.go.kr/6410000/busstationservice/v2/getBusStationViaRouteListv2';
 
+/// 경기도 GBIS 정류소명 검색. **도시코드를 요구하지 않는다.**
+///
+/// TAGO 검색은 `cityCode`가 필수라 화면이 전국 138개 도시 칩을 먼저 보여줘야 했다.
+/// GBIS는 이름만으로 서울·경기·인천을 한 번에 답하므로 주 경로가 도시를 묻지 않는다.
+/// 그 밖의 지역(부산·제주 등)은 0건이라 TAGO 검색이 **보조로** 남는다.
+const gbisStationSearchUrl =
+    'https://apis.data.go.kr/6410000/busstationservice/v2/getBusStationListv2';
+
 /// 메모리 캐시 수명. 폴링 주기와 같게 두어 방향 토글 왕복과 탭 재진입만 흡수한다.
 const busCacheTtl = Duration(seconds: 30);
 
@@ -188,7 +196,9 @@ class BusApiClient {
     required String nodeId,
   }) async {
     if (nodeId.startsWith(gbisIdPrefix)) {
-      return parseGbisArrivals(await _gbis(gbisArrivalUrl, nodeId));
+      return parseGbisArrivals(
+        await _gbis(gbisArrivalUrl, {'stationId': _stationId(nodeId)}),
+      );
     }
 
     final json = await _get(
@@ -216,7 +226,9 @@ class BusApiClient {
     if (!hasKey) return const TagoResult(TagoOutcome.keyError);
 
     try {
-      return parseGbisViaRoutes(await _gbis(gbisViaRouteUrl, nodeId));
+      return parseGbisViaRoutes(
+        await _gbis(gbisViaRouteUrl, {'stationId': _stationId(nodeId)}),
+      );
     } on _KeyRejected {
       return const TagoResult(TagoOutcome.keyError);
     } catch (_) {
@@ -224,18 +236,41 @@ class BusApiClient {
     }
   }
 
-  /// GBIS 엔드포인트 하나를 부른다 — 정류소 ID로 조회하는 두 서비스가 쿼리 규약을
-  /// 공유한다(`serviceKey`·`stationId`·`format`. TAGO의 `_type`·`pageNo`는 없다).
+  /// 정류소 **이름으로** 찾는다 — 도시를 묻지 않는다. 주 검색 경로다.
   ///
-  /// `nodeId`에서 접두를 떼는 규칙도 여기 한 곳에 둔다 — 두 곳에 흩어져 있으면 한쪽만
-  /// 고쳐 접두가 붙은 채 나가고, GBIS는 그것을 없는 정류소(`resultCode: 4`)로 답한다.
-  Future<Map<String, dynamic>> _gbis(String url, String nodeId) {
+  /// 서울·경기·인천을 한 번에 답한다. 그 밖의 지역은 `empty`이므로 호출부가
+  /// [searchStops](TAGO, 도시코드 필수)를 보조로 제안한다.
+  ///
+  /// "0건이면 자동으로 TAGO"는 **성립하지 않는다** — 부산 사용자가 `서면`을 찾으면
+  /// GBIS가 서울·광명·인천의 `강서면허시험장` 등 12건을 주므로(실측) 0건이 아니고,
+  /// 자동 폴백은 영구히 걸리지 않는다. 지역 전환은 사용자가 명시해야 한다.
+  Future<TagoResult<BusStop>> searchGbisStops({required String name}) async {
+    if (!hasKey) return const TagoResult(TagoOutcome.keyError);
+    try {
+      return parseGbisStops(
+        await _gbis(gbisStationSearchUrl, {'keyword': name}),
+      );
+    } on _KeyRejected {
+      return const TagoResult(TagoOutcome.keyError);
+    } catch (_) {
+      return const TagoResult(TagoOutcome.malformed);
+    }
+  }
+
+  /// GBIS 엔드포인트 하나를 부른다 — 공통 쿼리(`serviceKey`·`format`)를 여기 한 곳에서
+  /// 붙인다. TAGO의 `_type`·`pageNo`는 없다.
+  Future<Map<String, dynamic>> _gbis(String url, Map<String, String> query) {
     return _send(Uri.parse(url).replace(queryParameters: {
       'serviceKey': _serviceKey,
-      'stationId': nodeId.substring(gbisIdPrefix.length),
       'format': 'json',
+      ...query,
     }));
   }
+
+  /// `nodeId` → GBIS `stationId`. **접두를 떼는 규칙은 여기 한 곳에만 둔다** — 흩어져
+  /// 있으면 한쪽만 고쳐 접두가 붙은 채 나가고, GBIS는 그것을 없는 정류소
+  /// (`resultCode: 4`)로 답한다. 화면에는 `오늘 운행이 끝났어요`만 뜬다.
+  String _stationId(String nodeId) => nodeId.substring(gbisIdPrefix.length);
 
   Future<TagoResult<BusStop>> searchStops({
     required int cityCode,

@@ -1,0 +1,10 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 17:27:57.562",
+      "resultCode": 4,
+      "resultMessage": "결과가 존재하지 않습니다."
+    }
+  }
+}

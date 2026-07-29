@@ -1,0 +1,158 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 17:27:45.204",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busStationList": [
+        {
+          "centerYn": "N",
+          "mobileNo": " 22173",
+          "regionName": "서울",
+          "stationId": 121000097,
+          "stationName": "강남역10번출구",
+          "x": 127.02625,
+          "y": 37.5001
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 23284",
+          "regionName": "서울",
+          "stationId": 122000181,
+          "stationName": "강남역12번출구",
+          "x": 127.0294667,
+          "y": 37.4987667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 23494",
+          "regionName": "서울",
+          "stationId": 122000745,
+          "stationName": "강남역12번출구A",
+          "x": 127.0293833,
+          "y": 37.4987333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 23287",
+          "regionName": "서울",
+          "stationId": 122000184,
+          "stationName": "강남역1번출구.역삼세무서",
+          "x": 127.0293167,
+          "y": 37.4982333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22339",
+          "regionName": "서울",
+          "stationId": 121000262,
+          "stationName": "강남역8번출구",
+          "x": 127.02675,
+          "y": 37.4975333
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22167",
+          "regionName": "서울",
+          "stationId": 121000091,
+          "stationName": "강남역9번출구",
+          "x": 127.0265333,
+          "y": 37.4978
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22997",
+          "regionName": "서울",
+          "stationId": 121000921,
+          "stationName": "강남역나라빌딩앞",
+          "x": 127.0282833,
+          "y": 37.4958667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22600",
+          "regionName": "서울",
+          "stationId": 121000937,
+          "stationName": "강남역도시에빛",
+          "x": 127.0288,
+          "y": 37.4948167
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22652",
+          "regionName": "서울",
+          "stationId": 121000541,
+          "stationName": "강남역서초현대타워앞",
+          "x": 127.02795,
+          "y": 37.4965667
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22653",
+          "regionName": "서울",
+          "stationId": 121000974,
+          "stationName": "강남역우리은행",
+          "x": 127.02835,
+          "y": 37.49575
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 22654",
+          "regionName": "서울",
+          "stationId": 121000973,
+          "stationName": "강남역티월드",
+          "x": 127.0288667,
+          "y": 37.4947
+        },
+        {
+          "centerYn": "N",
+          "mobileNo": " 23572",
+          "regionName": "서울",
+          "stationId": 122900101,
+          "stationName": "신분당선.강남역4번출구",
+          "x": 127.0296667,
+          "y": 37.4943167
+        },
+        {
+          "centerYn": "Y",
+          "mobileNo": " 22010",
+          "regionName": "서울",
+          "stationId": 121000010,
+          "stationName": "신분당선강남역(중)",
+          "x": 127.02905,
+          "y": 37.49505
+        },
+        {
+          "centerYn": "Y",
+          "mobileNo": " 22009",
+          "regionName": "서울",
+          "stationId": 121000009,
+          "stationName": "신분당선강남역(중)",
+          "x": 127.0285667,
+          "y": 37.4957833
+        },
+        {
+          "centerYn": "Y",
+          "mobileNo": " 22012",
+          "regionName": "서울",
+          "stationId": 121000012,
+          "stationName": "지하철2호선강남역(중)",
+          "x": 127.0262333,
+          "y": 37.5008833
+        },
+        {
+          "centerYn": "Y",
+          "mobileNo": " 22011",
+          "regionName": "서울",
+          "stationId": 121000011,
+          "stationName": "지하철2호선강남역(중)",
+          "x": 127.0257167,
+          "y": 37.5017
+        }
+      ]
+    }
+  }
+}

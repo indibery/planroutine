@@ -119,6 +119,23 @@ class BusStrings {
   /// "출발지에 저장합니다" — 확인 시트가 저장 대상을 밝힌다.
   static String savesTo(String slot) => '$slot에 저장합니다';
 
+  /// 검색 전 안내. 도시를 고르지 않아도 되는 범위를 미리 말한다 — 안 말하면
+  /// 수도권 밖 사용자가 이름만 여러 번 고쳐 넣으며 헛수고한다.
+  static const searchCapitalHint = '서울·경기·인천은 이름만으로 찾을 수 있어요';
+
+  /// 도시 선택을 펼치는 링크.
+  static const searchOtherRegion = '다른 지역에서 찾기';
+
+  /// 그 링크 위에 붙는 이유.
+  static const searchOtherRegionHint = '서울·경기·인천이 아니면 도시를 골라주세요';
+
+  /// "군포 · 26044" — 검색 결과 행의 부제.
+  ///
+  /// **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않는 경로에서는 화면 어디에도
+  /// 지역 정보가 없는데, 같은 이름의 정류장이 여러 시·군에 있다(실측 `장미아파트` →
+  /// 의왕·인천·군포·시흥). 도시 선택 단계가 조용히 제공하던 정보를 행으로 옮긴 것이다.
+  static String stopRegion(String region, int nodeNo) => '$region · $nodeNo';
+
   // ── 확인 시트 (§4) ─────────────────────────────────────────
   static const confirmTitle = '이 정류장이 맞나요?';
   static const confirmRoutesTitle = '타는 버스만 남겨주세요';

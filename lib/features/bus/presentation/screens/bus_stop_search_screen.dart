@@ -13,7 +13,18 @@ import '../../domain/commute_direction.dart';
 import '../providers/bus_providers.dart';
 import '../widgets/bus_stop_confirm_sheet.dart';
 
-/// 도시 선택 → 정류장 이름 검색 → 확인 시트 → 슬롯 저장.
+/// 정류장 이름 검색 → 확인 시트 → 슬롯 저장.
+///
+/// **이름 검색이 주 경로이고 도시 선택은 보조다.** GBIS가 이름만으로 서울·경기·인천을
+/// 한 번에 답하므로(실측 `강남역` → 서울 16건) 대부분의 사용자는 도시를 고르지 않는다.
+/// 그 밖의 지역(부산·제주 등)만 `다른 지역에서 찾기`로 도시 선택을 펼쳐 TAGO로 찾는다.
+///
+/// **자동 폴백이 아니라 명시적 전환인 이유**: GBIS가 0건이면 TAGO로 넘기는 규칙은
+/// 성립하지 않는다. 부산 사용자가 `서면`을 찾으면 GBIS가 서울·광명·인천의
+/// `강서면허시험장` 등 12건을 주므로(실측) 0건이 아니고, 자동 폴백은 영구히 걸리지 않는다.
+///
+/// 도시 목록(TAGO 138개)은 **필요할 때만** 부른다 — 화면 진입마다 부르면 주 경로가
+/// TAGO 응답 속도에 묶인다(실측 5.1s, 클라이언트 타임아웃 10s에 근접).
 ///
 /// GPS 근접 검색을 쓰지 않는다. 슬롯을 **교체**하는 순간(전근·이사)에는 대상
 /// 정류장 근처에 없는 것이 기본값이라 GPS가 못 쓰인다 — 이름 검색만 항상 작동한다.
@@ -25,6 +36,10 @@ class BusStopSearchScreen extends ConsumerStatefulWidget {
 
   static const cityFieldKey = Key('bus_city_field');
   static const stopFieldKey = Key('bus_stop_field');
+
+  /// `다른 지역에서 찾기` — 도시 선택을 펼친다. 라벨로 찾으면 안내 문구와 링크가
+  /// 같은 낱말을 쓰게 되므로 키로 찾는다.
+  static const otherRegionKey = Key('bus_other_region');
 
   @override
   ConsumerState<BusStopSearchScreen> createState() =>
@@ -40,6 +55,12 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   List<BusStop> _results = const [];
   bool _loading = false;
   bool _searched = false;
+
+  /// 도시 선택을 펼쳤는가 — **켜져 있으면 TAGO로 찾는다.**
+  ///
+  /// 화면 수명 동안만 유지한다(저장하지 않는다). 다음에 정류장을 고칠 때 다시 수도권
+  /// 검색부터 시작하는 것이 맞다 — 지역을 바꾸는 일이 정류장을 바꾸는 일보다 드물다.
+  bool _regionMode = false;
 
   /// 조회가 **실패**한 이유. null이면 실패하지 않았다.
   ///
@@ -57,17 +78,27 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   /// 같은 이름을 말한다.
   CommuteDirection get _slot => widget.slot ?? CommuteDirection.toWork;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCities();
-  }
+  /// 지금 검색을 보낼 수 있는가. 수도권 검색은 도시가 필요 없다.
+  bool get _canSearch => !_regionMode || _city != null;
 
   @override
   void dispose() {
     _cityFilter.dispose();
     _stopQuery.dispose();
     super.dispose();
+  }
+
+  /// 도시 선택을 펼친다 — 이때 처음 도시 목록을 부른다.
+  void _enableRegionMode() {
+    setState(() {
+      _regionMode = true;
+      // 수도권 검색 결과를 남겨두면 도시를 고르기 전까지 그것이 이 모드의 결과처럼
+      // 읽힌다(도시별 결과와 섞인다).
+      _results = const [];
+      _searched = false;
+      _stopFailure = null;
+    });
+    if (_cities.isEmpty) _loadCities();
   }
 
   Future<void> _loadCities() async {
@@ -81,12 +112,15 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       _cities = result.items;
       _loading = false;
       // 칩이 0개인 이유가 '도시가 없다'가 아니라 '못 물어봤다'일 수 있다. 도시를
-      // 못 고르면 이 화면에서 할 수 있는 일이 없으므로 ok가 아닌 모든 결과를
+      // 못 고르면 이 모드에서 할 수 있는 일이 없으므로 ok가 아닌 모든 결과를
       // 실패로 말하고 재시도를 준다(TAGO는 정상이면 전국 138개를 준다).
       _cityFailure = result.outcome == TagoOutcome.ok ? null : result.outcome;
       // **편집 중인 슬롯의** 도시를 먼저, 없으면 반대 슬롯 — 두 슬롯이 다 등록된
       // 뒤 도착지를 고치는데 출발지의 도시가 복원되면, 잘못된 cityCode는 오류가
       // 아니라 빈 응답으로 와서 `검색 결과가 없어요` 한 번을 헛치게 된다.
+      //
+      // GBIS로 저장한 정류장은 cityCode가 0이라 일치하는 도시가 없어 자연히
+      // 복원되지 않는다 — 그 정류장은 애초에 도시로 찾은 것이 아니다.
       final saved = ref.read(busSettingsProvider).valueOrNull;
       final code = saved?.stopFor(_slot)?.cityCode ??
           saved?.stopFor(_slot.flipped)?.cityCode;
@@ -110,20 +144,22 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     if (_stopQuery.text.trim().isNotEmpty) _search();
   }
 
+  /// 이름으로 찾는다 — 모드에 따라 소스가 갈린다.
   Future<void> _search() async {
-    final city = _city;
     final name = _stopQuery.text.trim();
-    // 도시를 고르기 전에는 돋보기가 비활성이고 화면이 `먼저 도시를 골라주세요`를
-    // 띄우므로, 여기서 조용히 return해도 사용자는 이유를 읽는다.
-    if (city == null || name.isEmpty) return;
+    final city = _city;
+    // 도시를 고르지 않은 지역 모드에서는 돋보기가 비활성이고 화면이 `먼저 도시를
+    // 골라주세요`를 띄우므로, 여기서 조용히 return해도 사용자는 이유를 읽는다.
+    if (name.isEmpty || !_canSearch) return;
 
     setState(() {
       _loading = true;
       _stopFailure = null;
     });
-    final result = await ref
-        .read(busApiClientProvider)
-        .searchStops(cityCode: city.code, name: name);
+    final client = ref.read(busApiClientProvider);
+    final result = _regionMode && city != null
+        ? await client.searchStops(cityCode: city.code, name: name)
+        : await client.searchGbisStops(name: name);
     if (!mounted) return;
     setState(() {
       _results = result.items;
@@ -156,7 +192,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     final confirmed = await BusStopConfirmSheet.show(
       context,
       stop: stop,
-      // 선택 목록의 주 재료. 비면 시트가 도착정보로 목록을 만든다 — 비경기
+      // 선택 목록의 주 재료. 비면 시트가 도착정보로 목록을 만든다 — 비수도권
       // 정류장(부산·제주)과 경유노선 조회 실패가 그 경로다.
       routes: routes.items,
       arrivals: fetch.arrivals,
@@ -175,12 +211,6 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cities = _cityFilter.text.trim().isEmpty
-        ? _cities
-        : _cities
-            .where((c) => c.name.contains(_cityFilter.text.trim()))
-            .toList();
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -191,9 +221,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing48),
         children: [
-          _cityPicker(cities),
-          const Divider(height: 1),
+          // **이름 칸이 첫 컨트롤이다.** 도시 선택이 위에 있으면 대부분의 사용자가
+          // 필요 없는 단계를 먼저 만난다.
           _stopSearchField(),
+          if (_regionMode) ...[
+            const Divider(height: 1),
+            _cityPicker(),
+          ],
+          const Divider(height: 1),
           if (_loading)
             const Padding(
               padding: EdgeInsets.all(AppSizes.spacing24),
@@ -206,9 +241,37 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     );
   }
 
+  Widget _stopSearchField() {
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.pagePadding),
+      child: TextField(
+        key: BusStopSearchScreen.stopFieldKey,
+        controller: _stopQuery,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: BusStrings.stopSearchHint,
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.search),
+            // 지역 모드에서 도시를 고르기 전에는 조회가 나갈 수 없다 — 활성처럼
+            // 보이면 눌러도 아무 일이 없는 죽은 컨트롤이 된다. 수도권 검색은
+            // 도시가 필요 없으므로 기본 상태에서는 항상 활성이다.
+            onPressed: _canSearch ? _search : null,
+          ),
+        ),
+        onSubmitted: (_) => _search(),
+      ),
+    );
+  }
+
   /// 도시코드는 시·군 단위로 전국 138개다 — 스크롤만으로 고르게 하면 마찰이 크므로
-  /// 검색 필드를 둔다.
-  Widget _cityPicker(List<CityCode> cities) {
+  /// 검색 필드를 둔다. **지역 모드에서만 그린다.**
+  Widget _cityPicker() {
+    final cities = _cityFilter.text.trim().isEmpty
+        ? _cities
+        : _cities
+            .where((c) => c.name.contains(_cityFilter.text.trim()))
+            .toList();
+
     return Padding(
       padding: const EdgeInsets.all(AppSizes.pagePadding),
       child: Column(
@@ -266,55 +329,89 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     ];
   }
 
-  Widget _stopSearchField() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSizes.pagePadding),
-      child: TextField(
-        key: BusStopSearchScreen.stopFieldKey,
-        controller: _stopQuery,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: BusStrings.stopSearchHint,
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.search),
-            // 도시를 고르기 전에는 조회가 나갈 수 없다 — 활성처럼 보이면 눌러도
-            // 아무 일이 없는 죽은 컨트롤이 되고, 첫 등록은 반드시 이 상태를 지난다.
-            onPressed: _city == null ? null : _search,
-          ),
-        ),
-        onSubmitted: (_) => _search(),
-      ),
-    );
-  }
-
   List<Widget> _resultRows() {
     // 순서가 계약이다: 못 물어본 것 → 고를 수 없는 것 → 아직 안 찾은 것 →
     // 찾았지만 실패 → 정말 없음. 뒤섞으면 각 문구가 다른 상황을 덮는다.
     final cityFailure = _cityFailure;
-    if (cityFailure != null) {
+    if (_regionMode && cityFailure != null) {
       return [_notice(_failureMessage(cityFailure), onRetry: _loadCities)];
     }
-    if (_city == null) {
+    if (!_canSearch) {
       return [_notice(BusStrings.cityFirst)];
     }
     if (!_searched) {
-      return [_notice(BusStrings.searchPrompt)];
+      return [
+        _notice(BusStrings.searchPrompt),
+        // **검색 전에도 지역 전환이 보여야 한다.** 결과가 나온 뒤에만 두면 부산
+        // 사용자는 수도권 결과가 나올 헛검색을 한 번 해야 여기 도달한다.
+        if (!_regionMode) ...[
+          _hint(BusStrings.searchCapitalHint),
+          _otherRegionLink(),
+        ],
+      ];
     }
     final stopFailure = _stopFailure;
     if (stopFailure != null) {
       return [_notice(_failureMessage(stopFailure), onRetry: _search)];
     }
     if (_results.isEmpty) {
-      return [_notice(BusStrings.searchEmpty)];
+      return [
+        _notice(BusStrings.searchEmpty),
+        // 수도권 밖을 찾는 사람이 여기 도달한다 — 그때만 지역 전환을 권한다.
+        if (!_regionMode) ...[
+          _hint(BusStrings.searchOtherRegionHint),
+          _otherRegionLink(),
+        ],
+      ];
     }
-    return _results
-        .map((stop) => ListTile(
-              title: Text(stop.nodeNm),
-              subtitle: Text('${stop.nodeNo}'),
-              trailing: Icon(Icons.chevron_right, color: AppColors.faint),
-              onTap: () => _pick(stop),
-            ))
-        .toList();
+    return [
+      ..._results.map((stop) => ListTile(
+            title: Text(stop.nodeNm),
+            // **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않으므로 화면
+            // 어디에도 지역 정보가 없고, 같은 이름의 정류장이 여러 시·군에 있다
+            // (실측 `장미아파트` → 의왕·인천·군포·시흥). 도시 선택 단계가 조용히
+            // 제공하던 정보를 결과 행으로 옮긴 것이다.
+            subtitle: Text(_subtitleOf(stop)),
+            trailing: Icon(Icons.chevron_right, color: AppColors.faint),
+            onTap: () => _pick(stop),
+          )),
+      // 결과가 있어도 남긴다 — 이름이 겹쳐 수도권 결과만 나오는 경우
+      // (실측 `서면` → 부산 없이 12건) 여기가 유일한 출구다.
+      if (!_regionMode) _otherRegionLink(),
+    ];
+  }
+
+  /// 정류소번호와 (있으면) 지역명.
+  String _subtitleOf(BusStop stop) {
+    final region = stop.regionName;
+    return region == null
+        ? '${stop.nodeNo}'
+        : BusStrings.stopRegion(region, stop.nodeNo);
+  }
+
+  Widget _otherRegionLink() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
+      child: Center(
+        child: GestureDetector(
+          key: BusStopSearchScreen.otherRegionKey,
+          behavior: HitTestBehavior.opaque,
+          onTap: _enableRegionMode,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.spacing8),
+            child: Text(
+              BusStrings.searchOtherRegion,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// 키 문제와 그 밖의 장애를 갈라 말한다 — 확인 시트와 같은 문구를 쓴다.
@@ -323,6 +420,24 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       outcome == TagoOutcome.keyError
           ? BusStrings.emptyKey
           : BusStrings.emptyDown;
+
+  /// 안내 문구 아래 붙는 한 줄. 본문보다 작고 조용하다.
+  Widget _hint(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.pagePadding,
+      ),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 13,
+          color: AppColors.faint,
+        ),
+      ),
+    );
+  }
 
   Widget _notice(String message, {VoidCallback? onRetry}) {
     return Padding(

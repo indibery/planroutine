@@ -89,14 +89,25 @@ class _Tago {
   bool cityFails = false;
   bool stopFails = false;
 
-  /// 검색 결과 정류소 ID의 접두. **기본은 비경기(`N…`)다** — 경기(`GGB…`)만 GBIS
-  /// 경유노선을 조회하므로, 기본값을 두면 기존 테스트에는 그 호출이 없다.
+  /// GBIS 이름 검색(주 경로)이 실패한다. 대부분의 사용자가 밟는 경로이므로 이쪽 실패를
+  /// 먼저 검사한다.
+  bool gbisFails = false;
+
+  /// TAGO 검색 결과 정류소 ID의 접두. **기본은 비수도권(`N…`)다** — 경기(`GGB…`)만
+  /// GBIS 경유노선을 조회하므로, 기본값을 두면 TAGO 경로 테스트에는 그 호출이 없다.
   String idPrefix = 'N';
+
+  /// GBIS 이름 검색(**주 경로**)이 답할 정류장 — 이름 → 지역명.
+  ///
+  /// 도시와 무관하다. 비우면 `resultCode 4`(수도권 밖)로 답해, 사용자가 지역 전환을
+  /// 밟는 흐름을 테스트할 수 있다.
+  Map<String, String> gbisStops = const {'수원시청.수원일자리센터': '수원'};
 
   int cityCalls = 0;
   int stopCalls = 0;
   int arrivalCalls = 0;
   int viaRouteCalls = 0;
+  int gbisSearchCalls = 0;
 
   Future<http.Response> handle(http.Request req) async {
     final url = req.url;
@@ -104,6 +115,40 @@ class _Tago {
     if (url.path.endsWith('getBusStationViaRouteListv2')) {
       viaRouteCalls++;
       return _json(_gbisFixture('viaroutes_jangmi_10routes'));
+    }
+
+    if (url.path.endsWith('getBusStationListv2')) {
+      gbisSearchCalls++;
+      if (gbisFails) return _json('boom', 500);
+      final keyword = url.queryParameters['keyword'] ?? '';
+      final hits = gbisStops.entries
+          .where((e) => e.key.contains(keyword))
+          .toList();
+      if (hits.isEmpty) {
+        // 실측: 수도권 밖은 `msgBody` 키 자체가 없고 resultCode 4다.
+        return _json(jsonEncode({
+          'response': {
+            'msgHeader': {'resultCode': 4, 'resultMessage': '결과가 존재하지 않습니다.'},
+          },
+        }));
+      }
+      return _json(jsonEncode({
+        'response': {
+          'msgHeader': {'resultCode': 0, 'resultMessage': '정상'},
+          'msgBody': {
+            'busStationList': [
+              for (final (i, e) in hits.indexed)
+                {
+                  'stationId': 201000156 + i,
+                  'stationName': e.key,
+                  // 실측대로 앞에 공백을 붙여 준다 — trim이 빠지면 0이 된다.
+                  'mobileNo': ' ${2251 + i}',
+                  'regionName': e.value,
+                },
+            ],
+          },
+        },
+      }));
     }
 
     if (url.path.endsWith('getBusArrivalListv2')) {
@@ -234,6 +279,18 @@ Future<void> _tapCity(WidgetTester tester, String name) async {
   await tester.pumpAndSettle();
 }
 
+/// `다른 지역에서 찾기`를 눌러 도시 선택(TAGO 보조 경로)을 펼친다.
+///
+/// **도시 관련 테스트는 전부 이 단계를 지난다.** 주 경로는 이름만으로 찾으므로 도시
+/// 칩이 화면에 없다 — 그것이 이 변경의 요점이고, 도시 칩을 검사하려면 명시적으로
+/// 지역 모드에 들어가야 한다.
+Future<void> _openRegionMode(WidgetTester tester) async {
+  await tester.ensureVisible(find.byKey(BusStopSearchScreen.otherRegionKey));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(BusStopSearchScreen.otherRegionKey));
+  await tester.pumpAndSettle();
+}
+
 /// 지금 선택된 도시 칩. 없으면 null.
 PillChip? _selectedChip(WidgetTester tester) {
   final chips =
@@ -242,40 +299,103 @@ PillChip? _selectedChip(WidgetTester tester) {
 }
 
 void main() {
-  group('화면 기본 배선', () {
-    testWidgets('도시 칩을 그린다', (tester) async {
+  group('화면 기본 배선 — 이름 검색이 주 경로다', () {
+    testWidgets('도시를 묻지 않고 이름만으로 찾는다 — 도시 목록을 부르지 않는다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      expect(tago.cityCalls, 1);
-      expect(find.text('수원시'), findsOneWidget);
-      expect(find.text('성남시'), findsOneWidget);
+      // **이것이 이 변경의 요점이다.** 화면에 들어오는 것만으로 TAGO를 부르지 않으므로
+      // 주 경로가 TAGO 응답 속도(실측 5.1s, 클라이언트 타임아웃 10s)에 묶이지 않는다.
+      expect(tago.cityCalls, 0);
+      expect(find.byType(PillChip), findsNothing);
       expect(find.byKey(BusStopSearchScreen.stopFieldKey), findsOneWidget);
+
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+
+      expect(tago.gbisSearchCalls, 1);
+      expect(tago.stopCalls, 0, reason: 'TAGO는 보조다');
+      expect(find.widgetWithText(ListTile, '수원시청.수원일자리센터'), findsOneWidget);
     });
 
-    testWidgets('도시를 고르고 이름을 검색하면 결과 행이 뜬다', (tester) async {
+    testWidgets('결과 행에 지역명을 붙인다 — 도시를 먼저 고르지 않았으므로', (tester) async {
+      // 같은 이름의 정류장이 여러 시·군에 있다(실측 `장미아파트` → 의왕·인천·군포·시흥).
+      // 도시 선택 단계가 조용히 제공하던 정보를 행으로 옮긴 것이다.
+      final tago = _Tago()..gbisStops = const {'장미아파트': '군포'};
+      await _pumpScreen(tester, tago);
+
+      await _typeStop(tester, '장미');
+      await _tapSearch(tester);
+
+      expect(find.text(BusStrings.stopRegion('군포', 2251)), findsOneWidget);
+    });
+
+    testWidgets('돋보기는 도시 없이도 활성이다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+
+      final button = tester.widget<IconButton>(find.ancestor(
+        of: find.byIcon(Icons.search),
+        matching: find.byType(IconButton),
+      ));
+      expect(button.onPressed, isNotNull,
+          reason: '수도권 검색은 도시가 필요 없다 — 비활성이면 첫 검색이 막힌다');
+    });
+
+    testWidgets('결과 행을 탭하면 확인 시트가 뜬다 — 주 경로', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+
+      expect(tago.arrivalCalls, 1, reason: '저장 전에 오는 버스를 물어본다');
+      expect(tago.viaRouteCalls, 1, reason: 'GBIS 정류장이므로 경유노선도 함께 묻는다');
+      expect(find.text(BusStrings.confirmTitle), findsOneWidget);
+    });
+
+    testWidgets('다른 지역에서 찾기를 누르면 그때 도시를 부른다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+
+      expect(tago.cityCalls, 0);
+      await _openRegionMode(tester);
+
+      expect(tago.cityCalls, 1, reason: '필요할 때만 부른다');
+      expect(find.text('수원시'), findsOneWidget);
+      expect(find.text('성남시'), findsOneWidget);
+    });
+
+    testWidgets('지역 모드에서 도시를 고르고 검색하면 TAGO로 찾는다', (tester) async {
+      final tago = _Tago();
+      await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
 
       expect(tago.stopCalls, 1);
+      expect(tago.gbisSearchCalls, 0,
+          reason: '지역을 명시했으면 그 지역으로만 찾는다 — 수도권 결과가 섞이면 고를 수 없다');
       expect(find.widgetWithText(ListTile, '수원시청.수원일자리센터'), findsOneWidget);
     });
 
-    testWidgets('결과 행을 탭하면 도착을 조회해 확인 시트를 띄운다', (tester) async {
+    testWidgets('TAGO 경로 결과를 탭해도 확인 시트가 뜬다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
 
-      expect(tago.arrivalCalls, 1, reason: '저장 전에 오는 버스를 물어본다');
+      expect(tago.arrivalCalls, 1);
+      expect(tago.viaRouteCalls, 0, reason: '비수도권 nodeId로는 GBIS에 답이 없다');
       expect(find.text(BusStrings.confirmTitle), findsOneWidget);
       expect(find.text('720번'), findsOneWidget);
     });
@@ -287,6 +407,7 @@ void main() {
         tago,
         settings: BusSettings.defaults.copyWith(departure: _savedSuwon),
       );
+      await _openRegionMode(tester);
 
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
@@ -315,6 +436,7 @@ void main() {
           ),
         ),
       );
+      await _openRegionMode(tester);
 
       expect(find.text('가25시'), findsOneWidget, reason: '선택된 도시는 맨 앞');
       expect(find.text('가19시'), findsOneWidget);
@@ -322,10 +444,13 @@ void main() {
     });
   });
 
-  group('도시를 고르기 전 (I6) — 검색은 죽은 컨트롤이 아니다', () {
+  // 주 경로(이름 검색)에서는 도시가 필요 없어 이 상태가 없다 — 지역 모드에 들어가
+  // 도시를 고르기 전에만 성립한다.
+  group('지역 모드에서 도시를 고르기 전 (I6) — 검색은 죽은 컨트롤이 아니다', () {
     testWidgets('먼저 도시를 골라주세요라고 말한다 — 이름을 넣으라고 하지 않는다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       expect(find.text(BusStrings.cityFirst), findsOneWidget);
       expect(find.text(BusStrings.searchPrompt), findsNothing,
@@ -335,6 +460,7 @@ void main() {
     testWidgets('돋보기가 비활성이고 눌러도 요청이 나가지 않는다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       await _typeStop(tester, '시청');
       final button = tester.widget<IconButton>(
@@ -358,6 +484,7 @@ void main() {
     testWidgets('도시 목록 실패는 실패라고 말하고 다시 시도를 준다', (tester) async {
       final tago = _Tago()..cityFails = true;
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
       expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
@@ -369,6 +496,7 @@ void main() {
     testWidgets('다시 시도를 누르면 도시를 다시 불러온다', (tester) async {
       final tago = _Tago()..cityFails = true;
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
       expect(tago.cityCalls, 1);
 
       tago.cityFails = false;
@@ -381,11 +509,11 @@ void main() {
     });
 
     testWidgets('정류장 검색 실패를 검색 결과가 없어요로 뭉개지 않는다', (tester) async {
-      final tago = _Tago();
+      // **주 경로(GBIS)의 실패를 검사한다.** 대부분의 사용자가 여기를 밟는다.
+      // 실패 판정은 두 경로가 같은 `_stopFailure` switch를 지나므로 한쪽으로 충분하다.
+      final tago = _Tago()..gbisFails = true;
       await _pumpScreen(tester, tago);
 
-      await _tapCity(tester, '수원시');
-      tago.stopFails = true;
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
 
@@ -399,7 +527,6 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      await _tapCity(tester, '수원시');
       await _typeStop(tester, '없는이름');
       await _tapSearch(tester);
 
@@ -431,10 +558,9 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago, slot: CommuteDirection.toHome);
 
-      await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.confirmTitle), findsOneWidget);
@@ -452,10 +578,9 @@ void main() {
 
       expect(find.text('도착지 정류장 찾기'), findsOneWidget);
 
-      await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(BusStopConfirmSheet.acceptKey));
       await tester.pumpAndSettle();
@@ -469,13 +594,15 @@ void main() {
     testWidgets('경기 정류장은 경유노선을 함께 조회해 시트에 넘긴다', (tester) async {
       // 실기기 버그(2026-07-29)의 화면 경로다. 같은 정류장·같은 시각에 도착정보는
       // 8노선, 경유노선은 10노선이다 — 도착정보로 목록을 만들면 나머지를 고를 수 없다.
-      final tago = _Tago()..idPrefix = 'GGB';
+      //
+      // **주 경로로 밟는다.** GBIS 검색 결과는 nodeId가 `GGB…`라 접두를 손으로
+      // 지정할 필요가 없다.
+      final tago = _Tago();
       await _pumpRouted(tester, tago, slot: CommuteDirection.toWork);
 
-      await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
 
       expect(tago.viaRouteCalls, 1);
@@ -509,6 +636,7 @@ void main() {
       // GBIS는 경기도 전용이다. 헛요청은 일일 트래픽(1,000)만 쓴다.
       final tago = _Tago();
       await _pumpRouted(tester, tago, slot: CommuteDirection.toWork);
+      await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
@@ -526,6 +654,7 @@ void main() {
     testWidgets('검색어를 지운 뒤 도시를 바꾸면 옛 목록이 사라진다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
@@ -543,6 +672,7 @@ void main() {
     testWidgets('검색어가 남아 있으면 새 도시로 다시 찾는다', (tester) async {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
+      await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
@@ -561,6 +691,7 @@ void main() {
   group('도시 칩 (I13) — 공용 PillChip을 쓴다', () {
     testWidgets('raw ChoiceChip이 아니라 PillChip이다', (tester) async {
       await _pumpScreen(tester, _Tago());
+      await _openRegionMode(tester);
 
       expect(find.byType(ChoiceChip), findsNothing,
           reason: 'chipTheme.labelStyle이 선택/비선택 구분 없는 sub라 골드 채움 위에서 사라진다');
@@ -569,6 +700,7 @@ void main() {
 
     testWidgets('선택된 도시 이름은 골드로 뒤집혀 읽힌다', (tester) async {
       await _pumpScreen(tester, _Tago());
+      await _openRegionMode(tester);
       await _tapCity(tester, '성남시');
 
       expect(_selectedChip(tester)?.label, '성남시');
@@ -594,6 +726,7 @@ void main() {
           arrival: _savedHwaseong,
         ),
       );
+      await _openRegionMode(tester);
 
       expect(_selectedChip(tester)?.label, '화성시',
           reason: '출발지의 도시를 복원하면 잘못된 cityCode가 빈 응답으로 와 헛치게 된다');
@@ -606,6 +739,7 @@ void main() {
         slot: CommuteDirection.toHome,
         settings: BusSettings.defaults.copyWith(departure: _savedSuwon),
       );
+      await _openRegionMode(tester);
 
       expect(_selectedChip(tester)?.label, '수원시',
           reason: '첫 등록의 두 번째 슬롯에서 도시를 다시 고르게 하지 않는다');
@@ -615,6 +749,7 @@ void main() {
   group('한글 라벨에 영문 장식용 eyebrow를 쓰지 않는다 (M14)', () {
     testWidgets('도시 라벨은 label 스타일이다', (tester) async {
       await _pumpScreen(tester, _Tago());
+      await _openRegionMode(tester);
 
       final style = tester.widget<Text>(find.text(BusStrings.cityLabel)).style;
       expect(style, AppTextStyles.label);
@@ -625,10 +760,9 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      await _tapCity(tester, '수원시');
       await _typeStop(tester, '시청');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
 
       final style =

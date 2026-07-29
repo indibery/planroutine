@@ -148,6 +148,69 @@ void main() {
     });
   });
 
+  group('정류소명 검색 — 도시를 묻지 않는 주 경로', () {
+    test('이름만으로 수도권을 한 번에 답한다 — 도시코드가 없다', () {
+      // TAGO 검색은 `cityCode`가 필수라 화면이 전국 138개 도시 칩을 먼저 보여줘야
+      // 했다. 이 응답 하나가 그 단계를 없앤 근거다.
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(13));
+      expect(
+        r.items.map((s) => s.regionName).toSet(),
+        containsAll({'군포', '인천', '시흥', '의왕'}),
+      );
+    });
+
+    test('서울 정류소도 나온다 — 서울 API 별도 신청이 필요 없다', () {
+      final r = parseGbisStops(_fixture('stations_gangnam_seoul'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(16));
+      expect(r.items.map((s) => s.regionName).toSet(), {'서울'});
+      expect(r.items.first.nodeNm, contains('강남역'));
+    });
+
+    test('nodeId에 GGB 접두를 붙인다 — 조회 경로가 이 접두로 갈린다', () {
+      final r = parseGbisStops(_fixture('stations_gangnam_seoul'));
+
+      // 서울 정류소는 대응하는 TAGO nodeId가 없다. 접두의 뜻은 "TAGO ID"가 아니라
+      // "GBIS로 조회한다"다.
+      expect(r.items.first.nodeId, startsWith('GGB'));
+      expect(r.items.every((s) => s.nodeId.length > 3), isTrue);
+    });
+
+    test('mobileNo의 앞 공백을 벗겨 정류소번호로 읽는다', () {
+      // 실측 `" 26044"`. Dart의 int.tryParse는 공백을 허용하지 않아 trim 없이는
+      // 전부 0이 된다 — 같은 이름의 정류장을 구별하는 둘째 단서가 조용히 사라진다.
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+      final gunpo = r.items.firstWhere((s) => s.regionName == '군포');
+
+      expect(gunpo.nodeNo, 26044);
+      expect(r.items.every((s) => s.nodeNo > 0), isTrue);
+    });
+
+    test('GBIS 경로는 도시코드를 쓰지 않으므로 0이다', () {
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+
+      expect(r.items.every((s) => s.cityCode == 0), isTrue);
+    });
+
+    test('수도권 밖은 empty다 — TAGO 보조 경로가 필요한 이유', () {
+      // 실측 `제주공항` → resultCode 4. `서면`은 부산이 아니라 서울·광명·인천의
+      // `강서면허시험장` 등을 주므로 0건이 아니다 — 그래서 지역 전환을 자동 폴백으로
+      // 만들 수 없고 사용자가 명시해야 한다.
+      final r = parseGbisStops(_fixture('stations_none'));
+
+      expect(r.outcome, TagoOutcome.empty);
+      expect(r.items, isEmpty);
+    });
+
+    test('껍데기가 깨지면 malformed다', () {
+      expect(parseGbisStops(const {'nope': 1}).outcome, TagoOutcome.malformed);
+    });
+  });
+
   group('단건 응답 — 배열이 아니라 객체로 온다', () {
     test('도착정보가 객체로 와도 1건으로 읽는다 — closed로 뭉개지지 않는다', () {
       // 실측 서울 강남역10번출구. 예전 파서는 여기서 빈 목록을 돌려 카드가

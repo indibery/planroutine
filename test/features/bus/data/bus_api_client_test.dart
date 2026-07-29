@@ -311,6 +311,64 @@ void main() {
     });
   });
 
+  group('정류소명 검색 — 도시를 묻지 않는 주 경로', () {
+    test('GBIS 검색 엔드포인트로 이름만 보낸다 — cityCode가 없다', () async {
+      Uri? seen;
+      final c = clientWith((req) async {
+        seen = req.url;
+        return _json(_gbisFixture('stations_jangmi_capital'));
+      });
+      final r = await c.searchGbisStops(name: '장미아파트');
+
+      expect(seen?.path,
+          '/6410000/busstationservice/v2/getBusStationListv2');
+      expect(seen?.queryParameters['keyword'], '장미아파트');
+      expect(seen?.queryParameters['format'], 'json');
+      // 도시코드를 안 보내는 것이 이 경로의 존재 이유다 — 보내면 화면이 도시를
+      // 먼저 고르게 해야 한다.
+      expect(seen?.queryParameters.containsKey('cityCode'), isFalse);
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(13));
+      expect(r.items.map((s) => s.regionName), contains('군포'));
+    });
+
+    test('서울 정류소를 찾는다 — TAGO 도시목록에는 서울이 없다', () async {
+      final c = clientWith(
+        (_) async => _json(_gbisFixture('stations_gangnam_seoul')),
+      );
+      final r = await c.searchGbisStops(name: '강남역');
+
+      expect(r.items, hasLength(16));
+      expect(r.items.map((s) => s.regionName).toSet(), {'서울'});
+    });
+
+    test('수도권 밖은 empty다 — 실패가 아니다', () async {
+      final c = clientWith((_) async => _json(_gbisFixture('stations_none')));
+      final r = await c.searchGbisStops(name: '제주공항');
+
+      expect(r.outcome, TagoOutcome.empty);
+    });
+
+    test('403은 keyError, 네트워크 실패는 malformed다', () async {
+      final forbidden = clientWith((_) async => _json('{}', 403));
+      expect((await forbidden.searchGbisStops(name: 'x')).outcome,
+          TagoOutcome.keyError);
+
+      final broken = clientWith((_) async => throw const _Boom());
+      expect((await broken.searchGbisStops(name: 'x')).outcome,
+          TagoOutcome.malformed);
+    });
+
+    test('키가 없으면 요청하지 않는다', () async {
+      final c = clientWith((_) async => throw const _Boom(), key: '');
+
+      expect((await c.searchGbisStops(name: 'x')).outcome,
+          TagoOutcome.keyError);
+      expect(c.requestCount, 0);
+    });
+  });
+
   group('경유노선 조회 — 확인 시트의 선택 목록', () {
     test('GBIS 경유노선 엔드포인트로 가고 stationId는 접두를 뗀 값이다', () async {
       Uri? seen;
