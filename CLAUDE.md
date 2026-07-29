@@ -18,6 +18,9 @@
 9. **로컬 알림** — 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
 10. **오늘 탭(첫 화면)** — 오늘 처리할 **업무**만 모아 체크 원 탭으로 완료. 완료 순간 골드
    도장이 찍히고 상단 결산 링이 차오른다. 기한이 지난 항목은 롤링 7일까지만 기본 접힘.
+11. **출퇴근 버스 도착 카드** — 오늘 탭 맨 위. **기본 꺼짐**(설정 › 버스 도착). 출발지·도착지
+   정류장을 하나씩 등록해 두면 시간대에 따라 알아서 바꿔 보여준다. 30초 폴링, 접으면 조회
+   중단, 백그라운드면 중단. 공공데이터를 기기에서 직접 부르고 **자체 서버가 없다**.
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -35,11 +38,12 @@
 | 파일 선택 | file_picker | |
 | 공유 | share_plus, path_provider | 임시 디렉토리 + 공유시트 |
 | 앱 정보 | package_info_plus | 설정 탭 버전 표시 |
-| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장 |
+| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장, 버스 설정 |
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
+| 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 480 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 770 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -121,6 +125,25 @@ planroutine/
 │   │   │           ├── today_event_row.dart     # 체크 원 + 제목 + 도장 슬롯
 │   │   │           ├── today_progress_ring.dart # 결산 링 (CustomPainter)
 │   │   │           └── completion_seal.dart     # 완료 도장 (3종)
+│   │   ├── bus/                        # 출퇴근 버스 도착 카드
+│   │   │   ├── data/
+│   │   │   │   ├── bus_api_client.dart          # 소스 라우팅(지역별) + 30초 메모리 캐시
+│   │   │   │   ├── tago_response_parser.dart    # 국토교통부 TAGO
+│   │   │   │   └── gbis_response_parser.dart    # 경기도 GBIS + 지역별 nodeId 접두
+│   │   │   ├── domain/
+│   │   │   │   ├── bus_card_view.dart           # buildBusCardView(순수 함수) + 5상태
+│   │   │   │   ├── bus_route.dart               # 경유노선 + buildRouteChoices(순수 함수)
+│   │   │   │   ├── bus_arrival.dart · bus_stop.dart · bus_settings.dart
+│   │   │   │   ├── commute_direction.dart · time_range.dart · bus_card_style.dart
+│   │   │   │   └── bus_display.dart
+│   │   │   └── presentation/
+│   │   │       ├── screens/bus_stop_search_screen.dart  # 이름 검색(주) + 지역 모드(보조)
+│   │   │       └── widgets/
+│   │   │           ├── bus_card_host.dart              # 폴링·수명·시간대 판정
+│   │   │           ├── bus_arrival_card.dart           # 제목줄 + 접힘 토글
+│   │   │           ├── bus_body_text.dart · bus_body_axis.dart  # 모양 2종
+│   │   │           ├── bus_stop_confirm_sheet.dart     # 등록 직전 방향 확인
+│   │   │           └── bus_empty_state.dart · bus_more_count.dart
 │   │   └── onboarding/                 # 최초 진입 플로우
 │   └── shared/
 │       └── widgets/
@@ -429,6 +452,105 @@ planroutine/
 - `BrandLogo`(shared/widgets)는 `LogoHybrid` 디자인(수첩 바디 + 달력 그리드). 120×120 viewBox를 `size.width/120` 스케일로 환산.
 - 캘린더 AppBar leading(size 28) + 온보딩(size 80)에서 사용.
 - iOS 홈 아이콘은 `test/tools/gen_app_icon.dart`가 navy 배경 + 90% LogoHybrid를 1024×1024 PNG로 렌더해 `assets/icon/app_icon.png`에 덮어쓰고, `flutter_launcher_icons`가 각 사이즈를 재생성.
+
+### 출퇴근 버스 도착 카드
+
+- **DB를 쓰지 않는다.** 설정은 `shared_preferences`의 `bus_settings_v1` 하나, 조회 결과는
+  메모리 캐시(30초)뿐이다. 자체 서버도 없다 — 기기에서 공공데이터포털을 직접 부른다.
+  이것이 처리방침 §5·§6의 근거이므로 프록시를 세우려면 그 문서부터 고쳐야 한다.
+- **인증키는 빌드 시 주입한다**(`--dart-define-from-file=<tmp>.json`, `ios/fastlane/Fastfile`).
+  `--dart-define=TAGO_KEY=…`로 넣지 않는다 — fastlane의 `sh`가 명령 문자열을 echo하므로
+  argv에 실으면 매 beta 로그에 키가 평문으로 남는다. 빌드 후 `strip_dart_defines`가
+  `ios/Flutter/Generated.xcconfig`·`flutter_export_environment.sh`를 지운다(키가 재기록된다).
+  키만 확인하려면 `./ios/bin/fastlane.sh check_tago_key`.
+
+#### 소스는 지역으로 갈린다 — 접두가 라우팅이다
+
+`BusStop.nodeId`의 접두가 "어느 지역이냐"가 아니라 **"어디에 물어볼 것이냐"** 를 뜻한다
+(`BusApiClient._arrivals`가 이 접두로 분기한다).
+
+| 지역 | 소스 | 접두 | 근거(실측) |
+|---|---|---|---|
+| 경기 | GBIS | `GGB` | TAGO의 `cityCode`는 정류장 소속이 아니라 **노선 운영 시·군 필터**라 같은 nodeId를 시·군마다 다르게 답한다(`GGB225000100`: 군포 `3030·6501` / 안양 `15·11-5·87`). TAGO 도시목록 138개에 **서울이 없어** 서울 노선(`5623·541`)은 영구히 안 나온다 |
+| 인천 | TAGO | `ICB` | **정반대다.** 인천 장미아파트에서 TAGO 7개(`5·5-1·46·516·517·518·519`) vs GBIS 1개(`5`) — GBIS는 경기 버스가 지나는 인천 정류소만 얇게 안다 |
+| 서울 | GBIS | `GGB` | 옮길 곳이 없다(TAGO에 서울 없음). **부분 목록이라 확인 시트가 사용자에게 알린다**(`confirmSeoulPartial`). 응암역.신사오거리는 1개만 나온다 |
+| 그 밖 | TAGO | `BSB`·`JEB` 등 | GBIS는 수도권 전용 |
+
+- **규칙**: 각 소스가 **자기 관할 밖을 얇게만 안다.** 같은 정류장을 두 소스가 다르게
+  아는 것이 아니다. 새 지역을 붙일 때는 그 지역에서 **양쪽을 실측 비교**하고 결정한다.
+- `TAGO nodeId` = 지역접두 + `GBIS stationId`(경기·인천 모두 실측 확인). 그래서 접두만
+  갈아 끼우면 소스가 바뀐다 — 마이그레이션이 없다.
+- 서울 전용 API를 붙이면 필요한 것은 **`서울특별시_정류소정보조회` 하나**다: 검색
+  `getStationByNameList` · 경유노선 `getRouteByStationList` · 도착정보
+  `getStationByUidItem`. `버스도착정보조회` 서비스에는 정류소 단위 전체 조회가 **없다**
+  (저상·노선별만). 남은 비용은 **ATS 예외** 하나 — `ws.bus.go.kr`이 http 전용이다(실측).
+
+#### 선택 목록은 경유노선에서 나온다 (도착정보가 아니다)
+
+- 확인 시트의 "타는 버스만 남겨주세요"는 `getBusStationViaRouteListv2`(경유노선)로 만든다.
+  **도착정보로 만들면 등록하는 시각이 고를 수 있는 노선을 결정한다** — 군포 장미아파트는
+  경유노선 10개인데 그 순간 도착정보가 있는 것은 8개였고 실기기에서는 2개만 보였다
+  (사용자 신고, 2026-07-29). 경유노선은 시각과 무관해 심야에 등록해도 같은 목록이다.
+- 도착정보는 목록이 아니라 **각 행의 장식**(남은 분)이다. 없으면 그 자리를 비운다 —
+  `0`(곧 도착)과 `null`(정보 없음)은 다르다.
+- **행선지**(`routeDestName`)를 부제로 보여준다. 길 양쪽 정류장은 이름도 번호도 같고
+  행선지만 다르다(`3030 → 신사역(중)`) — 이 시트가 방향을 확인시키는 화면인데 노선번호만
+  으로는 "여기 온다"까지만 알 수 있다.
+- 표시 순서는 `buildRouteChoices`가 **번호순**으로 정한다(파서는 정렬하지 않는다). 카드는
+  빠른 순, 시트는 번호순 — 목적이 다르다. API 순서로는 `3030`이 맨 위, `6`이 아홉 번째다.
+- 경유노선이 비면(비수도권·조회 실패) 도착정보로 목록을 만든다 — 이전 동작으로 정확히 폴백.
+
+#### 검색은 이름만으로 (도시 선택은 보조)
+
+- 주 경로는 GBIS `getBusStationListv2` — **도시코드가 필요 없다.** 이름만으로 서울·경기·인천을
+  한 번에 답한다(`강남역` → 서울 16건). TAGO 검색은 `cityCode`가 필수라 전국 138개 도시
+  칩을 먼저 보여줘야 했다.
+- **도시 목록은 지역 모드에 들어갈 때만 부른다.** 화면 진입마다 부르면 주 경로가 TAGO 응답
+  속도에 묶인다(실측 5.1s, 클라이언트 타임아웃 10s — 실제로 통합 테스트가 여기서 멈췄다).
+- **자동 폴백이 아니라 명시적 전환이다.** "GBIS가 0건이면 TAGO로"는 성립하지 않는다 —
+  부산 사용자가 `서면`을 찾으면 GBIS가 서울·광명·인천의 `강서면허시험장` 등 12건을 주므로
+  0건이 아니다. `다른 지역에서 찾기` 링크로 도시 선택을 펼치고, 그때는 TAGO로만 찾는다.
+  링크는 **검색 전 화면에도** 둔다(결과 뒤에만 두면 헛검색을 한 번 해야 도달한다).
+- **`BusStop.regionName`은 선택이 아니라 필수다.** `장미아파트`는 의왕·인천·군포·시흥·서울에
+  다 있고 이름도 정류소번호도 사람이 구별에 쓸 수 없다. 도시를 먼저 고르던 시절에는 그
+  정보가 화면 위쪽에 이미 있었다 — **단계를 지우는 변경은 그 단계가 조용히 제공하던 정보를
+  함께 지운다.** 결과 행 부제(`군포 · 26044`)와 저장에 둔다.
+- `mobileNo`는 앞에 공백이 붙어 온다(`" 26044"`). Dart의 `int.tryParse`는 공백을 허용하지
+  않아 trim이 없으면 정류소번호가 전부 0이 된다.
+
+#### GBIS 응답의 함정
+
+- **건수가 1이면 배열이 아니라 객체로 온다**(실측 강남역10번출구: 경유노선 `9711` 하나 →
+  객체 / 강남역12번출구는 2건 → 배열). 이 분기가 없으면 **노선이 하나뿐인 정류장이 통째로
+  고장난다** — 빈 목록 → `empty` → 카드는 `오늘 운행이 끝났어요`, 시트는 `오는 버스가
+  없어요`인데 실제로는 버스가 오고 있다.
+- 같은 필드가 `int`·`''`·키 없음으로 **섞여** 온다. `routeName`은 `9`(int)와 `'11-5'`(String)가
+  한 응답에 있어 `as String` 캐스트가 크래시한다. 빈 값을 0으로 뭉개면 도착 정보가 없는
+  노선이 `곧 도착`으로 맨 위에 올라온다.
+- 초가 있으면 초를 쓴다 — 같은 행의 분 필드보다 정확하다(`predictTimeSec1 361`인 버스의
+  `predictTime1`이 `5`).
+- **픽스처는 실측 응답을 저장해 쓴다**(`test/fixtures/gbis/`). 손으로 쓴 GBIS 픽스처가 현실과
+  달라 여러 번 어긋났다.
+
+#### 데이터 출처 표시는 가드가 지킨다
+
+- 서울 API의 이용허락범위가 `저작자표시`(CC BY) + 공공누리 제1유형이라 **출처 표시가
+  라이선스 의무다**. `설정 › 앱 정보`의 `DataSourceListTile`.
+- 가드는 렌더링이 아니라 **문구와 실제 호출의 일치**를 본다
+  (`test/features/settings/data_source_credit_test.dart`). `bus_api_client.dart`의 기관코드
+  (`1613000`·`6410000`)와 호스트(`ws.bus.go.kr`)를 읽어 **양방향**으로 검사한다 — 호출하는데
+  안 적혀 있으면 실패, 적혀 있는데 호출하지 않으면 실패. 소스를 추가하고 출처를 잊는
+  순간이 정확히 라이선스를 어기는 순간이다.
+
+#### 확인 시트
+
+- `useSafeArea: true`가 **필요하다.** 기본값(false)은 시트를 화면 top까지 뻗게 하고 그 모드에서는
+  `MediaQuery`의 top padding이 제거돼 **시트 안의 `SafeArea`가 상단에 아무 일도 하지 않는다** —
+  제목이 다이나믹 아일랜드와 겹쳐 읽히지 않았다. 시트 높이가 내용에 따라 변하므로 가드는
+  **노선 10개** 픽스처를 쓴다(3개로 재면 시트가 짧아 통과한다).
+- 재료가 **하나도 없을 때만** 저장을 막는다. 경유노선과 도착정보는 별개 호출이라 도착 시간이
+  없어도 행선지로 방향을 확인할 수 있다 — 그것만으로 막으면 확인할 수 있는 사람을 막는다.
+  반대로 둘 다 없으면 시트가 통과 도장이 되므로 그때는 막는다.
 
 ### 탭바
 - `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 4탭 = **오늘 / 캘린더 / 입력 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
