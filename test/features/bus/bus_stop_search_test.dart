@@ -32,6 +32,7 @@ Future<void> _showSheet(
   List<BusRoute> routes = const [],
   BusCardState state = BusCardState.ok,
   CommuteDirection slot = CommuteDirection.toWork,
+  BusStop stop = _stop,
 }) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
@@ -39,7 +40,7 @@ Future<void> _showSheet(
         builder: (context) => ElevatedButton(
           onPressed: () => BusStopConfirmSheet.show(
             context,
-            stop: _stop,
+            stop: stop,
             routes: routes,
             arrivals: arrivals ?? _arrivals,
             state: state,
@@ -240,6 +241,21 @@ void main() {
       );
     });
 
+    testWidgets('서울 정류장은 목록이 전부가 아님을 밝힌다', (tester) async {
+      // 실측 응암역.신사오거리: GBIS로는 1개만 나온다(TAGO에는 서울이 없어 대안이
+      // 없다). 알리지 않으면 사용자는 목록을 전부라고 믿고 등록하고, 자기 버스가
+      // 영구히 안 보이는데 이유를 알 수 없다.
+      await _showSheet(tester, stop: _seoulStop, routes: _routes);
+
+      expect(find.text('서울 정류장은 아직 일부 노선만 보여요'), findsOneWidget);
+    });
+
+    testWidgets('경기 정류장에는 그 안내를 띄우지 않는다', (tester) async {
+      await _showSheet(tester, routes: _routes);
+
+      expect(find.text('서울 정류장은 아직 일부 노선만 보여요'), findsNothing);
+    });
+
     testWidgets('노선은 번호순으로 선다 — 자기 번호를 훑어 찾는다', (tester) async {
       await _showSheet(tester, routes: _routes, arrivals: _someArrivals);
 
@@ -252,6 +268,15 @@ void main() {
     });
   });
 }
+
+/// 서울 정류장. 목록이 부분집합이라는 것을 시트가 알려야 한다.
+const _seoulStop = BusStop(
+  nodeId: 'GGB111000090',
+  nodeNm: '응암역.신사오거리',
+  nodeNo: 13108,
+  cityCode: 0,
+  regionName: '서울',
+);
 
 /// 군포 장미아파트 실측 경유노선에서 셋을 골랐다 — 마을 `9`, 직행좌석 `3030`·`6501`.
 /// routeId는 실측 GBIS 값에 `GGB` 접두를 붙인 형태다(파서가 그렇게 준다).

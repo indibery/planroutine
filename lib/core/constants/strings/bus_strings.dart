@@ -151,6 +151,16 @@ class BusStrings {
   /// 있으니 저장을 막지 않고 이유만 밝힌다 — 시간이 통째로 빈 목록에 설명이 없으면
   /// 목록이 깨진 것으로 읽힌다.
   static const confirmNoArrivalTimes = '도착 시간은 지금 못 받았어요';
+
+  /// 서울 정류장을 고를 때. **목록이 전부가 아님을 밝힌다.**
+  ///
+  /// 서울은 경기버스정보에서 조회하는데 거기에는 경기를 지나는 노선만 담겨 있다
+  /// (실측 응암역: 1개만 나온다). 사용자가 목록을 전부라고 믿고 등록하면, 자기 버스가
+  /// 영구히 안 보이는데 이유를 알 수 없다. 시트는 노선 전체를 보여주므로 여기서
+  /// 알리면 사용자가 자기 버스가 있는지 보고 판단할 수 있다.
+  ///
+  /// 서울 전용 API가 붙으면 이 문구는 없어진다.
+  static const confirmSeoulPartial = '서울 정류장은 아직 일부 노선만 보여요';
   static const confirmReject = '아니에요';
   static const confirmAccept = '맞아요';
   static const confirmNeedRoute = '버스를 하나 이상 남겨주세요';

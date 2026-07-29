@@ -17,6 +17,21 @@ import 'tago_response_parser.dart';
 ///    오지 않아요`가 영구히 뜬다. 되붙이면 마이그레이션이 필요 없다.
 const gbisIdPrefix = 'GGB';
 
+/// TAGO 인천 정류소 접두. **경기와 같은 규칙이다** — `TAGO nodeId` = `'ICB'` +
+/// `GBIS stationId`(실측 인천 장미아파트: TAGO `ICB163000044` ↔ GBIS `163000044`).
+///
+/// 인천 정류장을 GBIS가 아니라 TAGO로 보내는 이유는 **커버리지다.** 같은 정류장·같은
+/// 시각에 TAGO는 7개 노선(`5·5-1·46·516·517·518·519`), GBIS는 1개(`5`)를 준다 —
+/// GBIS는 경기 버스가 지나는 인천 정류소만 담고 있다. 경기와 정반대 상황이다
+/// (경기는 TAGO가 부분집합이라 GBIS로 옮겼다).
+const incheonIdPrefix = 'ICB';
+
+/// TAGO 인천광역시 도시코드(실측 도시목록). TAGO 도착조회에 필요하다.
+const incheonCityCode = 23;
+
+/// GBIS 검색 결과의 `regionName`이 이 값이면 인천이다.
+const _regionIncheon = '인천';
+
 /// `resultCode` — 정상 처리.
 const _gbisOk = 0;
 
@@ -101,19 +116,31 @@ TagoResult<BusStop> parseGbisStops(Map<String, dynamic> json) {
 }
 
 /// 한 행 → 정류장 1건.
+///
+/// **접두를 지역으로 가른다.** 이 값이 곧 조회 소스를 결정하므로
+/// (`BusApiClient._arrivals`), 지역별로 커버리지가 더 좋은 쪽을 골라야 한다 —
+/// 경기는 GBIS([gbisIdPrefix]), 인천은 TAGO([incheonIdPrefix]). 근거는 두 상수의
+/// 문서에 있다.
+///
+/// 서울은 GBIS로 둔다. TAGO 도시목록에 서울이 없어 대안이 없고, GBIS가 부분적이라는
+/// 사실은 확인 시트가 사용자에게 알린다(`BusStrings.confirmSeoulPartial`).
 BusStop _stop(Map<String, dynamic> row) {
   final id = _intOrNull(row['stationId']);
+  final region = row['regionName']?.toString();
+  final incheon = region == _regionIncheon;
+  final prefix = incheon ? incheonIdPrefix : gbisIdPrefix;
 
   return BusStop(
-    nodeId: id == null ? gbisIdPrefix : '$gbisIdPrefix$id',
+    nodeId: id == null ? prefix : '$prefix$id',
     nodeNm: row['stationName']?.toString() ?? '',
     // `mobileNo`는 **앞에 공백이 붙어** 온다(실측 `" 27302"`). Dart의 `int.tryParse`는
     // 공백을 허용하지 않아 trim 없이는 전부 0이 된다 — 정류소번호가 화면에서 같은
     // 이름을 가진 정류장을 구별하는 둘째 단서인데 조용히 사라진다.
     nodeNo: _intOrNull(row['mobileNo']?.toString().trim()) ?? 0,
-    // GBIS 경로는 도시코드를 쓰지 않는다([BusStop.cityCode] 참고).
-    cityCode: 0,
-    regionName: row['regionName']?.toString(),
+    // 인천은 TAGO로 조회하므로 도시코드가 **필요하다.** GBIS 경로(경기·서울)는
+    // 쓰지 않으므로 0이다([BusStop.cityCode] 참고).
+    cityCode: incheon ? incheonCityCode : 0,
+    regionName: region,
   );
 }
 

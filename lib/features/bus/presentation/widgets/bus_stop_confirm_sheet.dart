@@ -204,6 +204,10 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
               // 방향은 행선지로 확인하면 되므로 막지 않고 이유만 밝힌다 —
               // 시간이 통째로 빈 목록에 설명이 없으면 목록이 깨진 것으로 읽힌다.
               if (_arrivalsFailed) _note(BusStrings.confirmNoArrivalTimes),
+              // 서울은 목록이 부분집합이다. 여기서 알리지 않으면 사용자는 목록을
+              // 전부라고 믿고 등록하고, 자기 버스가 영구히 안 보이는데 이유를 알 수
+              // 없다 — 이 기능이 처음 어긋난 방식과 같다.
+              if (widget.stop.isSeoul) _note(BusStrings.confirmSeoulPartial),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,

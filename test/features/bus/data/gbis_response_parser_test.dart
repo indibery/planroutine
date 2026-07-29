@@ -190,10 +190,65 @@ void main() {
       expect(r.items.every((s) => s.nodeNo > 0), isTrue);
     });
 
-    test('GBIS 경로는 도시코드를 쓰지 않으므로 0이다', () {
+    test('경기·서울은 GBIS로 가고 도시코드를 쓰지 않는다', () {
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+      final gyeonggi = r.items.where((s) => s.regionName != '인천');
+
+      expect(gyeonggi.every((s) => s.nodeId.startsWith('GGB')), isTrue);
+      expect(gyeonggi.every((s) => s.cityCode == 0), isTrue);
+    });
+
+    test('인천은 TAGO로 보낸다 — 커버리지가 7배다', () {
+      // 실측 인천 장미아파트: TAGO `ICB163000044` 7개 노선
+      // (5·5-1·46·516·517·518·519) vs GBIS `163000044` 1개(5).
+      // GBIS는 경기 버스가 지나는 인천 정류소만 담고 있다 — 경기와 정반대다.
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+      final incheon = r.items.where((s) => s.regionName == '인천').toList();
+
+      expect(incheon, isNotEmpty, reason: '픽스처에 인천 정류장이 있어야 이 테스트가 의미를 갖는다');
+      expect(incheon.every((s) => s.nodeId.startsWith('ICB')), isTrue);
+      // TAGO 조회에는 도시코드가 필요하다 — 0이면 빈 응답이 온다.
+      expect(incheon.every((s) => s.cityCode == 23), isTrue);
+    });
+
+    test('인천 nodeId는 접두만 다르고 숫자는 GBIS stationId와 같다', () {
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+      final incheon =
+          r.items.firstWhere((s) => s.regionName == '인천' && s.nodeNo == 37044);
+
+      expect(incheon.nodeId, 'ICB163000044');
+    });
+
+    test('서울 정류장은 부분 목록임을 스스로 밝힌다', () {
+      final r = parseGbisStops(_fixture('stations_gangnam_seoul'));
+
+      expect(r.items.every((s) => s.isSeoul), isTrue);
+      // GBIS로 가지만(TAGO에 서울이 없다) 시트가 사용자에게 알린다.
+      expect(r.items.every((s) => s.nodeId.startsWith('GGB')), isTrue);
+    });
+
+    test('한 응답 안에서 세 라우팅이 지역별로 갈린다', () {
+      // 실측 `장미아파트` 13건의 지역 분포: 인천 5 · 의왕 2 · 시흥 2 · 서울 2 ·
+      // 군포 1 · 수원 1. 한 응답에 세 분기가 다 들어 있다.
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
 
-      expect(r.items.every((s) => s.cityCode == 0), isTrue);
+      final incheon = r.items.where((s) => s.regionName == '인천');
+      final seoul = r.items.where((s) => s.isSeoul);
+      final gyeonggi = r.items.where((s) => s.regionName != '인천' && !s.isSeoul);
+
+      expect(incheon, hasLength(5));
+      expect(seoul, hasLength(2));
+      expect(gyeonggi, hasLength(6));
+
+      // 인천만 TAGO로, 나머지는 GBIS로.
+      expect(incheon.every((s) => s.nodeId.startsWith(incheonIdPrefix)), isTrue);
+      expect(seoul.every((s) => s.nodeId.startsWith(gbisIdPrefix)), isTrue);
+      expect(gyeonggi.every((s) => s.nodeId.startsWith(gbisIdPrefix)), isTrue);
+
+      // 도시코드는 TAGO로 가는 인천에만 필요하다.
+      expect(incheon.every((s) => s.cityCode == incheonCityCode), isTrue);
+      expect(seoul.every((s) => s.cityCode == 0), isTrue);
+      expect(gyeonggi.every((s) => s.cityCode == 0), isTrue);
     });
 
     test('수도권 밖은 empty다 — TAGO 보조 경로가 필요한 이유', () {

@@ -43,6 +43,16 @@ class BusStop {
   /// 전부를 골랐는데도 새 버스를 못 본다. 빈 집합은 시간이 지나도 뜻이 변하지 않는다.
   final Set<String> routeIds;
 
+  /// 서울 정류장인가 — **노선 목록이 전부가 아니라는 뜻이다.**
+  ///
+  /// 서울은 경기버스정보(GBIS)에서 조회하는데 거기에는 경기를 지나는 노선만 담겨 있다
+  /// (실측 응암역.신사오거리: 1개만 나온다. 인천 장미아파트도 TAGO 7개 vs GBIS 1개였고,
+  /// 인천은 TAGO로 옮겨 해결했지만 서울은 TAGO 도시목록에 아예 없다).
+  ///
+  /// 확인 시트가 이 값을 보고 사용자에게 알린다. 서울 전용 API가 붙으면 이 getter와
+  /// 그 안내가 함께 없어진다.
+  bool get isSeoul => regionName == '서울';
+
   BusStop copyWith({Set<String>? routeIds}) {
     return BusStop(
       nodeId: nodeId,
