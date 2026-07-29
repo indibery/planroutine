@@ -76,10 +76,7 @@ class BusArrivalCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 제목줄만 폭을 알아야 한다(좁은 폭에서 방향 라벨의 이모지를 뗀다).
-          LayoutBuilder(
-            builder: (context, constraints) => _header(constraints.maxWidth),
-          ),
+          _header(),
           if (expanded) ...[
             const SizedBox(height: AppSizes.spacing8),
             _body(),
@@ -96,22 +93,14 @@ class BusArrivalCard extends StatelessWidget {
     );
   }
 
-  /// 방향 라벨에서 이모지를 떼는 본문 폭.
-  ///
-  /// 320pt 기기(화면 확대를 켠 아이폰 · 배포 타깃 iOS 13이 포함하는 SE 1세대)의 본문 폭은
-  /// 280pt이고, 거기서 `stale` 제목줄의 고정 요소 셋(방향 라벨 · `07:32 기준 · 갱신 실패` ·
-  /// chevron)이 합쳐 약 301pt였다 — `Expanded`인 정류장 이름을 0으로 줄여도 21px이 넘쳤다.
-  /// 375pt 기기는 본문 335pt로 이 문턱 위라 **1픽셀도 바뀌지 않는다.**
-  static const _shortLabelWidth = 300.0;
-
-  Widget _header(double maxWidth) {
+  Widget _header() {
     final toggle = onToggleExpanded;
     final row = Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          maxWidth < _shortLabelWidth ? direction.shortLabel : direction.label,
+          direction.label,
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,

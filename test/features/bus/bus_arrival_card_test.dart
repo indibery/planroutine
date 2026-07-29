@@ -54,44 +54,6 @@ Future<void> _pump(
 }
 
 void main() {
-  // 320pt = 화면 확대를 켠 아이폰(390pt 기기가 이 폭으로 렌더)이고, 배포 타깃 iOS 13이
-  // 포함하는 SE 1세대의 폭이기도 하다. `stale`의 기준시각이 `07:32 기준 · 갱신 실패`로
-  // 길어지면 제목줄의 고정 요소 셋이 본문 폭을 넘어, `Expanded`인 정류장 이름을 0으로
-  // 줄여도 21px이 넘쳤다(`ok`는 넘치지 않았다 — 그래서 이 가드는 stale로 잡아야 한다).
-  group('좁은 폭 — 제목줄이 넘치지 않는다', () {
-    Future<void> pumpAt(WidgetTester tester, double width) async {
-      tester.view.physicalSize = Size(width * 3, 800 * 3);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await _pump(
-        tester,
-        view: _view(
-          state: BusCardState.stale,
-          fetchedAt: DateTime(2026, 7, 29, 7, 32),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('320pt에서 stale 제목줄이 넘치지 않고 이모지를 뗀다', (tester) async {
-      await pumpAt(tester, 320);
-      expect(tester.takeException(), isNull, reason: '오버플로가 없어야 한다');
-      expect(find.text('출근'), findsOneWidget);
-      expect(find.text('🏠→🏫 출근'), findsNothing,
-          reason: '이모지가 장식이고 말뜻은 문자가 진다 — 줄일 것은 이모지다');
-      expect(find.text('07:32 기준 · 갱신 실패'), findsOneWidget,
-          reason: '신선도 고백은 좁은 폭에서도 잘리지 않는다');
-    });
-
-    testWidgets('375pt에서는 1픽셀도 바뀌지 않는다', (tester) async {
-      await pumpAt(tester, 375);
-      expect(tester.takeException(), isNull);
-      expect(find.text('🏠→🏫 출근'), findsOneWidget,
-          reason: '문턱 위에서는 원래 라벨을 그대로 쓴다');
-    });
-  });
-
   group('펼침', () {
     testWidgets('방향·정류장·기준시각·본문·방향토글이 모두 보인다', (tester) async {
       await _pump(tester, view: _view(fetchedAt: DateTime(2026, 7, 28, 7, 32)));

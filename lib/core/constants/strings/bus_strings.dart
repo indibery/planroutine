@@ -26,14 +26,6 @@ class BusStrings {
   static const routeToWork = '🏠→🏫 출근';
   static const routeToHome = '🏫→🏠 퇴근';
 
-  /// 좁은 폭용 방향 라벨 — **이모지를 뺀다.**
-  ///
-  /// 320pt(화면 확대를 켠 아이폰, 그리고 배포 타깃 iOS 13이 포함하는 SE 1세대)에서는
-  /// 제목줄의 고정 요소 셋(방향 라벨 + `07:32 기준 · 갱신 실패` + chevron)이 본문 폭
-  /// 280pt를 넘어, `Expanded`인 정류장 이름을 0으로 줄여도 21px이 넘쳤다. 줄일 수 있는
-  /// 것 중 이모지가 **말뜻을 지고 있지 않은 유일한 요소**다.
-  static const routeToWorkShort = '출근';
-  static const routeToHomeShort = '퇴근';
   static const seeToWork = '출근 보기';
   static const seeToHome = '퇴근 보기';
   static const collapse = '접기';
