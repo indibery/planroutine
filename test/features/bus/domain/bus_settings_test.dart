@@ -7,7 +7,7 @@ import 'package:planroutine/features/bus/domain/time_range.dart';
 
 const _stop = BusStop(
   nodeId: 'GGB201000156',
-  nodeNm: '수원시청',
+  nodeNm: 'B정류장',
   nodeNo: 2251,
   cityCode: 31010,
 );

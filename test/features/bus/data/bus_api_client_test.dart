@@ -25,14 +25,14 @@ Map<String, dynamic> _arr(Object routeno, String routeid, int arrtime) => {
       'arrprevstationcnt': 3,
       'arrtime': arrtime,
       'nodeid': 'GGB201000156',
-      'nodenm': '수원시청',
+      'nodenm': 'B정류장',
       'routeid': routeid,
       'routeno': routeno,
       'vehicletp': '일반버스',
     };
 
 /// TAGO는 UTF-8 JSON을 준다. content-type을 빼면 package:http가 latin1로
-/// 인코딩해 픽스처의 한글(`수원시청`)에서 터진다 — 구현이 아니라 픽스처의 함정이다.
+/// 인코딩해 픽스처의 한글(`B정류장`)에서 터진다 — 구현이 아니라 픽스처의 함정이다.
 http.Response _json(String body, [int status = 200]) => http.Response(
       body,
       status,
@@ -95,7 +95,7 @@ void main() {
         seen = req.url;
         return _json(_gbisFixture('arrivals_jangmi_10routes'));
       });
-      // 군포 장미아파트. 실기기에서 2개만 보였던 그 정류장이다.
+      // 경기 A정류장. 실기기에서 2개만 보였던 그 정류장이다.
       final r = await c.fetchArrivals(cityCode: 31160, nodeId: 'GGB225000100');
 
       expect(seen?.scheme, 'https');
@@ -294,7 +294,7 @@ void main() {
       final c = clientWith((req) async {
         seen = req.url;
         return _json(
-          _body({'nodeid': 'N1', 'nodenm': '수원시청', 'nodeno': 2251}),
+          _body({'nodeid': 'N1', 'nodenm': 'B정류장', 'nodeno': 2251}),
         );
       });
       final r = await c.searchStops(cityCode: 31010, name: '시청');
@@ -318,11 +318,11 @@ void main() {
         seen = req.url;
         return _json(_gbisFixture('stations_jangmi_capital'));
       });
-      final r = await c.searchGbisStops(name: '장미아파트');
+      final r = await c.searchGbisStops(name: 'A정류장');
 
       expect(seen?.path,
           '/6410000/busstationservice/v2/getBusStationListv2');
-      expect(seen?.queryParameters['keyword'], '장미아파트');
+      expect(seen?.queryParameters['keyword'], 'A정류장');
       expect(seen?.queryParameters['format'], 'json');
       // 도시코드를 안 보내는 것이 이 경로의 존재 이유다 — 보내면 화면이 도시를
       // 먼저 고르게 해야 한다.

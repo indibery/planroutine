@@ -7,7 +7,7 @@ void main() {
     test('routeIds가 비어 있으면 왕복해도 비어 있다 — 필터 없음을 뜻한다', () {
       const stop = BusStop(
         nodeId: 'GGB201000156',
-        nodeNm: '수원시청.수원일자리센터',
+        nodeNm: 'B정류장(길 양쪽)',
         nodeNo: 2251,
         cityCode: 31010,
       );
@@ -21,7 +21,7 @@ void main() {
     test('골라둔 routeIds는 그대로 살아 돌아온다', () {
       const stop = BusStop(
         nodeId: 'GGB201000156',
-        nodeNm: '수원시청',
+        nodeNm: 'B정류장',
         nodeNo: 2251,
         cityCode: 31010,
         routeIds: {'GGB200000025', 'GGB200000029'},
@@ -33,7 +33,7 @@ void main() {
     test('routeIds 키가 없는 옛 값도 빈 집합으로 읽힌다', () {
       final back = BusStop.fromJson({
         'nodeId': 'GGB201000156',
-        'nodeNm': '수원시청',
+        'nodeNm': 'B정류장',
         'nodeNo': 2251,
         'cityCode': 31010,
       });
@@ -45,7 +45,7 @@ void main() {
     test('왕복해도 지역명이 남는다', () {
       const stop = BusStop(
         nodeId: 'GGB225000100',
-        nodeNm: '장미아파트',
+        nodeNm: 'A정류장',
         nodeNo: 26044,
         cityCode: 0,
         regionName: '군포',
@@ -68,14 +68,14 @@ void main() {
     test('옛 저장 데이터(지역명 없음)도 그대로 읽힌다 — 마이그레이션이 없다', () {
       final stop = BusStop.fromJson(const {
         'nodeId': 'GGB201000156',
-        'nodeNm': '수원시청.수원일자리센터',
+        'nodeNm': 'B정류장(길 양쪽)',
         'nodeNo': 2251,
         'cityCode': 31010,
         'routeIds': <String>[],
       });
 
       expect(stop.regionName, isNull);
-      expect(stop.nodeNm, '수원시청.수원일자리센터');
+      expect(stop.nodeNm, 'B정류장(길 양쪽)');
     });
 
     test('copyWith가 지역명을 잃지 않는다', () {
@@ -83,7 +83,7 @@ void main() {
       // 떨어지면 저장된 정류장의 지역 표시가 등록 직후 사라진다.
       const stop = BusStop(
         nodeId: 'GGB225000100',
-        nodeNm: '장미아파트',
+        nodeNm: 'A정류장',
         nodeNo: 26044,
         cityCode: 0,
         regionName: '군포',

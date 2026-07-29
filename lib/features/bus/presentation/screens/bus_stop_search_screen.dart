@@ -181,7 +181,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       _loading = true;
       _tooShort = false;
       _stopFailure = null;
-      // 새 검색이면 옛 지역 필터를 버린다 — 안 버리면 `군포`를 고른 채 다른 이름을
+      // 새 검색이면 옛 지역 필터를 버린다 — 안 버리면 `서울`을 고른 채 다른 이름을
       // 찾아 결과가 0건인데 이유가 화면에 없다.
       _region = null;
     });
@@ -411,7 +411,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
             title: Text(stop.nodeNm),
             // **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않으므로 화면
             // 어디에도 지역 정보가 없고, 같은 이름의 정류장이 여러 시·군에 있다
-            // (실측 `장미아파트` → 의왕·인천·군포·시흥). 도시 선택 단계가 조용히
+            // (실측 `A정류장` → 경기 3개 시·인천). 도시 선택 단계가 조용히
             // 제공하던 정보를 결과 행으로 옮긴 것이다.
             subtitle: Text(_subtitleOf(stop)),
             trailing: Icon(Icons.chevron_right, color: AppColors.faint),

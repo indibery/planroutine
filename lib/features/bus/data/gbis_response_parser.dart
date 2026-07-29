@@ -5,7 +5,7 @@ import 'tago_response_parser.dart';
 
 /// 경기도 식별자 접두. **`TAGO nodeId` = `'GGB'` + `GBIS stationId`**이고 노선 ID도
 /// 같은 규칙이다(실측: TAGO `GGB200000025`·`GGB200000029` ↔ GBIS `200000025`·
-/// `200000029` = 수원시청 92·92-1번).
+/// `200000029` = B정류장 92·92-1번).
 ///
 /// 이 상수가 두 가지를 정의한다.
 /// 1. **소스 분기** — `BusApiClient.fetchArrivals`가 이 접두로 GBIS/TAGO를 가른다.
@@ -18,7 +18,7 @@ import 'tago_response_parser.dart';
 const gbisIdPrefix = 'GGB';
 
 /// TAGO 인천 정류소 접두. **경기와 같은 규칙이다** — `TAGO nodeId` = `'ICB'` +
-/// `GBIS stationId`(실측 인천 장미아파트: TAGO `ICB163000044` ↔ GBIS `163000044`).
+/// `GBIS stationId`(실측 인천 A정류장: TAGO `ICB163000044` ↔ GBIS `163000044`).
 ///
 /// 인천 정류장을 GBIS가 아니라 TAGO로 보내는 이유는 **커버리지다.** 같은 정류장·같은
 /// 시각에 TAGO는 7개 노선(`5·5-1·46·516·517·518·519`), GBIS는 1개(`5`)를 준다 —
@@ -46,9 +46,9 @@ const _gbisNoResult = 4;
 /// 소스와 무관하게 한 곳에 있어야 한다. 이름 정리는 별건이다.
 ///
 /// **도착 시각이 없는 노선은 목록에서 뺀다.** GBIS는 그런 노선도 행으로 주고
-/// (`predictTime1: ""` + `predictTimeSec1` 없음, 실측 장미아파트 10행 중 2행)
+/// (`predictTime1: ""` + `predictTimeSec1` 없음, 실측 A정류장 10행 중 2행)
 /// 지도 앱은 그것을 `정보없음`으로 **보여준다.** 우리가 조용히 빼면 사용자는 "그
-/// 노선이 안 온다"로 읽는다 — 이 카드가 처음 어긋난 방식(군포 장미아파트에서 9개 중
+/// 노선이 안 온다"로 읽는다 — 이 카드가 처음 어긋난 방식(경기 A정류장에서 9개 중
 /// 2개만 보였다)의 축소판이다. 그런데도 지금 빼는 이유는 화면이 아니라 타입이다:
 /// [BusArrival.arrMin]이 non-nullable이고 nullable로 바꾸면 정렬·경과 보정·표시
 /// 상한·카드·확인 시트가 전부 영향받는다(스펙 개정 라운드 몫).
@@ -58,7 +58,7 @@ const _gbisNoResult = 4;
 /// 범위 밖이다.
 ///
 /// **노선 축약(같은 `routeId` 여러 건 → 빠른 것 하나)은 하지 않는다.** 1차·2차가 한
-/// 행에 오므로 실측 응답은 노선당 1행이다(장미 10노선 10행 · 수원시청 6노선 6행).
+/// 행에 오므로 실측 응답은 노선당 1행이다(A정류장 10노선 10행 · B정류장 6노선 6행).
 TagoResult<BusArrival> parseGbisArrivals(Map<String, dynamic> json) {
   final failure = _envelopeFailure(json);
   if (failure != null) return TagoResult(failure);
@@ -95,8 +95,8 @@ TagoResult<BusRoute> parseGbisViaRoutes(Map<String, dynamic> json) {
 ///
 /// **도시코드를 요구하지 않는다.** TAGO 검색(`getSttnNoList`)은 `cityCode`가 필수라
 /// 화면이 도시를 먼저 고르게 해야 했는데(전국 138개 칩), GBIS는 이름만으로
-/// **서울·경기·인천**을 한 번에 답한다(실측 `강남역` → 서울 16건, `장미아파트` →
-/// 의왕·인천·군포·시흥 9건). 그 밖의 지역은 0건이므로 TAGO가 계속 필요하다
+/// **서울·경기·인천**을 한 번에 답한다(실측 `강남역` → 서울 16건, `A정류장` →
+/// 경기 3개 시·인천 9건). 그 밖의 지역은 0건이므로 TAGO가 계속 필요하다
 /// (실측 `제주공항` → `resultCode 4`, `서면` → 부산 없음).
 ///
 /// `nodeId`에 [gbisIdPrefix]를 붙인다 — 저장·조회 경로가 그 접두로 소스를 가른다.

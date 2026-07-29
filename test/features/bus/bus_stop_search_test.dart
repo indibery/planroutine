@@ -9,7 +9,7 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_stop_confirm_s
 
 const _stop = BusStop(
   nodeId: 'GGB201000156',
-  nodeNm: '수원시청.수원일자리센터',
+  nodeNm: 'B정류장(길 양쪽)',
   nodeNo: 2251,
   cityCode: 31010,
 );
@@ -60,7 +60,7 @@ void main() {
     testWidgets('정류장 이름·번호와 오는 버스를 보여준다', (tester) async {
       await _showSheet(tester);
       expect(find.text('이 정류장이 맞나요?'), findsOneWidget);
-      expect(find.textContaining('수원시청.수원일자리센터'), findsOneWidget);
+      expect(find.textContaining('B정류장(길 양쪽)'), findsOneWidget);
       expect(find.textContaining('2251'), findsOneWidget);
       expect(find.text('82-1번'), findsOneWidget);
       expect(find.text('92-1번'), findsOneWidget);
@@ -141,7 +141,7 @@ void main() {
   });
 
   group('확인 시트 — 선택 목록은 경유노선에서 나온다', () {
-    // 이 그룹이 지키는 것이 실기기 버그다(2026-07-29): 군포 장미아파트는 경유노선이
+    // 이 그룹이 지키는 것이 실기기 버그다(2026-07-29): 경기 A정류장는 경유노선이
     // 10개인데 도착정보로 목록을 만들어 사용자 화면에 2개만 떴다. 자기 버스가 목록에
     // 없으면 노선을 좁힐 수 없다.
     testWidgets('도착정보에 없는 노선도 고를 수 있다', (tester) async {
@@ -278,7 +278,7 @@ const _seoulStop = BusStop(
   regionName: '서울',
 );
 
-/// 군포 장미아파트 실측 경유노선에서 셋을 골랐다 — 마을 `9`, 직행좌석 `3030`·`6501`.
+/// 경기 A정류장 실측 경유노선에서 셋을 골랐다 — 마을 `9`, 직행좌석 `3030`·`6501`.
 /// routeId는 실측 GBIS 값에 `GGB` 접두를 붙인 형태다(파서가 그렇게 준다).
 const _routes = [
   BusRoute(routeId: 'GGB208000027', routeNo: '3030', destName: '신사역(중)'),
@@ -295,7 +295,7 @@ final _someArrivals = [
   BusArrival.fromMinutes(routeId: 'GGB208000027', routeNo: '3030', arrMin: 4),
 ];
 
-/// 군포 장미아파트 실측 경유노선 **10개 전부**. 시트가 화면 top까지 자라는 조건이라
+/// 경기 A정류장 실측 경유노선 **10개 전부**. 시트가 화면 top까지 자라는 조건이라
 /// 상단 침범 가드가 이 픽스처를 쓴다.
 const _manyRoutes = [
   BusRoute(routeId: 'GGB241382003', routeNo: '6', destName: '금정역'),

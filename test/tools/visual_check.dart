@@ -146,7 +146,7 @@ const _longTitle = '2025학년도 3학년 교육과정 편성·운영 계획 수
 const _longDesc = '교무실 3층 회의실 · 담당 김철수 · 준비물 명부 사본 2부';
 
 /// 실측으로 두 개가 존재하는 정류장 이름.
-const _longStop = '수원시청.수원일자리센터';
+const _longStop = 'B정류장(길 양쪽)';
 
 final _sweepToday = DateTime(2026, 7, 29);
 
@@ -324,7 +324,7 @@ void main() {
               view: _view(st, hidden: 2),
               style: BusCardStyle.text,
               direction: CommuteDirection.toWork,
-              stopName: st == BusCardState.noStop ? '' : '수원시청.수원일자리센터',
+              stopName: st == BusCardState.noStop ? '' : 'B정류장(길 양쪽)',
               expanded: true,
               onToggleExpanded: st == BusCardState.noStop ? null : () {},
               onFlipDirection: () {},
@@ -1018,7 +1018,7 @@ void main() {
           interact: () async {
             await tester.enterText(
               find.byKey(BusStopSearchScreen.stopFieldKey),
-              '수원시청',
+              'B정류장',
             );
             await tester.testTextInput.receiveAction(TextInputAction.search);
           },

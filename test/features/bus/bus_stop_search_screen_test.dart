@@ -31,13 +31,13 @@ const _hwaseong = 41590;
 /// 도시코드가 달라야 한다.
 const _savedSuwon = BusStop(
   nodeId: 'N2251',
-  nodeNm: '수원시청.수원일자리센터',
+  nodeNm: 'B정류장(길 양쪽)',
   nodeNo: 2251,
   cityCode: _suwon,
 );
 const _savedHwaseong = BusStop(
   nodeId: 'N4401',
-  nodeNm: '화성시청',
+  nodeNm: 'B정류장(다른 시)',
   nodeNo: 4401,
   cityCode: _hwaseong,
 );
@@ -80,9 +80,9 @@ class _Tago {
 
   /// 도시코드 → (정류장 이름 → 정류소번호). 등록되지 않은 도시는 빈 응답이다.
   Map<int, Map<String, int>> stops = const {
-    _suwon: {'수원시청.수원일자리센터': 2251},
+    _suwon: {'B정류장(길 양쪽)': 2251},
     _seongnam: {'성남시청': 3301},
-    _hwaseong: {'화성시청': 4401},
+    _hwaseong: {'B정류장(다른 시)': 4401},
   };
 
   /// 켜면 그 엔드포인트가 500을 준다 — 클라이언트는 `malformed`로 읽는다.
@@ -101,7 +101,7 @@ class _Tago {
   ///
   /// 도시와 무관하다. 비우면 `resultCode 4`(수도권 밖)로 답해, 사용자가 지역 전환을
   /// 밟는 흐름을 테스트할 수 있다.
-  Map<String, String> gbisStops = const {'수원시청.수원일자리센터': '수원'};
+  Map<String, String> gbisStops = const {'B정류장(길 양쪽)': '수원'};
 
   int cityCalls = 0;
   int stopCalls = 0;
@@ -310,21 +310,21 @@ void main() {
       expect(find.byType(PillChip), findsNothing);
       expect(find.byKey(BusStopSearchScreen.stopFieldKey), findsOneWidget);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
 
       expect(tago.gbisSearchCalls, 1);
       expect(tago.stopCalls, 0, reason: 'TAGO는 보조다');
-      expect(find.widgetWithText(ListTile, '수원시청.수원일자리센터'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'), findsOneWidget);
     });
 
     testWidgets('결과 행에 지역명을 붙인다 — 도시를 먼저 고르지 않았으므로', (tester) async {
-      // 같은 이름의 정류장이 여러 시·군에 있다(실측 `장미아파트` → 의왕·인천·군포·시흥).
+      // 같은 이름의 정류장이 여러 시·군에 있다(실측 `A정류장` → 경기 3개 시·인천).
       // 도시 선택 단계가 조용히 제공하던 정보를 행으로 옮긴 것이다.
-      final tago = _Tago()..gbisStops = const {'장미아파트': '군포'};
+      final tago = _Tago()..gbisStops = const {'A정류장': '군포'};
       await _pumpScreen(tester, tago);
 
-      await _typeStop(tester, '장미');
+      await _typeStop(tester, 'A정류장');
       await _tapSearch(tester);
 
       expect(find.text(BusStrings.stopRegion('군포', 2251)), findsOneWidget);
@@ -346,9 +346,9 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       expect(tago.arrivalCalls, 1, reason: '저장 전에 오는 버스를 물어본다');
@@ -374,13 +374,13 @@ void main() {
       await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
 
       expect(tago.stopCalls, 1);
       expect(tago.gbisSearchCalls, 0,
           reason: '지역을 명시했으면 그 지역으로만 찾는다 — 수도권 결과가 섞이면 고를 수 없다');
-      expect(find.widgetWithText(ListTile, '수원시청.수원일자리센터'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'), findsOneWidget);
     });
 
     testWidgets('TAGO 경로 결과를 탭해도 확인 시트가 뜬다', (tester) async {
@@ -389,9 +389,9 @@ void main() {
       await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       expect(tago.arrivalCalls, 1);
@@ -409,11 +409,11 @@ void main() {
       );
       await _openRegionMode(tester);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
 
       expect(tago.stopCalls, 1);
-      expect(find.widgetWithText(ListTile, '수원시청.수원일자리센터'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'), findsOneWidget);
     });
 
     testWidgets('칩은 20개까지만 그리고 선택된 도시는 상한 밖이어도 맨 앞에 남는다', (tester) async {
@@ -462,7 +462,7 @@ void main() {
       await _pumpScreen(tester, tago);
       await _openRegionMode(tester);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       final button = tester.widget<IconButton>(
         find.ancestor(
           of: find.byIcon(Icons.search),
@@ -514,7 +514,7 @@ void main() {
       final tago = _Tago()..gbisFails = true;
       await _pumpScreen(tester, tago);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
 
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
@@ -558,9 +558,9 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago, slot: CommuteDirection.toHome);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.confirmTitle), findsOneWidget);
@@ -578,15 +578,15 @@ void main() {
 
       expect(find.text('도착지 정류장 찾기'), findsOneWidget);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(BusStopConfirmSheet.acceptKey));
       await tester.pumpAndSettle();
 
       final saved = container.read(busSettingsProvider).valueOrNull;
-      expect(saved?.arrival?.nodeNm, '수원시청.수원일자리센터');
+      expect(saved?.arrival?.nodeNm, 'B정류장(길 양쪽)');
       expect(saved?.departure, isNull,
           reason: '제목이 도착지라고 말했으면 출발지는 건드리지 않는다');
     });
@@ -600,9 +600,9 @@ void main() {
       final tago = _Tago();
       await _pumpRouted(tester, tago, slot: CommuteDirection.toWork);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       expect(tago.viaRouteCalls, 1);
@@ -639,9 +639,9 @@ void main() {
       await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.tap(find.text('B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       expect(tago.viaRouteCalls, 0);
@@ -657,14 +657,14 @@ void main() {
       await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      expect(find.text('수원시청.수원일자리센터'), findsOneWidget);
+      expect(find.text('B정류장(길 양쪽)'), findsOneWidget);
 
       await _typeStop(tester, '');
       await _tapCity(tester, '성남시');
 
-      expect(find.text('수원시청.수원일자리센터'), findsNothing,
+      expect(find.text('B정류장(길 양쪽)'), findsNothing,
           reason: '성남시가 강조된 칩 아래 수원시 목록이 깔려서는 안 된다');
       expect(find.text(BusStrings.searchPrompt), findsOneWidget);
     });
@@ -675,15 +675,15 @@ void main() {
       await _openRegionMode(tester);
 
       await _tapCity(tester, '수원시');
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
       expect(tago.stopCalls, 1);
 
       await _tapCity(tester, '화성시');
 
       expect(tago.stopCalls, 2);
-      expect(find.text('화성시청'), findsOneWidget);
-      expect(find.text('수원시청.수원일자리센터'), findsNothing,
+      expect(find.text('B정류장(다른 시)'), findsOneWidget);
+      expect(find.text('B정류장(길 양쪽)'), findsNothing,
           reason: '이름을 넣어둔 채 칩만 바꿨는데 옛 목록이 남으면 그 행을 탭한다');
     });
   });
@@ -760,9 +760,9 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      await _typeStop(tester, '시청');
+      await _typeStop(tester, 'B정류장');
       await _tapSearch(tester);
-      await tester.tap(find.widgetWithText(ListTile, '수원시청.수원일자리센터'));
+      await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
       final style =

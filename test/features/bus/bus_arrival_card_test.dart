@@ -34,7 +34,7 @@ Future<void> _pump(
   bool expanded = true,
   VoidCallback? onToggle,
   VoidCallback? onFlip,
-  String stopName = '수원시청',
+  String stopName = 'B정류장',
   // false면 `onToggleExpanded`로 null을 넘긴다 = 접을 수 없는 카드(정류장 미등록).
   bool collapsible = true,
 }) {
@@ -58,7 +58,7 @@ void main() {
     testWidgets('방향·정류장·기준시각·본문·방향토글이 모두 보인다', (tester) async {
       await _pump(tester, view: _view(fetchedAt: DateTime(2026, 7, 28, 7, 32)));
       expect(find.text('🏠→🏫 출근'), findsOneWidget);
-      expect(find.textContaining('수원시청'), findsOneWidget);
+      expect(find.textContaining('B정류장'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(find.byType(BusBodyText), findsOneWidget);
       expect(find.textContaining('퇴근 보기'), findsOneWidget);
@@ -80,7 +80,7 @@ void main() {
       expect(find.textContaining('퇴근 보기'), findsNothing);
 
       expect(find.text('🏠→🏫 출근'), findsOneWidget);
-      expect(find.textContaining('수원시청'), findsOneWidget);
+      expect(find.textContaining('B정류장'), findsOneWidget);
     });
 
     testWidgets('도착 분이 남지 않는다 — 안 보이게 하는 것이 목적이다', (tester) async {
@@ -155,7 +155,7 @@ void main() {
 
     testWidgets('이름이 있으면 구분점과 chevron이 그대로다', (tester) async {
       await _pump(tester, view: _view());
-      expect(find.text('· 수원시청'), findsOneWidget);
+      expect(find.text('· B정류장'), findsOneWidget);
       expect(find.byIcon(Icons.expand_less), findsOneWidget);
     });
   });

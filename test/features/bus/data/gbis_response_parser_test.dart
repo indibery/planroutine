@@ -32,7 +32,7 @@ BusArrival _byRouteNo(List<BusArrival> items, String routeNo) =>
     items.firstWhere((e) => e.routeNo == routeNo);
 
 void main() {
-  group('장미아파트 실측 10노선 — 이 교체의 존재 이유', () {
+  group('A정류장 실측 10노선 — 이 교체의 존재 이유', () {
     test('서울 노선이 목록에 들어온다 — TAGO로는 영구히 조회 불가였다', () {
       final r = parseGbisArrivals(_fixture('arrivals_jangmi_10routes'));
 
@@ -88,7 +88,7 @@ void main() {
     test('GGB 접두를 되붙인다 — TAGO 형식과 같은 문자열이 된다', () {
       final r = parseGbisArrivals(_fixture('arrivals_suwoncityhall_6routes'));
 
-      // 실측: 수원시청 92·92-1의 TAGO routeid가 `GGB200000025`·`GGB200000029`이고
+      // 실측: B정류장 92·92-1의 TAGO routeid가 `GGB200000025`·`GGB200000029`이고
       // GBIS routeId는 `200000025`·`200000029`다. 접두를 빼고 주면
       // `buildBusCardView`의 `routeIds.contains(a.routeId)`가 영구히 어긋나
       // 노선을 골라둔 사용자에게 `고른 노선은 지금 오지 않아요`만 남는다.
@@ -97,7 +97,7 @@ void main() {
     });
   });
 
-  group('수원시청 실측 6노선', () {
+  group('B정류장 실측 6노선', () {
     test('6건이 모두 읽히고 빠른 순이다', () {
       final r = parseGbisArrivals(_fixture('arrivals_suwoncityhall_6routes'));
 
@@ -202,7 +202,7 @@ void main() {
     });
 
     test('인천은 TAGO로 보낸다 — 커버리지가 7배다', () {
-      // 실측 인천 장미아파트: TAGO `ICB163000044` 7개 노선
+      // 실측 인천 A정류장: TAGO `ICB163000044` 7개 노선
       // (5·5-1·46·516·517·518·519) vs GBIS `163000044` 1개(5).
       // GBIS는 경기 버스가 지나는 인천 정류소만 담고 있다 — 경기와 정반대다.
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
@@ -231,7 +231,7 @@ void main() {
     });
 
     test('한 응답 안에서 세 라우팅이 지역별로 갈린다', () {
-      // 실측 `장미아파트` 13건의 지역 분포: 인천 5 · 의왕 2 · 시흥 2 · 서울 2 ·
+      // 실측 `A정류장` 13건의 지역 분포: 인천 5 · 의왕 2 · 시흥 2 · 서울 2 ·
       // 군포 1 · 수원 1. 한 응답에 세 분기가 다 들어 있다.
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
 
@@ -297,7 +297,7 @@ void main() {
   });
 
   group('경유노선 목록 — 확인 시트의 선택 목록이 여기서 나온다', () {
-    test('장미아파트 실측 10노선이 전부 나온다', () {
+    test('A정류장 실측 10노선이 전부 나온다', () {
       // 같은 정류장·같은 시각에 도착정보로는 8노선이었다(위 그룹). 등록하는 시각이
       // 고를 수 있는 노선을 결정하던 것이 실기기 버그의 원인이다.
       final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));

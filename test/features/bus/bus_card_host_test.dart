@@ -20,12 +20,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _stop = BusStop(
   nodeId: 'GGB201000156',
-  nodeNm: '수원시청',
+  nodeNm: 'B정류장',
   nodeNo: 2251,
   cityCode: 31010,
 );
 
-/// 수원시청(`GGB201000156`) **실측 GBIS 응답**을 그대로 쓴다.
+/// B정류장(`GGB201000156`) **실측 GBIS 응답**을 그대로 쓴다.
 ///
 /// [_stop]은 경기 정류장이므로 앱은 이 정류장을 GBIS로 조회한다 — 손으로 쓴 TAGO
 /// 껍데기를 stub으로 두면 실제로 타지 않는 경로 위에서 호스트를 검증하게 된다
@@ -39,7 +39,7 @@ String _body() =>
 
 /// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
 /// `_encodingForHeaders`로 인코딩을 유도하고 헤더가 없으면 latin1로 떨어져,
-/// 픽스처의 한글(`수원시청`)에서 `MockClient` 핸들러 안에서 터진다(구현이 아니라
+/// 픽스처의 한글(`B정류장`)에서 `MockClient` 핸들러 안에서 터진다(구현이 아니라
 /// 픽스처의 함정 — 실제로 한 번 발생했다). 구현은 utf8.decode(bodyBytes)로 맞다.
 http.Response _json(String body, [int status = 200]) => http.Response(
       body,
@@ -127,7 +127,7 @@ void main() {
     testWidgets('시간대 밖이면 접힌 채 그려지고 첫 조회조차 나가지 않는다', (tester) async {
       final n = await _pumpHost(tester, now: outOfRange, settings: onWithStop);
       expect(find.byType(BusArrivalCard), findsOneWidget);
-      expect(find.textContaining('수원시청'), findsOneWidget);
+      expect(find.textContaining('B정류장'), findsOneWidget);
       expect(find.text('92-1번'), findsNothing);
       expect(n, 0);
     });
@@ -761,7 +761,7 @@ void main() {
       expect(find.text('92-1번'), findsNothing,
           reason: '시간대가 끝나면 카드가 접히고 옛 도착 분이 남지 않는다');
       expect(find.textContaining('기준'), findsNothing);
-      expect(find.textContaining('수원시청'), findsOneWidget,
+      expect(find.textContaining('B정류장'), findsOneWidget,
           reason: '접힌 줄은 남는다 — 카드가 사라지는 것이 아니다');
       expect(count, 1, reason: '접힌 뒤에는 요청이 늘지 않는다');
     });
