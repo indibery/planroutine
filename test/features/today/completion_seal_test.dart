@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planroutine/features/today/domain/stamp_settings.dart';
 import 'package:planroutine/features/today/presentation/widgets/completion_seal.dart';
+import 'package:planroutine/features/today/presentation/widgets/seal_panda_mark.dart';
 
 void main() {
   Future<void> pumpSeal(
@@ -52,15 +53,15 @@ void main() {
     });
 
     testWidgets('좋아요 도장은 글자 없이 엄지 아이콘을 찍는다', (tester) async {
-      await pumpSeal(tester, style: SealStyle.like);
+      await pumpSeal(tester, style: SealStyle.panda);
 
-      expect(find.byIcon(Icons.thumb_up_alt_rounded), findsOneWidget);
-      expect(find.text('좋아요'), findsNothing);
+      expect(find.byType(SealPandaMark), findsOneWidget);
+      expect(find.text(SealStyle.panda.label), findsNothing);
     });
 
     testWidgets('글자 도장의 문구는 테두리 안에 들어간다 (넘치면 글자가 깨진다)',
         (tester) async {
-      for (final style in SealStyle.values.where((s) => !s.usesIcon)) {
+      for (final style in SealStyle.values.where((s) => s.mark == SealMark.text)) {
         await pumpSeal(tester, style: style);
         final textWidth = tester.getSize(find.text(style.label)).width;
         expect(

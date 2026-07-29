@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../domain/stamp_settings.dart';
+import 'seal_gecko_mark.dart';
+import 'seal_panda_mark.dart';
 
 /// 완료 도장 — 체크하는 순간 화면 밖 크기에서 떨어져 −10°로 앉는다.
 ///
@@ -12,7 +14,7 @@ import '../../domain/stamp_settings.dart';
 /// 이미 완료된 상태로 그려지는 행은 `AlwaysStoppedAnimation(1)`을 넘겨 도장이 처음부터
 /// 찍혀 있게 한다.
 ///
-/// [style]에 따라 모양이 바뀌고(원형/사각, 글자/아이콘), [dimmed]면 잔상처럼 옅게 찍는다.
+/// [style]에 따라 모양이 바뀌고(원형/사각, 글자·판다), [dimmed]면 잔상처럼 옅게 찍는다.
 class CompletionSeal extends StatelessWidget {
   const CompletionSeal({
     super.key,
@@ -135,23 +137,22 @@ class CompletionSeal extends StatelessWidget {
     );
   }
 
+  /// **`switch`로 둔다.** 모양을 추가하면 컴파일러가 여기 누락을 잡는다 — 불린
+  /// 분기였을 때는 새 모양이 조용히 글자 도장으로 그려졌다.
   Widget _mark() {
-    if (style.usesIcon) {
-      return Icon(
-        Icons.thumb_up_alt_rounded,
-        size: 19,
-        color: AppColors.gold,
-      );
-    }
-    return Text(
-      style.label,
-      style: TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 13,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
-        color: AppColors.gold,
-      ),
-    );
+    return switch (style.mark) {
+      SealMark.panda => SealPandaMark(color: AppColors.gold),
+      SealMark.gecko => SealGeckoMark(color: AppColors.gold),
+      SealMark.text => Text(
+          style.label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: AppColors.gold,
+          ),
+        ),
+    };
   }
 }

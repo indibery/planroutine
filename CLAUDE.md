@@ -43,7 +43,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 770 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 825 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -124,7 +124,9 @@ planroutine/
 │   │   │           ├── today_body.dart          # 순수 위젯 (위젯 테스트 대상)
 │   │   │           ├── today_event_row.dart     # 체크 원 + 제목 + 도장 슬롯
 │   │   │           ├── today_progress_ring.dart # 결산 링 (CustomPainter)
-│   │   │           └── completion_seal.dart     # 완료 도장 (3종)
+│   │   │           ├── completion_seal.dart     # 완료 도장 (4종, SealMark 분기)
+│   │   │           ├── seal_panda_mark.dart    # 판다 (CustomPainter)
+│   │   │           └── seal_gecko_mark.dart    # 도마뱀 (PNG 알파 마스크 + srcIn)
 │   │   ├── bus/                        # 출퇴근 버스 도착 카드
 │   │   │   ├── data/
 │   │   │   │   ├── bus_api_client.dart          # 소스 라우팅(지역별) + 30초 메모리 캐시
@@ -274,12 +276,38 @@ planroutine/
 - **완료 취소는 낙하의 역재생이 아니라 제자리 페이드아웃**이다. 같은 곡선을 reverse하면
   사라지는 동안 도장이 `scale 2.4` 쪽으로 부풀어 슬롯(56)을 넘어 제목을 덮는다
   (`CompletionSeal`이 `AnimationStatus.reverse`를 보고 scale/rotate를 안착값에 고정).
-- **완료 도장**(`설정 > 완료 도장`): 모양 3종(완료 원형·결재 사각·좋아요 엄지 아이콘) +
-  "이미 찍은 도장 흐리게"(기본 ON). 모양 규칙은 `SealStyle` enum이 들고 있어(`isSquare`,
-  `usesIcon`) 위젯은 enum만 보고 그린다. 흐리게는 **지난 도장에만** 적용 —
+- **완료 도장**(`설정 > 완료 도장`): 모양 4종(완료 원형·결재 사각·판다·도마뱀) +
+  "이미 찍은 도장 흐리게"(기본 ON). 흐리게는 **지난 도장에만** 적용 —
   `TodayEventRow._stampedOnEntry`로 구분하고 방금 누른 도장은 진하게 남긴다.
-  도장 문구는 44px 안에 들어가야 한다(내부 폭 31.4). 영문 4글자('Good')는 13px에서 50px로
-  물리적으로 안 맞아 아이콘을 쓴다 — 가드 테스트가 이 폭을 지킨다.
+  - 모양 규칙은 `SealStyle`(`isSquare`) + **`SealMark` enum**(`text`/`panda`/`gecko`)이
+    들고 있고 위젯은 `switch (style.mark)`만 본다. **불린 여러 개로 두지 않는다** —
+    `usesIcon` 같은 불린은 둘 다 true인 상태를 타입으로 허용하고, 모양을 추가할 때
+    분기를 빠뜨려도 컴파일이 통과해 새 도장이 조용히 글자로 그려진다.
+  - 글자 도장의 문구는 44px 안에 들어가야 한다(내부 폭 31.4). 영문 4글자('Good')는
+    13px에서 50px로 물리적으로 안 맞아 **글자 도장으로 못 만든다** — 가드가 폭을 지킨다.
+    (그 문제로 없앤 `좋아요`(엄지 아이콘) 자리에 판다·도마뱀이 들어왔다. 없어진 모양을
+    고른 사용자의 저장값은 `_decodeStyle`이 기본값으로 폴백한다.)
+  - **그림 마크는 두 방식이 공존한다.** 판다는 `CustomPainter`(`SealPandaMark`),
+    도마뱀은 **PNG 알파 마스크**(`SealGeckoMark` + `assets/images/seal_gecko.png`).
+    - 마크를 손으로 그려야 했던 이유는 하나뿐이었다 — 테마에 따라 색이 바뀐다. 그래서
+      "PNG는 색을 못 입혀서 안 된다"고 판단했는데 **틀렸다**: 알파 채널만 쓰고
+      `color` + `colorBlendMode: BlendMode.srcIn`으로 입히면 팔레트를 그대로 따라간다.
+      에셋은 **모양만** 담는다. 진짜로 안 되는 것은 이모지(`🦎`) 하나다.
+    - 얼굴 하나(판다)는 원·타원 몇 개로 되지만, 다리 넷·발가락·말린 꼬리가 있는 실루엣
+      (도마뱀)은 44px에서 손으로 못 맞췄다(여섯 번 시도해 전부 애벌레·튜브로 읽혔다).
+      **그림을 마스크로 쓰면 그 문제가 없다** — 새 마크는 이 경로를 먼저 고려할 것.
+    - 에셋 규칙: 알파 램프로 마스크를 뽑고 **선을 굵힌 뒤**(원본 선폭이 내용 폭의 3.7%면
+      마크 28px에서 1px 미만이 돼 흐린 회색으로 뭉갠다) 112px 한 장으로 둔다.
+      2.0x/3.0x 변형 폴더는 만들지 않는다(마크가 28px 고정이라 3배에서도 84px).
+    - 마크 크기는 판다 22 / 도마뱀 28로 다르다 — 속 빈 윤곽선은 22에서 선이 사라진다.
+      둘 다 `CompletionSeal.innerWidth`(31.4) 이하여야 하고 가드가 지킨다.
+    - ⚠️ **도마뱀 에셋은 출처가 불확실하다**(사용자 제공 참조 이미지, 2026-07-29).
+      TestFlight까지만 이 에셋으로 가고 **App Store 제출 전에 라이선스가 확실한 그림으로
+      교체**한다. 위 규칙만 지키면 파일 하나 갈아 끼우면 되고 코드는 손대지 않는다.
+  - `test/tools/seal_preview.dart`가 4종을 **실제 위젯으로** 렌더해 PNG로 뽑는다
+    (다크/라이트 각각 1x·3x). 에셋 마크는 위젯 존재 검증만으로는 못 지킨다 —
+    파일이나 pubspec 선언이 빠져도 트리에는 `Image`가 그대로 있어 테스트가 통과하고
+    **런타임에만** 빈 자리가 된다. 가드는 `rootBundle`로 실제 로드까지 확인한다.
 
 ### Google Calendar 연동
 - `google_sign_in`으로 `authHeaders` 획득 → 커스텀 `http.BaseClient`로 `googleapis` 호출.
@@ -627,6 +655,13 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
   존에서 sqflite FFI를 그냥 await하면 완료되지 않아 테스트가 10분 타임아웃까지 멈춘다.
   seed 삽입도 마찬가지. 화면이 뜰 때까지는 조건 폴링으로 기다린다
   (`schedule_screen_review_test.dart`·`today_screen_test.dart` 참고)
+- **`pumpAndSettle`은 이미지 디코드를 기다려 주지 않는다.** "settle"은 "예약된 프레임이
+  없다"는 뜻이고, 비동기 이미지 디코드는 **끝날 때까지 프레임을 예약하지 않는다** — 그래서
+  디코드 중에도 곧바로 반환한다. 에셋 이미지를 캡처·검증할 때는 `tester.runAsync` 안에서
+  `precacheImage`로 디코드를 끝내고 프레임은 존 밖에서 돌린다(`test/tools/seal_preview.dart`).
+  위젯 테스트와 통합 테스트 **양쪽 다** 걸린다 — fake-async 문제가 아니다.
+  (참고: 실제 디코드는 시뮬 디버그 빌드에서도 첫 회 6.8ms·이후 1.3ms로 한 프레임 안이라
+  **앱 동작에는 영향이 없다**. 프리캐시는 테스트 캡처용이지 제품 수정이 아니다.)
 - 날짜 문자열 포맷은 `date_utils.formatDate(DateTime) → 'YYYY-MM-DD'` 공용 함수 사용
 - 확인 다이얼로그는 `ConfirmDialog.show()` 공통 위젯 사용 (신규 AlertDialog 직접 만들지 않기)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리

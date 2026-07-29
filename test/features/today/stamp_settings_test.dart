@@ -55,16 +55,39 @@ void main() {
       }
     });
 
-    test('완료·결재는 글자 도장, 좋아요는 아이콘 도장이다', () {
-      expect(SealStyle.complete.usesIcon, isFalse);
-      expect(SealStyle.approve.usesIcon, isFalse);
-      expect(SealStyle.like.usesIcon, isTrue);
+    test('모양마다 그리는 것이 다르다', () {
+      expect(SealStyle.complete.mark, SealMark.text);
+      expect(SealStyle.approve.mark, SealMark.text);
+      expect(SealStyle.panda.mark, SealMark.panda);
+    });
+
+    test('판다는 사각이 아니다 — 결재만 사각이다', () {
+      expect(SealStyle.panda.isSquare, isFalse);
+    });
+
+    test('판다도 직렬화 왕복한다', () {
+      const s = StampSettings(style: SealStyle.panda);
+      expect(StampSettings.fromJson(s.toJson()).style, SealStyle.panda);
+    });
+
+    test('없어진 좋아요 도장을 고른 사용자는 기본 도장으로 돌아간다', () {
+      // `좋아요`를 빼면서 그 값은 저장값(`shared_preferences`)에 `"like"`로 남는다.
+      // 없어진 모양을 되살릴 방법이 없으므로 기본값 폴백이 맞고, **조용한 변경**이라
+      // 여기서 고정한다. 이 폴백이 깨지면 앱이 켜질 때 도장 설정이 사라진다.
+      final s = StampSettings.fromJson(const {
+        'style': 'like',
+        'dimPreviousStamps': false,
+      });
+
+      expect(s.style, SealStyle.complete);
+      // 모양만 폴백하고 **다른 설정은 유지**한다.
+      expect(s.dimPreviousStamps, isFalse);
     });
 
     test('결재만 사각 도장이다', () {
       expect(SealStyle.approve.isSquare, isTrue);
       expect(SealStyle.complete.isSquare, isFalse);
-      expect(SealStyle.like.isSquare, isFalse);
+      expect(SealStyle.panda.isSquare, isFalse);
     });
   });
 }

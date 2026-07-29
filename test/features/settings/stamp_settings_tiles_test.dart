@@ -40,7 +40,7 @@ void main() {
 
       expect(find.text(TodayStrings.sealComplete), findsOneWidget);
       expect(find.text(TodayStrings.sealApprove), findsOneWidget);
-      expect(find.text(TodayStrings.sealLike), findsOneWidget);
+      expect(find.text(TodayStrings.sealPanda), findsOneWidget);
     });
 
     testWidgets('결재를 고르면 설정에 저장된다', (tester) async {
@@ -55,10 +55,10 @@ void main() {
     testWidgets('좋아요를 고르면 설정에 저장된다', (tester) async {
       final container = await pumpTiles(tester);
 
-      await tester.tap(find.text(TodayStrings.sealLike));
+      await tester.tap(find.text(TodayStrings.sealPanda));
       await tester.pumpAndSettle();
 
-      expect(current(container).style, SealStyle.like);
+      expect(current(container).style, SealStyle.panda);
     });
 
     testWidgets('흐리게 스위치를 끄면 설정에 반영된다', (tester) async {

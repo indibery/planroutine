@@ -10,7 +10,8 @@ class TodayStrings {
   // 완료 도장 — 모양별 문구 (SealStyle이 참조)
   static const sealComplete = '완료';
   static const sealApprove = '결재';
-  static const sealLike = '좋아요';
+  static const sealPanda = '판다';
+  static const sealGecko = '도마뱀';
 
   // 진행도 문안
   static const allDone = '오늘 업무 모두 완료했네요!';
