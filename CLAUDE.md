@@ -31,7 +31,7 @@
 |--------|------|------|
 | 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import). 초기 라우트 `/today` |
+| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import, /bus/settings, /bus/stops). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
@@ -43,7 +43,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 825 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 840 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -96,13 +96,18 @@ planroutine/
 │   │   ├── settings/                   # 설정 탭 (섹션별 위젯 분리)
 │   │   │   ├── data/                   # app_reset_repository, schedule_csv_exporter
 │   │   │   └── presentation/
-│   │   │       ├── screens/settings_screen.dart   # 얇은 조합
+│   │   │       ├── screens/
+│   │   │       │   ├── settings_screen.dart        # 얇은 조합
+│   │   │       │   └── bus_settings_screen.dart    # /bus/settings — BusSettingsTiles를 감싼다
 │   │   │       ├── widgets/
 │   │   │       │   ├── settings_section.dart       # 헤더+본문+Divider wrapper
 │   │   │       │   ├── export_list_tile.dart
 │   │   │       │   ├── google_account_list_tile.dart
 │   │   │       │   ├── notification_settings_tiles.dart
-│   │   │       │   ├── stamp_settings_tiles.dart   # 완료 도장 모양 + 흐리게
+│   │   │       │   ├── stamp_settings_tiles.dart   # 도장 모양 한 줄 + 흐리게
+│   │   │       │   ├── stamp_style_sheet.dart      # 도장 모양 2열 그리드 시트
+│   │   │       │   ├── bus_settings_tiles.dart     # 버스 설정 본문 (화면이 감싼다)
+│   │   │       │   ├── bus_summary_list_tile.dart  # 설정 탭 버스 요약 한 줄
 │   │   │       │   ├── trash_list_tile.dart
 │   │   │       │   ├── reset_list_tile.dart
 │   │   │       │   └── app_info_list_tile.dart
@@ -279,6 +284,17 @@ planroutine/
 - **완료 도장**(`설정 > 완료 도장`): 모양 4종(완료 원형·결재 사각·판다·도마뱀) +
   "이미 찍은 도장 흐리게"(기본 ON). 흐리게는 **지난 도장에만** 적용 —
   `TodayEventRow._stampedOnEntry`로 구분하고 방금 누른 도장은 진하게 남긴다.
+  - **모양은 설정 화면이 아니라 시트에서 고른다**(`StampStyleSheet`, 2열 그리드).
+    설정 탭에는 `도장 모양 … 판다 ›` 한 줄만 남는다. 칩 `Wrap`으로 두던 시절 4종이
+    되자 라벨 옆에 못 들어가 줄이 둘로 갈라졌고, 같은 화면의 `화면 테마`는 한 줄이라
+    **한 화면에 행 문법이 두 종류**가 됐다. 규칙이 이렇게 바뀌었다 —
+    **개수가 고정된 설정은 세그먼트, 늘어나는 설정은 시트.** 5번째 도장이 들어와도
+    시트만 한 줄 자라고 설정 화면은 변하지 않는다.
+  - 시트의 미리보기는 **`CompletionSeal`을 그대로 쓴다** — 전용 위젯을 새로 그리면
+    실제 찍히는 도장과 어긋난다. 선택 표시는 골드 테두리·배경 **+ 체크 아이콘**이다
+    (색만으로 두지 않는다). 선택지를 찾을 때는 `StampStyleSheet.optionKey(style)`를
+    쓴다 — 글자 도장은 미리보기 **안에도** 같은 글자를 그려 `find.text`가 둘을 문다.
+    가드는 `SealStyle.values`를 순회해 새 모양을 시트에 빠뜨리는 것을 막는다.
   - 모양 규칙은 `SealStyle`(`isSquare`) + **`SealMark` enum**(`text`/`panda`/`gecko`)이
     들고 있고 위젯은 `switch (style.mark)`만 본다. **불린 여러 개로 두지 않는다** —
     `usesIcon` 같은 불린은 둘 다 true인 상태를 타입으로 허용하고, 모양을 추가할 때
@@ -454,6 +470,27 @@ planroutine/
 - `settings_screen.dart`는 100줄 미만의 얇은 조합. 각 섹션 UI는 `widgets/*_list_tile.dart`에 분리.
 - `SettingsSection` wrapper가 헤더(title+subtitle) + 본문 + Divider 3종 세트를 1줄로 묶는다.
 - 확인 다이얼로그는 `shared/widgets/confirm_dialog.dart`의 `ConfirmDialog.show()` 공통 사용.
+- **섹션 8개**: 화면 · 완료 도장 · 버스 도착 · 내보내기 · 캘린더 연동(flag) · 알림 ·
+  휴지통 · 데이터 관리 · 앱 정보.
+- **깊은 설정은 화면 밖으로 뺀다.** 섹션이 열 개·행이 열아홉 개가 되자(스크롤 세 화면 반)
+  무거운 둘만 빼서 12행으로 줄였다 — 도장 모양은 시트, 버스는 상세 화면.
+  - **버스가 시트가 아니라 화면인 이유**: 그 안에서 정류장 검색(`/bus/stops`, 풀스크린)과
+    `showTimePicker`를 다시 띄운다. 시트 위에 풀스크린을 push하면 시트가 가려진 채 뒤에
+    남고 돌아올 때 다시 나타난다. 화면이면 `설정 › 버스 도착 › 정류장 검색`으로 쌓이고
+    뒤로가기 한 번씩이 순서대로 맞는다.
+  - `BusSettingsScreen`은 `features/bus/`가 아니라 **settings 아래** 산다. 본문 위젯
+    (`BusSettingsTiles`)이 이미 여기 있어, bus에 두면 **bus → settings 역방향 import**가
+    생긴다(지금은 settings → bus 한 방향). 위젯을 옮기지 않아 그 테스트 9건도 그대로다.
+  - 설정 탭에 남는 요약은 순수 함수 `buildBusSettingsSummary`가 만든다
+    (`꺼짐` / `켜짐 · 정류장 없음` / `켜짐 · N곳`). **정류장 이름을 넣지 않는다** —
+    `우방아파트→중앙공원`은 320pt에서 넘친다. **켜짐 여부를 정류장 수보다 먼저 본다**:
+    꺼 둔 설정에도 정류장은 남아 있어, 수를 먼저 보면 꺼진 기능이 켜진 것처럼 읽힌다.
+  - 섹션 부제(`오늘 탭 맨 위에 출퇴근 버스 도착시간을…`)는 **상세 화면 상단으로 옮겼다.**
+    처음 쓰는 사람에게 이 한 줄이 기능 소개다 — 섹션을 줄이면서 그냥 걷어내면 사라진다.
+- **`AI 자동화 (고급)` 섹션은 없앴다**(2026-07-30). `aiTaskShareEnabledProvider`와
+  `event_edit_dialog`의 분기는 **남겨 뒀다** — provider까지 지우면 되살릴 때 저장값을
+  버린다. ⚠️ 토글이 켜진 채로 섹션을 지우면 다이얼로그가 계속 watch해 **끌 방법이
+  없어진다**(기본값 `false`, 제거 전 꺼져 있음을 확인했다).
 
 ### Import 플로우 (`/import` = 작년 업무 CSV 전용)
 - **이 화면에 사진 AI를 두지 않는다.** '작년 업무 가져오기'를 눌러 들어온 사람에게 "행사를 사진으로"가 크게 뜨면 엉뚱한 화면이 된다(실기기 피드백). 사진 AI는 입력 탭 히어로가 맡는다.
