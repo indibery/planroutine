@@ -10,6 +10,7 @@ import '../../../../shared/widgets/pill_chip.dart';
 import '../../data/tago_response_parser.dart';
 import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
+import '../../domain/stop_search_view.dart';
 import '../providers/bus_providers.dart';
 import '../widgets/bus_stop_confirm_sheet.dart';
 
@@ -55,6 +56,19 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   List<BusStop> _results = const [];
   bool _loading = false;
   bool _searched = false;
+
+  /// 검색 결과에서 고른 지역. null이면 전체.
+  ///
+  /// **도시 선택(`_city`)과 다른 것이다.** 이건 이미 받은 결과를 세어 만든 칩이고
+  /// 추가 조회가 없다. 이름 검색 결과가 감당이 안 되기 때문에 있다(실측 `시청` 160곳,
+  /// `아파트` 4,366곳) — 사용자가 지역으로 좁히거나 정류소번호를 넣어야 한다.
+  String? _region;
+
+  /// 두 글자 미만으로 검색을 눌렀는가.
+  ///
+  /// GBIS가 1글자를 `resultCode 22`로 거부한다. 화면이 먼저 막는다 — 헛요청이 없고,
+  /// 서버 오류로 말하면 사용자가 재시도만 반복한다(재시도해도 같다).
+  bool _tooShort = false;
 
   /// 도시 선택을 펼쳤는가 — **켜져 있으면 TAGO로 찾는다.**
   ///
@@ -144,7 +158,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     if (_stopQuery.text.trim().isNotEmpty) _search();
   }
 
-  /// 이름으로 찾는다 — 모드에 따라 소스가 갈린다.
+  /// 이름 또는 정류소번호로 찾는다 — 모드에 따라 소스가 갈린다.
   Future<void> _search() async {
     final name = _stopQuery.text.trim();
     final city = _city;
@@ -152,9 +166,24 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     // 골라주세요`를 띄우므로, 여기서 조용히 return해도 사용자는 이유를 읽는다.
     if (name.isEmpty || !_canSearch) return;
 
+    // GBIS는 1글자를 거부한다(`resultCode 22`). 보내지 않고 여기서 말한다.
+    if (name.length < 2) {
+      setState(() {
+        _tooShort = true;
+        _results = const [];
+        _searched = false;
+        _stopFailure = null;
+      });
+      return;
+    }
+
     setState(() {
       _loading = true;
+      _tooShort = false;
       _stopFailure = null;
+      // 새 검색이면 옛 지역 필터를 버린다 — 안 버리면 `군포`를 고른 채 다른 이름을
+      // 찾아 결과가 0건인데 이유가 화면에 없다.
+      _region = null;
     });
     final client = ref.read(busApiClientProvider);
     final result = _regionMode && city != null
@@ -339,6 +368,9 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     if (!_canSearch) {
       return [_notice(BusStrings.cityFirst)];
     }
+    if (_tooShort) {
+      return [_notice(BusStrings.searchTooShort)];
+    }
     if (!_searched) {
       return [
         _notice(BusStrings.searchPrompt),
@@ -364,8 +396,18 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
         ],
       ];
     }
+
+    final view = buildStopSearchView(stops: _results, region: _region);
+
     return [
-      ..._results.map((stop) => ListTile(
+      // 지역 칩이 목록 **위**에 온다 — 아래 두면 잘린 목록을 다 훑은 뒤에야 좁히는
+      // 수단을 만난다.
+      if (view.hasRegionChoice) _regionChips(view),
+      if (view.truncated) ...[
+        _notice(BusStrings.searchTooMany(view.total)),
+        _hint(BusStrings.searchTooManyHint),
+      ],
+      ...view.visible.map((stop) => ListTile(
             title: Text(stop.nodeNm),
             // **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않으므로 화면
             // 어디에도 지역 정보가 없고, 같은 이름의 정류장이 여러 시·군에 있다
@@ -379,6 +421,32 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       // (실측 `서면` → 부산 없이 12건) 여기가 유일한 출구다.
       if (!_regionMode) _otherRegionLink(),
     ];
+  }
+
+  /// 검색 결과에서 뽑은 지역 칩. **추가 조회가 없다** — 받은 결과를 세기만 한다.
+  Widget _regionChips(StopSearchView view) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.pagePadding,
+        vertical: AppSizes.spacing8,
+      ),
+      child: Wrap(
+        spacing: AppSizes.spacing8,
+        runSpacing: AppSizes.spacing4,
+        children: [
+          PillChip(
+            label: BusStrings.regionAll,
+            selected: _region == null,
+            onTap: () => setState(() => _region = null),
+          ),
+          ...view.regions.map((r) => PillChip(
+                label: BusStrings.regionChip(r.name, r.count),
+                selected: r.name == _region,
+                onTap: () => setState(() => _region = r.name),
+              )),
+        ],
+      ),
+    );
   }
 
   /// 정류소번호와 (있으면) 지역명.

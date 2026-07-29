@@ -28,11 +28,16 @@ class BusArrivalCard extends StatelessWidget {
     required this.onFlipDirection,
     this.onRetry,
     this.onRegister,
+    this.onRefresh,
     this.retrying = false,
   });
 
   static const headerKey = Key('bus_card_header');
   static const flipKey = Key('bus_card_flip');
+
+  /// 새로고침 버튼. **제목줄 탭(접기)과 표적이 겹치므로 키로 찾는다** — 아이콘으로
+  /// 찾으면 chevron·flip과 섞인다.
+  static const refreshKey = Key('bus_card_refresh');
 
   final BusCardView view;
   final BusCardStyle style;
@@ -52,7 +57,14 @@ class BusArrivalCard extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onRegister;
 
-  /// [onRetry]로 시작한 조회가 비행 중인가 — [BusEmptyState]에 그대로 넘긴다.
+  /// 제목줄 새로고침. null이면 아이콘이 없다.
+  ///
+  /// **호스트는 여기에 `onRetry`와 같은 함수를 넘긴다.** 촉발 경로가 하나여야 in-flight
+  /// 가드와 진행 표시가 어느 쪽에서 눌러도 같게 동작한다 — 두 경로로 갈리면 탭 N번이
+  /// 동시 요청 N건이 되는 함정이 한쪽에만 남는다.
+  final VoidCallback? onRefresh;
+
+  /// 조회가 비행 중인가 — [BusEmptyState]와 제목줄 새로고침이 함께 본다.
   final bool retrying;
 
   @override
@@ -93,14 +105,51 @@ class BusArrivalCard extends StatelessWidget {
     );
   }
 
+  /// 새로고침 아이콘, 조회 중이면 진행 표시.
+  ///
+  /// 진행 표시가 **아이콘과 같은 크기**여야 한다 — 다르면 누를 때마다 제목줄의
+  /// 오른쪽 요소들이 흔들린다.
+  Widget _refreshControl() {
+    if (retrying) {
+      return SizedBox(
+        width: AppSizes.iconSmall,
+        height: AppSizes.iconSmall,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.gold,
+        ),
+      );
+    }
+    return GestureDetector(
+      key: refreshKey,
+      behavior: HitTestBehavior.opaque,
+      onTap: onRefresh,
+      child: Icon(
+        Icons.refresh,
+        size: AppSizes.iconSmall,
+        color: AppColors.gold,
+        semanticLabel: BusStrings.refresh,
+      ),
+    );
+  }
+
   Widget _header() {
     final toggle = onToggleExpanded;
     final row = Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        Text(
-          direction.label,
+        // 이모지만 글자보다 크게 그린다 — 한 `Text`에 담으면 이모지가 13px에 묶여
+        // 작게 보이고, 집·학교를 한눈에 구별하는 것이 이 라벨의 일이다.
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(
+              text: direction.emoji,
+              style: const TextStyle(fontSize: BusStrings.headerEmojiSize),
+            ),
+            const TextSpan(text: ' '),
+            TextSpan(text: direction.title),
+          ]),
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,
@@ -141,6 +190,12 @@ class BusArrivalCard extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.spacing8),
         ],
+        // **펼친 상태에서만** 새로고침을 준다. 접히면 폴링이 멈추고 목록도 안 보여서
+        // 눌러도 결과를 확인할 수 없다 — 기준시각을 접힘에서 숨기는 것과 같은 이유다.
+        if (expanded && onRefresh != null) ...[
+          _refreshControl(),
+          const SizedBox(width: AppSizes.spacing8),
+        ],
         if (toggle != null)
           Icon(
             expanded ? Icons.expand_less : Icons.expand_more,
@@ -154,6 +209,8 @@ class BusArrivalCard extends StatelessWidget {
     // 콜백이 없으면 탭 대상도 아니다. `headerKey`도 함께 사라지므로 테스트가
     // 실수로 죽은 컨트롤을 두드리지 않는다.
     if (toggle == null) return row;
+    // 새로고침은 제목줄 안에 있는데 제목줄 전체가 접기 표적이다. 안쪽
+    // `GestureDetector`가 히트 테스트를 먼저 먹으므로 새로고침을 눌러도 접히지 않는다.
     return GestureDetector(
       key: headerKey,
       behavior: HitTestBehavior.opaque,

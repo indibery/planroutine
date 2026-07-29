@@ -765,4 +765,99 @@ void main() {
       expect(count, 1, reason: '접힌 뒤에는 요청이 늘지 않는다');
     });
   });
+
+  group('제목줄 새로고침', () {
+    testWidgets('펼친 카드에는 새로고침이 있다', (tester) async {
+      await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
+
+      expect(find.byKey(BusArrivalCard.refreshKey), findsOneWidget);
+    });
+
+    testWidgets('접힌 카드에는 없다 — 눌러도 결과를 볼 수 없다', (tester) async {
+      // 시간대 밖이면 접힌 채로 뜬다. 폴링도 멈춰 있다.
+      await _pumpRefreshHost(tester, start: outOfRange, settings: onWithStop);
+
+      expect(find.byKey(BusArrivalCard.refreshKey), findsNothing);
+    });
+
+    testWidgets('캐시가 신선하면 눌러도 요청이 나가지 않는다 — 캐시가 스로틀이다', (tester) async {
+      final h = await _pumpRefreshHost(
+        tester,
+        start: inRange,
+        settings: onWithStop,
+      );
+      expect(h.count(), 1);
+
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+
+      expect(h.count(), 1,
+          reason: '30초 캐시가 답한다 — 별도 스로틀 코드가 없는 이유다');
+    });
+
+    testWidgets('30초가 지난 뒤 누르면 다시 조회한다', (tester) async {
+      final h = await _pumpRefreshHost(
+        tester,
+        start: inRange,
+        settings: onWithStop,
+      );
+      expect(h.count(), 1);
+
+      h.advance(const Duration(seconds: 31));
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+
+      expect(h.count(), 2);
+    });
+
+    testWidgets('새로고침을 눌러도 카드가 접히지 않는다', (tester) async {
+      // 제목줄 **전체**가 접기 표적이고 새로고침은 그 안에 있다. 안쪽
+      // `GestureDetector`가 히트 테스트를 먼저 먹어야 한다 — 아니면 새로고침을
+      // 누를 때마다 카드가 접혀 결과를 볼 수 없다.
+      await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
+      expect(find.byIcon(Icons.expand_less), findsOneWidget);
+
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.expand_less), findsOneWidget,
+          reason: '펼친 상태가 유지돼야 한다');
+      expect(find.byKey(BusArrivalCard.refreshKey), findsOneWidget);
+    });
+  });
+}
+
+/// 새로고침 테스트용 — 시계와 요청 수를 테스트가 직접 만진다.
+///
+/// `_pumpHost`는 요청 수를 **그 시점 값으로** 돌려주고 시계가 고정이라, 탭 이후를
+/// 볼 수 없고 30초 캐시도 절대 만료되지 않는다. 새로고침은 그 둘이 다 필요하다.
+Future<({int Function() count, void Function(Duration) advance})>
+    _pumpRefreshHost(
+  WidgetTester tester, {
+  required DateTime start,
+  required BusSettings settings,
+}) async {
+  SharedPreferences.setMockInitialValues({
+    'bus_settings_v1': jsonEncode(settings.toJson()),
+  });
+
+  var now = start;
+  var count = 0;
+  final client = BusApiClient(
+    client: MockClient((_) async {
+      count++;
+      return _json(_body());
+    }),
+    serviceKey: 'TESTKEY',
+    clock: () => now,
+  );
+
+  await tester.pumpWidget(ProviderScope(
+    overrides: [busApiClientProvider.overrideWithValue(client)],
+    child: MaterialApp(
+      home: Scaffold(body: BusCardHost(clock: () => now)),
+    ),
+  ));
+  await tester.pumpAndSettle();
+  return (count: () => count, advance: (Duration d) => now = now.add(d));
 }

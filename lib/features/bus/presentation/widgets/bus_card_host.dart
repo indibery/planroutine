@@ -132,12 +132,24 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   /// 실패 결과는 `_fallback`이 캐시에 쓰지 않으므로 매 탭이 캐시 미스가 되어
   /// **탭 N번 = 동시 HTTP 요청 N건**이 된다. 키는 IPA에 하나뿐이라 개발계정
   /// 10,000/일 한도를 전 사용자가 공유한다(스펙 §5의 호출 회계).
+  /// 눌렀다는 것이 **보이게** 진행 표시를 최소 시간 유지한다.
+  ///
+  /// 캐시가 신선하면(`busCacheTtl` 30초 안) `_tick`이 네트워크 없이 즉시 끝나 진행
+  /// 표시가 한 프레임만 돌고 사라진다 — 눌렀는데 아무 일도 없는 것처럼 보이고,
+  /// 사용자는 다시 누른다. 이 카드에서 이미 한 번 겪은 실패 모드다(위 문서 참고).
+  static const _minRefreshFeedback = Duration(milliseconds: 350);
+
   Future<void> _retry() async {
     if (_retrying) return;
     setState(() => _retrying = true);
+    final started = _now();
     try {
       await _tick();
     } finally {
+      final elapsed = _now().difference(started);
+      if (elapsed < _minRefreshFeedback) {
+        await Future<void>.delayed(_minRefreshFeedback - elapsed);
+      }
       // 화면이 사라진 뒤 setState를 부르면 던진다 — 응답이 10초 뒤에 올 수 있다.
       if (mounted) setState(() => _retrying = false);
     }
@@ -333,6 +345,13 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       // 재시도가 실제로 도달하는 유일한 경로다(`stale`·`down` + 빈 목록).
       // `_tick`이 아니라 `_retry`를 넘긴다 — 가드와 진행 문구가 거기 있다.
       onRetry: _retry,
+      // **같은 함수를 넘긴다.** 제목줄 새로고침과 빈 상태의 재시도가 하는 일이 같고,
+      // 촉발 경로가 갈리면 in-flight 가드가 한쪽에만 남는다.
+      //
+      // 스로틀은 따로 두지 않는다 — `BusApiClient`의 30초 캐시가 그 역할을 한다.
+      // 신선한 동안 눌러도 네트워크 요청이 나가지 않고 같은 목록이 돌아오며,
+      // 제목줄의 `07:32 기준`이 그대로인 것이 "방금 받은 것"이라는 표시다.
+      onRefresh: _retry,
       retrying: _retrying,
       // **`onRegister`를 넘기지 않는다.** 여기 `view.state`는 `fetch.state`에서
       // 오고 `BusApiClient`가 낼 수 있는 값은 ok·closed·stale·down·keyError

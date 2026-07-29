@@ -29,8 +29,22 @@ class BusStrings {
   static const rangeInverted = '시작이 종료보다 빠르게 두세요';
 
   // ── 카드 ───────────────────────────────────────────────────
-  static const routeToWork = '🏠→🏫 출근';
-  static const routeToHome = '🏫→🏠 퇴근';
+  /// 카드 제목줄의 방향 표시 — **이모지와 글자를 나눠 둔다.**
+  ///
+  /// 카드가 `Text.rich`의 두 span으로 그려 **이모지만 조금 크게** 한다. 한 문자열이면
+  /// 이모지가 글자와 같은 13px에 묶여 작게 보이는데, 집·학교를 한눈에 구별하는 것이
+  /// 이 라벨의 일이다(사용자 요청, 2026-07-29).
+  static const emojiToWork = '🏠→🏫';
+  static const emojiToHome = '🏫→🏠';
+  static const titleToWork = '출근';
+  static const titleToHome = '퇴근';
+
+  /// 제목줄 이모지 크기. 글자는 13px이다.
+  ///
+  /// 상수로 두는 이유는 폭 측정과 묶여 있기 때문이다 — 이 값을 키우면 제목줄이 넓어지고
+  /// 좁은 화면에서 정류장 이름이 밀린다. `test/tools/visual_check.dart`가 실측 폰트로
+  /// 폭을 잰다(폴백 폰트로 재면 1.76배 부풀어 결론이 뒤집힌다).
+  static const headerEmojiSize = 16.0;
 
   /// "720번" — 노선번호에 붙는 조사. **카드와 확인 시트가 같은 함수를 쓴다.**
   ///
@@ -48,6 +62,9 @@ class BusStrings {
   static const seeToHome = '퇴근 보기';
   static const collapse = '접기';
   static const expand = '펼치기';
+
+  /// 제목줄 새로고침 아이콘의 스크린리더 라벨. 글자가 없으므로 이것이 유일한 이름이다.
+  static const refresh = '새로고침';
 
   /// "07:32 기준" — 캐시 신선도를 감추지 않고 고백한다.
   static String basedOn(String hhmm) => '$hhmm 기준';
@@ -98,9 +115,36 @@ class BusStrings {
   static const searchTitle = '정류장 찾기';
   static const cityLabel = '도시';
   static const citySearchHint = '시·군 이름 (예: 수원)';
-  static const stopSearchHint = '정류장 이름 (예: 시청)';
+  /// **번호를 먼저 말한다.** 이름만으로는 결과가 감당이 안 된다(실측 `시청` 160곳,
+  /// `아파트` 4,366곳). 정류소번호는 정류장 표지판과 지도 앱에 적혀 있고 한 번에
+  /// 한 곳으로 좁혀진다(실측 `26044` → 1곳).
+  static const stopSearchHint = '정류소번호 또는 이름 (예: 26044)';
   static const searchEmpty = '검색 결과가 없어요';
-  static const searchPrompt = '정류장 이름을 입력해 주세요';
+  static const searchPrompt = '정류소번호나 정류장 이름을 넣어주세요';
+
+  /// GBIS가 1글자를 거부한다(`resultCode 22`). **응답 메시지는 `1자리 이상`이라고
+  /// 하는데 1자리도 거부한다** — 실제 규칙은 2자리 이상이다. 화면이 먼저 막으므로
+  /// 헛요청이 나가지 않는다.
+  static const searchTooShort = '두 글자 이상 넣어주세요';
+
+  /// 결과가 상한을 넘었을 때. 지역 칩과 함께 뜬다.
+  ///
+  /// 건수를 밝히는 이유: `검색 결과가 없어요`도 아니고 목록이 잘린 것도 아닌,
+  /// **너무 많아서 좁혀야 하는** 상황이라는 것이 숫자 없이는 전달되지 않는다.
+  static String searchTooMany(int total) => '$total곳이 찾아졌어요';
+
+  /// 그 아래 붙는 해결책. 지역 칩이 바로 위에 있으므로 둘을 함께 말한다.
+  static const searchTooManyHint = '지역을 고르거나, 정류소번호를 넣으면 한 곳만 나와요';
+
+  /// "군포 3" — 검색 결과에서 뽑은 지역 칩.
+  ///
+  /// 도시 목록(TAGO 138개)과 무관하다 — **지금 결과에 실제로 있는 지역만** 칩이 되고
+  /// 추가 조회도 없다. 건수를 붙이는 이유는 어느 칩이 내 정류장을 담고 있을지
+  /// 짐작하게 하는 것이다.
+  static String regionChip(String region, int count) => '$region $count';
+
+  /// 지역 필터를 해제하는 칩.
+  static const regionAll = '전체';
 
   /// 도시를 고르기 전에 검색을 누른 사람에게. **`searchPrompt`를 쓰면 안 된다** —
   /// 방금 이름을 넣은 사용자에게 이름을 넣으라고 말하는 셈이 된다.
@@ -121,7 +165,8 @@ class BusStrings {
 
   /// 검색 전 안내. 도시를 고르지 않아도 되는 범위를 미리 말한다 — 안 말하면
   /// 수도권 밖 사용자가 이름만 여러 번 고쳐 넣으며 헛수고한다.
-  static const searchCapitalHint = '서울·경기·인천은 이름만으로 찾을 수 있어요';
+  static const searchCapitalHint =
+      '서울·경기·인천은 도시를 고르지 않아도 찾아요\n정류소번호로 찾으면 한 곳만 나옵니다';
 
   /// 도시 선택을 펼치는 링크.
   static const searchOtherRegion = '다른 지역에서 찾기';
