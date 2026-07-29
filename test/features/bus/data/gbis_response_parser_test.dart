@@ -148,6 +148,20 @@ void main() {
     });
   });
 
+  group('단건 응답 — 배열이 아니라 객체로 온다', () {
+    test('도착정보가 객체로 와도 1건으로 읽는다 — closed로 뭉개지지 않는다', () {
+      // 실측 서울 강남역10번출구. 예전 파서는 여기서 빈 목록을 돌려 카드가
+      // `오늘 운행이 끝났어요`를 띄웠다 — 9711번이 5분 후 오는 중이었다.
+      final r = parseGbisArrivals(_fixture('arrivals_single_object_seoul'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(1));
+      expect(r.items.single.routeNo, '9711');
+      // predictTimeSec1 = 331초 → 올림 6분.
+      expect(r.items.single.arrMin, 6);
+    });
+  });
+
   group('타입 혼재 — 초가 빠진 행', () {
     test('predictTimeSec1이 없으면 predictTime1(분)으로 읽는다', () {
       final json = _fixture('arrivals_jangmi_10routes');
@@ -232,6 +246,18 @@ void main() {
         }).outcome,
         TagoOutcome.malformed,
       );
+    });
+
+    test('단건이면 객체로 오는데도 1건으로 읽는다', () {
+      // 실측 서울 강남역10번출구: 경유노선이 9711 하나여서 `busRouteList`가 배열이
+      // 아니라 **객체**로 왔다. 이 분기가 없으면 노선이 하나뿐인 정류장에서 목록이
+      // 통째로 비고 확인 시트가 `오는 버스가 없어요`를 띄운다.
+      final r = parseGbisViaRoutes(_fixture('viaroutes_single_object_seoul'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(1));
+      expect(r.items.single.routeNo, '9711');
+      expect(r.items.single.destName, '매헌시민의숲.양재꽃시장');
     });
 
     test('정렬하지 않는다 — 표시 순서는 buildRouteChoices가 정한다', () {

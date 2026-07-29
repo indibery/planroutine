@@ -1,0 +1,22 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 17:28:23.937",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busRouteList": {
+        "regionName": "서울",
+        "routeDestId": 121000221,
+        "routeDestName": "매헌시민의숲.양재꽃시장",
+        "routeId": 100100607,
+        "routeName": 9711,
+        "routeTypeCd": 11,
+        "routeTypeName": "직행좌석형시내버스",
+        "staOrder": 24
+      }
+    }
+  }
+}

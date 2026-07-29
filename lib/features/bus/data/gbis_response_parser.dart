@@ -92,24 +92,33 @@ TagoOutcome? _envelopeFailure(Map<String, dynamic> json) {
   return null;
 }
 
-/// `msgBody.<key>` 배열의 각 행.
+/// `msgBody.<key>`의 각 행.
 ///
-/// `resultCode`가 정상인데 목록이 없는 형태는 관측되지 않았다. 와도 호출부가
-/// `empty`로 돌린다 — 껍데기가 깨진 것이 아니라 담긴 건수가 0인 것과 구별할 수단이
-/// 없다.
+/// **건수가 1이면 배열이 아니라 객체로 온다.** 실측: 서울 `강남역10번출구`
+/// (`121000097`)는 경유노선이 `9711` 하나여서 `busRouteList`가 객체로 왔고, 도착정보도
+/// 같았다. 2건 이상이면 배열이다(`강남역12번출구`는 2건 → 배열).
 ///
-/// **단건일 때 배열이 아니라 객체로 오는 형태는 다루지 않는다**(TAGO의
-/// `items: {'item': …}`에 해당하는 것). 그런 응답을 관측하지 못해 모양을 모르는데,
-/// 추측으로 분기를 넣으면 검증할 수 없는 코드가 남는다. 만약 그렇게 온다면 빈 목록
-/// → `empty`로 떨어져, 확인 시트는 도착정보 기반 목록으로 폴백한다(크래시가 아니다).
+/// 이 분기가 없으면 **노선이 하나뿐인 정류장이 통째로 고장난다** — 빈 목록 → `empty`
+/// → 카드는 `오늘 운행이 끝났어요`, 확인 시트는 `오는 버스가 없어요`를 띄운다. 실제로는
+/// 버스가 오고 있다. 방향별로 쪼개진 정류소와 마을버스 단독 정류장이 여기 걸린다.
+///
+/// (이전 주석은 "그런 응답을 관측하지 못해 추측으로 분기를 넣지 않는다"였다. 그 판단이
+/// 틀렸다 — 같은 공공데이터포털 계열인 TAGO가 이미 `items: {'item': …}`로 같은 짓을
+/// 하고 `tago_response_parser`에 그것을 다루는 헬퍼가 있었다. 추측이 아니라 근거 있는
+/// 유추였다.)
+///
+/// `resultCode`가 정상인데 목록 키 자체가 없는 형태는 관측되지 않았다. 와도 호출부가
+/// `empty`로 돌린다 — 껍데기가 깨진 것이 아니라 담긴 건수가 0인 것과 구별할 수단이 없다.
 Iterable<Map<String, dynamic>> _rows(Map<String, dynamic> json, String key) {
   final response = json['response'];
   final body = response is Map ? response['msgBody'] : null;
   final rows = body is Map ? body[key] : null;
 
-  return rows is List
-      ? rows.whereType<Map>().map((r) => r.cast<String, dynamic>())
-      : const [];
+  if (rows is List) {
+    return rows.whereType<Map>().map((r) => r.cast<String, dynamic>());
+  }
+  if (rows is Map) return [rows.cast<String, dynamic>()];
+  return const [];
 }
 
 /// 한 행 → 경유노선 1건.

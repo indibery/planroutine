@@ -220,6 +220,26 @@ void main() {
       expect(find.text('지금 이 정류장에 오는 버스가 없어요'), findsNothing);
     });
 
+    testWidgets('노선이 많아 시트가 커져도 제목이 상태바를 침범하지 않는다', (tester) async {
+      // 시뮬레이터 실측으로 잡은 결함이다. 행선지가 붙어 행이 2줄이 되고 건수가
+      // 늘면(실측 10) 시트가 처음으로 화면 top까지 자라는데, `showModalBottomSheet`의
+      // `useSafeArea` 기본값(false)에서는 top padding이 제거돼 제목
+      // `이 정류장이 맞나요?`가 다이나믹 아일랜드에 겹쳐 읽히지 않았다.
+      //
+      // 시트 높이가 내용에 따라 변하므로 가드가 없으면 **노선이 많은 정류장에서만**
+      // 재발한다 — 노선이 적은 정류장으로 테스트하면 통과한다.
+      tester.view.devicePixelRatio = 3.0;
+      tester.view.padding = const FakeViewPadding(top: 177); // 59 논리픽셀
+      addTearDown(tester.view.reset);
+
+      await _showSheet(tester, routes: _manyRoutes, arrivals: const []);
+
+      expect(
+        tester.getTopLeft(find.text('이 정류장이 맞나요?')).dy,
+        greaterThanOrEqualTo(59.0),
+      );
+    });
+
     testWidgets('노선은 번호순으로 선다 — 자기 번호를 훑어 찾는다', (tester) async {
       await _showSheet(tester, routes: _routes, arrivals: _someArrivals);
 
@@ -248,6 +268,41 @@ const _routes = [
 /// 위 셋 중 **하나만** 지금 오는 상태. 실기기에서 목록이 줄어든 그 상황이다.
 const _someArrivals = [
   BusArrival(routeId: 'GGB208000027', routeNo: '3030', arrMin: 4),
+];
+
+/// 군포 장미아파트 실측 경유노선 **10개 전부**. 시트가 화면 top까지 자라는 조건이라
+/// 상단 침범 가드가 이 픽스처를 쓴다.
+const _manyRoutes = [
+  BusRoute(routeId: 'GGB241382003', routeNo: '6', destName: '금정역'),
+  BusRoute(routeId: 'GGB241382001', routeNo: '9', destName: '금정역'),
+  BusRoute(
+    routeId: 'GGB208000005',
+    routeNo: '11-5',
+    destName: '정금마을.방배경찰서(중)',
+  ),
+  BusRoute(routeId: 'GGB208000001', routeNo: '15', destName: '창박골'),
+  BusRoute(routeId: 'GGB208000032', routeNo: '87', destName: '산본1동'),
+  BusRoute(
+    routeId: 'GGB100100574',
+    routeNo: '541',
+    destName: '신분당선강남역(중)',
+  ),
+  BusRoute(
+    routeId: 'GGB208000026',
+    routeNo: '917',
+    destName: '신사역8번출구.가로수길',
+  ),
+  BusRoute(routeId: 'GGB208000027', routeNo: '3030', destName: '신사역(중)'),
+  BusRoute(
+    routeId: 'GGB100100279',
+    routeNo: '5623',
+    destName: '여의도환승센터(1번승강장)',
+  ),
+  BusRoute(
+    routeId: 'GGB234001163',
+    routeNo: '6501',
+    destName: '부곡공영차고지(미정차)',
+  ),
 ];
 
 /// 시트를 띄우고 필요한 체크를 해제한 뒤 `맞아요`를 누른다.

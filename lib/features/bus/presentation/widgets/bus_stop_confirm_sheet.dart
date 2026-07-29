@@ -79,6 +79,15 @@ class BusStopConfirmSheet extends StatefulWidget {
     return showModalBottomSheet<BusStop>(
       context: context,
       isScrollControlled: true,
+      // **상단 침범을 피한다.** 기본값(false)은 시트를 화면 top까지 뻗게 하고, 그
+      // 모드에서는 `MediaQuery`의 top padding이 제거돼 **아래 `SafeArea`가 상단에
+      // 아무 일도 하지 않는다** — 제목이 다이나믹 아일랜드와 겹쳐 읽히지 않았다.
+      //
+      // 경유노선으로 목록을 옮기면서 드러난 문제다. 도착정보로 목록을 만들 때는 1줄
+      // 2~8행이라 시트가 top에 닿지 않았는데, 행선지가 붙어 2줄이 되고 건수도 늘어
+      // (실측 10) 처음으로 닿았다. 시트 높이는 내용에 따라 변하므로 이 플래그가
+      // 없으면 "정류장에 노선이 많을 때만" 제목이 사라진다.
+      useSafeArea: true,
       builder: (_) => BusStopConfirmSheet(
         stop: stop,
         routes: routes,

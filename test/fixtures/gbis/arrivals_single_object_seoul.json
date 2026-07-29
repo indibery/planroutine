@@ -1,0 +1,45 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 17:28:19.235",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busArrivalList": {
+        "crowded1": 0,
+        "crowded2": 0,
+        "flag": "PASS",
+        "locationNo1": 3,
+        "locationNo2": 6,
+        "lowPlate1": 0,
+        "lowPlate2": 0,
+        "plateNo1": "서울70사7049",
+        "plateNo2": "서울70사7055",
+        "predictTime1": 5,
+        "predictTime2": 50,
+        "remainSeatCnt1": -1,
+        "remainSeatCnt2": -1,
+        "routeDestId": 121000221,
+        "routeDestName": "매헌시민의숲.양재꽃시장",
+        "routeId": 100100607,
+        "routeName": 9711,
+        "routeTypeCd": 11,
+        "staOrder": 24,
+        "stationId": 121000097,
+        "stationNm1": "신사역.푸른저축은행(중)",
+        "stationNm2": "DMC상암센트럴파크",
+        "taglessCd1": 0,
+        "taglessCd2": 0,
+        "turnSeq": 31,
+        "vehId1": 111021317,
+        "vehId2": 111021320,
+        "predictTimeSec1": 331,
+        "predictTimeSec2": 3035,
+        "stateCd1": 1,
+        "stateCd2": 2
+      }
+    }
+  }
+}
