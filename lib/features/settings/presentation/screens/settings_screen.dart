@@ -7,7 +7,6 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../providers/settings_providers.dart';
-import '../widgets/ai_task_share_tile.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/bus_summary_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
@@ -92,11 +91,6 @@ class SettingsScreen extends ConsumerWidget {
             title: SettingsStrings.trashSection,
             subtitle: SettingsStrings.trashDescription,
             child: TrashListTile(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.aiShareSection,
-            subtitle: SettingsStrings.aiShareDescription,
-            child: AiTaskShareTile(),
           ),
           const SettingsSection(
             title: SettingsStrings.dataSection,

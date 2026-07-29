@@ -75,7 +75,6 @@ import 'package:planroutine/features/schedule/presentation/widgets/schedule_edit
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_tile.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/slide_hint_bar.dart';
-import 'package:planroutine/features/settings/presentation/widgets/ai_task_share_tile.dart';
 import 'package:planroutine/features/settings/presentation/widgets/bus_settings_tiles.dart';
 import 'package:planroutine/features/settings/presentation/widgets/export_list_tile.dart';
 import 'package:planroutine/features/settings/presentation/widgets/notification_settings_tiles.dart';
@@ -720,11 +719,6 @@ void main() {
               title: SettingsStrings.exportSection,
               subtitle: SettingsStrings.exportDescription,
               child: ExportListTile(),
-            ),
-            SettingsSection(
-              title: SettingsStrings.aiShareSection,
-              subtitle: SettingsStrings.aiShareDescription,
-              child: AiTaskShareTile(),
             ),
             SettingsSection(
               title: SettingsStrings.dataSection,
