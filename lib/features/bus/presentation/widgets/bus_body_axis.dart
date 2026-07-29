@@ -20,8 +20,20 @@ class BusBodyAxis extends StatelessWidget {
   /// 축이 담는 최대 분.
   static const axisRange = 15;
 
+  /// 점이 한 걸음 움직이는 시간. 호스트의 1초 틱과 **같아야** 이어져 보인다 —
+  /// 짧으면 움직였다 멈추기를 반복하고, 길면 다음 틱이 애니메이션을 자른다.
+  static const tick = Duration(seconds: 1);
+
   static const _minFraction = 0.03;
   static const _maxFraction = 0.97;
+
+  /// 점·라벨을 찾는 키. **둘을 다른 이름으로 둔다** — 같은 `routeId`로 겹치면
+  /// `find.byKey`가 둘을 함께 물어 테스트가 어느 쪽을 재는지 알 수 없다.
+  ///
+  /// 위치 기반 finder(`find.byType(Container).at(1)`)를 대신한다. 보조 눈금이
+  /// 들어오면서 그 인덱스가 밀렸다 — 레일·눈금·점이 모두 `Container`다.
+  static Key dotKey(String routeId) => ValueKey('bus_axis_dot_$routeId');
+  static Key labelKey(String routeId) => ValueKey('bus_axis_label_$routeId');
 
   /// 노선번호 라벨 박스의 폭.
   ///
@@ -47,8 +59,11 @@ class BusBodyAxis extends StatelessWidget {
   final BusCardView view;
 
   /// 축 위 위치를 0~1로. **양 끝에서 점이 반쯤 잘리지 않게 clamp한다.**
-  static double dotPosition(int arrMin) {
-    final raw = arrMin / axisRange;
+  ///
+  /// **초를 받는다.** 분을 받던 시절에는 `5분 59초`와 `6분 1초`가 같은 자리에 서고
+  /// 30초 폴링마다 한 칸씩 튀었다(실기기 신고 2026-07-30).
+  static double dotPosition(int arrSec) {
+    final raw = arrSec / (axisRange * 60);
     return raw.clamp(_minFraction, _maxFraction);
   }
 
@@ -122,6 +137,7 @@ class BusBodyAxis extends StatelessWidget {
                 ),
               ),
             ),
+            ..._minorTicks(width),
             ...view.visible.map((a) => _dot(a, width)),
           ],
         );
@@ -129,10 +145,40 @@ class BusBodyAxis extends StatelessWidget {
     );
   }
 
+  /// 1분 간격 보조 눈금.
+  ///
+  /// **라벨을 늘리지 않고 눈금만 깐다** — 글자를 1분마다 찍으면 노선 라벨
+  /// (`labelWidth` 34pt)과 부딪힌다. 5분 라벨은 좌표를 말하고, 이 실선은 그 사이를
+  /// 읽게 해 준다(실기기 요청 2026-07-30: "5분 단위보다 세밀하게").
+  ///
+  /// 양 끝(0분·15분)은 그리지 않는다 — 라벨이 이미 그 자리를 말하고, 끝에 세우면
+  /// 레일의 둥근 마구리와 겹쳐 지저분해진다.
+  List<Widget> _minorTicks(double width) {
+    return [
+      for (var m = 1; m < axisRange; m++)
+        Positioned(
+          left: (m / axisRange) * width,
+          top: 4,
+          child: Container(
+            width: 1,
+            height: 6,
+            color: AppColors.busSignalOff,
+          ),
+        ),
+    ];
+  }
+
   Widget _dot(BusArrival arrival, double width) {
     const size = 12.0;
-    return Positioned(
-      left: (dotPosition(arrival.arrMin) * width) - (size / 2),
+    // **`AnimatedPositioned` + `ValueKey(routeId)`가 짝이다.** 키가 없으면 Flutter가
+    // Stack 자식을 순서로 매칭해, 정렬이 바뀌는 순간 A 노선의 점이 B의 자리로
+    // 미끄러진다(색까지 함께 건너간다).
+    return AnimatedPositioned(
+      key: dotKey(arrival.routeId),
+      duration: tick,
+      // 등속이어야 흐름으로 읽힌다 — ease를 쓰면 1초마다 가속·감속해 떨린다.
+      curve: Curves.linear,
+      left: (dotPosition(arrival.arrSec) * width) - (size / 2),
       top: 1,
       child: Container(
         width: size,
@@ -157,8 +203,12 @@ class BusBodyAxis extends StatelessWidget {
         return Stack(
           children: view.visible.map((a) {
             final urgent = isUrgent(a.arrMin);
-            return Positioned(
-              left: (dotPosition(a.arrMin) * width) - labelWidth / 2,
+            return AnimatedPositioned(
+              // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
+              key: labelKey(a.routeId),
+              duration: tick,
+              curve: Curves.linear,
+              left: (dotPosition(a.arrSec) * width) - labelWidth / 2,
               top: 0,
               width: labelWidth,
               // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만

@@ -15,9 +15,9 @@ const _stop = BusStop(
 );
 
 final _arrivals = [
-  const BusArrival(routeId: 'R1', routeNo: '82-1', arrMin: 8),
-  const BusArrival(routeId: 'R2', routeNo: '92', arrMin: 10),
-  const BusArrival(routeId: 'R3', routeNo: '92-1', arrMin: 10),
+  BusArrival.fromMinutes(routeId: 'R1', routeNo: '82-1', arrMin: 8),
+  BusArrival.fromMinutes(routeId: 'R2', routeNo: '92', arrMin: 10),
+  BusArrival.fromMinutes(routeId: 'R3', routeNo: '92-1', arrMin: 10),
 ];
 
 /// 확인 시트를 **띄운 상태로** 둔다 — 시트 안에 무엇이 그려졌는지 검사할 때 쓴다.
@@ -291,8 +291,8 @@ const _routes = [
 ];
 
 /// 위 셋 중 **하나만** 지금 오는 상태. 실기기에서 목록이 줄어든 그 상황이다.
-const _someArrivals = [
-  BusArrival(routeId: 'GGB208000027', routeNo: '3030', arrMin: 4),
+final _someArrivals = [
+  BusArrival.fromMinutes(routeId: 'GGB208000027', routeNo: '3030', arrMin: 4),
 ];
 
 /// 군포 장미아파트 실측 경유노선 **10개 전부**. 시트가 화면 top까지 자라는 조건이라

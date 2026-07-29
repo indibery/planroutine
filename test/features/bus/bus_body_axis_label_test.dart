@@ -26,7 +26,7 @@ BusCardView _view(List<String> routeNos) => BusCardView(
       state: BusCardState.ok,
       visible: [
         for (final (i, no) in routeNos.indexed)
-          BusArrival(routeId: 'R$i', routeNo: no, arrMin: i * 5),
+          BusArrival.fromMinutes(routeId: 'R$i', routeNo: no, arrMin: i * 5),
       ],
       hiddenCount: 0,
       fetchedAt: DateTime(2026, 7, 29, 19, 51),
@@ -84,8 +84,11 @@ void main() {
         ),
       ));
 
+      // **위치 기반 finder를 쓰지 않는다.** 예전에는 `find.byType(Container).at(1)`로
+      // 점을 집었는데, 1분 보조 눈금이 들어오면서 그 인덱스가 밀렸다(레일·눈금·점이
+      // 모두 Container다). 이름 있는 키는 그런 이동에 영향받지 않는다.
       final label = tester.getRect(find.text('5623'));
-      final dot = tester.getRect(find.byType(Container).at(1));
+      final dot = tester.getRect(find.byKey(BusBodyAxis.dotKey('R0')));
 
       expect((label.center.dx - dot.center.dx).abs(), lessThan(1.0),
           reason: '라벨 중앙과 점 중앙이 어긋나면 어느 버스의 번호인지 알 수 없다');

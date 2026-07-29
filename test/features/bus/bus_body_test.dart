@@ -9,7 +9,7 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_body_axis.dart
 import 'package:planroutine/features/bus/presentation/widgets/bus_body_text.dart';
 
 BusArrival _a(String routeId, String routeNo, int arrMin) =>
-    BusArrival(routeId: routeId, routeNo: routeNo, arrMin: arrMin);
+    BusArrival.fromMinutes(routeId: routeId, routeNo: routeNo, arrMin: arrMin);
 
 BusCardView _view(List<BusArrival> items, {int hidden = 0}) => BusCardView(
       state: BusCardState.ok,
@@ -83,15 +83,15 @@ void main() {
     });
 
     test('15분은 오른쪽 끝(97%)이다', () {
-      expect(BusBodyAxis.dotPosition(15), closeTo(0.97, 0.001));
+      expect(BusBodyAxis.dotPosition(15 * 60), closeTo(0.97, 0.001));
     });
 
     test('15분을 넘겨도 97%를 넘지 않는다', () {
-      expect(BusBodyAxis.dotPosition(48), closeTo(0.97, 0.001));
+      expect(BusBodyAxis.dotPosition(48 * 60), closeTo(0.97, 0.001));
     });
 
     test('중간값은 비례한다', () {
-      expect(BusBodyAxis.dotPosition(5), closeTo(1 / 3, 0.01));
+      expect(BusBodyAxis.dotPosition(5 * 60), closeTo(1 / 3, 0.01));
     });
   });
 
@@ -129,7 +129,7 @@ void main() {
       // "간격이 공간으로 보인다"이므로 그 공간 매핑을 위젯 레벨에서 고정한다.
       await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
 
-      final expected = BusBodyAxis.dotPosition(2) * _axisWidth;
+      final expected = BusBodyAxis.dotPosition(2 * 60) * _axisWidth;
       expect(tester.getCenter(_dot(0)).dx, closeTo(expected, 0.5),
           reason: '점 중심이 분에 비례한 x다 — size/2 보정이 그 일을 한다');
       expect(tester.getCenter(find.text('720')).dx, closeTo(expected, 0.5),
@@ -143,7 +143,7 @@ void main() {
         BusBodyAxis(view: _view([_a('A', '720', 18), _a('B', '61', 31)])),
       );
 
-      final far = BusBodyAxis.dotPosition(BusBodyAxis.axisRange) * _axisWidth;
+      final far = BusBodyAxis.dotPosition(BusBodyAxis.axisRange * 60) * _axisWidth;
       expect(tester.getCenter(find.text('720')).dx, closeTo(far, 0.5));
       expect(tester.getCenter(find.text('61')).dx, closeTo(far, 0.5),
           reason: '축을 넘긴 값은 97%에 모인다 — 축 밖으로 밀려나지 않는다');

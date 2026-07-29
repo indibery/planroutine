@@ -21,7 +21,7 @@ BusCardView _view({
 }) {
   return BusCardView(
     state: state,
-    visible: items ?? [const BusArrival(routeId: 'A', routeNo: '720', arrMin: 2)],
+    visible: items ?? [BusArrival.fromMinutes(routeId: 'A', routeNo: '720', arrMin: 2)],
     hiddenCount: hidden,
     fetchedAt: fetchedAt,
   );
@@ -162,10 +162,10 @@ void main() {
 
   group('모양을 바꿔도 같은 정보가 보인다 — 두 본문의 공유 계약', () {
     // 5노선 정류장 + 필터 없음(= 확인 시트의 기본 저장값)에서 상한이 3개를 남긴 모습.
-    const visible = [
-      BusArrival(routeId: 'A', routeNo: '720', arrMin: 2),
-      BusArrival(routeId: 'B', routeNo: '150', arrMin: 5),
-      BusArrival(routeId: 'C', routeNo: '92', arrMin: 9),
+    final visible = [
+      BusArrival.fromMinutes(routeId: 'A', routeNo: '720', arrMin: 2),
+      BusArrival.fromMinutes(routeId: 'B', routeNo: '150', arrMin: 5),
+      BusArrival.fromMinutes(routeId: 'C', routeNo: '92', arrMin: 9),
     ];
 
     // **모양별로 따로 쓰지 않고 순회한다.** `hiddenCount`가 `간단히`에만 있었던 것이

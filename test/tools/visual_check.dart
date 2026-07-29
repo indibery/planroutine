@@ -121,7 +121,7 @@ double _distance(Color x, Color y) {
 Color _cardSurface() => Color.alphaBlend(AppColors.glass, AppColors.background);
 
 BusArrival _a(String id, String no, int min) =>
-    BusArrival(routeId: id, routeNo: no, arrMin: min);
+    BusArrival.fromMinutes(routeId: id, routeNo: no, arrMin: min);
 
 BusCardView _view(BusCardState state, {int hidden = 0}) => BusCardView(
       state: state,
@@ -1048,10 +1048,10 @@ void main() {
             BusRoute(routeId: 'R3', routeNo: '1006-1', destName: '금정역'),
             BusRoute(routeId: 'R4', routeNo: '5623', destName: '여의도환승센터'),
           ],
-          arrivals: const [
-            BusArrival(routeId: 'R1', routeNo: '82-1', arrMin: 2),
-            BusArrival(routeId: 'R2', routeNo: '720-1', arrMin: 8),
-            BusArrival(routeId: 'R3', routeNo: '1006-1', arrMin: 0),
+          arrivals: [
+            BusArrival.fromMinutes(routeId: 'R1', routeNo: '82-1', arrMin: 2),
+            BusArrival.fromMinutes(routeId: 'R2', routeNo: '720-1', arrMin: 8),
+            BusArrival.fromMinutes(routeId: 'R3', routeNo: '1006-1', arrMin: 0),
           ],
           state: BusCardState.ok,
           slot: CommuteDirection.toHome,

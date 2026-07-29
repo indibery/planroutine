@@ -61,15 +61,18 @@ void main() {
     test('빠른 순으로 정렬된다 — 응답 순서는 도착 순서가 아니다', () {
       final r = parseGbisArrivals(_fixture('arrivals_jangmi_10routes'));
 
-      expect(r.items.map((e) => e.arrMin).toList(), [4, 4, 4, 5, 5, 7, 9, 20]);
+      expect(r.items.map((e) => e.arrMin).toList(), [3, 4, 4, 4, 4, 6, 8, 19]);
     });
 
-    test('초를 올림해 분을 만든다 — 같은 행의 분 필드보다 초가 정확하다', () {
+    test('초를 보존한다 — 같은 행의 분 필드보다 초가 정확하다', () {
       final r = parseGbisArrivals(_fixture('arrivals_jangmi_10routes'));
 
-      // 5623: predictTimeSec1 361(=6.02분) · predictTime1 5 → 초 기준 올림 7분.
-      expect(_byRouteNo(r.items, '5623').arrMin, 7);
-      // 87: predictTimeSec1 234 → 4분(predictTime1도 4).
+      // 5623: predictTimeSec1 361 · predictTime1 5 → 초를 쓴다(분 필드는 5라 틀렸다).
+      expect(_byRouteNo(r.items, '5623').arrSec, 361);
+      // 361초 = 6.02분 → 반올림 6분. 예전 ceil은 7분으로 과대 표시했다.
+      expect(_byRouteNo(r.items, '5623').arrMin, 6);
+      // 87: predictTimeSec1 234 → 3.9분 → 4분(predictTime1도 4).
+      expect(_byRouteNo(r.items, '87').arrSec, 234);
       expect(_byRouteNo(r.items, '87').arrMin, 4);
     });
 
@@ -100,7 +103,7 @@ void main() {
 
       expect(r.outcome, TagoOutcome.ok);
       expect(r.items.length, 6);
-      expect(r.items.map((e) => e.arrMin).toList(), [3, 4, 4, 7, 21, 38]);
+      expect(r.items.map((e) => e.arrMin).toList(), [3, 4, 4, 7, 20, 38]);
       expect(_routeNos(r.items), containsAll({'92-1', '82-1', '201'}));
     });
   });

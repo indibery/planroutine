@@ -16,6 +16,12 @@ import 'bus_arrival_card.dart';
 /// 폴링 주기. 서버 캐시가 없으니 이 값이 곧 호출 주기다.
 const busPollInterval = Duration(seconds: 30);
 
+/// 점을 움직이는 주기. **네트워크와 무관하다** — `buildBusCardView`가 `now`를 받는
+/// 순수 함수라, 리빌드만 시키면 경과 보정이 다시 돌아 점이 초만큼 왼쪽으로 간다.
+///
+/// `BusBodyAxis.tick`과 **같은 값이어야** 애니메이션이 끊기지 않는다.
+const busMoveInterval = Duration(seconds: 1);
+
 /// 오늘 탭 최상단에 카드를 얹는 호스트.
 ///
 /// **요청이 나가는 조건 여섯 개를 이 한곳에서 판정한다**(스펙 §6). 조건을 여러 곳에
@@ -36,6 +42,9 @@ class BusCardHost extends ConsumerStatefulWidget {
 class _BusCardHostState extends ConsumerState<BusCardHost>
     with WidgetsBindingObserver {
   Timer? _timer;
+
+  /// 점을 움직이는 1초 틱. 폴링(`_timer`)과 같은 조건에서 같이 살고 죽는다.
+  Timer? _moveTimer;
   BusFetch? _fetch;
 
   /// 방향 토글은 **화면 수명**이다 — 저장하지 않는다.
@@ -112,6 +121,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   @override
   void dispose() {
     _timer?.cancel();
+    _moveTimer?.cancel();
     _cooldownTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -126,6 +136,9 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     } else {
       _timer?.cancel();
       _timer = null;
+      // 백그라운드에서 초당 리빌드를 남기지 않는다.
+      _moveTimer?.cancel();
+      _moveTimer = null;
     }
   }
 
@@ -209,6 +222,8 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       // 반환하고 묵은 목록도 사라진다. 본문은 `expanded`로만 게이트되므로
       // (`bus_arrival_card.dart`의 `if (expanded)`) 접힌 카드에 로딩 문구가
       // 노출되지는 않는다.
+      _moveTimer?.cancel();
+      _moveTimer = null;
       if (mounted && _fetch != null) setState(() => _fetch = null);
       return;
     }
@@ -251,6 +266,16 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       return;
     }
     _timer ??= Timer.periodic(busPollInterval, (_) => _tick());
+
+    // 이동 틱 — 조회하지 않고 리빌드만 한다. 조건은 폴링과 같은 자리에서 걸리므로
+    // 접힘·미설정·시간대 밖에서는 위의 `!shouldPoll` 분기가 함께 끊는다.
+    //
+    // 시간대가 만료돼 접히는 순간은 폴링(최대 30초)이 정리할 때까지 이 타이머가
+    // 잠깐 더 돈다. 리빌드뿐이라 비용이 없고, 오히려 그 리빌드가 `_display`를 새
+    // `now`로 돌려 **접힘 판정을 1초 안에** 반영한다(예전에는 최대 30초 늦었다).
+    _moveTimer ??= Timer.periodic(busMoveInterval, (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   /// 시간대 판정 + 화면 수명 방향 토글.

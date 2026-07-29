@@ -6,7 +6,7 @@ DateTime _at(int hour, int minute, [int second = 0]) =>
     DateTime(2026, 7, 28, hour, minute, second);
 
 BusArrival _a(String routeId, String routeNo, int arrMin) =>
-    BusArrival(routeId: routeId, routeNo: routeNo, arrMin: arrMin);
+    BusArrival.fromMinutes(routeId: routeId, routeNo: routeNo, arrMin: arrMin);
 
 BusCardView _build({
   required List<BusArrival> arrivals,

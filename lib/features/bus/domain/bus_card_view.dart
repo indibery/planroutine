@@ -90,13 +90,15 @@ BusCardView buildBusCardView({
   // 1) 경과 보정 — 캐시가 묵은 만큼 차감한다. 서버가 "4분"이라고 준 값이 50초
   //    묵었으면 화면에는 3분으로 나가야 한다.
   //
-  //    round를 쓰는 이유: floor는 조회 1초 뒤에 239초를 3분으로 떨어뜨려 표시가
-  //    튄다. ceil은 반대로 최대 59초를 과대 표시해 사용자가 버스를 놓칠 수 있다.
+  //    **초 단위로 뺀다.** 예전에는 여기서 다시 분으로 반올림했는데, 그 반올림이
+  //    시간 축의 점을 분 격자에 붙여 두는 두 번째 지점이었다. 분 변환 규칙은
+  //    `BusArrival.arrMin` 한 곳에만 남는다(round — ceil은 최대 59초를 과대
+  //    표시해 사용자가 버스를 놓칠 수 있다).
   final elapsed = fetchedAt == null ? 0 : now.difference(fetchedAt).inSeconds;
   final adjusted = arrivals.map((a) {
     if (elapsed <= 0) return a;
-    final remaining = a.arrMin * 60 - elapsed;
-    return a.copyWith(arrMin: remaining <= 0 ? 0 : (remaining / 60).round());
+    final remaining = a.arrSec - elapsed;
+    return a.copyWith(arrSec: remaining <= 0 ? 0 : remaining);
   });
 
   // 2) 노선 필터 — 비어 있으면 "필터 없음"이라 전부 통과한다.
@@ -105,7 +107,7 @@ BusCardView buildBusCardView({
       : adjusted.where((a) => routeIds.contains(a.routeId)).toList();
 
   // 3) 정렬 — 보정으로 순서가 바뀔 수 있다.
-  filtered.sort((a, b) => a.arrMin.compareTo(b.arrMin));
+  filtered.sort((a, b) => a.arrSec.compareTo(b.arrSec));
 
   // 4) 상한 — 필터를 걸었다면 자르지 않는다. 자기가 고른 것을 감추면 안 된다.
   final limited = routeIds.isEmpty && filtered.length > busUnfilteredLimit

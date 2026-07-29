@@ -6,7 +6,7 @@ BusRoute _r(String id, String no, [String dest = '금정역']) =>
     BusRoute(routeId: id, routeNo: no, destName: dest);
 
 BusArrival _a(String id, String no, int min) =>
-    BusArrival(routeId: id, routeNo: no, arrMin: min);
+    BusArrival.fromMinutes(routeId: id, routeNo: no, arrMin: min);
 
 BusRouteChoice _find(List<BusRouteChoice> cs, String routeNo) =>
     cs.firstWhere((c) => c.route.routeNo == routeNo);

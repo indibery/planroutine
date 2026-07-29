@@ -52,12 +52,12 @@ TagoResult<BusArrival> parseArrivals(Map<String, dynamic> json) {
     for (final row in rows) {
       final arrival = _arrival(row);
       final prev = fastest[arrival.routeId];
-      if (prev == null || arrival.arrMin < prev.arrMin) {
+      if (prev == null || arrival.arrSec < prev.arrSec) {
         fastest[arrival.routeId] = arrival;
       }
     }
     final list = fastest.values.toList()
-      ..sort((a, b) => a.arrMin.compareTo(b.arrMin));
+      ..sort((a, b) => a.arrSec.compareTo(b.arrSec));
     return list;
   });
 }
@@ -145,7 +145,9 @@ BusArrival _arrival(Map<String, dynamic> row) {
     // routeno가 int와 String으로 섞여 온다(`92` / `"92-1"`). `as String` 캐스트는
     // 숫자 노선번호에서 크래시하므로 반드시 toString으로 받는다.
     routeNo: row['routeno']?.toString() ?? '',
-    arrMin: seconds <= 0 ? 0 : (seconds / 60).ceil(),
+    // **초를 그대로 넘긴다.** 예전에는 여기서 `ceil`로 분을 만들었는데, 시간 축이
+    // 그 격자에 갇혀 점이 30초마다 순간이동했다. 분은 `BusArrival.arrMin`이 만든다.
+    arrSec: seconds <= 0 ? 0 : seconds,
     lowFloor: row['vehicletp']?.toString() == '저상버스',
   );
 }

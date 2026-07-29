@@ -92,13 +92,23 @@ void main() {
     });
   });
 
-  group('arrMin 변환', () {
-    test('초를 올림해 분으로 만든다', () {
-      expect(parseArrivals(_envelope(_arr(1, 'A', 551))).items.single.arrMin, 10);
-      expect(parseArrivals(_envelope(_arr(1, 'A', 61))).items.single.arrMin, 2);
+  group('도착 시각 변환', () {
+    test('초를 그대로 보존한다 — 시간 축이 이 정밀도로 점을 놓는다', () {
+      // 예전에는 여기서 ceil로 분을 만들어 초를 버렸다. 그 결과 `5분 59초`와
+      // `6분 1초`가 축의 같은 자리에 서고 30초마다 한 칸씩 튀었다.
+      expect(parseArrivals(_envelope(_arr(1, 'A', 551))).items.single.arrSec, 551);
+      expect(parseArrivals(_envelope(_arr(1, 'A', 61))).items.single.arrSec, 61);
+    });
+
+    test('분은 반올림으로 파생된다', () {
+      // ceil이 아니다 — 최대 59초를 과대 표시해 사용자가 버스를 놓칠 수 있다.
+      // 551초(9.18분) → 9분, 61초(1.02분) → 1분.
+      expect(parseArrivals(_envelope(_arr(1, 'A', 551))).items.single.arrMin, 9);
+      expect(parseArrivals(_envelope(_arr(1, 'A', 61))).items.single.arrMin, 1);
     });
 
     test('0초는 0분(곧 도착)이다', () {
+      expect(parseArrivals(_envelope(_arr(1, 'A', 0))).items.single.arrSec, 0);
       expect(parseArrivals(_envelope(_arr(1, 'A', 0))).items.single.arrMin, 0);
     });
   });

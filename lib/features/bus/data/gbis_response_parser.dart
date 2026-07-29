@@ -70,7 +70,7 @@ TagoResult<BusArrival> parseGbisArrivals(Map<String, dynamic> json) {
   }
   if (list.isEmpty) return const TagoResult(TagoOutcome.empty);
 
-  list.sort((a, b) => a.arrMin.compareTo(b.arrMin));
+  list.sort((a, b) => a.arrSec.compareTo(b.arrSec));
   return TagoResult(TagoOutcome.ok, list);
 }
 
@@ -204,34 +204,36 @@ BusRoute _route(Map<String, dynamic> row) {
 
 /// 한 행 → 도착 1건. 도착 시각이 없는 행이면 null(위 doc 참고).
 BusArrival? _arrival(Map<String, dynamic> row) {
-  final arrMin = _arrMin(row['predictTimeSec1'], row['predictTime1']);
-  if (arrMin == null) return null;
+  final arrSec = _arrSec(row['predictTimeSec1'], row['predictTime1']);
+  if (arrSec == null) return null;
 
   return BusArrival(
     routeId: '$gbisIdPrefix${_intOrNull(row['routeId']) ?? 0}',
     // routeName은 **int와 String이 한 응답에 섞여** 온다(실측: `9`·`5623`은 int,
     // `'11-5'`는 String). `as String` 캐스트는 숫자 노선번호에서 크래시한다.
     routeNo: row['routeName']?.toString() ?? '',
-    arrMin: arrMin,
+    arrSec: arrSec,
     lowFloor: _intOrNull(row['lowPlate1']) == 1,
   );
 }
 
-/// 도착까지 남은 분.
+/// 도착까지 남은 **초**.
 ///
 /// **초가 있으면 초를 쓴다** — 같은 행의 분 필드보다 정확하다(실측: `predictTimeSec1
-/// 361`인 버스의 `predictTime1`이 `5`). 올림 규칙은 TAGO 경로
-/// (`tago_response_parser`의 `arrtime`)와 같은 `ceil`로 둔다 — 두 소스가 다른
-/// 규칙을 쓰면 같은 정류장을 경기/비경기로 옮겨 볼 때 표시가 어긋난다.
+/// 361`인 버스의 `predictTime1`이 `5`). 이제는 그 정밀도를 버리지 않는다: 예전에는
+/// 여기서 `ceil`로 분을 만들어 시간 축이 분 격자에 갇혔다.
+///
+/// 초가 없으면 분을 초로 환산해 폴백한다. 두 소스의 규칙은 여전히 같다 —
+/// 분 변환은 `BusArrival.arrMin` 한 곳에만 있다.
 ///
 /// 둘 다 비어 있으면(`''`·키 없음) 도착 정보가 없는 노선이다 → null.
-int? _arrMin(Object? sec, Object? min) {
+int? _arrSec(Object? sec, Object? min) {
   final seconds = _intOrNull(sec);
-  if (seconds != null) return seconds <= 0 ? 0 : (seconds / 60).ceil();
+  if (seconds != null) return seconds <= 0 ? 0 : seconds;
 
   final minutes = _intOrNull(min);
   if (minutes == null) return null;
-  return minutes < 0 ? 0 : minutes;
+  return minutes < 0 ? 0 : minutes * 60;
 }
 
 /// GBIS는 같은 필드를 `int` · `''`(빈 문자열) · 키 없음(null)으로 **섞어** 준다.
