@@ -23,6 +23,27 @@ class BusBodyAxis extends StatelessWidget {
   static const _minFraction = 0.03;
   static const _maxFraction = 0.97;
 
+  /// 노선번호 라벨 박스의 폭.
+  ///
+  /// **`left`의 `- labelWidth / 2`와 짝이다** — 하나만 고치면 라벨이 점에서 어긋난다
+  /// (예전에는 `28`과 `14`가 따로 박혀 있었다).
+  ///
+  /// 28pt였을 때 **4자리 노선번호가 잘렸다**(실기기 신고 2026-07-29: `5623` → `562`).
+  /// 실측 폭은 `3030` 28.6pt · `5623` 27.7pt로 28pt 경계에 걸쳐 있었고, 0.3pt 여유는
+  /// 폰트 버전·힌팅·글자 크기 설정 하나에 먹혔다. **0.3pt는 여유가 아니다.**
+  ///
+  /// 34pt면 4자리 최대(28.6)에 5.4pt 여유가 생긴다. 라벨이 넓어져 인접 버스와 겹칠
+  /// 확률이 21% 늘지만, **잘린 숫자는 읽기 어려운 것이 아니라 틀린 것**이다 —
+  /// `562`도 존재할 수 있는 노선번호이고 사용자는 다른 버스를 보고 있다는 사실조차
+  /// 알 수 없다. 겹침(읽기 어려움)보다 잘림(틀림)을 먼저 없앤다.
+  static const labelWidth = 34.0;
+
+  /// 라벨이 박스를 넘길 때 남겨야 할 여유. 가드가 이 값으로 검사한다.
+  ///
+  /// "들어간다"가 아니라 "여유가 있다"로 재는 이유가 위 버그다 — 0.3pt를 OK로 판정한
+  /// 것이 실기기 잘림을 놓친 원인이었다.
+  static const labelHeadroom = 3.0;
+
   final BusCardView view;
 
   /// 축 위 위치를 0~1로. **양 끝에서 점이 반쯤 잘리지 않게 clamp한다.**
@@ -137,9 +158,9 @@ class BusBodyAxis extends StatelessWidget {
           children: view.visible.map((a) {
             final urgent = isUrgent(a.arrMin);
             return Positioned(
-              left: (dotPosition(a.arrMin) * width) - 14,
+              left: (dotPosition(a.arrMin) * width) - labelWidth / 2,
               top: 0,
-              width: 28,
+              width: labelWidth,
               // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
               // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
               // 스크린리더에는 `720`·`150`이 맥락 없이 읽혀 정보가 0이 된다 —
@@ -150,16 +171,25 @@ class BusBodyAxis extends StatelessWidget {
                 label: '${BusStrings.routeLabel(a.routeNo)} '
                     '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
                 excludeSemantics: true,
-                child: Text(
-                  a.routeNo,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: urgent ? AppColors.ink : AppColors.sub,
+                // **박스를 넓히는 것만으로는 부족하다.** 사용자가 iOS 글자 크기를
+                // 키우면 11pt가 그만큼 커져 34pt도 넘는다 — `scaleDown`은 그때
+                // 잘리는 대신 줄인다. 하이픈이 붙은 긴 번호(실측 `1006-1` 36.8pt)도
+                // 여기서 흡수된다.
+                //
+                // `softWrap: false`가 필요하다 — FittedBox는 자식에게 무한 폭을
+                // 주므로 줄바꿈이 허용되면 긴 번호가 두 줄로 눕는다.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    a.routeNo,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: urgent ? AppColors.ink : AppColors.sub,
+                    ),
                   ),
                 ),
               ),
