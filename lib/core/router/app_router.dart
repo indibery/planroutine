@@ -96,7 +96,9 @@ GoRouter createRouter({
               path: AppRoutes.busStops,
               pageBuilder: (context, state) => NoTransitionPage(
                 child: BusStopSearchScreen(
-                  slot: _busSlot(state.uri.queryParameters['slot']),
+                  slot: CommuteDirection.fromName(
+                    state.uri.queryParameters['slot'],
+                  ),
                 ),
               ),
             ),
@@ -104,11 +106,3 @@ GoRouter createRouter({
         ),
       ],
     );
-
-/// `?slot=toWork` 쿼리를 방향으로. 모르는 값이면 null(화면이 기본 슬롯을 쓴다).
-CommuteDirection? _busSlot(String? raw) {
-  for (final direction in CommuteDirection.values) {
-    if (direction.name == raw) return direction;
-  }
-  return null;
-}

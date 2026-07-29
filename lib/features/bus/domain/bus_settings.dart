@@ -51,6 +51,14 @@ class BusSettings {
   BusStop? stopFor(CommuteDirection direction) =>
       direction == CommuteDirection.toWork ? departure : arrival;
 
+  /// [clearOverride]가 true면 override 두 값을 **명시적으로** 지운다.
+  ///
+  /// null 병합(`overrideAt ?? this.overrideAt`)만으로는 값을 없앨 수 없어
+  /// `copyWith(overrideAt: null)`이 조용히 무시되기 때문에 해제 신호를 따로 받는다.
+  /// 이 플래그가 없던 시절 [clearOverride]는 생성자로 8개 필드 중 6개를 손으로
+  /// 열거했다 — CLAUDE.md가 '편집 시트는 반드시 copyWith'를 blocking 사례로 못박은
+  /// 바로 그 형태다(`kind`·`googleEventId`를 그렇게 잃었다). 필드를 추가할 때
+  /// 고쳐야 할 곳을 이 메서드 하나로 모아 둔다.
   BusSettings copyWith({
     bool? enabled,
     BusStop? departure,
@@ -60,6 +68,7 @@ class BusSettings {
     TimeRange? toHomeRange,
     DateTime? overrideAt,
     bool? overrideExpanded,
+    bool clearOverride = false,
   }) {
     return BusSettings(
       enabled: enabled ?? this.enabled,
@@ -68,25 +77,14 @@ class BusSettings {
       style: style ?? this.style,
       toWorkRange: toWorkRange ?? this.toWorkRange,
       toHomeRange: toHomeRange ?? this.toHomeRange,
-      overrideAt: overrideAt ?? this.overrideAt,
-      overrideExpanded: overrideExpanded ?? this.overrideExpanded,
+      overrideAt: clearOverride ? null : (overrideAt ?? this.overrideAt),
+      overrideExpanded:
+          clearOverride ? false : (overrideExpanded ?? this.overrideExpanded),
     );
   }
 
-  /// override 두 값을 함께 지운다.
-  ///
-  /// `copyWith(overrideAt: null)`은 null 병합 때문에 지워지지 않으므로 전용
-  /// 메서드를 둔다 — 한쪽만 남으면 만료 판정이 흔들린다.
-  BusSettings clearOverride() {
-    return BusSettings(
-      enabled: enabled,
-      departure: departure,
-      arrival: arrival,
-      style: style,
-      toWorkRange: toWorkRange,
-      toHomeRange: toHomeRange,
-    );
-  }
+  /// override 두 값을 함께 지운다 — 한쪽만 남으면 만료 판정이 흔들린다.
+  BusSettings clearOverride() => copyWith(clearOverride: true);
 
   Map<String, dynamic> toJson() => {
         'enabled': enabled,
@@ -104,7 +102,7 @@ class BusSettings {
       enabled: json['enabled'] as bool? ?? false,
       departure: _stop(json['departure']),
       arrival: _stop(json['arrival']),
-      style: _style(json['style'] as String?),
+      style: BusCardStyle.fromName(json['style'] as String?),
       toWorkRange: _range(json['toWorkRange'], const TimeRange.hm(7, 0, 8, 30)),
       toHomeRange: _range(json['toHomeRange'], const TimeRange.hm(16, 0, 18, 0)),
       overrideAt: DateTime.tryParse(json['overrideAt'] as String? ?? ''),
@@ -117,12 +115,4 @@ class BusSettings {
 
   static TimeRange _range(Object? raw, TimeRange fallback) =>
       raw is Map<String, dynamic> ? TimeRange.fromJson(raw) : fallback;
-
-  /// 모르는 이름(구버전·손상)이면 기본 모양으로 폴백한다.
-  static BusCardStyle _style(String? raw) {
-    return BusCardStyle.values.firstWhere(
-      (s) => s.name == raw,
-      orElse: () => BusCardStyle.text,
-    );
-  }
 }

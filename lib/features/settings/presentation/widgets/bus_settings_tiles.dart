@@ -28,8 +28,13 @@ class BusSettingsTiles extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(busSettingsProvider).valueOrNull;
-    if (settings == null) return const SizedBox.shrink();
+    // **로딩 중에도 기본값으로 그린다.** null에 `SizedBox.shrink()`를 돌려주면
+    // `SharedPreferences.getInstance()`를 기다리는 한 프레임 동안 제목·부제·Divider만
+    // 있고 스위치가 없는 빈 섹션이 보인다 — 같은 화면의 도장·알림·테마 섹션은
+    // 전부 defaults로 즉시 그리므로 이 섹션 하나만 깜빡인다. 기본값이 `enabled:
+    // false`라 아래 감춤 로직도 그대로 맞다.
+    final settings =
+        ref.watch(busSettingsProvider).valueOrNull ?? BusSettings.defaults;
 
     final notifier = ref.read(busSettingsProvider.notifier);
 

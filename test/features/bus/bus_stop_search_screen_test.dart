@@ -15,6 +15,7 @@ import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
 import 'package:planroutine/features/bus/presentation/providers/bus_providers.dart';
 import 'package:planroutine/features/bus/presentation/screens/bus_stop_search_screen.dart';
+import 'package:planroutine/features/bus/presentation/widgets/bus_stop_confirm_sheet.dart';
 import 'package:planroutine/shared/widgets/pill_chip.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -435,7 +436,7 @@ void main() {
       await _tapSearch(tester);
       await tester.tap(find.text('수원시청.수원일자리센터'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(BusStopSearchScreen.confirmAcceptKey));
+      await tester.tap(find.byKey(BusStopConfirmSheet.acceptKey));
       await tester.pumpAndSettle();
 
       final saved = container.read(busSettingsProvider).valueOrNull;

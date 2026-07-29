@@ -4,7 +4,7 @@ import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
-import 'package:planroutine/features/bus/presentation/screens/bus_stop_search_screen.dart';
+import 'package:planroutine/features/bus/presentation/widgets/bus_stop_confirm_sheet.dart';
 
 const _stop = BusStop(
   nodeId: 'GGB201000156',
@@ -129,7 +129,7 @@ void main() {
           reason: '못 물어본 것을 안 온다고 말하면 시트가 통과 도장이 된다');
 
       final accept = tester.widget<ElevatedButton>(
-        find.byKey(BusStopSearchScreen.confirmAcceptKey),
+        find.byKey(BusStopConfirmSheet.acceptKey),
       );
       expect(accept.onPressed, isNull,
           reason: '방향을 확인할 재료가 0인데 저장을 허용하면 반대편 정류장이 저장된다');
@@ -172,7 +172,7 @@ Future<BusStop?> _tapAccept(
     await tester.pumpAndSettle();
   }
 
-  await tester.tap(find.byKey(BusStopSearchScreen.confirmAcceptKey));
+  await tester.tap(find.byKey(BusStopConfirmSheet.acceptKey));
   await tester.pumpAndSettle();
   return result;
 }

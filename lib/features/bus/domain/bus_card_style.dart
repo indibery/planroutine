@@ -23,4 +23,16 @@ enum BusCardStyle {
 
   /// 설정 화면 세그먼트에 표시할 이름.
   final String label;
+
+  /// 저장된 이름 → enum. 모르는 값·null(구버전·손상)은 기본 모양으로 폴백한다.
+  ///
+  /// 폴백 규칙은 **enum이 든다** — `EntryKind.fromValue`와 같은 자리다. 읽는 쪽
+  /// (`BusSettings.fromJson`)에 두면 같은 일을 하는 파서가 파일마다 다른 모양으로
+  /// 늘어난다.
+  static BusCardStyle fromName(String? name) {
+    return values.firstWhere(
+      (style) => style.name == name,
+      orElse: () => BusCardStyle.text,
+    );
+  }
 }

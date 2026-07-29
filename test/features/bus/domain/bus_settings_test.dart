@@ -88,5 +88,32 @@ void main() {
       expect(cleared.overrideAt, isNull);
       expect(cleared.overrideExpanded, isFalse);
     });
+
+    // clearOverride가 생성자 조립이던 시절에는 8개 필드 중 6개를 손으로 열거했다 —
+    // 필드를 추가하며 여기를 빼먹으면 접기 탭 한 번에 설정이 조용히 초기화된다
+    // (CLAUDE.md가 `kind`·`googleEventId`로 데인 그 패턴). 지금은 copyWith 한
+    // 경로만 쓰지만, 되살아나면 이 테스트가 먼저 깨진다.
+    test('clearOverride는 override 밖의 값을 하나도 잃지 않는다', () {
+      final s = BusSettings.defaults.copyWith(
+        enabled: true,
+        departure: _stop,
+        arrival: _stop.copyWith(routeIds: {'A'}),
+        style: BusCardStyle.axis,
+        toWorkRange: const TimeRange.hm(6, 30, 8, 0),
+        toHomeRange: const TimeRange.hm(15, 0, 17, 0),
+        overrideAt: DateTime(2026, 7, 28, 8, 35),
+        overrideExpanded: true,
+      );
+
+      final cleared = s.clearOverride();
+      expect(cleared.enabled, isTrue);
+      expect(cleared.departure?.nodeId, 'GGB201000156');
+      expect(cleared.arrival?.routeIds, {'A'});
+      expect(cleared.style, BusCardStyle.axis);
+      expect(cleared.toWorkRange.label, '06:30 – 08:00');
+      expect(cleared.toHomeRange.label, '15:00 – 17:00');
+      expect(cleared.overrideAt, isNull);
+      expect(cleared.overrideExpanded, isFalse);
+    });
   });
 }
