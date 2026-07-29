@@ -118,6 +118,21 @@ void main() {
       expect(n, 0);
     });
 
+    testWidgets('꺼져 있고 슬롯이 남아 있어도 요청은 0이다 — 켜본 뒤 끈 사용자', (tester) async {
+      // 위의 `스위치가 꺼져 있으면…`은 `BusSettings.defaults`를 넘겨 **슬롯도 없다** —
+      // 그래서 `shouldPoll`에서 `settings.enabled &&`를 통째로 지워도 `stop == null`이
+      // 대신 false를 만들어 통과한다. 프로덕션의 가장 흔한 OFF 상태는 슬롯이 남아
+      // 있는 이 조합이고(켜서 정류장을 등록한 뒤 끈 사용자), 그때 그 절이 사라지면
+      // 화면에 카드가 1픽셀도 없는데 30초마다 TAGO를 두드린다.
+      final n = await _pumpHost(
+        tester,
+        now: inRange,
+        settings: onWithStop.copyWith(enabled: false),
+      );
+      expect(find.byType(BusArrivalCard), findsNothing);
+      expect(n, 0);
+    });
+
     testWidgets('시간대 밖이면 접힌 채 그려지고 첫 조회조차 나가지 않는다', (tester) async {
       final n = await _pumpHost(tester, now: outOfRange, settings: onWithStop);
       expect(find.byType(BusArrivalCard), findsOneWidget);
@@ -393,6 +408,89 @@ void main() {
 
       expect(count, 2,
           reason: '복귀가 조회를 촉발한다 — 이 단정이 그 분기의 유일한 가드다');
+    });
+  });
+
+  group('가드 — 포그라운드 (§6 조건 5)', () {
+    // 이 조건은 여섯 중 **유일하게 단정이 0**이었다. 위의 라이프사이클 3개는 `paused`
+    // 직후가 `pump()`(시간 전진 0)이고 `Timer.periodic`은 프레임을 예약하지 않아 30초에
+    // 도달하지 못한다 — 그래서 타이머 취소 분기와 비행 중 재확인을 **둘 다 지워도**
+    // 전부 초록이었다. 여기서 그 두 분기를 각각 발화시킨다.
+
+    testWidgets('백그라운드로 내려가면 폴링 타이머가 멈춘다', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      // **가변 clock이어야 한다** — 고정하면 캐시가 tick을 흡수해 타이머가 살아
+      // 있어도 count가 그대로다(단정이 반증 불가가 된다).
+      var now = inRange;
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(count, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      now = now.add(const Duration(seconds: 31));
+      await tester.pump(busPollInterval); // 취소되지 않았다면 여기서 발화한다
+      await tester.pumpAndSettle();
+
+      expect(count, 1,
+          reason: '백그라운드에서는 폴링이 멈춘다 — 화면에 안 보이는 호출이라 '
+              '화면 검증으로는 잡히지 않는다');
+    });
+
+    testWidgets('비행 중에 내려가면 응답이 돌아와도 타이머를 새로 걸지 않는다', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'bus_settings_v1': jsonEncode(onWithStop.toJson()),
+      });
+      var count = 0;
+      var now = inRange;
+      final hold = Completer<void>();
+      final client = BusApiClient(
+        client: MockClient((_) async {
+          count++;
+          await hold.future;
+          return _json(_body());
+        }),
+        serviceKey: 'TESTKEY',
+        clock: () => now,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+      ));
+      await tester.pumpAndSettle();
+      expect(count, 1, reason: '첫 조회가 비행 중이다');
+
+      // 라이프사이클 콜백은 응답보다 **먼저** 지나간다 — 그 시점 `_timer`는 아직
+      // null이라 취소할 것이 없고, 응답 처리 끝의 재확인만이 타이머를 막는다.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      hold.complete();
+      await tester.pumpAndSettle();
+
+      now = now.add(const Duration(seconds: 31));
+      await tester.pump(busPollInterval);
+      await tester.pumpAndSettle();
+
+      expect(count, 1,
+          reason: '비행 중 내려간 앱에 폴링 타이머가 걸리면 백그라운드에서 '
+              '30초마다 호출이 나간다');
     });
   });
 
