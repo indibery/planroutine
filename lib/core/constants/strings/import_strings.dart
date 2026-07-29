@@ -1,3 +1,4 @@
+import '../../../features/schedule/domain/entry_kind.dart';
 /// 작년 일정 가져오기(CSV) UI 문자열.
 class ImportStrings {
   ImportStrings._();
@@ -27,7 +28,18 @@ class ImportStrings {
   // 이 경로로 들어온 것은 **전부 행사**다(`registerAiSchedules`가 EntryKind.event를
   // 박는다). 그러니 히어로 제목부터 미리보기·실패 문구까지 한 낱말로 부른다 —
   // 중간에 우산말 `일정`이 끼면 같은 흐름에서 대상을 두 이름으로 부르게 된다.
-  static const aiPromptCopied = '프롬프트를 복사했어요. AI 앱에 일정표 사진과 함께 붙여넣으세요';
+  /// 복사 안내 — **어떤 사진을 찍어야 하는지**를 종류에 맞춰 말한다.
+  ///
+  /// 한 문구로 `일정표 사진`이라고만 하면 쪽지를 고른 사용자가 일정표를 찾아 헤맨다.
+  static String aiPromptCopiedFor(EntryKind kind) => kind == EntryKind.task
+      ? '프롬프트를 복사했어요. AI 앱에 쪽지·안내문 사진과 함께 붙여넣으세요'
+      : '프롬프트를 복사했어요. AI 앱에 일정표 사진과 함께 붙여넣으세요';
+
+  /// 히어로의 종류 칩 라벨. `EntryKind.label`(업무·행사)만으로는 **무엇을 찍어야
+  /// 하는지**가 안 드러나 소스 문서를 말한다 — 그래서 별도 안내 줄이 필요 없다.
+  static const aiSourceEvent = '행사 일정표';
+  static const aiSourceTask = '업무 쪽지';
+
   static const aiParseEmpty = '붙여넣은 내용에서 행사를 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
   static const aiPreviewTitle = '붙여넣기 미리보기';
   static String aiPreviewCount(int n) => '행사 $n건 인식';
@@ -36,13 +48,13 @@ class ImportStrings {
   static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';
 
   // 입력 탭 히어로 — 사진 AI가 주 경로, 작년 업무 CSV는 보조 한 줄
-  static const heroTitle = '행사 사진으로 넣기';
-  static const heroSubtitle = '월간 일정표를 찍어 AI에게 맡기세요';
+  /// **`행사`를 떼었다.** 쪽지의 마감 기한도 이 경로로 들어오므로(업무로 저장된다)
+  /// 제목이 행사라고 못박으면 사용자가 쪽지를 넣을 수 있다는 것을 모른다.
+  static const heroTitle = '사진으로 넣기';
+  static const heroSubtitle = '일정표나 쪽지를 찍어 AI에게 맡기세요';
   static const heroStepCopy = '① 프롬프트';
   static const heroStepAway = 'AI 앱';
   static const heroStepPaste = '② 붙여넣기';
-  static const heroHint =
-      '① 프롬프트를 복사해 AI 앱(ChatGPT·Claude 등)에 일정표 사진과 함께 붙여넣고, 받은 결과를 복사한 뒤 ②를 누르세요.';
   static const heroCsvLink = '작년 업무 가져오기 (에듀파인 CSV)';
 
   // 에듀파인에서 CSV 받고 가져오는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)

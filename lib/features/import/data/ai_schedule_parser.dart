@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../core/utils/date_utils.dart' as du;
+import '../../schedule/domain/entry_kind.dart';
 
 /// AI가 사진에서 뽑아준 행사 한 건.
 class AiScheduleItem {
@@ -125,16 +126,48 @@ List<dynamic>? _extractFirstJsonArray(String text) {
 }
 
 /// 사진 변환용 프롬프트. [now] 기준 학년도(3월 시작)에 맞춰 연도 규칙을 주입한다.
-/// v1 고정 문구 — 사용자가 포맷을 몰라도 복사 한 번으로 AI가 정확한 JSON을 내게 한다.
-String buildAiPhotoPrompt(DateTime now) {
+/// 고정 문구 — 사용자가 포맷을 몰라도 복사 한 번으로 AI가 정확한 JSON을 내게 한다.
+///
+/// [kind]가 **소스 문서의 종류**를 결정한다.
+///
+/// 두 프롬프트로 갈라 쓰는 이유는 **읽는 대상이 다르기** 때문이다. 일정표는 표에서
+/// 모든 행을 뽑는 일이고, 쪽지·공문은 산문에서 기한이 적힌 문장만 골라내는 일이다.
+/// 한 프롬프트로 둘을 다 지시하면 표에서 엉뚱한 항목을 기한으로 읽거나 쪽지에서
+/// 기한 아닌 문장을 일정으로 만든다.
+///
+/// [kind]는 등록 종류도 함께 결정한다(`registerAiSchedules`) — 한 선택이 두 곳을
+/// 정해야 "쪽지 프롬프트로 뽑았는데 행사로 저장"이 생기지 않는다.
+String buildAiPhotoPrompt(DateTime now, {EntryKind kind = EntryKind.event}) {
   final schoolYear = now.month >= 3 ? now.year : now.year - 1;
+  final yearRule =
+      '- 날짜에 연도가 없으면 3~12월은 $schoolYear년, 1~2월은 ${schoolYear + 1}년으로 합니다. (학년도 기준)';
+
+  // 소스 문서를 설명하는 말은 **UI 용어에 맞추지 않는다** — 청중이 AI이고, 우리 분류에
+  // 맞춰 고치면 추출 품질이 흔들린다(CLAUDE.md의 용어 예외).
+  if (kind == EntryKind.task) {
+    return '''
+첨부한 사진은 학교에서 받은 쪽지·안내문·공문입니다. 본문에서 **처리 기한이 있는 일**만 찾아 아래 JSON 배열로만 출력하세요. 설명·인사말 없이 JSON만 출력합니다.
+
+[{"title": "할 일 이름", "date": "yyyy-MM-dd", "description": "근거가 된 문구(없으면 생략)"}]
+
+규칙:
+$yearRule
+- `~까지`, `마감`, `기한`, `제출`, `신청`, `회신`, `까지 알려`처럼 **언제까지 해야 하는지**가 적힌 것만 뽑습니다.
+- date는 **마감일**입니다. `10월 15일까지 제출`이면 10월 15일입니다.
+- 기간이 적혀 있으면(예: 10.13~10.17 신청) **마지막 날**을 date로 합니다.
+- title은 내가 할 일로 씁니다. `방과후 신청서 제출`처럼 동작이 드러나게 합니다.
+- 행사 안내(운동회·학예회 등)만 있고 내가 처리할 기한이 없으면 그 항목은 건너뜁니다.
+- 기한이 하나도 없으면 빈 배열 `[]`을 출력합니다.
+- 읽을 수 없는 항목은 건너뜁니다.''';
+  }
+
   return '''
 첨부한 사진은 학교 월간·연간 일정표입니다. 표에 있는 모든 일정을 아래 JSON 배열로만 출력하세요. 설명·인사말 없이 JSON만 출력합니다.
 
 [{"title": "일정 이름", "date": "yyyy-MM-dd", "description": "비고(없으면 생략)"}]
 
 규칙:
-- 날짜에 연도가 없으면 3~12월은 $schoolYear년, 1~2월은 ${schoolYear + 1}년으로 합니다. (학년도 기준)
+$yearRule
 - 기간 일정(예: 3.16~3.20)은 시작일 기준 1건으로 하고 기간을 description에 적습니다.
 - 읽을 수 없는 항목은 건너뜁니다.''';
 }

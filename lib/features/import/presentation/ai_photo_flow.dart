@@ -9,6 +9,7 @@ import '../../../core/utils/date_utils.dart' as du;
 import '../../schedule/presentation/providers/schedule_providers.dart';
 import '../data/ai_schedule_parser.dart';
 import '../data/ai_schedule_register.dart';
+import '../../schedule/domain/entry_kind.dart';
 
 /// 사진 → AI → 붙여넣기 왕복 흐름의 두 동작.
 ///
@@ -16,21 +17,29 @@ import '../data/ai_schedule_register.dart';
 /// 같은 동작을 다른 모양으로 노출하므로, 로직은 여기 한 곳에만 둔다.
 
 /// ① 변환 프롬프트를 클립보드에 싣는다.
-Future<void> copyAiPhotoPrompt(BuildContext context) async {
+///
+/// [kind]는 히어로에서 고른 소스 종류다. **②의 [pasteAiSchedulesAndPreview]에 같은
+/// 값을 넘겨야 한다** — 갈리면 쪽지 프롬프트로 뽑은 마감 기한이 행사로 저장돼 오늘
+/// 탭에 뜨지 않는다. 호출부(히어로·가져오기 섹션)가 하나의 상태에서 둘 다 읽는다.
+Future<void> copyAiPhotoPrompt(
+  BuildContext context, {
+  EntryKind kind = EntryKind.event,
+}) async {
   await Clipboard.setData(
-    ClipboardData(text: buildAiPhotoPrompt(DateTime.now())),
+    ClipboardData(text: buildAiPhotoPrompt(DateTime.now(), kind: kind)),
   );
   if (!context.mounted) return;
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
-    ..showSnackBar(const SnackBar(content: Text(ImportStrings.aiPromptCopied)));
+    ..showSnackBar(SnackBar(content: Text(ImportStrings.aiPromptCopiedFor(kind))));
 }
 
 /// ② 클립보드의 AI 응답을 파싱해 미리보기 시트를 띄우고, 승인 시 검토 대기로 등록한다.
 Future<void> pasteAiSchedulesAndPreview(
   BuildContext context,
-  WidgetRef ref,
-) async {
+  WidgetRef ref, {
+  EntryKind kind = EntryKind.event,
+}) async {
   final data = await Clipboard.getData(Clipboard.kTextPlain);
   final parsed = parseAiScheduleJson(data?.text ?? '');
   if (!context.mounted) return;
@@ -75,6 +84,8 @@ Future<void> pasteAiSchedulesAndPreview(
         final result = await registerAiSchedules(
           ref.read(scheduleRepositoryProvider),
           fresh,
+          // ①에서 복사한 프롬프트와 **같은 종류**로 저장한다.
+          kind: kind,
         );
         ref.invalidate(schedulesProvider);
         if (!sheetContext.mounted) return;

@@ -134,7 +134,7 @@ void main() {
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved!.length, 2);
     expect(saved.every((s) => s.kind == EntryKind.event), isTrue,
-        reason: '사진 경로는 행사');
+        reason: '기본 선택(행사 일정표)이면 행사로 저장된다');
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
   });
 
@@ -152,5 +152,73 @@ void main() {
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved, isEmpty);
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
+  });
+
+  testWidgets('업무 쪽지를 고르면 프롬프트가 기한을 찾는 것으로 바뀐다', (tester) async {
+    await pumpHero(tester);
+
+    await tester.tap(find.text(ImportStrings.aiSourceTask));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ImportStrings.heroStepCopy));
+    await tester.pumpAndSettle();
+
+    expect(clipboardText, contains('쪽지'));
+    expect(clipboardText, contains('마감'));
+    expect(clipboardText, isNot(contains('표에 있는 모든 일정')));
+    await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
+  });
+
+  testWidgets('행사 일정표로 되돌리면 프롬프트도 되돌아온다', (tester) async {
+    await pumpHero(tester);
+
+    await tester.tap(find.text(ImportStrings.aiSourceTask));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ImportStrings.aiSourceEvent));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ImportStrings.heroStepCopy));
+    await tester.pumpAndSettle();
+
+    expect(clipboardText, contains('표에 있는 모든 일정'));
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('업무 쪽지로 등록하면 업무로 저장된다 — 오늘 탭에 뜨는 조건', (tester) async {
+    // **이 테스트가 이 기능의 급소다.** 프롬프트와 등록 종류가 갈리면 쪽지 프롬프트로
+    // 뽑은 마감 기한이 행사로 저장돼 오늘 탭에 뜨지 않고, 사용자는 사진을 찍은
+    // 이유(그날 할 일을 잊지 않는 것)를 잃는다.
+    await pumpHero(tester);
+    clipboardText = '[{"title":"방과후 신청서 제출","date":"2026-10-15"}]';
+
+    await tester.tap(find.text(ImportStrings.aiSourceTask));
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text(ImportStrings.heroStepPaste));
+      for (var i = 0;
+          i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
+          i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.textContaining('검토 목록에 등록'));
+      for (var i = 0;
+          i < 100 &&
+              find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+          i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+
+    final saved = await tester.runAsync(() => repo.getSchedules());
+    expect(saved!.single.title, '방과후 신청서 제출');
+    expect(saved.single.kind, EntryKind.task,
+        reason: '업무로 저장돼야 오늘 탭에 뜨고 체크로 완료할 수 있다');
+    await tester.pump(const Duration(seconds: 4));
   });
 }
