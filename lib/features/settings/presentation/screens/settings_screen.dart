@@ -10,6 +10,7 @@ import '../providers/settings_providers.dart';
 import '../widgets/ai_task_share_tile.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/bus_settings_tiles.dart';
+import '../widgets/data_source_list_tile.dart';
 import '../widgets/export_list_tile.dart';
 import '../widgets/calendar_integration_section.dart';
 import '../widgets/notification_settings_tiles.dart';
@@ -104,7 +105,10 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(
             title: SettingsStrings.aboutSection,
             showDivider: false,
-            child: AppInfoListTile(),
+            // 출처 표시는 앱 정보 아래에 붙인다 — 둘 다 정보성이고 탭이 없다.
+            child: Column(
+              children: [AppInfoListTile(), DataSourceListTile()],
+            ),
           ),
           const SizedBox(height: AppSizes.spacing24),
         ],

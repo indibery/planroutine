@@ -23,6 +23,21 @@ class SettingsStrings {
   static const trashSection = '휴지통';
   static const dataSection = '데이터 관리';
   static const aboutSection = '앱 정보';
+
+  /// 공공데이터 출처 표시 — **라이선스 의무다.**
+  ///
+  /// 서울특별시 API의 이용허락범위가 `저작자표시`(CC BY)이고 공공누리 제1유형
+  /// (출처표시)이다. 경기도·국토교통부는 그 표기를 요구하지 않지만 함께 적는다 —
+  /// 어느 데이터가 화면의 어느 숫자를 만들었는지 사용자가 알 수 있고, 소스가 바뀔 때
+  /// 고칠 곳이 한 군데다.
+  ///
+  /// **실제로 호출하는 것만 적는다.** 서울 API는 신청·승인됐지만 아직 키가 등록되지
+  /// 않아 호출하지 않는다 — 안 쓰는 기관을 출처로 적으면 그것도 거짓이다. 서울을
+  /// 붙일 때 이 문구에 추가한다.
+  static const dataSourceTitle = '데이터 출처';
+  static const dataSourceBody =
+      '버스 도착 정보 — 국토교통부(TAGO) · 경기도(GBIS)\n'
+      '공공데이터포털에서 제공받았습니다';
   static const aiShareSection = 'AI 자동화 (고급)';
 
   // AI 자동화 공유 (고급)
