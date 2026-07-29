@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +51,11 @@ http.Response _json(String body, [int status = 200]) => http.Response(
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
 
+/// GBIS 실측 응답 파일. **손으로 적지 않는다** — 이 작업에서 손으로 쓴 픽스처가
+/// 현실과 달라 여러 번 어긋났다(`gbis_response_parser_test.dart`와 같은 이유).
+String _gbisFixture(String name) =>
+    File('test/fixtures/gbis/$name.json').readAsStringSync();
+
 /// 실측 껍데기. 데이터가 없을 때 `items`는 **빈 문자열**로 온다.
 String _body(Object? inner) => jsonEncode({
       'response': {
@@ -83,12 +89,27 @@ class _Tago {
   bool cityFails = false;
   bool stopFails = false;
 
+  /// 검색 결과 정류소 ID의 접두. **기본은 비경기(`N…`)다** — 경기(`GGB…`)만 GBIS
+  /// 경유노선을 조회하므로, 기본값을 두면 기존 테스트에는 그 호출이 없다.
+  String idPrefix = 'N';
+
   int cityCalls = 0;
   int stopCalls = 0;
   int arrivalCalls = 0;
+  int viaRouteCalls = 0;
 
   Future<http.Response> handle(http.Request req) async {
     final url = req.url;
+
+    if (url.path.endsWith('getBusStationViaRouteListv2')) {
+      viaRouteCalls++;
+      return _json(_gbisFixture('viaroutes_jangmi_10routes'));
+    }
+
+    if (url.path.endsWith('getBusArrivalListv2')) {
+      arrivalCalls++;
+      return _json(_gbisFixture('arrivals_jangmi_10routes'));
+    }
 
     if (url.path.endsWith('getCtyCodeList')) {
       cityCalls++;
@@ -107,7 +128,7 @@ class _Tago {
           .entries
           .where((e) => e.key.contains(name))
           .map((e) => {
-                'nodeid': 'N${e.value}',
+                'nodeid': '$idPrefix${e.value}',
                 'nodenm': e.key,
                 'nodeno': e.value,
               })
@@ -443,6 +464,61 @@ void main() {
       expect(saved?.arrival?.nodeNm, '수원시청.수원일자리센터');
       expect(saved?.departure, isNull,
           reason: '제목이 도착지라고 말했으면 출발지는 건드리지 않는다');
+    });
+
+    testWidgets('경기 정류장은 경유노선을 함께 조회해 시트에 넘긴다', (tester) async {
+      // 실기기 버그(2026-07-29)의 화면 경로다. 같은 정류장·같은 시각에 도착정보는
+      // 8노선, 경유노선은 10노선이다 — 도착정보로 목록을 만들면 나머지를 고를 수 없다.
+      final tago = _Tago()..idPrefix = 'GGB';
+      await _pumpRouted(tester, tago, slot: CommuteDirection.toWork);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+
+      expect(tago.viaRouteCalls, 1);
+      expect(tago.arrivalCalls, 1);
+
+      // **행 개수는 델리게이트에서 읽는다.** `find.byType(CheckboxListTile)`은
+      // 뷰포트 밖 자식이 마운트되지 않아 테스트 창(600px) 기준 6개만 센다 — 목록이
+      // 몇 건인지와 무관한 수라 단정에 쓰면 화면 크기를 검사하는 테스트가 된다.
+      final list = tester.widget<ListView>(find.descendant(
+        of: find.byType(BusStopConfirmSheet),
+        matching: find.byType(ListView),
+      ));
+      expect(list.childrenDelegate.estimatedChildCount, 10,
+          reason: '도착정보 8건이 아니라 경유노선 10건이 목록이다');
+
+      // `9`는 이 픽스처의 도착정보에서 `정보없음`으로 빠지는 노선이다 — 목록에
+      // 있다는 것이 곧 목록의 출처가 경유노선이라는 증거다. 번호순 첫 행이라
+      // 뷰포트에 확실히 들어온다.
+      expect(find.text('9번'), findsOneWidget);
+
+      // 행선지는 경유노선 응답에만 있다. **그 행의 부제를 직접 읽는다** —
+      // 문구로 찾으면 마을 `6`·`9`가 둘 다 금정역행이라(실측) 2건이 잡힌다.
+      final tile = tester.widget<CheckboxListTile>(find.ancestor(
+        of: find.text('9번'),
+        matching: find.byType(CheckboxListTile),
+      ));
+      expect((tile.subtitle as Text).data, '금정역 방면');
+    });
+
+    testWidgets('비경기 정류장은 경유노선을 조회하지 않는다', (tester) async {
+      // GBIS는 경기도 전용이다. 헛요청은 일일 트래픽(1,000)만 쓴다.
+      final tago = _Tago();
+      await _pumpRouted(tester, tago, slot: CommuteDirection.toWork);
+
+      await _tapCity(tester, '수원시');
+      await _typeStop(tester, '시청');
+      await _tapSearch(tester);
+      await tester.tap(find.text('수원시청.수원일자리센터'));
+      await tester.pumpAndSettle();
+
+      expect(tago.viaRouteCalls, 0);
+      expect(find.text(BusStrings.confirmTitle), findsOneWidget,
+          reason: '경유노선이 없어도 시트는 도착정보로 열린다');
     });
   });
 

@@ -1,0 +1,64 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 16:45:14.388",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busRouteList": [
+        {
+          "regionName": "수원",
+          "routeDestId": 233000576,
+          "routeDestName": "수원대학교",
+          "routeId": 200000265,
+          "routeName": "30-1",
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 8
+        },
+        {
+          "regionName": "수원",
+          "routeDestId": 201000322,
+          "routeDestName": "금곡동강남아파트",
+          "routeId": 200000078,
+          "routeName": "62-1",
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 57
+        },
+        {
+          "regionName": "수원",
+          "routeDestId": 208000068,
+          "routeDestName": "안양역",
+          "routeId": 200000043,
+          "routeName": 64,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 53
+        },
+        {
+          "regionName": "수원",
+          "routeDestId": 201000447,
+          "routeDestName": "호매실스타힐스.수원여대입구",
+          "routeId": 200000144,
+          "routeName": 99,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 159
+        },
+        {
+          "regionName": "수원",
+          "routeDestId": 201000151,
+          "routeDestName": "오목천주공아파트",
+          "routeId": 200000196,
+          "routeName": "99-2",
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 93
+        }
+      ]
+    }
+  }
+}

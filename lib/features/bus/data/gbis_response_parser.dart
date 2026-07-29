@@ -1,4 +1,5 @@
 import '../domain/bus_arrival.dart';
+import '../domain/bus_route.dart';
 import 'tago_response_parser.dart';
 
 /// 경기도 식별자 접두. **`TAGO nodeId` = `'GGB'` + `GBIS stationId`**이고 노선 ID도
@@ -43,32 +44,84 @@ const _gbisNoResult = 4;
 /// **노선 축약(같은 `routeId` 여러 건 → 빠른 것 하나)은 하지 않는다.** 1차·2차가 한
 /// 행에 오므로 실측 응답은 노선당 1행이다(장미 10노선 10행 · 수원시청 6노선 6행).
 TagoResult<BusArrival> parseGbisArrivals(Map<String, dynamic> json) {
-  final response = json['response'];
-  if (response is! Map) return const TagoResult(TagoOutcome.malformed);
-
-  final header = response['msgHeader'];
-  if (header is! Map) return const TagoResult(TagoOutcome.malformed);
-
-  final code = _intOrNull(header['resultCode']);
-  if (code == _gbisNoResult) return const TagoResult(TagoOutcome.empty);
-  if (code != _gbisOk) return const TagoResult(TagoOutcome.malformed);
-
-  // `resultCode`가 정상인데 목록이 없는 형태는 관측되지 않았다. 와도 `empty`로 —
-  // 껍데기가 깨진 것이 아니라 담긴 노선이 0건인 것과 구별할 수단이 없다.
-  final body = response['msgBody'];
-  final rows = body is Map ? body['busArrivalList'] : null;
+  final failure = _envelopeFailure(json);
+  if (failure != null) return TagoResult(failure);
 
   final list = <BusArrival>[];
-  if (rows is List) {
-    for (final row in rows.whereType<Map>()) {
-      final arrival = _arrival(row.cast<String, dynamic>());
-      if (arrival != null) list.add(arrival);
-    }
+  for (final row in _rows(json, 'busArrivalList')) {
+    final arrival = _arrival(row);
+    if (arrival != null) list.add(arrival);
   }
   if (list.isEmpty) return const TagoResult(TagoOutcome.empty);
 
   list.sort((a, b) => a.arrMin.compareTo(b.arrMin));
   return TagoResult(TagoOutcome.ok, list);
+}
+
+/// 경유노선 목록 응답 → 이 정류장을 지나는 노선 **전체**(도착 여부 무관).
+///
+/// 도착정보와 별개 엔드포인트인 것이 요점이다 — 확인 시트의 선택 목록이 등록하는
+/// **시각**에 좌우되지 않는다([BusRoute] 문서 참고). 심야에 등록해도 같은 목록이
+/// 나오고, 도착 조회가 실패해도 행선지로 방향을 확인할 수 있다.
+///
+/// **정렬하지 않는다.** 표시 순서는 `buildRouteChoices`가 번호순으로 정한다
+/// (카드는 빠른 순, 시트는 번호순 — 목적이 다르다).
+TagoResult<BusRoute> parseGbisViaRoutes(Map<String, dynamic> json) {
+  final failure = _envelopeFailure(json);
+  if (failure != null) return TagoResult(failure);
+
+  final list = _rows(json, 'busRouteList').map(_route).toList();
+  if (list.isEmpty) return const TagoResult(TagoOutcome.empty);
+  return TagoResult(TagoOutcome.ok, list);
+}
+
+/// 두 GBIS 응답이 공유하는 껍데기·`resultCode` 판정. **null이면 정상이다.**
+///
+/// 도착정보와 경유노선이 같은 계약을 쓰므로 한 곳에 둔다 — 복사해 두면 GBIS가
+/// 코드를 하나 추가할 때 한쪽만 따라간다.
+TagoOutcome? _envelopeFailure(Map<String, dynamic> json) {
+  final response = json['response'];
+  if (response is! Map) return TagoOutcome.malformed;
+
+  final header = response['msgHeader'];
+  if (header is! Map) return TagoOutcome.malformed;
+
+  final code = _intOrNull(header['resultCode']);
+  if (code == _gbisNoResult) return TagoOutcome.empty;
+  if (code != _gbisOk) return TagoOutcome.malformed;
+  return null;
+}
+
+/// `msgBody.<key>` 배열의 각 행.
+///
+/// `resultCode`가 정상인데 목록이 없는 형태는 관측되지 않았다. 와도 호출부가
+/// `empty`로 돌린다 — 껍데기가 깨진 것이 아니라 담긴 건수가 0인 것과 구별할 수단이
+/// 없다.
+///
+/// **단건일 때 배열이 아니라 객체로 오는 형태는 다루지 않는다**(TAGO의
+/// `items: {'item': …}`에 해당하는 것). 그런 응답을 관측하지 못해 모양을 모르는데,
+/// 추측으로 분기를 넣으면 검증할 수 없는 코드가 남는다. 만약 그렇게 온다면 빈 목록
+/// → `empty`로 떨어져, 확인 시트는 도착정보 기반 목록으로 폴백한다(크래시가 아니다).
+Iterable<Map<String, dynamic>> _rows(Map<String, dynamic> json, String key) {
+  final response = json['response'];
+  final body = response is Map ? response['msgBody'] : null;
+  final rows = body is Map ? body[key] : null;
+
+  return rows is List
+      ? rows.whereType<Map>().map((r) => r.cast<String, dynamic>())
+      : const [];
+}
+
+/// 한 행 → 경유노선 1건.
+BusRoute _route(Map<String, dynamic> row) {
+  return BusRoute(
+    // 도착정보 파서와 **같은 규칙**으로 접두를 되붙인다 — 시트에서 고른 routeId가
+    // 곧 `BusStop.routeIds`이고, 카드는 그것을 도착정보의 routeId와 문자열로
+    // 비교한다. 한쪽만 접두를 붙이면 고른 노선이 카드에서 전부 걸러진다.
+    routeId: '$gbisIdPrefix${_intOrNull(row['routeId']) ?? 0}',
+    routeNo: row['routeName']?.toString() ?? '',
+    destName: row['routeDestName']?.toString() ?? '',
+  );
 }
 
 /// 한 행 → 도착 1건. 도착 시각이 없는 행이면 null(위 doc 참고).

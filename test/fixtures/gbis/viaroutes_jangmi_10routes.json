@@ -1,0 +1,114 @@
+{
+  "response": {
+    "comMsgHeader": "",
+    "msgHeader": {
+      "queryTime": "2026-07-29 16:45:07.857",
+      "resultCode": 0,
+      "resultMessage": "정상적으로 처리되었습니다."
+    },
+    "msgBody": {
+      "busRouteList": [
+        {
+          "regionName": "군포",
+          "routeDestId": 121000016,
+          "routeDestName": "신사역(중)",
+          "routeId": 208000027,
+          "routeName": 3030,
+          "routeTypeCd": 11,
+          "routeTypeName": "직행좌석형시내버스",
+          "staOrder": 8
+        },
+        {
+          "regionName": "군포",
+          "routeDestId": 277102714,
+          "routeDestName": "부곡공영차고지(미정차)",
+          "routeId": 234001163,
+          "routeName": 6501,
+          "routeTypeCd": 11,
+          "routeTypeName": "직행좌석형시내버스",
+          "staOrder": 71
+        },
+        {
+          "regionName": "안양",
+          "routeDestId": 119000288,
+          "routeDestName": "정금마을.방배경찰서(중)",
+          "routeId": 208000005,
+          "routeName": "11-5",
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 10
+        },
+        {
+          "regionName": "안양",
+          "routeDestId": 208000132,
+          "routeDestName": "창박골",
+          "routeId": 208000001,
+          "routeName": 15,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 43
+        },
+        {
+          "regionName": "서울",
+          "routeDestId": 121000009,
+          "routeDestName": "신분당선강남역(중)",
+          "routeId": 100100574,
+          "routeName": 541,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 10
+        },
+        {
+          "regionName": "서울",
+          "routeDestId": 118000513,
+          "routeDestName": "여의도환승센터(1번승강장)",
+          "routeId": 100100279,
+          "routeName": 5623,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 17
+        },
+        {
+          "regionName": "안양",
+          "routeDestId": 225000156,
+          "routeDestName": "산본1동",
+          "routeId": 208000032,
+          "routeName": 87,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 32
+        },
+        {
+          "regionName": "안양",
+          "routeDestId": 122000008,
+          "routeDestName": "신사역8번출구.가로수길",
+          "routeId": 208000026,
+          "routeName": 917,
+          "routeTypeCd": 13,
+          "routeTypeName": "일반형시내버스",
+          "staOrder": 10
+        },
+        {
+          "regionName": "군포",
+          "routeDestId": 225000007,
+          "routeDestName": "금정역",
+          "routeId": 241382003,
+          "routeName": 6,
+          "routeTypeCd": 30,
+          "routeTypeName": "마을버스",
+          "staOrder": 22
+        },
+        {
+          "regionName": "군포",
+          "routeDestId": 225000007,
+          "routeDestName": "금정역",
+          "routeId": 241382001,
+          "routeName": 9,
+          "routeTypeCd": 30,
+          "routeTypeName": "마을버스",
+          "staOrder": 16
+        }
+      ]
+    }
+  }
+}

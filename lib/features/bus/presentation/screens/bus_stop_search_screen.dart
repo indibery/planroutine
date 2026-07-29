@@ -137,18 +137,28 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     });
   }
 
-  /// 정류장을 탭했을 때 — 바로 저장하지 않고 오는 버스를 조회해 확인받는다.
+  /// 정류장을 탭했을 때 — 바로 저장하지 않고 노선 목록과 오는 버스를 조회해 확인받는다.
+  ///
+  /// 두 조회를 **함께 보낸다.** 순차로 보내면 시트가 뜨기까지 왕복이 두 번이라 느린
+  /// 회선에서 탭이 먹지 않은 것처럼 느껴진다. 둘 다 예외를 던지지 않고 실패를
+  /// outcome으로 돌려주므로(경유노선이 실패하면 도착정보 기반 목록으로 폴백) 한쪽
+  /// 실패가 다른 쪽을 막지 않는다.
   Future<void> _pick(BusStop stop) async {
     setState(() => _loading = true);
-    final fetch = await ref
-        .read(busApiClientProvider)
-        .fetchArrivals(cityCode: stop.cityCode, nodeId: stop.nodeId);
+    final client = ref.read(busApiClientProvider);
+    final (routes, fetch) = await (
+      client.fetchViaRoutes(nodeId: stop.nodeId),
+      client.fetchArrivals(cityCode: stop.cityCode, nodeId: stop.nodeId),
+    ).wait;
     if (!mounted) return;
     setState(() => _loading = false);
 
     final confirmed = await BusStopConfirmSheet.show(
       context,
       stop: stop,
+      // 선택 목록의 주 재료. 비면 시트가 도착정보로 목록을 만든다 — 비경기
+      // 정류장(부산·제주)과 경유노선 조회 실패가 그 경로다.
+      routes: routes.items,
       arrivals: fetch.arrivals,
       // 빈 목록의 이유를 시트가 알아야 한다 — `fetchArrivals`는 예외를 던지지 않고
       // 실패를 상태로 돌려주므로, state를 버리면 장애와 막차 후가 구별되지 않는다.

@@ -123,6 +123,17 @@ class BusStrings {
   static const confirmTitle = '이 정류장이 맞나요?';
   static const confirmRoutesTitle = '타는 버스만 남겨주세요';
   static const confirmNoRoutes = '지금 이 정류장에 오는 버스가 없어요';
+
+  /// "신사역(중) 방면" — 확인 시트에서 노선번호 아래 붙는 행선지.
+  ///
+  /// 길 양쪽 정류장은 이름도 노선번호도 같고 **행선지만 다르다.** 이 시트가 방향을
+  /// 확인시키는 화면이므로, 사용자가 실제로 판단에 쓰는 문자열이 이것이다.
+  static String routeDest(String dest) => '$dest 방면';
+
+  /// 경유노선은 받았지만 도착 시간을 못 받았을 때. 목록과 행선지는 그대로 쓸 수
+  /// 있으니 저장을 막지 않고 이유만 밝힌다 — 시간이 통째로 빈 목록에 설명이 없으면
+  /// 목록이 깨진 것으로 읽힌다.
+  static const confirmNoArrivalTimes = '도착 시간은 지금 못 받았어요';
   static const confirmReject = '아니에요';
   static const confirmAccept = '맞아요';
   static const confirmNeedRoute = '버스를 하나 이상 남겨주세요';

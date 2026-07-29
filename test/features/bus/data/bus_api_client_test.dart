@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
+import 'package:planroutine/features/bus/data/tago_response_parser.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 
 /// 실제 구조: `body.items`는 `{'item': ...}` 형태의 Map이거나, 데이터가 없을 때
@@ -307,6 +308,97 @@ void main() {
           ));
       final r = await c.fetchCities();
       expect(r.items.single.code, 31010);
+    });
+  });
+
+  group('경유노선 조회 — 확인 시트의 선택 목록', () {
+    test('GBIS 경유노선 엔드포인트로 가고 stationId는 접두를 뗀 값이다', () async {
+      Uri? seen;
+      final c = clientWith((req) async {
+        seen = req.url;
+        return _json(_gbisFixture('viaroutes_jangmi_10routes'));
+      });
+      final r = await c.fetchViaRoutes(nodeId: 'GGB225000100');
+
+      expect(seen?.scheme, 'https');
+      expect(seen?.host, 'apis.data.go.kr');
+      expect(seen?.path,
+          '/6410000/busstationservice/v2/getBusStationViaRouteListv2');
+      expect(seen?.queryParameters['stationId'], '225000100');
+      expect(seen?.queryParameters['format'], 'json');
+      expect(seen?.queryParameters['serviceKey'], 'TESTKEY');
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(10));
+    });
+
+    test('비경기 정류장은 요청조차 하지 않는다', () async {
+      // GBIS는 경기도 전용이라 부산·제주 nodeId로는 답이 없다. 헛요청은 일일
+      // 트래픽(1,000)만 쓰고, 호출부는 빈 결과를 도착정보 폴백으로 읽는다.
+      final c = clientWith((_) async => throw const _Boom());
+
+      final r = await c.fetchViaRoutes(nodeId: 'BSB223000123');
+
+      expect(r.outcome, TagoOutcome.empty);
+      expect(r.items, isEmpty);
+      expect(c.requestCount, 0);
+    });
+
+    test('키가 없으면 요청하지 않고 keyError다', () async {
+      final c = clientWith((_) async => throw const _Boom(), key: '');
+
+      final r = await c.fetchViaRoutes(nodeId: 'GGB225000100');
+
+      expect(r.outcome, TagoOutcome.keyError);
+      expect(c.requestCount, 0);
+    });
+
+    test('403(활용신청 미승인)은 keyError로 온다 — 예외를 던지지 않는다', () async {
+      // 도착정보와 **다른 서비스**라 활용신청이 별개다. 미승인 상태로도 등록 흐름이
+      // 멈추지 않아야 한다(시트가 도착정보 기반 목록으로 폴백한다).
+      final c = clientWith((_) async => _json('{}', 403));
+
+      final r = await c.fetchViaRoutes(nodeId: 'GGB225000100');
+
+      expect(r.outcome, TagoOutcome.keyError);
+      expect(r.items, isEmpty);
+    });
+
+    test('네트워크 실패는 malformed로 온다 — 예외가 새지 않는다', () async {
+      final c = clientWith((_) async => throw const _Boom());
+
+      final r = await c.fetchViaRoutes(nodeId: 'GGB225000100');
+
+      expect(r.outcome, TagoOutcome.malformed);
+    });
+
+    test('캐시하지 않는다 — 등록할 때 한 번만 부르는 경로다', () async {
+      final c = clientWith(
+        (_) async => _json(_gbisFixture('viaroutes_jangmi_10routes')),
+      );
+      await c.fetchViaRoutes(nodeId: 'GGB225000100');
+      await c.fetchViaRoutes(nodeId: 'GGB225000100');
+
+      expect(c.requestCount, 2);
+    });
+
+    test('도착정보 캐시를 건드리지 않는다', () async {
+      // 두 조회가 같은 클라이언트를 쓰지만 캐시 키 공간을 공유하면, 경유노선 응답이
+      // 도착정보 자리에 들어가 카드가 엉뚱한 목록을 그린다.
+      final c = clientWith((req) async => req.url.path.contains('busarrival')
+          ? _json(_gbisFixture('arrivals_jangmi_10routes'))
+          : _json(_gbisFixture('viaroutes_jangmi_10routes')));
+
+      await c.fetchArrivals(cityCode: 31160, nodeId: 'GGB225000100');
+      await c.fetchViaRoutes(nodeId: 'GGB225000100');
+      final again = await c.fetchArrivals(
+        cityCode: 31160,
+        nodeId: 'GGB225000100',
+      );
+
+      // 도착정보는 여전히 캐시 히트(요청 2회 = 도착 1 + 경유 1)이고 목록도 그대로다.
+      expect(c.requestCount, 2);
+      expect(again.arrivals.length, 8);
     });
   });
 }

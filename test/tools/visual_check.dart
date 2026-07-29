@@ -45,6 +45,7 @@ import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 import 'package:planroutine/features/bus/domain/bus_card_style.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
+import 'package:planroutine/features/bus/domain/bus_route.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
@@ -1030,6 +1031,23 @@ void main() {
             nodeNo: 2251,
             cityCode: 31010,
           ),
+          // 행선지가 붙은 뒤로 이 행이 가장 넓다 — 실측에서 가져온 긴 행선지를
+          // 쓴다(`정금마을.방배경찰서(중)`). 마지막 노선은 행선지가 있고 도착
+          // 정보가 없는 조합이라, 부제만 있고 우측이 빈 행의 폭도 함께 잰다.
+          routes: const [
+            BusRoute(
+              routeId: 'R1',
+              routeNo: '82-1',
+              destName: '정금마을.방배경찰서(중)',
+            ),
+            BusRoute(
+              routeId: 'R2',
+              routeNo: '720-1',
+              destName: '부곡공영차고지(미정차)',
+            ),
+            BusRoute(routeId: 'R3', routeNo: '1006-1', destName: '금정역'),
+            BusRoute(routeId: 'R4', routeNo: '5623', destName: '여의도환승센터'),
+          ],
           arrivals: const [
             BusArrival(routeId: 'R1', routeNo: '82-1', arrMin: 2),
             BusArrival(routeId: 'R2', routeNo: '720-1', arrMin: 8),

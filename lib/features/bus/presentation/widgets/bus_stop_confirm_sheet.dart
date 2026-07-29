@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
+import '../../domain/bus_route.dart';
 import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
 
@@ -23,6 +24,7 @@ class BusStopConfirmSheet extends StatefulWidget {
   const BusStopConfirmSheet({
     super.key,
     required this.stop,
+    required this.routes,
     required this.arrivals,
     required this.state,
     required this.slot,
@@ -33,6 +35,22 @@ class BusStopConfirmSheet extends StatefulWidget {
   static const acceptKey = Key('bus_confirm_accept');
 
   final BusStop stop;
+
+  /// 이 정류장을 지나는 노선 전체 — **선택 목록의 주 재료다.**
+  ///
+  /// 도착정보를 목록으로 쓰던 시절에는 등록하는 **시각**이 고를 수 있는 노선을
+  /// 결정했다. 군포 장미아파트는 경유노선이 10개인데 그 순간 도착정보가 있는 것은
+  /// 8개였고, 사용자 실기기에서는 2개만 보였다 — 자기 버스가 목록에 없으면 노선을
+  /// 좁힐 방법이 없다. 경유노선은 도착 여부와 무관하므로 심야에 등록해도 같은
+  /// 목록이 나온다.
+  ///
+  /// 비면 [arrivals]로 목록을 만든다(비경기 정류장·경유노선 조회 실패).
+  /// 그 폴백은 [buildRouteChoices]가 든다.
+  final List<BusRoute> routes;
+
+  /// 지금 오는 버스. **목록이 아니라 목록의 장식이다** — 각 행에 남은 분을 붙인다.
+  ///
+  /// [routes]가 비었을 때만 목록 자체의 재료가 된다.
   final List<BusArrival> arrivals;
 
   /// 저장 대상 슬롯. **required다** — 옵션으로 두면 문구를 빼먹은 호출부가 조용히
@@ -42,19 +60,18 @@ class BusStopConfirmSheet extends StatefulWidget {
   /// 도착지) 사용자가 알 수 있는 곳이 제목줄과 이 줄뿐이다.
   final CommuteDirection slot;
 
-  /// 조회 결과 상태. **빈 목록의 이유를 구분하는 데만 쓴다.**
+  /// **도착정보** 조회 결과 상태. 경유노선 조회와는 별개 호출이다.
   ///
-  /// `arrivals`가 비는 경로는 두 가지고 뜻이 정반대다: 막차 후처럼 **정말 안 오는
-  /// 경우**(`ok`·`closed`)와 네트워크·키 문제로 **못 물어본 경우**(`down`·`keyError`).
-  /// 뭉개면 조회 실패 순간 사용자는 "이 정류장에 오는 버스가 없어요"를 읽고 방향을
-  /// 전혀 확인하지 못한 채 저장한다 — 시트를 만든 이유가 실패 경로에서 정확히
-  /// 무너진다(반대 방향 정류장이 저장되고, 사용자는 앱이 아니라 자기가 늦었다고
-  /// 생각한다).
+  /// 빈 목록의 이유를 구분하는 데 쓴다. 목록이 비는 경로는 두 가지고 뜻이 정반대다:
+  /// 막차 후처럼 **정말 안 오는 경우**(`ok`·`closed`)와 네트워크·키 문제로 **못
+  /// 물어본 경우**(`down`·`keyError`). 뭉개면 조회 실패 순간 사용자는 "이 정류장에
+  /// 오는 버스가 없어요"를 읽고 방향을 전혀 확인하지 못한 채 저장한다.
   final BusCardState state;
 
   static Future<BusStop?> show(
     BuildContext context, {
     required BusStop stop,
+    required List<BusRoute> routes,
     required List<BusArrival> arrivals,
     required BusCardState state,
     required CommuteDirection slot,
@@ -64,6 +81,7 @@ class BusStopConfirmSheet extends StatefulWidget {
       isScrollControlled: true,
       builder: (_) => BusStopConfirmSheet(
         stop: stop,
+        routes: routes,
         arrivals: arrivals,
         state: state,
         slot: slot,
@@ -76,6 +94,9 @@ class BusStopConfirmSheet extends StatefulWidget {
 }
 
 class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
+  /// 그릴 선택 목록. 노선 순서·행선지·남은 분이 여기서 한 번에 결정된다.
+  late final List<BusRouteChoice> _choices;
+
   late Set<String> _checked;
 
   /// 전부 해제한 채 `맞아요`를 눌렀는가 — 시트 **안에** 경고를 띄운다.
@@ -86,27 +107,39 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
   /// 시트 안에서 벌어진 일은 시트 안에서 말한다.
   bool _needRoute = false;
 
-  /// 못 물어본 것인가. 이때는 확인할 재료가 0이므로 저장을 막는다.
-  bool get _fetchFailed =>
+  /// **도착정보**를 못 물어봤는가. 경유노선과 별개 호출이라 이것만 실패할 수 있다.
+  bool get _arrivalsFailed =>
       widget.state == BusCardState.down || widget.state == BusCardState.keyError;
+
+  /// 확인할 재료가 하나도 없는가 — **이때만 저장을 막는다.**
+  ///
+  /// 예전에는 도착 조회 실패만으로 막았다. 경유노선이 들어온 뒤로는 도착 시간이
+  /// 없어도 행선지로 방향을 확인할 수 있으므로, 그것만으로 막으면 확인할 수 있는
+  /// 사람을 막는 것이 된다. 반대로 **둘 다** 없으면 시트가 통과 도장이 되므로
+  /// 그때는 막는다 — 시트를 만든 이유가 실패 경로에서 무너지지 않게.
+  bool get _blocked => _choices.isEmpty && _arrivalsFailed;
 
   @override
   void initState() {
     super.initState();
+    _choices = buildRouteChoices(
+      routes: widget.routes,
+      arrivals: widget.arrivals,
+    );
     // 기본은 전부 체크 — 방향만 확인하려는 사람이 `맞아요`만 눌러도 되게.
-    _checked = widget.arrivals.map((a) => a.routeId).toSet();
+    _checked = _choices.map((c) => c.routeId).toSet();
   }
 
   void _accept() {
-    if (widget.arrivals.isNotEmpty && _checked.isEmpty) {
+    if (_choices.isNotEmpty && _checked.isEmpty) {
       setState(() => _needRoute = true);
       return;
     }
 
     // 전부 체크된 상태는 **빈 집합**으로 저장한다. 열거해 저장하면 "전부"가
-    // "이 다섯 개"로 굳어 노선이 신설됐을 때 영구히 안 보인다.
-    final all = widget.arrivals.map((a) => a.routeId).toSet();
-    final selected = _checked.length == all.length ? <String>{} : _checked;
+    // "이 열 개"로 굳어 노선이 신설됐을 때 영구히 안 보인다.
+    final selected =
+        _checked.length == _choices.length ? <String>{} : _checked;
 
     Navigator.of(context).pop(widget.stop.copyWith(routeIds: selected));
   }
@@ -144,38 +177,28 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
               ),
             ),
             const SizedBox(height: AppSizes.spacing16),
-            if (_fetchFailed)
-              // 못 물어본 경우 — 카드의 실패 문구를 그대로 쓴다. 시트용 문구를
-              // 따로 만들지 않는 이유: 사용자가 읽는 사실이 같다("지금 정보를 못
-              // 받았어요"), 그리고 문구가 갈라지면 둘 중 하나만 손보게 된다.
-              Text(
-                widget.state == BusCardState.keyError
-                    ? BusStrings.emptyKey
-                    : BusStrings.emptyDown,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 14,
-                  color: AppColors.sub,
-                ),
-              )
-            else if (widget.arrivals.isEmpty)
-              Text(
-                BusStrings.confirmNoRoutes,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 14,
-                  color: AppColors.sub,
-                ),
-              )
+            if (_choices.isEmpty)
+              // 목록이 없는 이유를 갈라 말한다. 못 물어본 경우에는 카드의 실패
+              // 문구를 그대로 쓴다 — 시트용 문구를 따로 만들면 사용자가 읽는
+              // 사실이 같은데 둘 중 하나만 손보게 된다.
+              _note(_arrivalsFailed
+                  ? (widget.state == BusCardState.keyError
+                      ? BusStrings.emptyKey
+                      : BusStrings.emptyDown)
+                  : BusStrings.confirmNoRoutes)
             else ...[
               // 시트 안에서 사용자가 할 일을 말하는 **유일한 지시문**이다.
               // eyebrow(10px·자간 2.5·골드)로 그리면 본문보다 작아 장식 라벨로
               // 읽히고, 방향 확인이라는 이 시트의 존재 이유가 가장 약한 위계에 놓인다.
               Text(BusStrings.confirmRoutesTitle, style: AppTextStyles.bodyL),
+              // 노선은 받았는데 도착 시간만 못 받은 경우. 목록은 그대로 쓸 수 있고
+              // 방향은 행선지로 확인하면 되므로 막지 않고 이유만 밝힌다 —
+              // 시간이 통째로 빈 목록에 설명이 없으면 목록이 깨진 것으로 읽힌다.
+              if (_arrivalsFailed) _note(BusStrings.confirmNoArrivalTimes),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  children: widget.arrivals.map(_routeTile).toList(),
+                  children: _choices.map(_routeTile).toList(),
                 ),
               ),
             ],
@@ -205,10 +228,10 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
                 Expanded(
                   child: ElevatedButton(
                     key: BusStopConfirmSheet.acceptKey,
-                    // 조회 실패면 저장할 수 없다 — 방향을 확인할 재료가 없는데
+                    // 재료가 하나도 없으면 저장할 수 없다 — 방향을 확인할 수 없는데
                     // 저장을 허용하면 시트가 통과 도장이 된다. 사용자는 `아니에요`로
                     // 닫고 다시 고르면 그때 새로 조회한다.
-                    onPressed: _fetchFailed ? null : _accept,
+                    onPressed: _blocked ? null : _accept,
                     child: const Text(BusStrings.confirmAccept),
                   ),
                 ),
@@ -220,31 +243,61 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
     );
   }
 
-  Widget _routeTile(BusArrival arrival) {
+  Widget _note(String message) {
+    return Text(
+      message,
+      style: TextStyle(
+        fontFamily: 'Pretendard',
+        fontSize: 14,
+        color: AppColors.sub,
+      ),
+    );
+  }
+
+  Widget _routeTile(BusRouteChoice choice) {
+    final arrMin = choice.arrMin;
+    final dest = choice.route.destName;
+
     return CheckboxListTile(
       dense: true,
       controlAffinity: ListTileControlAffinity.leading,
-      value: _checked.contains(arrival.routeId),
+      value: _checked.contains(choice.routeId),
       onChanged: (on) => setState(() {
         if (on ?? false) {
-          _checked.add(arrival.routeId);
+          _checked.add(choice.routeId);
           // 하나라도 다시 켜졌으면 경고를 내린다 — 이미 고친 것을 계속 꾸짖지 않는다.
           _needRoute = false;
         } else {
-          _checked.remove(arrival.routeId);
+          _checked.remove(choice.routeId);
         }
       }),
-      title: Text(BusStrings.routeLabel(arrival.routeNo)),
-      secondary: Text(
-        arrival.arrMin == 0
-            ? BusStrings.arrivingNow
-            : BusStrings.minutesLater(arrival.arrMin),
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 13,
-          color: AppColors.sub,
-        ),
-      ),
+      title: Text(BusStrings.routeLabel(choice.route.routeNo)),
+      // 행선지가 방향을 가르는 단서다 — 길 양쪽 정류장은 이름도 번호도 같지만
+      // 행선지는 다르다. 도착정보 폴백 경로에는 행선지가 없어 그때만 빠진다.
+      subtitle: dest.isEmpty
+          ? null
+          : Text(
+              BusStrings.routeDest(dest),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                color: AppColors.sub,
+              ),
+            ),
+      // 도착 정보가 없는 노선은 이 자리를 비운다. `곧 도착`(0분)과 `정보 없음`(null)은
+      // 다르다 — 뭉개면 심야에 등록하는 사용자에게 전부 `곧 도착`으로 보인다.
+      secondary: arrMin == null
+          ? null
+          : Text(
+              arrMin == 0
+                  ? BusStrings.arrivingNow
+                  : BusStrings.minutesLater(arrMin),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                color: AppColors.sub,
+              ),
+            ),
     );
   }
 }

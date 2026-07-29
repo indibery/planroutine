@@ -160,4 +160,91 @@ void main() {
       expect(_byRouteNo(r.items, '5623').arrMin, 5);
     });
   });
+
+  group('경유노선 목록 — 확인 시트의 선택 목록이 여기서 나온다', () {
+    test('장미아파트 실측 10노선이 전부 나온다', () {
+      // 같은 정류장·같은 시각에 도착정보로는 8노선이었다(위 그룹). 등록하는 시각이
+      // 고를 수 있는 노선을 결정하던 것이 실기기 버그의 원인이다.
+      final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(10));
+      expect(
+        r.items.map((e) => e.routeNo).toSet(),
+        {'3030', '6501', '11-5', '15', '541', '5623', '87', '917', '6', '9'},
+      );
+    });
+
+    test('routeId에 GGB 접두를 되붙인다 — 도착정보 파서와 같은 규칙', () {
+      final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));
+
+      // 실측 GBIS routeId 208000027(3030번). 접두를 빼면 사용자가 고른 노선이
+      // 카드에서 전부 걸러진다(`routeIds.contains(a.routeId)`가 문자열 비교다).
+      expect(
+        r.items.firstWhere((e) => e.routeNo == '3030').routeId,
+        'GGB208000027',
+      );
+    });
+
+    test('행선지가 들어온다 — 길 양쪽 정류장을 가르는 단서', () {
+      final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));
+
+      expect(
+        r.items.firstWhere((e) => e.routeNo == '3030').destName,
+        '신사역(중)',
+      );
+      expect(
+        r.items.firstWhere((e) => e.routeNo == '5623').destName,
+        '여의도환승센터(1번승강장)',
+      );
+    });
+
+    test('routeName이 int로 와도 문자열이 된다', () {
+      // 실측: `9`·`5623`은 int, `'11-5'`는 String으로 **한 응답에 섞여** 온다.
+      final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));
+
+      expect(r.items.map((e) => e.routeNo), everyElement(isA<String>()));
+      expect(r.items.map((e) => e.routeNo), contains('9'));
+    });
+
+    test('수원 실측 5노선도 그대로 나온다', () {
+      final r = parseGbisViaRoutes(_fixture('viaroutes_suwon_5routes'));
+
+      expect(r.outcome, TagoOutcome.ok);
+      expect(r.items, hasLength(5));
+    });
+
+    test('없는 정류소는 empty다 — msgBody 키 자체가 없다', () {
+      final r = parseGbisViaRoutes(_fixture('viaroutes_unknown_station'));
+
+      expect(r.outcome, TagoOutcome.empty);
+      expect(r.items, isEmpty);
+    });
+
+    test('껍데기가 깨지면 malformed다', () {
+      expect(parseGbisViaRoutes(const {'oops': 1}).outcome,
+          TagoOutcome.malformed);
+      expect(
+        parseGbisViaRoutes(const {
+          'response': {
+            'msgHeader': {'resultCode': 99},
+          },
+        }).outcome,
+        TagoOutcome.malformed,
+      );
+    });
+
+    test('정렬하지 않는다 — 표시 순서는 buildRouteChoices가 정한다', () {
+      // 카드는 빠른 순, 시트는 번호순이다. 파서가 한쪽 순서로 고정하면 다른 쪽이
+      // 그것을 다시 뒤집어야 한다.
+      final json = _fixture('viaroutes_jangmi_10routes');
+      final rows = ((json['response'] as Map)['msgBody'] as Map)['busRouteList']
+          as List;
+      final apiOrder =
+          rows.map((r) => (r as Map)['routeName'].toString()).toList();
+
+      final r = parseGbisViaRoutes(json);
+      expect(r.items.map((e) => e.routeNo), apiOrder);
+    });
+  });
 }

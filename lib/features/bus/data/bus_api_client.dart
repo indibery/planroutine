@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../domain/bus_arrival.dart';
 import '../domain/bus_card_view.dart';
+import '../domain/bus_route.dart';
 import '../domain/bus_stop.dart';
 import 'gbis_response_parser.dart';
 import 'tago_response_parser.dart';
@@ -27,6 +28,15 @@ const tagoBaseUrl = 'https://apis.data.go.kr/1613000';
 /// 정류장을 서울 노선까지 한 번에 답한다.
 const gbisArrivalUrl =
     'https://apis.data.go.kr/6410000/busarrivalservice/v2/getBusArrivalListv2';
+
+/// 경기도 GBIS 정류소 경유노선 목록.
+///
+/// 도착정보와 같은 호스트·같은 키지만 **다른 서비스**(`busstationservice`)라 공공데이터
+/// 포털 활용신청이 별개다. 미승인이면 403이 오고 [BusApiClient.fetchViaRoutes]가
+/// `keyError`로 돌려주므로, 확인 시트는 도착정보 기반 목록으로 폴백한다 — 이 서비스가
+/// 없어도 앱은 이전과 똑같이 동작한다.
+const gbisViaRouteUrl =
+    'https://apis.data.go.kr/6410000/busstationservice/v2/getBusStationViaRouteListv2';
 
 /// 메모리 캐시 수명. 폴링 주기와 같게 두어 방향 토글 왕복과 탭 재진입만 흡수한다.
 const busCacheTtl = Duration(seconds: 30);
@@ -178,14 +188,7 @@ class BusApiClient {
     required String nodeId,
   }) async {
     if (nodeId.startsWith(gbisIdPrefix)) {
-      final json = await _send(Uri.parse(gbisArrivalUrl).replace(
-        queryParameters: {
-          'serviceKey': _serviceKey,
-          'stationId': nodeId.substring(gbisIdPrefix.length),
-          'format': 'json',
-        },
-      ));
-      return parseGbisArrivals(json);
+      return parseGbisArrivals(await _gbis(gbisArrivalUrl, nodeId));
     }
 
     final json = await _get(
@@ -193,6 +196,45 @@ class BusApiClient {
       {'cityCode': '$cityCode', 'nodeId': nodeId, 'numOfRows': '30'},
     );
     return parseArrivals(json);
+  }
+
+  /// 정류장을 지나는 노선 **전체**. 확인 시트의 선택 목록이 여기서 나온다.
+  ///
+  /// **등록할 때 한 번만** 부른다 — 폴링 경로가 아니므로 캐시하지 않는다(재사용 창이
+  /// 없다). 일일 트래픽도 도착정보와 별도로 배정돼(각 1,000) 병목이 아니다.
+  ///
+  /// 경기 정류장이 아니면 **요청을 보내지 않고** 빈 결과를 준다. GBIS는 경기도 전용이라
+  /// 부산 `BSB…`·제주 `JEB…`로는 답이 없고, 헛요청은 트래픽만 쓴다. 호출부는 빈 결과를
+  /// 실패로 읽지 않고 도착정보 기반 목록으로 폴백한다.
+  ///
+  /// 실패(키 거부·네트워크·파손)도 예외를 던지지 않고 outcome으로 돌려준다 —
+  /// 선택 목록을 못 받은 것이 등록 자체를 막을 이유는 아니다.
+  Future<TagoResult<BusRoute>> fetchViaRoutes({required String nodeId}) async {
+    if (!nodeId.startsWith(gbisIdPrefix)) {
+      return const TagoResult(TagoOutcome.empty);
+    }
+    if (!hasKey) return const TagoResult(TagoOutcome.keyError);
+
+    try {
+      return parseGbisViaRoutes(await _gbis(gbisViaRouteUrl, nodeId));
+    } on _KeyRejected {
+      return const TagoResult(TagoOutcome.keyError);
+    } catch (_) {
+      return const TagoResult(TagoOutcome.malformed);
+    }
+  }
+
+  /// GBIS 엔드포인트 하나를 부른다 — 정류소 ID로 조회하는 두 서비스가 쿼리 규약을
+  /// 공유한다(`serviceKey`·`stationId`·`format`. TAGO의 `_type`·`pageNo`는 없다).
+  ///
+  /// `nodeId`에서 접두를 떼는 규칙도 여기 한 곳에 둔다 — 두 곳에 흩어져 있으면 한쪽만
+  /// 고쳐 접두가 붙은 채 나가고, GBIS는 그것을 없는 정류소(`resultCode: 4`)로 답한다.
+  Future<Map<String, dynamic>> _gbis(String url, String nodeId) {
+    return _send(Uri.parse(url).replace(queryParameters: {
+      'serviceKey': _serviceKey,
+      'stationId': nodeId.substring(gbisIdPrefix.length),
+      'format': 'json',
+    }));
   }
 
   Future<TagoResult<BusStop>> searchStops({
@@ -251,7 +293,7 @@ class BusApiClient {
   }
 
   /// TAGO 엔드포인트 하나를 부른다. 공통 쿼리(`serviceKey`·`_type`·`pageNo`)를 여기
-  /// 한 곳에서 붙인다 — GBIS는 쿼리 규약이 다르므로 [_send]를 직접 쓴다.
+  /// 한 곳에서 붙인다 — GBIS는 쿼리 규약이 달라 [_gbis]가 따로 있다.
   Future<Map<String, dynamic>> _get(
     String path,
     Map<String, String> query,
