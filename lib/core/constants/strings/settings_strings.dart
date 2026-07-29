@@ -14,6 +14,10 @@ class SettingsStrings {
   static const stampStyleLabel = '도장 모양';
   static const stampDimLabel = '이미 찍은 도장 흐리게';
   static const stampDimDescription = '방금 찍은 도장은 진하게, 지난 도장은 잔상으로';
+
+  /// 도장 모양 시트 제목. 설정 탭의 행 라벨과 **같은 말이어야** 시트가 그 행의
+  /// 연장으로 읽힌다 — 다른 말을 쓰면 다른 설정을 연 것처럼 보인다.
+  static const stampStyleSheetTitle = stampStyleLabel;
   static const themeSystem = '시스템';
   static const themeLight = '밝게';
   static const themeDark = '어둡게';
