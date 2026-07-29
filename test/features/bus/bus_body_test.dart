@@ -18,11 +18,25 @@ BusCardView _view(List<BusArrival> items, {int hidden = 0}) => BusCardView(
       fetchedAt: DateTime(2026, 7, 28, 7, 32),
     );
 
+/// 본문에 주는 폭. 축의 좌표 단정이 이 값에서 나오므로 상수로 둔다.
+const _axisWidth = 340.0;
+
 Future<void> _pump(WidgetTester tester, Widget child) {
   return tester.pumpWidget(MaterialApp(
-    home: Scaffold(body: SizedBox(width: 340, child: child)),
+    home: Scaffold(body: SizedBox(width: _axisWidth, child: child)),
   ));
 }
+
+/// 축의 점 — 원형 `Container`. 레일은 사각(`borderRadius`)이라 걸리지 않는다.
+Finder _dot(int index) => find
+    .descendant(
+      of: find.byType(BusBodyAxis),
+      matching: find.byWidgetPredicate((w) =>
+          w is Container &&
+          w.decoration is BoxDecoration &&
+          (w.decoration! as BoxDecoration).shape == BoxShape.circle),
+    )
+    .at(index);
 
 void main() {
   group('BusBodyText — 색을 쓰지 않고 굵기·크기로만 위계를 만든다', () {
@@ -87,6 +101,34 @@ void main() {
       expect(find.text('지금'), findsOneWidget);
       expect(find.text('15분'), findsOneWidget);
       expect(find.text('720'), findsOneWidget);
+    });
+
+    testWidgets('점과 라벨이 분에 비례한 x좌표에 놓인다', (tester) async {
+      // 위 테스트처럼 **존재만** 보면 무검증이다 — `_dot`의 `left` 식을 아무렇게나
+      // 바꾸거나 `_labels`의 `- 14` 중심 보정을 지워도 `find.text`는 통과한다
+      // (Stack은 Flex와 달리 오버플로를 FlutterError로 알리지 않고 클립만 하므로,
+      // 340폭 안에서 left 680으로 놓아도 예외가 없다). `시간 축`의 존재 이유가
+      // "간격이 공간으로 보인다"이므로 그 공간 매핑을 위젯 레벨에서 고정한다.
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
+
+      final expected = BusBodyAxis.dotPosition(2) * _axisWidth;
+      expect(tester.getCenter(_dot(0)).dx, closeTo(expected, 0.5),
+          reason: '점 중심이 분에 비례한 x다 — size/2 보정이 그 일을 한다');
+      expect(tester.getCenter(find.text('720')).dx, closeTo(expected, 0.5),
+          reason: '라벨 중심이 점과 같은 x다 — 폭 28의 -14 보정이 그 일을 한다');
+    });
+
+    testWidgets('15분을 넘긴 항목들은 오른쪽 끝 같은 위치로 모인다', (tester) async {
+      // clamp가 없으면 31분은 축 폭의 2배 지점으로 나가 화면 밖에서 조용히 잘린다.
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('A', '720', 18), _a('B', '61', 31)])),
+      );
+
+      final far = BusBodyAxis.dotPosition(BusBodyAxis.axisRange) * _axisWidth;
+      expect(tester.getCenter(find.text('720')).dx, closeTo(far, 0.5));
+      expect(tester.getCenter(find.text('61')).dx, closeTo(far, 0.5),
+          reason: '축을 넘긴 값은 97%에 모인다 — 축 밖으로 밀려나지 않는다');
     });
 
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
