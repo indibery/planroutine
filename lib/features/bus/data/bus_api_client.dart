@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../domain/bus_arrival.dart';
 import '../domain/bus_card_view.dart';
 import '../domain/bus_stop.dart';
+import 'gbis_response_parser.dart';
 import 'tago_response_parser.dart';
 
 /// TAGO 국토교통부 서비스 묶음.
@@ -12,6 +13,20 @@ import 'tago_response_parser.dart';
 /// **https다.** 실측으로 TLSv1.3 + GlobalSign 인증서를 확인했으므로 `Info.plist`에
 /// ATS 예외를 넣지 않는다.
 const tagoBaseUrl = 'https://apis.data.go.kr/1613000';
+
+/// 경기도 GBIS 정류소 도착정보.
+///
+/// **TAGO와 같은 호스트·같은 https·같은 인증키다** — ATS 예외도, 키 추가 발급도
+/// 필요 없다(실측).
+///
+/// 경기 정류장에서 TAGO를 쓰지 않는 이유: TAGO의 `cityCode`는 정류장 소속이 아니라
+/// **노선 운영 시·군 필터**라 같은 nodeId를 시·군마다 다르게 답한다(실측
+/// `GGB225000100`: 군포시 `3030·6501` / 안양시 `15·11-5·87`). 우리는 검색에 쓴
+/// cityCode 하나만 저장하므로 구조적으로 일부만 보인다. 게다가 TAGO 도시목록 138개에
+/// **서울이 없어** 서울 노선(`5623`·`541`)은 영구히 조회되지 않는다. GBIS는 같은
+/// 정류장을 서울 노선까지 한 번에 답한다.
+const gbisArrivalUrl =
+    'https://apis.data.go.kr/6410000/busarrivalservice/v2/getBusArrivalListv2';
 
 /// 메모리 캐시 수명. 폴링 주기와 같게 두어 방향 토글 왕복과 탭 재진입만 흡수한다.
 const busCacheTtl = Duration(seconds: 30);
@@ -118,11 +133,7 @@ class BusApiClient {
     }
 
     try {
-      final json = await _get(
-        'ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList',
-        {'cityCode': '$cityCode', 'nodeId': nodeId, 'numOfRows': '30'},
-      );
-      final result = parseArrivals(json);
+      final result = await _arrivals(cityCode: cityCode, nodeId: nodeId);
 
       switch (result.outcome) {
         case TagoOutcome.ok:
@@ -150,6 +161,38 @@ class BusApiClient {
       // 실패를 고백한다 — 실시간인 척하면 버스를 놓친 사용자가 앱을 불신한다.
       return _fallback(key, cached, BusCardState.down);
     }
+  }
+
+  /// 도착정보 1회 조회 — **정류소 ID 접두로 소스를 가른다.**
+  ///
+  /// 경기 정류장([gbisIdPrefix])만 GBIS로 보내고 나머지는 TAGO를 그대로 쓴다. GBIS는
+  /// 경기도 전용이라 비경기 nodeId(부산 `BSB…`·제주 `JEB…`)로는 답이 없다.
+  ///
+  /// 저장된 [BusStop]은 손대지 않는다 — `nodeId`에서 접두만 떼면 GBIS `stationId`다
+  /// (실측 3건 검증). 그래서 이 교체에 마이그레이션이 없다.
+  ///
+  /// `cityCode`는 TAGO 경로에만 넘어간다. GBIS는 정류소 ID만 보므로 잘못된 시·군을
+  /// 골라 저장한 사용자도 경기 안이면 정상 조회된다.
+  Future<TagoResult<BusArrival>> _arrivals({
+    required int cityCode,
+    required String nodeId,
+  }) async {
+    if (nodeId.startsWith(gbisIdPrefix)) {
+      final json = await _send(Uri.parse(gbisArrivalUrl).replace(
+        queryParameters: {
+          'serviceKey': _serviceKey,
+          'stationId': nodeId.substring(gbisIdPrefix.length),
+          'format': 'json',
+        },
+      ));
+      return parseGbisArrivals(json);
+    }
+
+    final json = await _get(
+      'ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList',
+      {'cityCode': '$cityCode', 'nodeId': nodeId, 'numOfRows': '30'},
+    );
+    return parseArrivals(json);
   }
 
   Future<TagoResult<BusStop>> searchStops({
@@ -207,17 +250,24 @@ class BusApiClient {
     );
   }
 
+  /// TAGO 엔드포인트 하나를 부른다. 공통 쿼리(`serviceKey`·`_type`·`pageNo`)를 여기
+  /// 한 곳에서 붙인다 — GBIS는 쿼리 규약이 다르므로 [_send]를 직접 쓴다.
   Future<Map<String, dynamic>> _get(
     String path,
     Map<String, String> query,
-  ) async {
-    final uri = Uri.parse('$tagoBaseUrl/$path').replace(queryParameters: {
+  ) {
+    return _send(Uri.parse('$tagoBaseUrl/$path').replace(queryParameters: {
       'serviceKey': _serviceKey,
       '_type': 'json',
       'pageNo': '1',
       ...query,
-    });
+    }));
+  }
 
+  /// HTTP 한 번 + 실패 판정. **두 소스가 같은 계약을 쓴다** — 401/403은 키 거부,
+  /// 그 밖의 비200은 예외다(캐시 폴백으로 간다). GBIS 게이트웨이의 활용신청 미승인도
+  /// 401/403으로 온다.
+  Future<Map<String, dynamic>> _send(Uri uri) async {
     _requestCount++;
     final response = await _client.get(uri).timeout(const Duration(seconds: 10));
 

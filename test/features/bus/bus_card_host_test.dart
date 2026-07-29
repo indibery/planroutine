@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,28 +24,17 @@ const _stop = BusStop(
   cityCode: 31010,
 );
 
-String _body() => jsonEncode({
-      'response': {
-        'header': {'resultCode': '00', 'resultMsg': 'NORMAL SERVICE.'},
-        'body': {
-          'items': {
-            'item': [
-              {
-                'arrprevstationcnt': 3,
-                'arrtime': 120,
-                'nodeid': 'GGB201000156',
-                'nodenm': '수원시청',
-                'routeid': 'R1',
-                'routeno': 720,
-                'vehicletp': '일반버스',
-              }
-            ]
-          },
-          'numOfRows': 30,
-          'pageNo': 1,
-        },
-      },
-    });
+/// 수원시청(`GGB201000156`) **실측 GBIS 응답**을 그대로 쓴다.
+///
+/// [_stop]은 경기 정류장이므로 앱은 이 정류장을 GBIS로 조회한다 — 손으로 쓴 TAGO
+/// 껍데기를 stub으로 두면 실제로 타지 않는 경로 위에서 호스트를 검증하게 된다
+/// (교체 전에는 TAGO 껍데기였고, 분기가 들어오자 이 파일 7건이 한꺼번에 깨졌다).
+///
+/// 6노선이 오고 가장 빠른 것이 `92-1`(160초 → 3분)이다. 표시 상한(`busUnfilteredLimit`)이
+/// 3이라 카드에는 `92-1`·`82-1`·`61` 세 줄만 보인다.
+String _body() =>
+    File('test/fixtures/gbis/arrivals_suwoncityhall_6routes.json')
+        .readAsStringSync();
 
 /// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
 /// `_encodingForHeaders`로 인코딩을 유도하고 헤더가 없으면 latin1로 떨어져,
@@ -137,7 +127,7 @@ void main() {
       final n = await _pumpHost(tester, now: outOfRange, settings: onWithStop);
       expect(find.byType(BusArrivalCard), findsOneWidget);
       expect(find.textContaining('수원시청'), findsOneWidget);
-      expect(find.text('720번'), findsNothing);
+      expect(find.text('92-1번'), findsNothing);
       expect(n, 0);
     });
   });
@@ -145,8 +135,8 @@ void main() {
   group('시간대 안 — 펼쳐지고 조회한다', () {
     testWidgets('목록과 기준시각이 보인다', (tester) async {
       final n = await _pumpHost(tester, now: inRange, settings: onWithStop);
-      expect(find.text('720번'), findsOneWidget);
-      expect(find.text('2분'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
+      expect(find.text('3분'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(n, 1);
     });
@@ -186,7 +176,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(count, 1, reason: '이미 data인 설정 위에서 마운트해도 첫 조회는 나간다');
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
       expect(find.text(BusStrings.emptyLoading), findsNothing);
     });
   });
@@ -203,7 +193,7 @@ void main() {
           toHomeRange: const TimeRange.hm(8, 0, 18, 0), // 출근 07:00–08:30과 겹친다
         ),
       );
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(n, 1, reason: '시간대가 복구돼 조건 3(펼침)이 통과한다');
     });
@@ -241,7 +231,7 @@ void main() {
       await tester.tap(find.byKey(BusArrivalCard.headerKey));
       await tester.pumpAndSettle();
 
-      expect(find.text('720번'), findsNothing);
+      expect(find.text('92-1번'), findsNothing);
       expect(find.text('07:32 기준'), findsNothing);
       expect(count, 1, reason: '접힘 상태에서는 요청이 늘지 않는다');
     });
@@ -273,7 +263,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(count, 1);
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
     });
   });
 
@@ -721,20 +711,20 @@ void main() {
         child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
 
       now = now.add(const Duration(seconds: 31));
       await tester.pump(busPollInterval); // 타이머 발화 → 두 번째 요청이 비행 중
       await tester.pump(); // 드롭이 있었다면 이 프레임에서 보인다
 
       expect(count, 2);
-      expect(find.text('720번'), findsOneWidget,
+      expect(find.text('92-1번'), findsOneWidget,
           reason: '갱신 중에도 직전 목록을 유지한다 — 3분을 넘긴 값만 내린다');
       expect(find.text(BusStrings.emptyLoading), findsNothing);
 
       hold.complete();
       await tester.pumpAndSettle();
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
     });
 
     testWidgets('시간대가 끝나면 다음 tick이 카드를 접고 옛 목록을 버린다', (tester) async {
@@ -760,14 +750,14 @@ void main() {
         child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('92-1번'), findsOneWidget);
       expect(count, 1);
 
       now = DateTime(2026, 7, 28, 8, 31); // 시간대 종료
       await tester.pump(busPollInterval);
       await tester.pumpAndSettle();
 
-      expect(find.text('720번'), findsNothing,
+      expect(find.text('92-1번'), findsNothing,
           reason: '시간대가 끝나면 카드가 접히고 옛 도착 분이 남지 않는다');
       expect(find.textContaining('기준'), findsNothing);
       expect(find.textContaining('수원시청'), findsOneWidget,
