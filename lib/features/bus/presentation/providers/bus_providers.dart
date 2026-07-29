@@ -30,12 +30,37 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefsKey);
     if (raw == null) return BusSettings.defaults;
+    BusSettings loaded;
     try {
-      return BusSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      loaded = BusSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       // 손상된 값이면 기본값으로
       return BusSettings.defaults;
     }
+    if (loaded.rangesValid) return loaded;
+
+    // **시간대가 겹치거나 뒤집힌 값을 읽었으면 그 두 값만 기본값으로 되돌려 저장한다.**
+    //
+    // 그냥 들고 있으면 기능 전체가 죽는다 — `resolveBusDisplay`가 `!rangesValid`에서
+    // override를 읽기도 전에 `expanded: false`로 조기 반환하므로 카드는 접힌 줄만
+    // 남고, 제목줄을 눌러도 `setOverride`는 저장되는데 다음 build가 그 override를
+    // 다시 무시해 **몇 번을 눌러도 펼쳐지지 않는다**. 설정 타일은 겹친 값을 정상처럼
+    // 표시하니 사용자가 원인을 볼 방법도 없다.
+    //
+    // **정당한 값을 잃지 않는다**: `setRange`가 `!rangesValid`면 저장을 거부하므로
+    // 정상 UI로는 이 상태에 도달할 수 없다(prefs 손상·수동 편집·향후 스키마 변경뿐).
+    // 그래서 막다른 길을 화면에서 설명하는(경고 문구·스낵바) 대신 **없애는** 쪽이
+    // 값싸다.
+    //
+    // **시간대 두 개만** 되돌린다 — 스위치·슬롯·모양·override는 멀쩡하고, 함께
+    // 날리면 정류장을 다시 등록하게 만든다.
+    final repaired = loaded.copyWith(
+      toWorkRange: BusSettings.defaults.toWorkRange,
+      toHomeRange: BusSettings.defaults.toHomeRange,
+    );
+    // `_save`를 쓰지 않는다 — build 중에는 state를 대입할 수 없다(반환값이 곧 state).
+    await prefs.setString(_prefsKey, jsonEncode(repaired.toJson()));
+    return repaired;
   }
 
   BusSettings get _current => state.valueOrNull ?? BusSettings.defaults;

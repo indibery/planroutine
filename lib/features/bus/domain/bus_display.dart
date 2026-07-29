@@ -30,6 +30,11 @@ BusDisplay resolveBusDisplay({
 }) {
   // 시간대가 겹치거나 뒤집혔으면 방향 판정이 모호하다. 접힌 채로 두면 요청도
   // 나가지 않아 안전하다(설정 화면이 저장을 막지만 옛 저장값이 있을 수 있다).
+  //
+  // **이 폴백은 순수 함수의 마지막 방어선일 뿐 사용자가 보는 상태가 아니다** —
+  // override보다 먼저 반환하므로 이 상태로 살아 있으면 제목줄 탭이 영구 no-op가
+  // 된다. 그래서 `BusSettingsNotifier.build`가 읽는 순간 시간대를 기본값으로
+  // 되돌려 저장해 이 분기에 머무르지 않게 한다.
   if (!settings.rangesValid) {
     return const BusDisplay(
       direction: CommuteDirection.toWork,

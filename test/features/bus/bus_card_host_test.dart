@@ -10,6 +10,7 @@ import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
+import 'package:planroutine/features/bus/domain/time_range.dart';
 import 'package:planroutine/features/bus/presentation/providers/bus_providers.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_arrival_card.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_card_host.dart';
@@ -172,6 +173,24 @@ void main() {
       expect(count, 1, reason: '이미 data인 설정 위에서 마운트해도 첫 조회는 나간다');
       expect(find.text('720번'), findsOneWidget);
       expect(find.text(BusStrings.emptyLoading), findsNothing);
+    });
+  });
+
+  group('겹친 시간대 — 읽는 순간 복구되므로 카드가 죽지 않는다 (M5)', () {
+    testWidgets('prefs에 겹친 시간대가 있어도 펼쳐지고 조회한다', (tester) async {
+      // 복구가 없으면 `resolveBusDisplay`가 `!rangesValid`에서 override보다 먼저
+      // `expanded: false`를 반환해 카드는 접힌 줄만 남고, 제목줄을 몇 번 눌러도
+      // 펼쳐지지 않는다 — 도달 경로는 좁지만 증상은 기능 전체 사망이다.
+      final n = await _pumpHost(
+        tester,
+        now: inRange,
+        settings: onWithStop.copyWith(
+          toHomeRange: const TimeRange.hm(8, 0, 18, 0), // 출근 07:00–08:30과 겹친다
+        ),
+      );
+      expect(find.text('720번'), findsOneWidget);
+      expect(find.text('07:32 기준'), findsOneWidget);
+      expect(n, 1, reason: '시간대가 복구돼 조건 3(펼침)이 통과한다');
     });
   });
 
