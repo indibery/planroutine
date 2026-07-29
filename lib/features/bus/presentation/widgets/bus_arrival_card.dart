@@ -30,13 +30,13 @@ class BusArrivalCard extends StatelessWidget {
     this.onRegister,
     this.onRefresh,
     this.retrying = false,
+    this.refreshEnabled = true,
   });
 
   static const headerKey = Key('bus_card_header');
   static const flipKey = Key('bus_card_flip');
 
-  /// 새로고침 버튼. **제목줄 탭(접기)과 표적이 겹치므로 키로 찾는다** — 아이콘으로
-  /// 찾으면 chevron·flip과 섞인다.
+  /// 새로고침 버튼. 아이콘으로 찾으면 chevron·flip과 섞이므로 키로 찾는다.
   static const refreshKey = Key('bus_card_refresh');
 
   final BusCardView view;
@@ -57,15 +57,21 @@ class BusArrivalCard extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onRegister;
 
-  /// 제목줄 새로고침. null이면 아이콘이 없다.
+  /// 하단 행의 새로고침. null이면 아이콘이 없다.
   ///
   /// **호스트는 여기에 `onRetry`와 같은 함수를 넘긴다.** 촉발 경로가 하나여야 in-flight
   /// 가드와 진행 표시가 어느 쪽에서 눌러도 같게 동작한다 — 두 경로로 갈리면 탭 N번이
   /// 동시 요청 N건이 되는 함정이 한쪽에만 남는다.
   final VoidCallback? onRefresh;
 
-  /// 조회가 비행 중인가 — [BusEmptyState]와 제목줄 새로고침이 함께 본다.
+  /// 조회가 비행 중인가 — [BusEmptyState]와 새로고침 아이콘이 함께 본다.
   final bool retrying;
+
+  /// 지금 새로고침을 누를 수 있는가. false면 **자리는 지키되** 흐리고 눌리지 않는다.
+  ///
+  /// **아이콘을 없애지 않는 이유**: 사라졌다 나타나면 그 자리가 빈 칸이 되어 "고장난
+  /// 것"으로 읽히고, 쿨다운이라는 이유를 말할 수단도 없어진다. 흐린 색이 이유다.
+  final bool refreshEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -98,38 +104,60 @@ class BusArrivalCard extends StatelessWidget {
             // 사용자가 퇴근 시간대에 열었을 때 `정류장을 등록하면 도착시간이
             // 보여요`만 있고 이미 등록해 둔 반대 방향으로 갈 길이 없는 막힌 카드가
             // 된다. 막차 후(`오늘 운행이 끝났어요`)에 다음 방향을 볼 길도 막힌다.
-            _flip(),
+            _bottomRow(),
           ],
         ],
       ),
     );
   }
 
+  /// 새로고침 탭 영역을 아이콘보다 넓히는 여백. 16pt 아이콘 + 이 여백 = **40×32**.
+  ///
+  /// 하단 행은 접기 표적이 아니고 우측이 비어 있어 넉넉히 줄 수 있다 — 제목줄에
+  /// 있을 때는 chevron과 붙어 있어 이만큼 못 줬다(`_bottomRow` 문서 참고).
+  /// Apple 권장 44pt에는 조금 못 미치지만, 세로로 분리돼 있어 오탭의 대가가
+  /// "아무 일도 안 일어남"이지 "카드가 접힘"이 아니다.
+  static const _refreshHitPadding =
+      EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+
   /// 새로고침 아이콘, 조회 중이면 진행 표시.
   ///
-  /// 진행 표시가 **아이콘과 같은 크기**여야 한다 — 다르면 누를 때마다 제목줄의
-  /// 오른쪽 요소들이 흔들린다.
+  /// 세 상태(진행·활성·쿨다운)가 **같은 자리·같은 크기**를 차지해야 한다 — 다르면
+  /// 누를 때마다 하단 행의 요소가 흔들려 표적이 움직인다.
   Widget _refreshControl() {
     if (retrying) {
-      return SizedBox(
-        width: AppSizes.iconSmall,
-        height: AppSizes.iconSmall,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppColors.gold,
+      return Padding(
+        padding: _refreshHitPadding,
+        child: SizedBox(
+          width: AppSizes.iconSmall,
+          height: AppSizes.iconSmall,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.gold,
+          ),
         ),
       );
     }
-    return GestureDetector(
-      key: refreshKey,
-      behavior: HitTestBehavior.opaque,
-      onTap: onRefresh,
+
+    final icon = Padding(
+      padding: _refreshHitPadding,
       child: Icon(
         Icons.refresh,
         size: AppSizes.iconSmall,
-        color: AppColors.gold,
+        // 쿨다운이면 흐리게 — 누를 수 없다는 것을 색으로 말한다.
+        color: refreshEnabled ? AppColors.gold : AppColors.faint,
         semanticLabel: BusStrings.refresh,
       ),
+    );
+
+    return GestureDetector(
+      key: refreshKey,
+      behavior: HitTestBehavior.opaque,
+      // 쿨다운이면 `null` — 하단 행에는 조상 제스처가 없으므로 흡수용 빈 콜백이
+      // 필요 없다(제목줄에 있을 때는 필요했다: 인식기가 없으면 제목줄 탭이 아레나를
+      // 이겨 카드가 접혔다). 눌러도 아무 일이 없고 흐린 색이 이유를 말한다.
+      onTap: refreshEnabled ? onRefresh : null,
+      child: icon,
     );
   }
 
@@ -190,12 +218,6 @@ class BusArrivalCard extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.spacing8),
         ],
-        // **펼친 상태에서만** 새로고침을 준다. 접히면 폴링이 멈추고 목록도 안 보여서
-        // 눌러도 결과를 확인할 수 없다 — 기준시각을 접힘에서 숨기는 것과 같은 이유다.
-        if (expanded && onRefresh != null) ...[
-          _refreshControl(),
-          const SizedBox(width: AppSizes.spacing8),
-        ],
         if (toggle != null)
           Icon(
             expanded ? Icons.expand_less : Icons.expand_more,
@@ -209,8 +231,8 @@ class BusArrivalCard extends StatelessWidget {
     // 콜백이 없으면 탭 대상도 아니다. `headerKey`도 함께 사라지므로 테스트가
     // 실수로 죽은 컨트롤을 두드리지 않는다.
     if (toggle == null) return row;
-    // 새로고침은 제목줄 안에 있는데 제목줄 전체가 접기 표적이다. 안쪽
-    // `GestureDetector`가 히트 테스트를 먼저 먹으므로 새로고침을 눌러도 접히지 않는다.
+    // 제목줄에는 다른 표적을 두지 않는다 — 새로고침은 하단 행으로 내렸다
+    // (`_bottomRow` 문서 참고).
     return GestureDetector(
       key: headerKey,
       behavior: HitTestBehavior.opaque,
@@ -245,23 +267,36 @@ class BusArrivalCard extends StatelessWidget {
     };
   }
 
-  Widget _flip() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: GestureDetector(
-        key: flipKey,
-        behavior: HitTestBehavior.opaque,
-        onTap: onFlipDirection,
-        child: Text(
-          BusStrings.flip(direction.otherLabel),
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.gold,
+  /// 하단 조작 행 — 좌: 방향 전환, 우: 새로고침.
+  ///
+  /// **새로고침이 제목줄이 아니라 여기 있는 이유**: 제목줄 **전체**가 접기 표적이라,
+  /// 그 안에 16pt 아이콘을 두면 빗나가는 순간 카드가 접힌다(실기기 신고 2026-07-29:
+  /// "접는거랑 새로고침이 가까워서 손가락이 굵은 사람은 실수로 누르게 돼").
+  /// 히트 영역을 넓히는 것은 확률만 낮춘다 — 표적이 표적을 감싸는 구조는 그대로다.
+  ///
+  /// 여기로 내리면 그 구조가 사라진다: 제목줄은 순수하게 접기이고, 이 행은 접기
+  /// 표적이 아니므로 오탭해도 접히지 않는다. 본문 높이만큼 세로로 떨어져 있어
+  /// 손가락이 두 표적을 동시에 덮을 수 없고, 공간이 넉넉해 히트 영역도 크게 준다.
+  Widget _bottomRow() {
+    return Row(
+      children: [
+        GestureDetector(
+          key: flipKey,
+          behavior: HitTestBehavior.opaque,
+          onTap: onFlipDirection,
+          child: Text(
+            BusStrings.flip(direction.otherLabel),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gold,
+            ),
           ),
         ),
-      ),
+        const Spacer(),
+        if (onRefresh != null) _refreshControl(),
+      ],
     );
   }
 }

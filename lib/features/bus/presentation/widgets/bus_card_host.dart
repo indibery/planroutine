@@ -50,6 +50,34 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   /// **가려질 콘텐츠가 애초에 없다**(빈 카드로 남을 목록 자체가 없다).
   bool _retrying = false;
 
+  /// 눌렀다는 것이 **보이게** 진행 표시를 최소 시간 유지한다.
+  ///
+  /// 캐시가 신선하면(`busCacheTtl` 30초 안) `_tick`이 네트워크 없이 즉시 끝나 진행
+  /// 표시가 한 프레임만 돌고 사라진다 — 눌렀는데 아무 일도 없는 것처럼 보이고,
+  /// 사용자는 다시 누른다.
+  static const _minRefreshFeedback = Duration(milliseconds: 350);
+
+  /// **손으로** 새로고침을 누른 시각. 쿨다운 판정의 기준이다.
+  ///
+  /// 자동 폴링은 이 값을 건드리지 않는다 — 폴링까지 쿨다운을 걸면 30초 주기가 곧
+  /// 쿨다운이라 아이콘이 늘 흐려 보인다. 막으려는 것은 사람의 연속 탭이다
+  /// (실기기 신고 2026-07-29: "장난으로 누를 수도 있는데 연속해서 못 누르게").
+  DateTime? _manualRefreshAt;
+
+  /// 쿨다운이 끝나는 순간 한 번 리빌드한다 — 없으면 다음 폴링(최대 30초 뒤)까지
+  /// 아이콘이 흐린 채로 남는다.
+  Timer? _cooldownTimer;
+
+  /// 지금 손으로 누를 수 있는가.
+  ///
+  /// 쿨다운을 `busCacheTtl`과 같게 둔다 — 그 안에 다시 눌러도 캐시가 답해 새 값이
+  /// 오지 않으므로, 누를 수 있게 두면 "반응 없는 버튼"이 된다. 즉 이 쿨다운은
+  /// 새로 만든 제약이 아니라 **이미 있던 사실을 화면에 드러내는 것**이다.
+  bool get _canRefresh {
+    final at = _manualRefreshAt;
+    return at == null || _now().difference(at) >= busCacheTtl;
+  }
+
   DateTime _now() => (widget.clock ?? DateTime.now)();
 
   @override
@@ -84,6 +112,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   @override
   void dispose() {
     _timer?.cancel();
+    _cooldownTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -132,16 +161,19 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   /// 실패 결과는 `_fallback`이 캐시에 쓰지 않으므로 매 탭이 캐시 미스가 되어
   /// **탭 N번 = 동시 HTTP 요청 N건**이 된다. 키는 IPA에 하나뿐이라 개발계정
   /// 10,000/일 한도를 전 사용자가 공유한다(스펙 §5의 호출 회계).
-  /// 눌렀다는 것이 **보이게** 진행 표시를 최소 시간 유지한다.
   ///
-  /// 캐시가 신선하면(`busCacheTtl` 30초 안) `_tick`이 네트워크 없이 즉시 끝나 진행
-  /// 표시가 한 프레임만 돌고 사라진다 — 눌렀는데 아무 일도 없는 것처럼 보이고,
-  /// 사용자는 다시 누른다. 이 카드에서 이미 한 번 겪은 실패 모드다(위 문서 참고).
-  static const _minRefreshFeedback = Duration(milliseconds: 350);
-
+  /// 제목줄 새로고침도 **같은 함수**를 쓴다 — 촉발 경로가 갈리면 이 가드가 한쪽에만
+  /// 남는다.
   Future<void> _retry() async {
     if (_retrying) return;
-    setState(() => _retrying = true);
+    setState(() {
+      _retrying = true;
+      _manualRefreshAt = _now();
+    });
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer(busCacheTtl, () {
+      if (mounted) setState(() {});
+    });
     final started = _now();
     try {
       await _tick();
@@ -353,6 +385,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       // 제목줄의 `07:32 기준`이 그대로인 것이 "방금 받은 것"이라는 표시다.
       onRefresh: _retry,
       retrying: _retrying,
+      refreshEnabled: _canRefresh,
       // **`onRegister`를 넘기지 않는다.** 여기 `view.state`는 `fetch.state`에서
       // 오고 `BusApiClient`가 낼 수 있는 값은 ok·closed·stale·down·keyError
       // 다섯뿐이다(`noStop`을 만드는 곳은 위 분기 하나뿐이고 소비처도

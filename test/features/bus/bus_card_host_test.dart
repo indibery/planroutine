@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
@@ -766,11 +767,44 @@ void main() {
     });
   });
 
-  group('제목줄 새로고침', () {
+  group('새로고침 — 하단 행', () {
     testWidgets('펼친 카드에는 새로고침이 있다', (tester) async {
       await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
 
       expect(find.byKey(BusArrivalCard.refreshKey), findsOneWidget);
+    });
+
+    testWidgets('새로고침은 제목줄이 아니라 하단 행에 있다', (tester) async {
+      // 제목줄 **전체**가 접기 표적이라 그 안에 두면 빗나가는 순간 카드가 접힌다
+      // (실기기 신고 2026-07-29). 세로로 분리해 그 구조를 없앤다 — 히트 영역을
+      // 넓히는 것은 확률만 낮춘다.
+      await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
+
+      final refresh = tester.getRect(find.byKey(BusArrivalCard.refreshKey));
+      final header = tester.getRect(find.byKey(BusArrivalCard.headerKey));
+
+      expect(refresh.top, greaterThan(header.bottom),
+          reason: '두 표적이 세로로 떨어져 있어야 손가락이 동시에 덮지 못한다');
+    });
+
+    testWidgets('방향 전환과 같은 행에 있고 서로 겹치지 않는다', (tester) async {
+      await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
+
+      final refresh = tester.getRect(find.byKey(BusArrivalCard.refreshKey));
+      final flip = tester.getRect(find.byKey(BusArrivalCard.flipKey));
+
+      expect(refresh.left, greaterThan(flip.right),
+          reason: '좌: 방향 전환 · 우: 새로고침 — 겹치면 둘 다 오탭한다');
+    });
+
+    testWidgets('히트 영역이 아이콘보다 넓다 — 손가락이 굵어도 눌린다', (tester) async {
+      await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
+
+      final hit = tester.getRect(find.byKey(BusArrivalCard.refreshKey));
+
+      // 아이콘은 16pt다. 그것만이면 오탭이 잦다.
+      expect(hit.width, greaterThanOrEqualTo(36));
+      expect(hit.height, greaterThanOrEqualTo(28));
     });
 
     testWidgets('접힌 카드에는 없다 — 눌러도 결과를 볼 수 없다', (tester) async {
@@ -795,6 +829,59 @@ void main() {
           reason: '30초 캐시가 답한다 — 별도 스로틀 코드가 없는 이유다');
     });
 
+    testWidgets('한 번 누르면 30초간 다시 누를 수 없다', (tester) async {
+      // 실기기 신고: "장난으로 누를 수도 있는데 연속해서 못 누르게".
+      final h = await _pumpRefreshHost(
+        tester,
+        start: inRange,
+        settings: onWithStop,
+      );
+
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+
+      final card = tester.widget<BusArrivalCard>(find.byType(BusArrivalCard));
+      expect(card.refreshEnabled, isFalse, reason: '누른 직후에는 쿨다운이다');
+
+      final icon = tester.widget<Icon>(find.descendant(
+        of: find.byKey(BusArrivalCard.refreshKey),
+        matching: find.byType(Icon),
+      ));
+      expect(icon.color, AppColors.faint, reason: '흐린 색이 이유를 말한다');
+
+      // 연속 탭이 요청을 늘리지 않는다.
+      final before = h.count();
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+      expect(h.count(), before);
+    });
+
+    testWidgets('쿨다운이 끝나면 다시 활성이다 — 타이머가 리빌드한다', (tester) async {
+      final h = await _pumpRefreshHost(
+        tester,
+        start: inRange,
+        settings: onWithStop,
+      );
+
+      await tester.tap(find.byKey(BusArrivalCard.refreshKey));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<BusArrivalCard>(find.byType(BusArrivalCard)).refreshEnabled,
+        isFalse,
+      );
+
+      // 시계를 밀고 쿨다운 타이머가 깨어날 시간을 준다.
+      h.advance(const Duration(seconds: 31));
+      await tester.pump(const Duration(seconds: 31));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<BusArrivalCard>(find.byType(BusArrivalCard)).refreshEnabled,
+        isTrue,
+        reason: '없으면 다음 폴링까지 흐린 채로 남는다',
+      );
+    });
+
     testWidgets('30초가 지난 뒤 누르면 다시 조회한다', (tester) async {
       final h = await _pumpRefreshHost(
         tester,
@@ -811,9 +898,8 @@ void main() {
     });
 
     testWidgets('새로고침을 눌러도 카드가 접히지 않는다', (tester) async {
-      // 제목줄 **전체**가 접기 표적이고 새로고침은 그 안에 있다. 안쪽
-      // `GestureDetector`가 히트 테스트를 먼저 먹어야 한다 — 아니면 새로고침을
-      // 누를 때마다 카드가 접혀 결과를 볼 수 없다.
+      // 하단 행으로 내린 뒤에는 구조적으로 접힐 수 없지만, 다시 제목줄로 옮기는
+      // 변경이 오면 이 가드가 먼저 걸린다.
       await _pumpRefreshHost(tester, start: inRange, settings: onWithStop);
       expect(find.byIcon(Icons.expand_less), findsOneWidget);
 
