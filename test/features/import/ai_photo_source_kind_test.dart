@@ -70,20 +70,58 @@ void main() {
       );
     });
 
-    test('연도 규칙은 두 프롬프트가 공유한다 — 학년도 기준', () {
-      // 10월이면 그 해가 학년도다. 한쪽만 고치면 쪽지의 날짜가 1년 틀어진다.
-      for (final kind in EntryKind.values) {
-        final p = buildAiPhotoPrompt(now, kind: kind);
-        expect(p, contains('3~12월은 2026년'));
-        expect(p, contains('1~2월은 2027년'));
-      }
-    });
-
-    test('1~2월에 찍으면 학년도가 전년이다', () {
-      final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.task);
+    test('행사는 학년도 규칙을 쓴다', () {
+      // 학사일정은 3월에 시작해 다음 2월에 끝나는 한 덩어리다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.event);
 
       expect(p, contains('3~12월은 2026년'));
       expect(p, contains('1~2월은 2027년'));
+      expect(p, contains('학년도 기준'));
+    });
+
+    test('1~2월에 찍으면 행사의 학년도는 전년이다', () {
+      final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.event);
+
+      expect(p, contains('3~12월은 2026년'));
+      expect(p, contains('1~2월은 2027년'));
+    });
+
+    test('업무는 학년도를 쓰지 않는다 — 오늘 기준 가장 가까운 미래다', () {
+      // 학년도를 쓰면 마감이 어긋난다(사용자 지적 2026-07-29):
+      //  · 2027-05에 찍은 `1월 20일` → 학년도로는 2028-01-20 (8개월 뒤)
+      //  · 2027-01에 찍은 `12월 3일` → 학년도로는 2026-12-03 (이미 지난 날)
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, isNot(contains('학년도')));
+      expect(p, contains('오늘은 2026-10-01입니다'));
+      expect(p, contains('오늘 이후 가장 가까운'));
+    });
+
+    test('업무 프롬프트의 오늘 날짜는 인자를 따라간다', () {
+      // 고정 문구가 아니라 주입값이다 — 안 따라가면 모든 상대 날짜가 틀어진다.
+      final p = buildAiPhotoPrompt(DateTime(2027, 1, 15), kind: EntryKind.task);
+
+      expect(p, contains('오늘은 2027-01-15입니다'));
+      expect(p, isNot(contains('2026')));
+    });
+
+    test('두 프롬프트의 연도 규칙이 서로 다르다', () {
+      final event = buildAiPhotoPrompt(now, kind: EntryKind.event);
+      final task = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(event.contains('학년도 기준'), isTrue);
+      expect(task.contains('학년도 기준'), isFalse);
+      expect(task.contains('오늘 이후 가장 가까운'), isTrue);
+      expect(event.contains('오늘 이후 가장 가까운'), isFalse);
+    });
+
+    test('업무는 자세한 내용을 description에 넣으라고 말한다', () {
+      // 도서관 사진에서 책 제목이 어디에도 안 남으면 `도서 2권 반납`만 보고
+      // 어느 책인지 알 수 없다(사용자 요청 2026-07-29).
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, contains('자세한 내용'));
+      expect(p, contains('책 제목'));
     });
 
     test('업무 프롬프트는 내 일이 아닌 것을 걸러내라고 말한다', () {
