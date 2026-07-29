@@ -6,6 +6,7 @@ import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
+import '../../features/settings/presentation/screens/bus_settings_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/today/presentation/screens/today_screen.dart';
 import '../../features/trash/presentation/screens/trash_screen.dart';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const trash = '/trash';
   static const import = '/import';
   static const busStops = '/bus/stops';
+  static const busSettings = '/bus/settings';
 }
 
 /// GoRouter 팩토리 — 부팅 시 onboarding 완료 여부에 따라 initial 라우트 결정.
@@ -90,6 +92,14 @@ GoRouter createRouter({
               path: AppRoutes.import,
               pageBuilder: (context, state) => const NoTransitionPage(
                 child: ImportScreen(),
+              ),
+            ),
+            // 설정 탭에서 push. `/bus/stops`와 같은 Shell에 둬야
+            // `설정 › 버스 도착 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.
+            GoRoute(
+              path: AppRoutes.busSettings,
+              pageBuilder: (context, state) => const NoTransitionPage(
+                child: BusSettingsScreen(),
               ),
             ),
             GoRoute(
