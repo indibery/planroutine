@@ -42,7 +42,6 @@ class BusStrings {
 
   static String minutes(int n) => '$n분';
   static const arrivingNow = '곧 도착';
-  static const lowFloor = '저상';
 
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
   static const axisNow = '지금';

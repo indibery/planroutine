@@ -7,7 +7,6 @@ class BusArrival {
     required this.routeId,
     required this.routeNo,
     required this.arrMin,
-    this.prevCnt = 0,
     this.lowFloor = false,
   });
 
@@ -23,9 +22,6 @@ class BusArrival {
   /// 도착까지 남은 분. 0이면 "곧 도착".
   final int arrMin;
 
-  /// 남은 정류장 수.
-  final int prevCnt;
-
   /// 저상버스인지 (`vehicletp == '저상버스'`).
   final bool lowFloor;
 
@@ -35,7 +31,6 @@ class BusArrival {
       routeId: routeId,
       routeNo: routeNo,
       arrMin: arrMin ?? this.arrMin,
-      prevCnt: prevCnt,
       lowFloor: lowFloor,
     );
   }

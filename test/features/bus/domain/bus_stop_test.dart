@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planroutine/features/bus/domain/bus_card_style.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
 
@@ -54,10 +53,8 @@ void main() {
     });
   });
 
-  group('BusCardStyle', () {
-    test('기본 모양은 신호색을 쓰지 않는다', () {
-      expect(BusCardStyle.text.usesSignalColors, isFalse);
-      expect(BusCardStyle.axis.usesSignalColors, isTrue);
-    });
-  });
+  // `BusCardStyle` 그룹은 없다 — `usesSignalColors`를 되읽는 항진 단정이었고
+  // (선언부 리터럴을 그대로 비교해 화면을 하나도 지키지 못했다) 필드와 함께 지웠다.
+  // 기본 모양이 신호색을 쓰지 않는다는 사실은 `bus_body_test.dart`의 소스 가드가
+  // 지킨다.
 }

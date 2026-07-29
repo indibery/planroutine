@@ -20,13 +20,16 @@ enum TagoOutcome {
 }
 
 /// 파싱 결과 — 결과 종류와 항목을 함께 든다.
+///
+/// **`isOk` 같은 요약 getter를 두지 않는다.** 짧게 쓸 수 있으면 `if (isOk)`로 쓰고
+/// 싶어지고 그 순간 `keyError`·`malformed`·`empty`가 하나의 else로 뭉개진다 —
+/// 이 셋은 사용자에게 다른 말을 해야 하는 서로 다른 사실이다(§3). 판정은 [outcome]을
+/// 열거하는 쪽에서만 한다.
 class TagoResult<T> {
   const TagoResult(this.outcome, [this.items = const []]);
 
   final TagoOutcome outcome;
   final List<T> items;
-
-  bool get isOk => outcome == TagoOutcome.ok;
 }
 
 /// 도시코드 1건.
@@ -143,7 +146,6 @@ BusArrival _arrival(Map<String, dynamic> row) {
     // 숫자 노선번호에서 크래시하므로 반드시 toString으로 받는다.
     routeNo: row['routeno']?.toString() ?? '',
     arrMin: seconds <= 0 ? 0 : (seconds / 60).ceil(),
-    prevCnt: _int(row['arrprevstationcnt']),
     lowFloor: row['vehicletp']?.toString() == '저상버스',
   );
 }

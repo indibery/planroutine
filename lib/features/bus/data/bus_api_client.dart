@@ -32,8 +32,13 @@ const busMaxDisplayAge = Duration(minutes: 3);
 
 /// 빌드 시 주입되는 인증키. 소스와 git 히스토리에 남지 않는다.
 ///
-/// `--dart-define=TAGO_KEY=...`로 넣는다(`main.dart`의 `SCREENSHOT_MODE`와 같은
-/// 패턴). 난독화가 아니라 **히스토리에 남지 않는 것**이 실질 이득이다 — 키는
+/// 넣는 경로는 **`--dart-define-from-file=<tmp>.json` 하나다**(`ios/fastlane/Fastfile`
+/// 참고 — 레인이 임시 JSON을 만들고 빌드 후 지운다).
+///
+/// **`--dart-define=TAGO_KEY=...`로 넣지 않는다**: fastlane의 `sh`가 기본으로 명령
+/// 문자열을 echo하므로 argv에 실으면 매 beta 로그에 키가 평문으로 남는다.
+///
+/// 난독화가 아니라 **히스토리와 로그에 남지 않는 것**이 실질 이득이다 — 키는
 /// 어차피 IPA 안에 문자열로 남는다.
 const _envKey = String.fromEnvironment('TAGO_KEY');
 

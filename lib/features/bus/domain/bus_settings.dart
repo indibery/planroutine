@@ -51,9 +51,6 @@ class BusSettings {
   BusStop? stopFor(CommuteDirection direction) =>
       direction == CommuteDirection.toWork ? departure : arrival;
 
-  TimeRange rangeFor(CommuteDirection direction) =>
-      direction == CommuteDirection.toWork ? toWorkRange : toHomeRange;
-
   BusSettings copyWith({
     bool? enabled,
     BusStop? departure,
