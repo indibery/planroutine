@@ -8,13 +8,12 @@ import '../../../../core/router/app_router.dart';
 import '../../data/bus_api_client.dart';
 import '../../domain/bus_card_view.dart';
 import '../../domain/bus_display.dart';
+import '../../domain/bus_poll_interval.dart';
 import '../../domain/bus_settings.dart';
+import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
 import '../providers/bus_providers.dart';
 import 'bus_arrival_card.dart';
-
-/// 폴링 주기. 서버 캐시가 없으니 이 값이 곧 호출 주기다.
-const busPollInterval = Duration(seconds: 30);
 
 /// 점을 움직이는 주기. **네트워크와 무관하다** — `buildBusCardView`가 `now`를 받는
 /// 순수 함수라, 리빌드만 시키면 경과 보정이 다시 돌아 점이 초만큼 왼쪽으로 간다.
@@ -265,18 +264,54 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         lifecycle == AppLifecycleState.detached) {
       return;
     }
-    _timer ??= Timer.periodic(busPollInterval, (_) => _tick());
-
-    // 이동 틱 — 조회하지 않고 리빌드만 한다. 조건은 폴링과 같은 자리에서 걸리므로
-    // 접힘·미설정·시간대 밖에서는 위의 `!shouldPoll` 분기가 함께 끊는다.
+    // **다음 간격을 매번 다시 계산한다.** `Timer.periodic`이 아닌 이유는 간격이
+    // 고정이 아니기 때문이다 — 지금 뜬 버스가 지나가는 시점을 겨냥하므로 매 조회
+    // 결과에 따라 달라진다(`busPollIntervalFor`).
     //
-    // 시간대가 만료돼 접히는 순간은 폴링(최대 30초)이 정리할 때까지 이 타이머가
-    // 잠깐 더 돈다. 리빌드뿐이라 비용이 없고, 오히려 그 리빌드가 `_display`를 새
-    // `now`로 돌려 **접힘 판정을 1초 안에** 반영한다(예전에는 최대 30초 늦었다).
+    // 늘 취소 후 재설정한다. `??=`는 periodic 시절 중복 생성을 막던 관용구인데,
+    // 일회성 `Timer`에 그대로 쓰면 **이미 만료된 핸들이 non-null로 남아 다음
+    // 예약이 통째로 건너뛰어진다** — 폴링이 한 번 돌고 영영 멈춘다.
+    final next = busPollIntervalFor(_viewOf(fetch, stop));
+    _timer?.cancel();
+    _timer = next == null ? null : Timer(next, _tick);
+
+    // 이동 틱 — 조회하지 않고 리빌드만 한다.
+    //
+    // 폴링이 멈춰도(막차 뒤) 이 틱은 남긴다. 리빌드뿐이라 비용이 없고, 그 리빌드가
+    // `_display`를 새 `now`로 돌려 **시간대 만료를 1초 안에** 반영한다. 그때
+    // `!shouldPoll`이 참이 되는데 `_tick`이 다시 돌지 않으므로, 정리는 이 틱이 직접
+    // 한다 — 안 그러면 접힌 뒤에도 1초 타이머가 무기한 남는다.
     _moveTimer ??= Timer.periodic(busMoveInterval, (_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      if (!_shouldPoll()) {
+        _moveTimer?.cancel();
+        _moveTimer = null;
+        _timer?.cancel();
+        _timer = null;
+      }
+      setState(() {});
     });
   }
+
+  /// 조회·이동 틱이 함께 쓰는 조건. 셋 중 하나라도 어긋나면 둘 다 멈춘다.
+  bool _shouldPoll() {
+    final settings = ref.read(busSettingsProvider).valueOrNull;
+    if (settings == null) return false;
+    final display = _display(settings);
+    return settings.enabled &&
+        settings.stopFor(display.direction) != null &&
+        display.expanded;
+  }
+
+  /// 화면이 그리는 것과 **같은** view. `build`와 `_tick`이 각자 조립하면 간격이
+  /// 사용자가 보는 목록과 어긋난다(상한 `1차+30초`가 성립하는 전제가 깨진다).
+  BusCardView _viewOf(BusFetch fetch, BusStop stop) => buildBusCardView(
+        state: fetch.state,
+        arrivals: fetch.arrivals,
+        fetchedAt: fetch.fetchedAt,
+        now: _now(),
+        routeIds: stop.routeIds,
+      );
 
   /// 시간대 판정 + 화면 수명 방향 토글.
   BusDisplay _display(BusSettings settings) {
@@ -383,13 +418,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
       );
     }
 
-    final view = buildBusCardView(
-      state: fetch.state,
-      arrivals: fetch.arrivals,
-      fetchedAt: fetch.fetchedAt,
-      now: _now(),
-      routeIds: stop.routeIds,
-    );
+    final view = _viewOf(fetch, stop);
 
     return BusArrivalCard(
       view: view,

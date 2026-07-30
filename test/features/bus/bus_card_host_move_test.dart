@@ -88,6 +88,49 @@ void main() {
     expect(calls, 1, reason: '이동 틱은 네트워크를 부르지 않는다');
   });
 
+  testWidgets('조회 간격이 규칙대로 걸린다 — 이르면 안 나가고 때가 되면 나간다', (tester) async {
+    // 픽스처 최속 노선이 160초라 규칙은 min(300, 160+30) = 190초를 준다.
+    // **양쪽을 다 본다** — 늦게만 검사하면 30초 고정으로 되돌려도 통과한다
+    // (190초를 밀면 어차피 발화하므로).
+    final settings = BusSettings.defaults.copyWith(
+      enabled: true,
+      departure: _stop,
+      style: BusCardStyle.axis,
+    );
+    SharedPreferences.setMockInitialValues({
+      'bus_settings_v1': jsonEncode(settings.toJson()),
+    });
+
+    var now = DateTime(2026, 7, 28, 7, 32);
+    var calls = 0;
+    final client = BusApiClient(
+      client: MockClient((_) async {
+        calls++;
+        return _json(_body());
+      }),
+      serviceKey: 'TESTKEY',
+      clock: () => now,
+    );
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [busApiClientProvider.overrideWithValue(client)],
+      child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
+    ));
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+
+    // 189초 — 아직 때가 아니다. 30초 고정이었다면 여기서 6번 더 나갔다.
+    now = now.add(const Duration(seconds: 189));
+    await tester.pump(const Duration(seconds: 189));
+    expect(calls, 1, reason: '간격 전에는 조회가 나가지 않는다');
+
+    // 190초 — 규칙이 정한 시각.
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(calls, 2, reason: '간격이 지나면 정확히 한 번 나간다');
+  });
+
   testWidgets('백그라운드로 내려가면 이동 틱도 멈춘다', (tester) async {
     final settings = BusSettings.defaults.copyWith(
       enabled: true,

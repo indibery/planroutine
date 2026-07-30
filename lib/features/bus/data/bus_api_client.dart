@@ -61,7 +61,12 @@ const busCacheTtl = Duration(seconds: 30);
 /// `busCacheTtl`과 다른 값이어야 한다 — 표시 드롭을 TTL과 같게 두면 `fetchedAt`이
 /// 요청 **시작** 시각이고 폴링은 응답 **뒤** 30초라 `d+30 > 30`이 구조적으로 항상
 /// 참이 되어 정상 폴링마다 목록이 사라진다.
-const busMaxDisplayAge = Duration(minutes: 3);
+///
+/// **`busPollMax`(300초)보다도 길어야 한다.** 폴링이 균등 30초에서 적응형으로 바뀌며
+/// 최장 간격이 5분이 됐다 — 3분을 그대로 뒀다면 먼 버스 구간에서 목록이 사라졌다
+/// 돌아오며 깜빡였을 것이다. 같은 종류의 함정을 한 번 더 밟은 셈이라 두 상수의
+/// 부등식을 `bus_poll_interval_test`가 가드로 잡는다.
+const busMaxDisplayAge = Duration(minutes: 6);
 
 /// 빌드 시 주입되는 인증키. 소스와 git 히스토리에 남지 않는다.
 ///

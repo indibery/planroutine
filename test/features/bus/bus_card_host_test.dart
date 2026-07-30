@@ -10,6 +10,7 @@ import 'package:http/testing.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
+import 'package:planroutine/features/bus/domain/bus_poll_interval.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/time_range.dart';
@@ -17,6 +18,14 @@ import 'package:planroutine/features/bus/presentation/providers/bus_providers.da
 import 'package:planroutine/features/bus/presentation/widgets/bus_arrival_card.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_card_host.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// 픽스처(`arrivals_suwoncityhall_6routes`)의 최속 노선이 160초라
+/// `busPollIntervalFor`가 돌려주는 간격 = min(300초, 160+30) = 190초.
+///
+/// **고정 상수가 아니라 픽스처에서 파생된 값이다** — 폴링이 균등 30초에서
+/// 적응형으로 바뀌면서, 시간을 얼마나 밀어야 다음 조회가 나가는지도 목록에
+/// 따라 달라진다.
+const _pollAfterFixture = Duration(seconds: 190);
 
 const _stop = BusStop(
   nodeId: 'GGB201000156',
@@ -436,7 +445,7 @@ void main() {
       await tester.pump();
 
       now = now.add(const Duration(seconds: 31));
-      await tester.pump(busPollInterval); // 취소되지 않았다면 여기서 발화한다
+      await tester.pump(_pollAfterFixture); // 취소되지 않았다면 여기서 발화한다
       await tester.pumpAndSettle();
 
       expect(count, 1,
@@ -476,7 +485,7 @@ void main() {
       await tester.pumpAndSettle();
 
       now = now.add(const Duration(seconds: 31));
-      await tester.pump(busPollInterval);
+      await tester.pump(_pollAfterFixture);
       await tester.pumpAndSettle();
 
       expect(count, 1,
@@ -585,8 +594,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(count, 2, reason: '재시도 1회는 나간다');
 
+      // **여기는 `busPollMax`다.** 이 시나리오는 조회가 계속 실패해 목록이 비어
+      // 있고, 그때 간격은 픽스처가 아니라 "회복을 기다리는 가장 성긴 주기"가 된다.
       now = now.add(const Duration(seconds: 31));
-      await tester.pump(busPollInterval);
+      await tester.pump(busPollMax);
       await tester.pumpAndSettle();
       expect(count, 3, reason: '재시도가 끝난 뒤에도 폴링 타이머는 살아 있다');
 
@@ -653,7 +664,7 @@ void main() {
     });
   });
 
-  group('폴링 — busPollInterval', () {
+  group('폴링 — _pollAfterFixture', () {
     testWidgets('30초마다 다시 조회한다', (tester) async {
       // 첫 조회 1건 → 시계를 31초 밀고 타이머를 발화시키면 캐시가 만료돼 2건이 된다.
       // 시계를 밀지 않으면 tick이 캐시 히트로 끝나 이 테스트는 아무것도 증명하지 못한다.
@@ -679,7 +690,7 @@ void main() {
       expect(count, 1);
 
       now = now.add(const Duration(seconds: 31));
-      await tester.pump(busPollInterval);
+      await tester.pump(_pollAfterFixture);
       await tester.pumpAndSettle();
 
       expect(count, 2, reason: '폴링 타이머가 실제로 걸려 있다');
@@ -715,7 +726,7 @@ void main() {
       expect(find.text('92-1번'), findsOneWidget);
 
       now = now.add(const Duration(seconds: 31));
-      await tester.pump(busPollInterval); // 타이머 발화 → 두 번째 요청이 비행 중
+      await tester.pump(_pollAfterFixture); // 타이머 발화 → 두 번째 요청이 비행 중
       await tester.pump(); // 드롭이 있었다면 이 프레임에서 보인다
 
       expect(count, 2);
@@ -755,7 +766,7 @@ void main() {
       expect(count, 1);
 
       now = DateTime(2026, 7, 28, 8, 31); // 시간대 종료
-      await tester.pump(busPollInterval);
+      await tester.pump(_pollAfterFixture);
       await tester.pumpAndSettle();
 
       expect(find.text('92-1번'), findsNothing,
