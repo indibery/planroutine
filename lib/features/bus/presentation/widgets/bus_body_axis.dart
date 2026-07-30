@@ -36,6 +36,10 @@ class BusBodyAxis extends StatelessWidget {
   static Key dotKey(String routeId) => ValueKey('bus_axis_dot_$routeId');
   static Key labelKey(String routeId) => ValueKey('bus_axis_label_$routeId');
 
+  /// 그 다음 차의 속 빈 점. 노선이 하나뿐일 때만 그리므로 routeId가 필요 없다.
+  static const nextDotKey = ValueKey('bus_axis_next_dot');
+  static const nextLabelKey = ValueKey('bus_axis_next_label');
+
   /// 노선번호 라벨 박스의 폭.
   ///
   /// **`left`의 `- labelWidth / 2`와 짝이다** — 하나만 고치면 라벨이 점에서 어긋난다
@@ -106,7 +110,7 @@ class BusBodyAxis extends StatelessWidget {
         //
         // `hiddenCount`와 동시에 뜨지 않는다 — 감춘 개수가 있으려면 보이는 것이
         // 상한(3)만큼 있어야 하는데, 이 줄은 한 대일 때만 붙는다.
-        if (nextBusMinutes(view) case final next?) ...[
+        if (nextBusOffAxis(view) case final next?) ...[
           const SizedBox(height: 2),
           Align(
             alignment: Alignment.centerRight,
@@ -163,6 +167,7 @@ class BusBodyAxis extends StatelessWidget {
             ),
             ..._minorTicks(width),
             ...view.visible.map((a) => _dot(a, width)),
+            if (nextBusOnAxis(view) case final sec?) _nextDot(sec, width),
           ],
         );
       },
@@ -220,12 +225,61 @@ class BusBodyAxis extends StatelessWidget {
     );
   }
 
+  /// 그 다음 차 — **속 빈 점**. 채운 점(지금 오는 차)과 형태로 갈린다.
+  ///
+  /// 색으로 가르지 않는 이유: 채운 점은 남은 시간에 따라 빨강·노랑·초록이 되는데
+  /// 다음 차까지 그 규칙을 쓰면 "2분 남은 다음 차"가 빨간 점이 돼 지금 오는 차보다
+  /// 급해 보인다. 형태(속 빔)가 위계를 말하고 색은 중립으로 둔다.
+  Widget _nextDot(int arrSec2, double width) {
+    const size = 10.0;
+    return AnimatedPositioned(
+      key: nextDotKey,
+      duration: tick,
+      curve: Curves.linear,
+      left: (dotPosition(arrSec2) * width) - (size / 2),
+      top: 2,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.sub, width: 2),
+        ),
+      ),
+    );
+  }
+
   Widget _labels() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         return Stack(
-          children: view.visible.map((a) {
+          children: [
+            if (nextBusOnAxis(view) case final sec?)
+              AnimatedPositioned(
+                key: nextLabelKey,
+                duration: tick,
+                curve: Curves.linear,
+                left: (dotPosition(sec) * width) - labelWidth / 2,
+                top: 0,
+                width: labelWidth,
+                child: Semantics(
+                  label: BusStrings.nextBus((sec / 60).round()),
+                  excludeSemantics: true,
+                  child: Text(
+                    BusStrings.nextBusShort,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.sub,
+                    ),
+                  ),
+                ),
+              ),
+            ...view.visible.map((a) {
             final urgent = isUrgent(a.arrMin);
             return AnimatedPositioned(
               // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
@@ -268,7 +322,8 @@ class BusBodyAxis extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+            }),
+          ],
         );
       },
     );

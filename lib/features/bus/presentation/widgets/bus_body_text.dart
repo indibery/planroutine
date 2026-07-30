@@ -40,7 +40,7 @@ class BusBodyText extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 12,
-                color: AppColors.faint,
+                color: AppColors.sub,
               ),
             ),
           ),
