@@ -83,12 +83,20 @@ void main() {
       expect(find.text(BusStrings.nextBus(14)), findsOneWidget);
     });
 
-    testWidgets('시간 축 — 15분 이내면 속 빈 점과 다음 라벨이 뜬다', (tester) async {
+    testWidgets('시간 축 — 15분 이내면 속 빈 점이 뜨고 라벨은 노선번호다', (tester) async {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
 
       expect(find.byKey(BusBodyAxis.nextDotKey), findsOneWidget);
       expect(find.byKey(BusBodyAxis.nextLabelKey), findsOneWidget);
-      expect(find.text(BusStrings.nextBusShort), findsOneWidget);
+      // 두 점 모두 같은 노선이다 — 축의 라벨 규칙(노선번호)을 그 자리만 깨면
+      // 다른 노선처럼 보인다. 먼저·나중은 점의 형태가 말한다.
+      expect(
+        find.descendant(
+          of: find.byKey(BusBodyAxis.nextLabelKey),
+          matching: find.text('A'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text(BusStrings.nextBus(14)), findsNothing,
           reason: '점이 위치로 말하므로 글자 줄은 뜨지 않는다');
     });

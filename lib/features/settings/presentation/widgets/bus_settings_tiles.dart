@@ -122,26 +122,46 @@ class BusSettingsTiles extends ConsumerWidget {
     required String? value,
     required CommuteDirection direction,
   }) {
-    return ListTile(
-      key: key,
-      title: Text(title, style: _titleStyle),
-      subtitle: Text(hint, style: _subStyle),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value ?? BusStrings.slotEmpty,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: value == null ? AppColors.faint : AppColors.sub,
-            ),
+    // **`trailing`의 폭을 묶어야 한다.** `ListTile`은 trailing에 제약을 주지 않아
+    // 긴 정류장 이름이 가로를 다 먹고 `title`·`subtitle`을 두 글자 폭으로 짓눌렀다 —
+    // `도착지`가 세로로 여섯 줄이 됐다(실기기 신고 2026-07-30, 실측
+    // `석수체육공원.자동차학원.원태우지사의거지`).
+    //
+    // 카드 제목줄은 같은 함정을 `Expanded` + `ellipsis`로 이미 막고 있었다
+    // (`bus_arrival_card.dart`) — 이 행만 빠져 있었다.
+    //
+    // 45%인 이유: 남는 55%가 `학교 근처에서 타는 정류장`(부제 중 가장 긴 것)을
+    // 320pt에서 한 줄에 담는다. 가드 테스트가 320·390·430pt를 훑는다.
+    return LayoutBuilder(
+      builder: (context, constraints) => ListTile(
+        key: key,
+        title: Text(title, style: _titleStyle),
+        subtitle: Text(hint, style: _subStyle),
+        trailing: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  value ?? BusStrings.slotEmpty,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 14,
+                    color: value == null ? AppColors.faint : AppColors.sub,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing4),
+              Icon(Icons.chevron_right, size: 20, color: AppColors.faint),
+            ],
           ),
-          const SizedBox(width: AppSizes.spacing4),
-          Icon(Icons.chevron_right, size: 20, color: AppColors.faint),
-        ],
+        ),
+        onTap: () =>
+            context.push('${AppRoutes.busStops}?slot=${direction.name}'),
       ),
-      onTap: () => context.push('${AppRoutes.busStops}?slot=${direction.name}'),
     );
   }
 

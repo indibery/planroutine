@@ -263,18 +263,28 @@ class BusBodyAxis extends StatelessWidget {
                 left: (dotPosition(sec) * width) - labelWidth / 2,
                 top: 0,
                 width: labelWidth,
+                // **라벨은 노선번호다.** 두 점 모두 같은 노선이므로 `다음`이라고
+                // 쓰면 축에서 그 자리만 다른 규칙이 된다 — 축의 라벨은 노선번호로
+                // 읽히는데 거기만 낱말이 끼어들어 다른 노선처럼 보였다
+                // (실기기 신고 2026-07-30).
+                //
+                // 어느 쪽이 먼저인지는 **점의 형태**가 말한다(채움 = 먼저).
+                // 스크린리더에는 위치가 안 보이므로 `다음 14분`으로 풀어 준다.
                 child: Semantics(
                   label: BusStrings.nextBus((sec / 60).round()),
                   excludeSemantics: true,
-                  child: Text(
-                    BusStrings.nextBusShort,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.sub,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      view.visible.single.routeNo,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.faint,
+                      ),
                     ),
                   ),
                 ),

@@ -103,9 +103,6 @@ class BusStrings {
   /// 값처럼 읽혀 2차 예측의 오차가 그대로 드러난다. 절대 시각은 "대략"으로 읽힌다.
   static String nextBus(int minutes) => '다음 $minutes분';
 
-  /// 시간 축의 두 번째 점 아래 라벨. 축이 위치로 분을 말해 주므로 숫자를 뺀다 —
-  /// 노선번호 라벨(`labelWidth` 34pt)과 같은 폭에 `다음 14분`은 안 들어간다.
-  static const nextBusShort = '다음';
 
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
   static const axisNow = '지금';
