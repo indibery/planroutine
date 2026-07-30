@@ -69,22 +69,22 @@ void main() {
         BusArrival(routeId: 'R2', routeNo: '541', arrSec: 620),
       ]));
 
-      expect(find.byKey(BusBodyAxis.dotKey('R1')), findsOneWidget);
-      expect(find.byKey(BusBodyAxis.dotKey('R2')), findsOneWidget);
-      expect(find.byKey(BusBodyAxis.labelKey('R1')), findsOneWidget);
-      expect(find.byKey(BusBodyAxis.labelKey('R2')), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.dotKeyFor('R1')), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.dotKeyFor('R2')), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.labelKeyFor('R1')), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.labelKeyFor('R2')), findsOneWidget);
     });
 
     testWidgets('초가 줄면 점이 실제로 왼쪽으로 이동한다', (tester) async {
       await _pump(tester, _viewOf([
         BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 600),
       ]));
-      final before = tester.getRect(find.byKey(BusBodyAxis.dotKey('R1'))).center.dx;
+      final before = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R1'))).center.dx;
 
       await _pump(tester, _viewOf([
         BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 540),
       ]));
-      final after = tester.getRect(find.byKey(BusBodyAxis.dotKey('R1'))).center.dx;
+      final after = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R1'))).center.dx;
 
       expect(after, lessThan(before));
     });

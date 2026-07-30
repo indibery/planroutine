@@ -88,7 +88,7 @@ void main() {
       // 점을 집었는데, 1분 보조 눈금이 들어오면서 그 인덱스가 밀렸다(레일·눈금·점이
       // 모두 Container다). 이름 있는 키는 그런 이동에 영향받지 않는다.
       final label = tester.getRect(find.text('5623'));
-      final dot = tester.getRect(find.byKey(BusBodyAxis.dotKey('R0')));
+      final dot = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R0')));
 
       expect((label.center.dx - dot.center.dx).abs(), lessThan(1.0),
           reason: '라벨 중앙과 점 중앙이 어긋나면 어느 버스의 번호인지 알 수 없다');

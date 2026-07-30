@@ -10,6 +10,8 @@ class BusArrival {
     required this.routeNo,
     required this.arrSec,
     this.arrSec2,
+    this.vehicleId,
+    this.vehicleId2,
     this.lowFloor = false,
   });
 
@@ -66,16 +68,31 @@ class BusArrival {
   /// 감당된다. 레이블이 부정확함을 감당 가능하게 만든다.
   final int? arrSec2;
 
+  /// 실제 **차량** 식별자(GBIS `vehId1`). 없을 수 있다 — TAGO 응답에는 없다.
+  ///
+  /// **화면의 점이 무엇인지를 정하는 값이다.** 축의 점은 "노선"이 아니라 "지금
+  /// 오고 있는 이 버스"다. 노선으로 묶으면 앞차가 지나가는 순간 같은 위젯의 위치만
+  /// 0분에서 8분으로 바뀌어 **점이 시간을 거슬러 오른쪽으로 미끄러진다**
+  /// (실기기 신고 2026-07-30). 차량으로 묶으면 지나간 차는 사라지고, 뒤차는
+  /// 제자리에서 앞차가 되며, 새 차가 오른쪽에 생긴다.
+  final String? vehicleId;
+
+  /// 그 다음 차량(GBIS `vehId2`). [arrSec2]와 짝이다.
+  final String? vehicleId2;
+
   /// 저상버스인지 (`vehicletp == '저상버스'`).
   final bool lowFloor;
 
-  /// 경과 보정에서 [arrSec]·[arrSec2]를 갈아끼운다.
+  /// 경과 보정에서 [arrSec]·[arrSec2]를 갈아끼운다. 차량 식별자는 보존한다 —
+  /// 보정은 같은 버스의 남은 시간만 줄이는 일이다.
   BusArrival copyWith({int? arrSec, int? arrSec2}) {
     return BusArrival(
       routeId: routeId,
       routeNo: routeNo,
       arrSec: arrSec ?? this.arrSec,
       arrSec2: arrSec2 ?? this.arrSec2,
+      vehicleId: vehicleId,
+      vehicleId2: vehicleId2,
       lowFloor: lowFloor,
     );
   }

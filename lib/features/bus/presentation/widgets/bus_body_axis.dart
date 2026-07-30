@@ -33,12 +33,22 @@ class BusBodyAxis extends StatelessWidget {
   ///
   /// 위치 기반 finder(`find.byType(Container).at(1)`)를 대신한다. 보조 눈금이
   /// 들어오면서 그 인덱스가 밀렸다 — 레일·눈금·점이 모두 `Container`다.
-  static Key dotKey(String routeId) => ValueKey('bus_axis_dot_$routeId');
-  static Key labelKey(String routeId) => ValueKey('bus_axis_label_$routeId');
+  /// **차량 기준 키.** 점의 정체성은 노선이 아니라 "지금 오고 있는 이 버스"다.
+  ///
+  /// 노선으로 묶으면 앞차가 지나가는 순간 같은 위젯의 위치만 0분 → 8분으로 바뀌어
+  /// **점이 시간을 거슬러 오른쪽으로 미끄러진다**(실기기 신고 2026-07-30).
+  /// 차량으로 묶으면 지나간 차는 키가 사라져 제거되고, 뒤차는 **같은 키를 유지한 채**
+  /// 속 빈 점에서 채운 점으로 바뀌며 제자리에 남는다.
+  ///
+  /// **점과 다음 점이 같은 이름공간을 쓴다** — 달랐다면 뒤차가 1차가 될 때 위젯이
+  /// 교체돼 그 자리에서 채워지는 대신 사라졌다 다시 생긴다.
+  static Key dotKeyFor(String id) => ValueKey('bus_axis_dot_$id');
+  static Key labelKeyFor(String id) => ValueKey('bus_axis_label_$id');
 
-  /// 그 다음 차의 속 빈 점. 노선이 하나뿐일 때만 그리므로 routeId가 필요 없다.
-  static const nextDotKey = ValueKey('bus_axis_next_dot');
-  static const nextLabelKey = ValueKey('bus_axis_next_label');
+  /// 차량 식별자가 없으면(TAGO) 노선으로 떨어진다. 그 경로에서는 뒤로 미끄러지는
+  /// 증상이 남는다 — 수도권은 GBIS라 주 경로는 고쳐진다.
+  static String _idOf(BusArrival a) => a.vehicleId ?? a.routeId;
+  static String _nextIdOf(BusArrival a) => a.vehicleId2 ?? '${a.routeId}_next';
 
   /// 노선번호 라벨 박스의 폭.
   ///
@@ -167,7 +177,8 @@ class BusBodyAxis extends StatelessWidget {
             ),
             ..._minorTicks(width),
             ...view.visible.map((a) => _dot(a, width)),
-            if (nextBusOnAxis(view) case final sec?) _nextDot(sec, width),
+            if (nextBusOnAxis(view) case final sec?)
+              _nextDot(sec, width, _nextIdOf(view.visible.single)),
           ],
         );
       },
@@ -203,7 +214,7 @@ class BusBodyAxis extends StatelessWidget {
     // Stack 자식을 순서로 매칭해, 정렬이 바뀌는 순간 A 노선의 점이 B의 자리로
     // 미끄러진다(색까지 함께 건너간다).
     return AnimatedPositioned(
-      key: dotKey(arrival.routeId),
+      key: dotKeyFor(_idOf(arrival)),
       duration: tick,
       // 등속이어야 흐름으로 읽힌다 — ease를 쓰면 1초마다 가속·감속해 떨린다.
       curve: Curves.linear,
@@ -230,10 +241,10 @@ class BusBodyAxis extends StatelessWidget {
   /// 색으로 가르지 않는 이유: 채운 점은 남은 시간에 따라 빨강·노랑·초록이 되는데
   /// 다음 차까지 그 규칙을 쓰면 "2분 남은 다음 차"가 빨간 점이 돼 지금 오는 차보다
   /// 급해 보인다. 형태(속 빔)가 위계를 말하고 색은 중립으로 둔다.
-  Widget _nextDot(int arrSec2, double width) {
+  Widget _nextDot(int arrSec2, double width, String id) {
     const size = 10.0;
     return AnimatedPositioned(
-      key: nextDotKey,
+      key: dotKeyFor(id),
       duration: tick,
       curve: Curves.linear,
       left: (dotPosition(arrSec2) * width) - (size / 2),
@@ -257,7 +268,7 @@ class BusBodyAxis extends StatelessWidget {
           children: [
             if (nextBusOnAxis(view) case final sec?)
               AnimatedPositioned(
-                key: nextLabelKey,
+                key: labelKeyFor(_nextIdOf(view.visible.single)),
                 duration: tick,
                 curve: Curves.linear,
                 left: (dotPosition(sec) * width) - labelWidth / 2,
@@ -293,7 +304,7 @@ class BusBodyAxis extends StatelessWidget {
             final urgent = isUrgent(a.arrMin);
             return AnimatedPositioned(
               // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
-              key: labelKey(a.routeId),
+              key: labelKeyFor(_idOf(a)),
               duration: tick,
               curve: Curves.linear,
               left: (dotPosition(a.arrSec) * width) - labelWidth / 2,

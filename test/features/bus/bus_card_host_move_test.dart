@@ -33,8 +33,12 @@ http.Response _json(String body) => http.Response(
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
 
-/// 가장 빠른 노선. 픽스처의 `92-1`(160초)이고 `GGB` 접두가 붙는다.
-const _fastestRouteId = 'GGB200000029';
+/// 가장 빠른 버스의 **차량** ID. 픽스처의 `92-1`(160초, `vehId1=200010883`).
+///
+/// **노선 ID가 아니다** — 축의 점은 노선이 아니라 "지금 오고 있는 이 버스"로
+/// 묶인다. 노선으로 묶던 시절에는 앞차가 지나갈 때 점이 시간을 거슬러 오른쪽으로
+/// 미끄러졌다([BusBodyAxis.dotKeyFor] 참고).
+const _fastestVehicleId = '200010883';
 
 void main() {
   // **이 파일이 덮는 것은 배선이다.** `dotPosition`이 초를 쓰는 것과 축 위젯이
@@ -71,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, 1, reason: '첫 조회는 나가야 한다');
-    final dot = find.byKey(BusBodyAxis.dotKey(_fastestRouteId));
+    final dot = find.byKey(BusBodyAxis.dotKeyFor(_fastestVehicleId));
     expect(dot, findsOneWidget, reason: '시간 축 모양이어야 점이 그려진다');
     final before = tester.getRect(dot).center.dx;
 
@@ -157,7 +161,7 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump();
 
-    final dot = find.byKey(BusBodyAxis.dotKey(_fastestRouteId));
+    final dot = find.byKey(BusBodyAxis.dotKeyFor(_fastestVehicleId));
     final before = tester.getRect(dot).center.dx;
 
     now = now.add(const Duration(seconds: 5));

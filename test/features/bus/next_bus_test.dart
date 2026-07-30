@@ -86,13 +86,13 @@ void main() {
     testWidgets('시간 축 — 15분 이내면 속 빈 점이 뜨고 라벨은 노선번호다', (tester) async {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
 
-      expect(find.byKey(BusBodyAxis.nextDotKey), findsOneWidget);
-      expect(find.byKey(BusBodyAxis.nextLabelKey), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.dotKeyFor('A_next')), findsOneWidget);
+      expect(find.byKey(BusBodyAxis.labelKeyFor('A_next')), findsOneWidget);
       // 두 점 모두 같은 노선이다 — 축의 라벨 규칙(노선번호)을 그 자리만 깨면
       // 다른 노선처럼 보인다. 먼저·나중은 점의 형태가 말한다.
       expect(
         find.descendant(
-          of: find.byKey(BusBodyAxis.nextLabelKey),
+          of: find.byKey(BusBodyAxis.labelKeyFor('A_next')),
           matching: find.text('A'),
         ),
         findsOneWidget,
@@ -105,15 +105,15 @@ void main() {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
 
       final first =
-          tester.getRect(find.byKey(BusBodyAxis.dotKey('A'))).center.dx;
-      final next = tester.getRect(find.byKey(BusBodyAxis.nextDotKey)).center.dx;
+          tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('A'))).center.dx;
+      final next = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('A_next'))).center.dx;
       expect(next, greaterThan(first));
     });
 
     testWidgets('시간 축 — 15분을 넘으면 점 대신 글자로 말한다', (tester) async {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 1500)])));
 
-      expect(find.byKey(BusBodyAxis.nextDotKey), findsNothing);
+      expect(find.byKey(BusBodyAxis.dotKeyFor('A_next')), findsNothing);
       expect(find.text(BusStrings.nextBus(25)), findsOneWidget);
     });
 

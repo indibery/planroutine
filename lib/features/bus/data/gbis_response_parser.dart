@@ -215,6 +215,10 @@ BusArrival? _arrival(Map<String, dynamic> row) {
     arrSec: arrSec,
     // 같은 행의 `*2` 짝. **표시 전용**이다([BusArrival.arrSec2] 참고).
     arrSec2: _arrSec(row['predictTimeSec2'], row['predictTime2']),
+    // 차량 식별자 — 축의 점이 무엇인지를 정한다([BusArrival.vehicleId] 참고).
+    // 빈 문자열로 오는 행이 있다(도착 정보가 없는 노선).
+    vehicleId: _idOrNull(row['vehId1']),
+    vehicleId2: _idOrNull(row['vehId2']),
     lowFloor: _intOrNull(row['lowPlate1']) == 1,
   );
 }
@@ -236,6 +240,13 @@ int? _arrSec(Object? sec, Object? min) {
   final minutes = _intOrNull(min);
   if (minutes == null) return null;
   return minutes < 0 ? 0 : minutes * 60;
+}
+
+/// 차량 식별자. **빈 문자열은 null로 접는다** — 그대로 두면 서로 다른 노선의
+/// "식별자 없음"이 모두 `''`로 같아져 축에서 한 점으로 뭉친다.
+String? _idOrNull(Object? raw) {
+  final s = raw?.toString().trim();
+  return (s == null || s.isEmpty) ? null : s;
 }
 
 /// GBIS는 같은 필드를 `int` · `''`(빈 문자열) · 키 없음(null)으로 **섞어** 준다.
