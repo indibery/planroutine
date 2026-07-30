@@ -5,6 +5,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
+import '../../domain/next_bus.dart';
 import 'bus_more_count.dart';
 
 /// `간단히` 본문 — 한 줄에 노선을 나열한다. **기본 모양.**
@@ -29,6 +30,20 @@ class BusBodyText extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.end,
       children: [
         ...view.visible.map(_entry),
+        // **한 대만 보일 때만** 그 다음 차를 덧붙인다(`BusBodyAxis`도 같은 조건).
+        // 놓쳐도 얼마나 기다리는지가 이때 가장 궁금하다 — 대안이 화면에 없으니까.
+        if (nextBusMinutes(view) case final next?)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              BusStrings.nextBus(next),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 12,
+                color: AppColors.faint,
+              ),
+            ),
+          ),
         // 감춘 개수는 `시간 축`과 **같은 위젯**으로 그린다 — 인라인으로 두면
         // 한쪽에만 있는 상태가 다시 만들어진다(`BusMoreCount`의 주석 참고).
         if (view.hiddenCount > 0) BusMoreCount(hiddenCount: view.hiddenCount),

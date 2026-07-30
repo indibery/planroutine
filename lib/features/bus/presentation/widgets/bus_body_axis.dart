@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/bus_card_view.dart';
+import '../../domain/next_bus.dart';
 import 'bus_more_count.dart';
 
 /// `시간 축` 본문 — 0~15분 축에 버스를 점으로 놓는다.
@@ -94,6 +95,29 @@ class BusBodyAxis extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: BusMoreCount(hiddenCount: view.hiddenCount),
+          ),
+        ],
+        // **`간단히`와 같은 함수로 판정한다.** 한쪽에만 두면 모양을 바꾼 사용자만
+        // 조용히 정보를 덜 받는다.
+        //
+        // 축 위에 속 빈 점으로 그리는 안이 더 축답지만, 15분을 넘긴 2차가 오른쪽
+        // 끝에 clamp돼 `N개 더`와 자리를 다투고 레이블 없이는 "다음 차"로 읽히지도
+        // 않는다. 글자 한 줄이 정보 동등성을 확실히 지킨다.
+        //
+        // `hiddenCount`와 동시에 뜨지 않는다 — 감춘 개수가 있으려면 보이는 것이
+        // 상한(3)만큼 있어야 하는데, 이 줄은 한 대일 때만 붙는다.
+        if (nextBusMinutes(view) case final next?) ...[
+          const SizedBox(height: 2),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              BusStrings.nextBus(next),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 12,
+                color: AppColors.faint,
+              ),
+            ),
           ),
         ],
       ],

@@ -12,17 +12,20 @@ const busPollAfterArrival = Duration(seconds: 30);
 /// 다음 조회까지의 간격. **순수 함수.** null이면 조회를 멈춘다.
 ///
 /// ```
-/// ① 막차 확정(closed)          → null (조회 중단)
-/// ② 목록이 비었지만 막차는 아님 → 300초
-/// ③ 그 밖                      → min(300초, 1차 남은시간 + 30초)
+/// ① 목록이 비었으면            → 300초
+/// ② 그 밖                      → min(300초, 1차 남은시간 + 30초)
 /// ```
 ///
-/// **①의 기준은 `visible.isEmpty`가 아니라 `state == closed`다.** 목록이 비는
-/// 경우는 막차 말고도 있다 — 조회 실패(`down`)·키 오류·고른 노선만 안 옴
-/// (`filteredOut`). 비었다는 이유로 멈추면 **일시적인 네트워크 오류에 카드가 영구히
-/// 얼어붙는다**(수동 새로고침 전까지). 막차만이 "더 물어볼 필요가 없다"가 확정된
-/// 상태다. 시뮬레이션은 실패를 모델링하지 않아 이것을 놓쳤고,
-/// `bus_card_host_test`의 `재시도 가드는 폴링·복귀 촉발을 막지 않는다`가 잡았다.
+/// **조회를 아예 멈추는 분기는 없다.** 처음에는 막차(`state == closed`)에서 멈췄는데
+/// 둘이 겹쳐 위험했다: GBIS가 순간 빈 응답(`resultCode 4`)을 주면
+/// `BusApiClient`가 그것도 `closed`로 매핑하므로(`bus_api_client.dart`) 막차와
+/// 구별할 수 없고, 그때 멈추면 **카드가 수동 새로고침 전까지 영구히 얼어붙는다.**
+///
+/// 그리고 이 앱의 사용층(초등 교사)은 출퇴근 시간대가 07:00–08:30·16:00–18:00이라
+/// **막차를 거의 만나지 않는다**(사용자 확인 2026-07-30) — 이득은 없고 위험만 남았다.
+///
+/// 밤에 무한 폴링될 걱정은 없다: 시간대 밖에서 펼친 override는
+/// `expandOverrideLifetime`(30분)이면 만료되고 `_shouldPoll`이 접는다.
 ///
 /// **왜 균등 간격이 아닌가.** 1초 보간이 들어온 뒤로 폴링의 값어치가 달라졌다 —
 /// 서버가 "5분 남음"이라고 하면 그 5분을 요청 없이 정확히 그릴 수 있다. 조회가
@@ -44,10 +47,8 @@ const busPollAfterArrival = Duration(seconds: 30);
 ///
 /// 실기기에서 조율하려면 위 상수 둘만 바꾸면 된다. 결과 예측은
 /// `test/tools/bus_poll_sim.py`로 다시 돌려볼 수 있다.
-Duration? busPollIntervalFor(BusCardView view) {
-  if (view.state == BusCardState.closed) return null;
-
-  // 실패·필터로 비었을 뿐이다. 회복을 기다리며 가장 성기게 계속 본다.
+Duration busPollIntervalFor(BusCardView view) {
+  // 막차·실패·필터 — 이유를 구별하지 않는다. 회복을 기다리며 가장 성기게 본다.
   if (view.visible.isEmpty) return busPollMax;
 
   final first = view.visible.first.arrSec;

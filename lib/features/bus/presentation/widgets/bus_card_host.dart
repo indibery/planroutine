@@ -273,7 +273,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     // 예약이 통째로 건너뛰어진다** — 폴링이 한 번 돌고 영영 멈춘다.
     final next = busPollIntervalFor(_viewOf(fetch, stop));
     _timer?.cancel();
-    _timer = next == null ? null : Timer(next, _tick);
+    _timer = Timer(next, _tick);
 
     // 이동 틱 — 조회하지 않고 리빌드만 한다.
     //

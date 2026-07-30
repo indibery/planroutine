@@ -98,7 +98,13 @@ BusCardView buildBusCardView({
   final adjusted = arrivals.map((a) {
     if (elapsed <= 0) return a;
     final remaining = a.arrSec - elapsed;
-    return a.copyWith(arrSec: remaining <= 0 ? 0 : remaining);
+    // **2차도 함께 깎는다.** 안 깎으면 `다음 14분`이 화면에서 멈춰 있고, 1차만
+    // 흘러 둘의 간격이 시간이 갈수록 벌어진다.
+    final second = a.arrSec2;
+    return a.copyWith(
+      arrSec: remaining <= 0 ? 0 : remaining,
+      arrSec2: second == null ? null : (second - elapsed).clamp(0, second),
+    );
   });
 
   // 2) 노선 필터 — 비어 있으면 "필터 없음"이라 전부 통과한다.

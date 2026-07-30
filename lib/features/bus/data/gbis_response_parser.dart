@@ -213,6 +213,8 @@ BusArrival? _arrival(Map<String, dynamic> row) {
     // `'11-5'`는 String). `as String` 캐스트는 숫자 노선번호에서 크래시한다.
     routeNo: row['routeName']?.toString() ?? '',
     arrSec: arrSec,
+    // 같은 행의 `*2` 짝. **표시 전용**이다([BusArrival.arrSec2] 참고).
+    arrSec2: _arrSec(row['predictTimeSec2'], row['predictTime2']),
     lowFloor: _intOrNull(row['lowPlate1']) == 1,
   );
 }

@@ -9,6 +9,7 @@ class BusArrival {
     required this.routeId,
     required this.routeNo,
     required this.arrSec,
+    this.arrSec2,
     this.lowFloor = false,
   });
 
@@ -20,12 +21,14 @@ class BusArrival {
     required String routeId,
     required String routeNo,
     required int arrMin,
+    int? arrMin2,
     bool lowFloor = false,
   }) =>
       BusArrival(
         routeId: routeId,
         routeNo: routeNo,
         arrSec: arrMin * 60,
+        arrSec2: arrMin2 == null ? null : arrMin2 * 60,
         lowFloor: lowFloor,
       );
 
@@ -51,15 +54,28 @@ class BusArrival {
   /// 경과 보정 경로가 이미 거부했던 규칙이다 — 두 경로를 여기 한 곳으로 합쳤다.
   int get arrMin => (arrSec / 60).round();
 
+  /// **그 다음 차**까지 남은 초. 없을 수 있다(모든 노선이 2차를 주지는 않는다 —
+  /// 실측 A정류장 5/8, B정류장 5/6).
+  ///
+  /// **표시 전용이다.** 조회 간격 계산(`busPollIntervalFor`)에는 쓰지 않는다.
+  /// 2차 예측은 그 버스가 15~30분 뒤일 때 만들어진 값이라 원래 부정확하고, 그것을
+  /// 1차인 것처럼 갈아끼우는 안은 시뮬에서 기각됐다(drift 12%에서 오차 p90 389초).
+  ///
+  /// 그런데 **`다음 14분`이라고 밝히고 보여주는 것은 다르다** — 사용자가 그 숫자로
+  /// 하는 판단은 "뛸까 말까"지 "몇 분에 정확히 온다"가 아니라서, 몇 분 틀려도
+  /// 감당된다. 레이블이 부정확함을 감당 가능하게 만든다.
+  final int? arrSec2;
+
   /// 저상버스인지 (`vehicletp == '저상버스'`).
   final bool lowFloor;
 
-  /// 경과 보정에서 [arrSec]만 갈아끼운다.
-  BusArrival copyWith({int? arrSec}) {
+  /// 경과 보정에서 [arrSec]·[arrSec2]를 갈아끼운다.
+  BusArrival copyWith({int? arrSec, int? arrSec2}) {
     return BusArrival(
       routeId: routeId,
       routeNo: routeNo,
       arrSec: arrSec ?? this.arrSec,
+      arrSec2: arrSec2 ?? this.arrSec2,
       lowFloor: lowFloor,
     );
   }

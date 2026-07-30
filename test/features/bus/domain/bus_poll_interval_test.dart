@@ -18,19 +18,13 @@ BusCardView _view(List<int> secs, {BusCardState state = BusCardState.ok}) =>
 
 void main() {
   group('busPollIntervalFor', () {
-    test('막차가 확정되면 조회를 멈춘다', () {
-      // 지금은 막차 뒤에도 30초마다 물어봐 밤새 헛요청이 나간다.
-      expect(
-        busPollIntervalFor(_view([], state: BusCardState.closed)),
-        isNull,
-      );
-    });
-
-    test('실패로 비었을 때는 멈추지 않는다 — 회복을 기다린다', () {
-      // **`visible.isEmpty`로 멈추면 안 된다.** 일시적인 네트워크 오류에 카드가
-      // 수동 새로고침 전까지 영구히 얼어붙는다. 막차만이 "더 물어볼 필요 없음"이
-      // 확정된 상태다.
+    test('목록이 비면 이유를 가리지 않고 가장 성기게 계속 본다', () {
+      // **`closed`에서 멈추는 분기를 두지 않는다.** GBIS가 순간 빈 응답을 주면
+      // `BusApiClient`가 그것도 `closed`로 매핑해 막차와 구별되지 않는다 — 멈추면
+      // 카드가 수동 새로고침 전까지 영구히 얼어붙는다. 이 앱의 사용층은 출퇴근
+      // 시간대라 막차를 거의 만나지 않아, 멈춰서 얻는 것도 없다.
       for (final state in [
+        BusCardState.closed,
         BusCardState.down,
         BusCardState.stale,
         BusCardState.keyError,

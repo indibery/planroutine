@@ -94,6 +94,15 @@ class BusStrings {
 
   static const arrivingNow = '곧 도착';
 
+  /// "다음 14분" — **한 대만 보일 때** 그 노선의 그 다음 차.
+  ///
+  /// 여러 대가 떠 있으면 붙이지 않는다 — 목록 자체가 이미 대안을 보여주고 있고,
+  /// 각 줄에 붙이면 세 대가 여섯 줄이 된다.
+  ///
+  /// **`놓치면 +8분`처럼 간격으로 쓰지 않는다.** 뺄셈을 우리가 대신 해 주면 계산된
+  /// 값처럼 읽혀 2차 예측의 오차가 그대로 드러난다. 절대 시각은 "대략"으로 읽힌다.
+  static String nextBus(int minutes) => '다음 $minutes분';
+
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
   static const axisNow = '지금';
 

@@ -48,15 +48,22 @@ TagoResult<BusArrival> parseArrivals(Map<String, dynamic> json) {
     // 같은 노선이 다음 차·그다음 차로 여러 건 온다(실측: 5노선 10항목).
     // 축약하지 않으면 카드에 `92번 10분 · 92번 25분`이 나란히 떠 한 노선이
     // 두 줄을 쓴다.
-    final fastest = <String, BusArrival>{};
+    // **버리지 않고 2등을 남긴다.** GBIS가 `*2` 짝으로 주는 "그 다음 차"를 TAGO는
+    // 별개 행으로 준다 — 축약하면서 그냥 떨어뜨리면 같은 정보를 소스마다 다르게
+    // 갖게 된다(카드는 소스를 구별하지 않는다).
+    final byRoute = <String, List<BusArrival>>{};
     for (final row in rows) {
       final arrival = _arrival(row);
-      final prev = fastest[arrival.routeId];
-      if (prev == null || arrival.arrSec < prev.arrSec) {
-        fastest[arrival.routeId] = arrival;
-      }
+      (byRoute[arrival.routeId] ??= []).add(arrival);
     }
-    final list = fastest.values.toList()
+
+    final list = byRoute.values.map((rows) {
+      rows.sort((a, b) => a.arrSec.compareTo(b.arrSec));
+      final first = rows.first;
+      return rows.length < 2
+          ? first
+          : first.copyWith(arrSec2: rows[1].arrSec);
+    }).toList()
       ..sort((a, b) => a.arrSec.compareTo(b.arrSec));
     return list;
   });
