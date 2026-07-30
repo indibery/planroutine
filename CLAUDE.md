@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 864 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 904 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -656,6 +656,24 @@ planroutine/
 상수 둘만 바꾸고 시뮬을 다시 돌려 볼 것.
 
 ⚠️ **시뮬은 실패를 모델링하지 않는다.** ①의 버그를 잡은 것은 기존 호스트 테스트였다.
+
+#### 정류장 이름은 길다 — `trailing`에 넣을 때 폭을 묶을 것
+
+실측 `석수체육공원.자동차학원.원태우지사의거지`. 이런 이름이 실재한다.
+
+**`ListTile`은 `trailing`에 폭 제약을 주지 않는다.** 긴 이름을 그대로 넣으면 가로를
+다 먹고 `title`·`subtitle`에 두 글자 폭만 남는다 — 실기기에서 `도착지`가 세로로
+여섯 줄, 부제가 일곱 줄이 됐다(2026-07-30).
+
+**같은 함정을 두 번 밟았다.** 카드 제목줄(`bus_arrival_card`)은 이미 `Expanded` +
+`ellipsis`로 막고 있었는데 설정 행(`bus_settings_tiles._slotTile`)만 빠져 있었다.
+정류장 이름을 새 자리에 넣을 때는 **먼저 폭을 묶는다.**
+
+- 설정 행은 `LayoutBuilder` + `ConstrainedBox(maxWidth: 폭 × 0.45)` + `ellipsis`.
+- 45%인 이유는 남는 55%가 320pt에서 부제를 두 줄 안에 담기 때문이다. 더 조이면
+  이번엔 정류장 이름이 두 글자만 남는다 — 양쪽이 서로를 밀어낸다.
+- 가드는 `bus_slot_tile_long_name_test`가 **320·390·430pt를 훑는다.** 제목 한 줄,
+  부제 두 줄까지. 폭 하나로만 재면 다른 폭에서 조용히 깨진다.
 
 #### 확인 시트
 
