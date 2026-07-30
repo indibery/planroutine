@@ -23,7 +23,7 @@ class CalendarIntegrationSection extends ConsumerWidget {
     );
 
     return SettingsSection(
-      title: CalendarIntegrationStrings.sectionTitle,
+      // 헤더 없음 — 행 제목이 `캘린더 연동`으로 그 말을 넘겨받았다.
       child: Column(
         children: [
           ListTile(

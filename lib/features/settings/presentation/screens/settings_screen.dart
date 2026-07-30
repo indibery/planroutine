@@ -61,44 +61,25 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
         children: [
-          const SettingsSection(
-            title: SettingsStrings.appearanceSection,
-            child: ThemeModeTile(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.stampSection,
-            subtitle: SettingsStrings.stampDescription,
-            child: StampSettingsTiles(),
-          ),
-          const SettingsSection(
-            // **헤더를 두지 않는다.** 행 제목이 `버스 도착`이라 섹션 헤더와 같은
-            // 말이 두 번 나왔다(실기기 신고 2026-07-30). 기능 설명(부제)은 이미
-            // 상세 화면 상단으로 옮겨 뒀으므로 여기서 잃는 정보가 없다.
-            child: BusSummaryListTile(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.exportSection,
-            subtitle: SettingsStrings.exportDescription,
-            child: ExportListTile(),
-          ),
+          // **섹션 헤더를 두지 않는다**(실기기 신고 2026-07-30).
+          //
+          // 여덟 개 중 다섯은 행 제목의 축약이거나 같은 말이었고(`휴지통` 헤더 +
+          // `휴지통` 행), 나머지도 행이 스스로를 설명해 헤더가 하는 일이 없었다.
+          // 여덟 줄 약 200px — 화면 3분의 1이 라벨에 쓰이고 있었다.
+          //
+          // **설명은 버리지 않고 행 부제로 내렸다** — 헤더만 지우면
+          // `30일 후 자동 영구 삭제` 같은, 이 화면에서만 볼 수 있는 규칙이
+          // 함께 사라진다. 묶임은 `Divider`가 그대로 맡는다.
+          const SettingsSection(child: ThemeModeTile()),
+          const SettingsSection(child: StampSettingsTiles()),
+          const SettingsSection(child: BusSummaryListTile()),
+          const SettingsSection(child: ExportListTile()),
           if (AppFeatures.googleCalendarEnabled)
             const CalendarIntegrationSection(),
+          const SettingsSection(child: NotificationSettingsTiles()),
+          const SettingsSection(child: TrashListTile()),
+          const SettingsSection(child: ResetListTile()),
           const SettingsSection(
-            title: NotificationStrings.section,
-            subtitle: NotificationStrings.masterDescription,
-            child: NotificationSettingsTiles(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.trashSection,
-            subtitle: SettingsStrings.trashDescription,
-            child: TrashListTile(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.dataSection,
-            child: ResetListTile(),
-          ),
-          const SettingsSection(
-            title: SettingsStrings.aboutSection,
             showDivider: false,
             // 출처 표시는 앱 정보 아래에 붙인다 — 둘 다 정보성이고 탭이 없다.
             child: Column(

@@ -4,7 +4,10 @@ class CalendarIntegrationStrings {
 
   // 설정 섹션
   static const sectionTitle = '캘린더 연동';
-  static const targetLabel = '연동 대상';
+  /// 행 제목. **`연동 대상`이 아니다** — 섹션 헤더(`캘린더 연동`)를 걷어내면서
+  /// 그 행만 남으면 무엇에 대한 설정인지 알 수 없어진다. 헤더가 하던 말을
+  /// 행이 넘겨받았다.
+  static const targetLabel = '캘린더 연동';
   static const targetNone = '사용 안 함';
   static const targetGoogle = 'Google 캘린더';
   static const targetDevice = '기기 캘린더';

@@ -46,6 +46,16 @@ class StampSettingsTiles extends ConsumerWidget {
               color: AppColors.textPrimary,
             ),
           ),
+          // 섹션 헤더가 달고 있던 설명이 여기로 내려왔다 — `도장 모양`만으로는
+          // 이 도장이 어디에 찍히는지 알 수 없다.
+          subtitle: Text(
+            SettingsStrings.stampDescription,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

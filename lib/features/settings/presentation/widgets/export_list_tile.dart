@@ -80,6 +80,11 @@ class _ExportListTileState extends ConsumerState<ExportListTile> {
     return ListTile(
       leading: Icon(Icons.ios_share, color: AppColors.primary),
       title: const Text(SettingsStrings.exportTitle),
+      // 섹션 헤더가 달고 있던 설명. 무엇이 나가는지(올해 · 확정분)를 여기서만 말한다.
+      subtitle: Text(
+        SettingsStrings.exportDescription,
+        style: TextStyle(fontSize: 12, color: AppColors.sub),
+      ),
       trailing: _exporting
           ? const SizedBox(
               width: 20,
