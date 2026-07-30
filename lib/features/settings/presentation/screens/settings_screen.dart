@@ -71,8 +71,9 @@ class SettingsScreen extends ConsumerWidget {
             child: StampSettingsTiles(),
           ),
           const SettingsSection(
-            title: BusStrings.section,
-            subtitle: BusStrings.sectionDescription,
+            // **헤더를 두지 않는다.** 행 제목이 `버스 도착`이라 섹션 헤더와 같은
+            // 말이 두 번 나왔다(실기기 신고 2026-07-30). 기능 설명(부제)은 이미
+            // 상세 화면 상단으로 옮겨 뒀으므로 여기서 잃는 정보가 없다.
             child: BusSummaryListTile(),
           ),
           const SettingsSection(

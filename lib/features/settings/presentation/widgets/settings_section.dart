@@ -11,13 +11,17 @@ import '../../../../shared/widgets/section_header.dart';
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     super.key,
-    required this.title,
+    this.title,
     this.subtitle,
     required this.child,
     this.showDivider = true,
   });
 
-  final String title;
+  /// null이면 헤더를 그리지 않는다 — 행 제목이 헤더와 같은 말이라 겹치는 경우.
+  ///
+  /// 그때 부제도 함께 사라지므로, 설명이 필요한 기능은 **상세 화면 안으로** 옮긴
+  /// 뒤에 헤더를 뗀다(버스 도착이 그 경로를 밟았다).
+  final String? title;
   final String? subtitle;
   final Widget child;
   final bool showDivider;
@@ -27,12 +31,13 @@ class SettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.pagePadding,
+        if (title case final t?)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.pagePadding,
+            ),
+            child: SectionHeader(title: t, subtitle: subtitle),
           ),
-          child: SectionHeader(title: title, subtitle: subtitle),
-        ),
         child,
         if (showDivider) const Divider(height: 1),
       ],
