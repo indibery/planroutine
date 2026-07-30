@@ -14,6 +14,10 @@ class SettingsStrings {
   static const stampStyleLabel = '도장 모양';
   static const stampDimLabel = '이미 찍은 도장 흐리게';
   static const stampDimDescription = '방금 찍은 도장은 진하게, 지난 도장은 잔상으로';
+
+  /// 도장 모양 시트 제목. 설정 탭의 행 라벨과 **같은 말이어야** 시트가 그 행의
+  /// 연장으로 읽힌다 — 다른 말을 쓰면 다른 설정을 연 것처럼 보인다.
+  static const stampStyleSheetTitle = stampStyleLabel;
   static const themeSystem = '시스템';
   static const themeLight = '밝게';
   static const themeDark = '어둡게';
@@ -38,13 +42,6 @@ class SettingsStrings {
   static const dataSourceBody =
       '버스 도착 정보 — 국토교통부(TAGO) · 경기도(GBIS)\n'
       '공공데이터포털에서 제공받았습니다';
-  static const aiShareSection = 'AI 자동화 (고급)';
-
-  // AI 자동화 공유 (고급)
-  static const aiShareDescription = '캘린더 일정을 외부 AI로 보내 문서 초안·준비 정리 등을 맡깁니다';
-  static const aiShareToggleTitle = 'AI로 보내기 활성화';
-  static const aiShareToggleSubtitle = '켜면 캘린더 일정 편집에 "AI로 보내기"가 나타납니다 (기본 꺼짐)';
-
   // 내보내기
   static const exportTitle = 'CSV로 내보내기';
   static const exportDescription = '올해 등록된 일정을 CSV 파일로 저장·공유합니다';

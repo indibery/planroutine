@@ -6,11 +6,24 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../today/domain/stamp_settings.dart';
 import '../providers/stamp_settings_provider.dart';
-import '../../../../shared/widgets/pill_chip.dart';
+import 'stamp_style_sheet.dart';
 
-/// 완료 도장 설정 — 도장 모양 선택 + "이미 찍은 도장 흐리게" 스위치.
+/// 완료 도장 설정 — 도장 모양 한 줄 + "이미 찍은 도장 흐리게" 스위치.
+///
+/// **모양 선택지는 이 화면에 두지 않는다.** 칩 `Wrap`으로 두던 시절 도장이 4종이
+/// 되자 라벨 옆에 못 들어가 줄이 둘로 갈라졌다 — 같은 화면의 `화면 테마`는 라벨과
+/// 세그먼트가 한 줄이라, 한 화면에 행 문법이 두 종류가 됐다.
+///
+/// 규칙: **개수가 고정된 설정은 세그먼트**(화면 테마 3종),
+/// **늘어나는 설정은 시트**([StampStyleSheet]). 도장은 늘어나는 축이라 5번째가
+/// 들어와도 이 화면은 변하지 않는다 — 시트가 자기 높이만 한 줄 늘린다.
+///
+/// (이전 규칙은 "늘어나는 설정은 칩"이었다. 칩은 개수 제한이 없어 세그먼트보다
+/// 나았지만, 라벨과 같은 줄에 못 서는 것은 마찬가지였다.)
 class StampSettingsTiles extends ConsumerWidget {
   const StampSettingsTiles({super.key});
+
+  static const styleTileKey = Key('stamp_style_tile');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +34,35 @@ class StampSettingsTiles extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _StyleRow(selected: settings.style, onChanged: notifier.setStyle),
+        ListTile(
+          key: styleTileKey,
+          leading: Icon(Icons.approval_outlined, color: AppColors.primary),
+          title: Text(
+            SettingsStrings.stampStyleLabel,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                settings.style.label,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing4),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+          onTap: () => StampStyleSheet.show(context),
+        ),
         SwitchListTile(
           key: const Key('stamp_dim_switch'),
           value: settings.dimPreviousStamps,
@@ -48,68 +89,6 @@ class StampSettingsTiles extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// 도장 모양 선택 — 라벨 한 줄 + 아래에 칩.
-///
-/// **`SegmentedSettingRow`를 쓰지 않는다.** 그 위젯은 한 줄에 라벨과 세그먼트를 나란히
-/// 놓는데, 도장이 4종이 되자 320pt에서 **33px 넘쳤다**(폭 훑기가 잡았다).
-///
-/// 2줄 세그먼트로 고칠 수도 있었지만 **도장 모양은 늘어나는 축**이다(판다를 넣었고
-/// 강아지도 후보다). 4개는 되고 5개는 또 넘친다. 칩 `Wrap`은 개수 제한이 없다.
-///
-/// 그래서 이 화면에는 두 모양이 함께 있다 — 규칙은 이것이다:
-/// **개수가 고정된 설정은 세그먼트**(화면 테마 3종), **늘어나는 설정은 칩**(도장 모양).
-/// 리포의 선택 가능한 칩은 전부 `PillChip`이므로 입력 탭 히어로와도 같은 모양이다.
-class _StyleRow extends StatelessWidget {
-  const _StyleRow({required this.selected, required this.onChanged});
-
-  final SealStyle selected;
-  final ValueChanged<SealStyle> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      // `SegmentedSettingRow`와 같은 여백 — 위아래 행과 왼쪽 선이 맞아야 한 섹션으로 읽힌다.
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing16,
-        vertical: AppSizes.spacing8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.approval_outlined, color: AppColors.primary),
-              const SizedBox(width: AppSizes.spacing16),
-              Text(
-                SettingsStrings.stampStyleLabel,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.spacing8),
-          Wrap(
-            spacing: AppSizes.spacing8,
-            runSpacing: AppSizes.spacing4,
-            children: [
-              for (final style in SealStyle.values)
-                PillChip(
-                  label: style.label,
-                  selected: style == selected,
-                  onTap: () => onChanged(style),
-                ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
