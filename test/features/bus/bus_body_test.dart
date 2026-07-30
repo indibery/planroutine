@@ -136,17 +136,45 @@ void main() {
           reason: '라벨 중심이 점과 같은 x다 — 폭 28의 -14 보정이 그 일을 한다');
     });
 
-    testWidgets('15분을 넘긴 항목들은 오른쪽 끝 같은 위치로 모인다', (tester) async {
+    testWidgets('15분을 넘긴 항목들은 점이 오른쪽 끝에 모인다', (tester) async {
       // clamp가 없으면 31분은 축 폭의 2배 지점으로 나가 화면 밖에서 조용히 잘린다.
+      //
+      // **점으로 잰다.** 라벨은 겹침을 피해 밀려나므로(`layoutAxisLabels`) 더 이상
+      // 같은 자리에 서지 않는다 — 그게 이 화면의 개선이다. clamp가 지키는 것은
+      // "축 밖으로 나가지 않는다"이고 그 책임은 점에 있다.
       await _pump(
         tester,
         BusBodyAxis(view: _view([_a('A', '720', 18), _a('B', '61', 31)])),
       );
 
-      final far = BusBodyAxis.dotPosition(BusBodyAxis.axisRange * 60) * _axisWidth;
-      expect(tester.getCenter(find.text('720')).dx, closeTo(far, 0.5));
-      expect(tester.getCenter(find.text('61')).dx, closeTo(far, 0.5),
-          reason: '축을 넘긴 값은 97%에 모인다 — 축 밖으로 밀려나지 않는다');
+      final far =
+          BusBodyAxis.dotPosition(BusBodyAxis.axisRange * 60) * _axisWidth;
+      expect(
+        tester.getCenter(find.byKey(BusBodyAxis.dotKeyFor('A'))).dx,
+        closeTo(far, 0.5),
+      );
+      expect(
+        tester.getCenter(find.byKey(BusBodyAxis.dotKeyFor('B'))).dx,
+        closeTo(far, 0.5),
+        reason: '축을 넘긴 값은 97%에 모인다 — 축 밖으로 밀려나지 않는다',
+      );
+    });
+
+    testWidgets('붙어 있는 두 라벨은 겹치지 않는다', (tester) async {
+      // 실기기 신고 2026-07-30: 1분·1.5분 두 대의 라벨이 `55536023`으로 뭉쳤다.
+      // 점은 구별되는데 라벨 폭(34pt = 축의 1.7분치)이 서로를 먹었다.
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('A', '553', 1), _a('B', '5623', 2)])),
+      );
+
+      final a = tester.getRect(find.text('553'));
+      final b = tester.getRect(find.text('5623'));
+      expect(
+        a.right <= b.left + 0.5 || b.right <= a.left + 0.5,
+        isTrue,
+        reason: '두 라벨의 사각형이 겹치면 글자가 뭉쳐 읽힌다',
+      );
     });
 
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {

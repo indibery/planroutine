@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_arrival.dart';
+import '../../domain/axis_label_layout.dart';
 import '../../domain/bus_card_view.dart';
 import '../../domain/next_bus.dart';
 import 'bus_more_count.dart';
@@ -264,89 +265,106 @@ class BusBodyAxis extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+
+        // **라벨을 한 목록으로 모아 함께 민다.** 따로 그리면 서로를 못 보고
+        // 겹친다 — 실기기에서 1분·1.5분 두 대가 `55536023`으로 뭉쳐 읽혔다
+        // (2026-07-30). 라벨 폭 34pt는 300pt 축에서 1.7분치라, 점이 떨어져
+        // 있어도 글자는 겹친다.
+        final entries = <_LabelSpec>[
+          for (final a in view.visible)
+            _LabelSpec(
+              key: labelKeyFor(_idOf(a)),
+              center: dotPosition(a.arrSec) * width,
+              text: a.routeNo,
+              semantics: '${BusStrings.routeLabel(a.routeNo)} '
+                  '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
+              color: isUrgent(a.arrMin) ? AppColors.ink : AppColors.sub,
+              weight: FontWeight.w700,
+            ),
+          if (nextBusOnAxis(view) case final sec?)
+            _LabelSpec(
+              key: labelKeyFor(_nextIdOf(view.visible.single)),
+              center: dotPosition(sec) * width,
+              // **노선번호다.** 두 점 모두 같은 노선이므로 `다음`이라고 쓰면 축에서
+              // 그 자리만 다른 규칙이 된다 — 어느 쪽이 먼저인지는 점의 형태가
+              // 말한다(채움 = 먼저). 스크린리더에는 위치가 안 보이므로 풀어 준다.
+              text: view.visible.single.routeNo,
+              semantics: BusStrings.nextBus((sec / 60).round()),
+              color: AppColors.faint,
+              weight: FontWeight.w600,
+            ),
+        ]..sort((a, b) => a.center.compareTo(b.center));
+
+        final xs = layoutAxisLabels(
+          [for (final e in entries) e.center],
+          labelWidth,
+          width,
+        );
+
         return Stack(
           children: [
-            if (nextBusOnAxis(view) case final sec?)
+            for (final (i, e) in entries.indexed)
               AnimatedPositioned(
-                key: labelKeyFor(_nextIdOf(view.visible.single)),
+                // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
+                key: e.key,
                 duration: tick,
                 curve: Curves.linear,
-                left: (dotPosition(sec) * width) - labelWidth / 2,
+                left: xs[i] - labelWidth / 2,
                 top: 0,
                 width: labelWidth,
-                // **라벨은 노선번호다.** 두 점 모두 같은 노선이므로 `다음`이라고
-                // 쓰면 축에서 그 자리만 다른 규칙이 된다 — 축의 라벨은 노선번호로
-                // 읽히는데 거기만 낱말이 끼어들어 다른 노선처럼 보였다
-                // (실기기 신고 2026-07-30).
-                //
-                // 어느 쪽이 먼저인지는 **점의 형태**가 말한다(채움 = 먼저).
-                // 스크린리더에는 위치가 안 보이므로 `다음 14분`으로 풀어 준다.
+                // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
+                // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
+                // 스크린리더에는 `720`이 맥락 없이 읽혀 정보가 0이 된다.
                 child: Semantics(
-                  label: BusStrings.nextBus((sec / 60).round()),
+                  label: e.semantics,
                   excludeSemantics: true,
+                  // **박스를 넓히는 것만으로는 부족하다.** iOS 글자 크기를 키우면
+                  // 11pt가 그만큼 커져 34pt도 넘는다 — `scaleDown`이 잘리는 대신
+                  // 줄인다. 하이픈이 붙은 긴 번호(실측 `1006-1` 36.8pt)도 흡수된다.
+                  //
+                  // `softWrap: false`가 필요하다 — FittedBox는 자식에게 무한 폭을
+                  // 주므로 줄바꿈이 허용되면 긴 번호가 두 줄로 눕는다.
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      view.visible.single.routeNo,
+                      e.text,
                       maxLines: 1,
                       softWrap: false,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.faint,
+                        fontWeight: e.weight,
+                        color: e.color,
                       ),
                     ),
                   ),
                 ),
               ),
-            ...view.visible.map((a) {
-            final urgent = isUrgent(a.arrMin);
-            return AnimatedPositioned(
-              // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
-              key: labelKeyFor(_idOf(a)),
-              duration: tick,
-              curve: Curves.linear,
-              left: (dotPosition(a.arrSec) * width) - labelWidth / 2,
-              top: 0,
-              width: labelWidth,
-              // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
-              // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
-              // 스크린리더에는 `720`·`150`이 맥락 없이 읽혀 정보가 0이 된다 —
-              // `간단히`가 `720번` + `2분`을 읽어 주는 것과 같은 사실을 말해야 한다.
-              // 문구는 `간단히`와 **같은 상수**를 쓴다(두 모양이 갈라지지 않게).
-              // 목록의 중요 ★를 `Semantics`로 감싼 것과 같은 수법이다.
-              child: Semantics(
-                label: '${BusStrings.routeLabel(a.routeNo)} '
-                    '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
-                excludeSemantics: true,
-                // **박스를 넓히는 것만으로는 부족하다.** 사용자가 iOS 글자 크기를
-                // 키우면 11pt가 그만큼 커져 34pt도 넘는다 — `scaleDown`은 그때
-                // 잘리는 대신 줄인다. 하이픈이 붙은 긴 번호(실측 `1006-1` 36.8pt)도
-                // 여기서 흡수된다.
-                //
-                // `softWrap: false`가 필요하다 — FittedBox는 자식에게 무한 폭을
-                // 주므로 줄바꿈이 허용되면 긴 번호가 두 줄로 눕는다.
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    a.routeNo,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: urgent ? AppColors.ink : AppColors.sub,
-                    ),
-                  ),
-                ),
-              ),
-            );
-            }),
           ],
         );
       },
     );
   }
+
+}
+
+/// 라벨 한 개가 그려지는 데 필요한 것 전부. 밀어내기 계산과 렌더를 갈라 두려고 둔다.
+class _LabelSpec {
+  const _LabelSpec({
+    required this.key,
+    required this.center,
+    required this.text,
+    required this.semantics,
+    required this.color,
+    required this.weight,
+  });
+
+  final Key key;
+
+  /// 밀어내기 전, 점이 있는 진짜 x.
+  final double center;
+  final String text;
+  final String semantics;
+  final Color color;
+  final FontWeight weight;
 }

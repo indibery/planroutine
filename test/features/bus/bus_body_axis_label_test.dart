@@ -22,11 +22,18 @@ double _labelWidth(String routeNo) {
   return tp.width;
 }
 
+/// **5분부터 시작한다.** 0분은 축 왼쪽 끝(3%)이라 라벨 상자가 화면 밖으로 나가고
+/// `layoutAxisLabels`가 안쪽으로 밀어 넣는다 — 그러면 라벨과 점이 어긋나는 것이
+/// 정상 동작이라 정렬 검사가 성립하지 않는다. 가운데에서 잰다.
 BusCardView _view(List<String> routeNos) => BusCardView(
       state: BusCardState.ok,
       visible: [
         for (final (i, no) in routeNos.indexed)
-          BusArrival.fromMinutes(routeId: 'R$i', routeNo: no, arrMin: i * 5),
+          BusArrival.fromMinutes(
+            routeId: 'R$i',
+            routeNo: no,
+            arrMin: 5 + i * 5,
+          ),
       ],
       hiddenCount: 0,
       fetchedAt: DateTime(2026, 7, 29, 19, 51),
