@@ -30,6 +30,16 @@ ios/fastlane/README.md
 ios/fastlane/screenshots/
 ios/fastlane/test_output/
 
+android/fastlane/report.xml
+android/fastlane/README.md
+android/fastlane/Preview.html
+android/fastlane/metadata/
+
+android/fastlane/*.json
+android/play-store-*.json
+**/*.pepk
+**/*.p12
+
 # Misc
 *.log
 
