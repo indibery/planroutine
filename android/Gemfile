@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+# Homebrew로 설치한 fastlane이 자체 Ruby를 쓰면서 시스템 CocoaPods와 서로
+# 다른 Ruby 인스턴스로 분리되는 문제가 있다. 프로젝트 레벨 bundler로 fastlane과
+# cocoapods를 동일 Ruby 환경에 묶어 충돌을 차단한다.
+gem "fastlane"
+gem "cocoapods"

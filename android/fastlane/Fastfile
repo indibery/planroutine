@@ -1,0 +1,277 @@
+# android/fastlane/Fastfile
+default_platform(:android)
+
+require "json"
+require "tmpdir"
+require "fileutils"
+
+APP_PACKAGE = "com.planroutine.app"
+AAB_PATH = "../build/app/outputs/bundle/release/app-release.aab"   # cwd = android/
+
+# 비공개 테스트 트랙 identifier.
+#
+# Play Console이 처음부터 제공하는 트랙 넷의 API identifier는 고정이다 —
+# 내부 테스트 `internal` / **비공개 테스트 `alpha`** / 공개 테스트 `beta` /
+# 프로덕션 `production`(supply/lib/supply.rb:30-38의 `Tracks`가 같은 넷을 상수로 든다).
+# **그래서 비공개 테스트 트랙을 새로 만들지 않고 기본 제공 트랙을 쓴다** — 새로 만들면
+# identifier가 콘솔이 정하는 값이 되고, 그 값을 API로 열거하는 fastlane 액션이 없다.
+CLOSED_TRACK = "alpha"
+
+# versionCode를 계산할 때 훑는 트랙.
+#
+# `google_play_track_version_codes`는 **그 트랙만** 본다 — iOS의
+# `latest_testflight_build_number`(계정 스코프)와 대칭이 아니다. 한 트랙만 보면
+# §순서 ③의 확정용 업로드(internal)나 콘솔 수동 업로드가 남긴 코드를 못 보고
+# `Version code N has already been used`로 튕긴다.
+VERSION_SCAN_TRACKS = %w[internal alpha beta production].freeze
+
+# ── 공통 헬퍼 ──
+# TAGO 인증키를 리포 밖에서 읽는다. 키를 못 읽으면 레인을 실패시킨다.
+#
+# ⚠️ 이 15줄은 ios/fastlane/Fastfile:11-26의 복제다. iOS 배포 경로가 이미 돌고 있어
+#    공용 파일로 뽑는 리팩터를 하지 않았다(그 경로를 건드리는 위험이 이득보다 크다).
+#    **키 값 자체는 여전히 한 곳에만 있다** — ~/.planroutine/tago.env. 재발급 시
+#    갱신할 파일은 하나이고, 복제된 것은 그 파일을 읽는 코드뿐이다.
+def tago_key
+  path = File.expand_path("~/.planroutine/tago.env")
+  UI.user_error!("TAGO 키 파일이 없습니다: #{path}") unless File.exist?(path)
+
+  key = File.readlines(path).map(&:strip)
+           .find { |l| l.start_with?("TAGO_KEY_DECODING=") }
+           &.split("=", 2)&.last&.strip
+  UI.user_error!("TAGO_KEY_DECODING 이 비어 있습니다: #{path}") if key.nil? || key.empty?
+  key
+end
+
+# Play 서비스 계정 JSON이 **있는지만** 본다. 인증이 실제로 먹는지는 API 호출이 답한다
+# (`check_play_key`). 이 가드의 존재 이유는 clean 앞에서 값싸게 죽는 것이다 —
+# 없으면 레인이 TAGO 가드를 지나 `flutter clean`(수 분, 되돌릴 수 없음)까지 간 뒤
+# 인증에서 죽는다.
+#
+# 경로를 Fastfile에 다시 적지 않고 Appfile에서 읽는다 — 두 곳에 쓰면 한쪽만 고친다.
+def play_json_path
+  path = CredentialsManager::AppfileConfig.try_fetch_value(:json_key_file)
+  UI.user_error!("android/fastlane/Appfile에 json_key_file이 없습니다") if path.to_s.empty?
+  File.expand_path(path)
+end
+
+def assert_play_key
+  path = play_json_path
+  unless File.exist?(path)
+    UI.user_error!(
+      "Play 서비스 계정 JSON이 없습니다: #{path}\n" \
+      "  Play Console › 설정 › API 액세스에서 발급해 리포 밖에 두십시오(§M1-H1.6)."
+    )
+  end
+  path
+end
+
+# 업로드 키 설정이 있는지. gradle 가드가 같은 것을 보지만 그건 clean·설정 단계 뒤에 터진다.
+def assert_release_keystore
+  path = File.expand_path("../key.properties", __dir__)   # android/key.properties
+  unless File.exist?(path)
+    UI.user_error!("android/key.properties가 없습니다 (§M1-C3). 업로드 키 없이 release를 만들 수 없습니다.")
+  end
+  path
+end
+
+# debug 산출물이 release 빌드로 새는 두 경로를 막는다. iOS `reset_ios_caches`(함정 #6)와
+# 같은 성격이고, 근거는 실측 두 건이다.
+#
+#  (a) android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+#      debug 빌드는 integration_test(dev dependency)를 registrant에 심는데, gradle release는
+#      그 서브프로젝트를 뺀다(PluginHandler.kt:133) → javac 실패:
+#        GeneratedPluginRegistrant.java:49: package dev.flutter.plugins.integration_test
+#        does not exist
+#      **이 파일은 소스 위치에 있고 `flutter clean`이 건드리지 않는다.** 실제로 막는 것은
+#      아래 빌드에 `--no-pub`을 붙이지 않아 pub get이 재생성하는 것이고, 여기서 먼저 지우는
+#      것은 "덮어썼는지"를 추측하지 않기 위해서다. 재생성이 안 되면 javac가 **큰 소리로**
+#      죽는다 — 조용히 dev dependency가 섞이는 것보다 낫다. (gitignore돼 있다.)
+#  (b) build/native_assets/android/jniLibs/
+#      sqlite3(← sqflite_common_ffi, dev dependency)가 스테이징한 libsqlite3.so를
+#      mergeReleaseJniLibFolders가 그대로 담는다. 실측 release APK 70.4MB → 65.3MB.
+#      **`flutter clean`이 `build/` 전체를 지우므로**(clean.dart:52-53) 별도 rm이 필요 없다.
+#
+# ⚠️ `android/.gradle`·`android/app/build`·`build/native_assets`를 지우는 형태는 셋 다 헛것이다:
+#    `android/app/build`는 **존재하지 않고**(Flutter가 빌드 디렉터리를 리포 루트 `build/app/`으로
+#    돌린다 — 실측), `build/native_assets`는 직전 `flutter clean`이 이미 지웠고, `android/.gradle`은
+#    유출과 무관한 Gradle 캐시라 지우면 매 빌드가 몇 분 느려질 뿐이다. **지울 것은 registrant
+#    하나다** — 목록을 늘리면 무엇이 왜 있는지 흐려져 다음 사람이 틀린 쪽을 정리한다.
+def reset_android_caches
+  UI.header("Android 캐시 정리 — debug 산출물 유입 차단")
+  project_root = File.expand_path("../..", __dir__)
+  Dir.chdir(project_root) do
+    sh("flutter", "clean")   # build/ + .dart_tool/ 삭제 → 이어지는 빌드가 pub get을 재수행
+    sh("rm", "-f", "android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java")
+  end
+end
+
+# pubspec.yaml의 `version: X.Y.Z+N`. iOS Fastfile:67-73의 복제이고, 이유도 같다 —
+# 돌고 있는 iOS 배포 경로를 건드리지 않는다. **값의 출처는 여전히 pubspec 하나다.**
+def pubspec_version
+  project_root = File.expand_path("../..", __dir__)
+  pubspec = File.read(File.join(project_root, "pubspec.yaml"))
+  match = pubspec.match(/^version:\s*(\d+\.\d+\.\d+)\+(\d+)/)
+  UI.user_error!("pubspec.yaml에서 version을 찾을 수 없습니다") unless match
+  [match[1], match[2].to_i]
+end
+
+# versionCode. **트랙 전수의 최대값 + 1**을 쓰고, pubspec의 `+N`을 하한으로 둔다.
+#
+# ⚠️ android/local.properties의 flutter.versionCode를 원천으로 읽지 말 것 —
+#    매 빌드가 pubspec 값으로 덮어쓴다.
+def next_version_code
+  # ⚠️ 트랙별로 rescue 한다. fastlane의 404 흡수는 `get_edit_track`의
+  #    trackEmpty/Track not found 뿐이고(`client.rb:498-501`), 성공 경로에는 nil 방어가 없다 —
+  #    `return result.releases.flat_map(&:version_codes) || []`에서 `|| []`가 flat_map **결과**에
+  #    붙어 있어 `result.releases`가 nil이면 NoMethodError다. VERSION_SCAN_TRACKS는 릴리즈가
+  #    한 번도 없었을 트랙(beta·production)까지 의도적으로 훑으므로 그 트랙이 "404가 아니라
+  #    릴리즈 없는 200"으로 답하면 모든 업로드 레인이 Ruby 스택트레이스로 죽는다.
+  codes = VERSION_SCAN_TRACKS.flat_map do |track|
+    begin
+      google_play_track_version_codes(package_name: APP_PACKAGE, track: track) || []
+    rescue StandardError => e
+      UI.important("트랙 #{track} 조회 실패 — 0으로 본다: #{e.class}")
+      []
+    end
+  end
+  _name, floor = pubspec_version
+  new_code = [floor, (codes.max || 0) + 1].max
+  UI.message("versionCode: 트랙 최대 #{codes.max.inspect} / pubspec 하한 #{floor} → #{new_code}")
+  new_code
+end
+
+# 릴리즈 노트를 supply가 읽는 자리에 깔아 둔다. 원천은 iOS와 **같은 파일**이다.
+#
+# supply는 changelog를 `<metadata_path>/<언어>/changelogs/<versionCode>.txt`에서 읽는다
+# (`supply/lib/supply/uploader.rb:239`). 그리고 `skip_upload_metadata`는 **changelog를
+# 포함하지 않는다** — 옵션 설명 verbatim: "Whether to skip uploading metadata, changelogs
+# not included"(`options.rb:196`). 그래서 스토어 등록정보 본문은 건드리지 않으면서
+# 릴리즈 노트만 올릴 수 있다.
+#
+# 파일이 없으면 changelog 없이 올린다. Play는 릴리즈 노트를 필수로 요구하지 않으므로
+# iOS 가드 E처럼 막지 않는다 — 막으면 M1 껍데기 업로드가 문구 작성에 걸린다.
+#
+# ⚠️ **그런데 지금은 "없음"이 아니다.** pubspec이 `1.3.0+52`이고
+# `docs/release_notes/1.3.0.ko.txt`가 **이미 있다** — 내용은 iOS v1.3.0(버스 카드) 문구다.
+# 그대로 두면 M1 껍데기 빌드가 그 문구를 달고 테스터에게 간다: 있지도 않은 버스 카드 개선을
+# 알리고, 정작 알려야 할 "알림은 아직 오지 않습니다 / 14일 연속 opt-in을 유지해 주세요"는
+# 어디에도 없다. **테스터에게 자동으로 닿는 유일한 채널이 이것이므로** M1에서는
+# `docs/release_notes/1.3.0-android-m1.ko.txt`처럼 Android M1 전용 파일을 만들어
+# `ANDROID_NOTE_SUFFIX`로 먼저 찾게 하거나(없으면 기존 파일로 폴백), H6c의 opt-in 안내
+# 이메일에 그 문장을 싣는다. **어느 쪽인지 C5에서 정하고 적어 둔다.**
+def stage_changelog(version_code)
+  name, _code = pubspec_version
+  src = File.expand_path("../../docs/release_notes/#{name}.ko.txt", __dir__)
+  unless File.exist?(src)
+    UI.important("릴리즈 노트 없음 → changelog 없이 올린다: #{src}")
+    return nil
+  end
+  dir = File.join(__dir__, "metadata/android/ko-KR/changelogs")
+  FileUtils.mkdir_p(dir)
+  File.write(File.join(dir, "#{version_code}.txt"), File.read(src).strip)
+  UI.message("changelog 준비: ko-KR/#{version_code}.txt")
+  File.join(__dir__, "metadata/android")
+end
+
+platform :android do
+  desc "TAGO 키만 확인 (빌드·업로드·clean 없음)"
+  lane :check_tago_key do
+    UI.success("TAGO 키 OK: #{tago_key.length}자")
+  end
+
+  desc "Play 서비스 계정과 트랙만 확인 (빌드·업로드·clean 없음)"
+  lane :check_play_key do
+    UI.success("서비스 계정 JSON OK: #{assert_play_key}")
+    VERSION_SCAN_TRACKS.each do |track|
+      codes = google_play_track_version_codes(package_name: APP_PACKAGE, track: track)
+      UI.message("  #{track.ljust(11)} versionCodes=#{codes.inspect}")
+    end
+  end
+
+  desc "release AAB만 만든다 (업로드 없음). 스모크·폴백·검증이 여기서 나온다"
+  lane :build_aab do |options|
+    # 값싼 가드를 파괴적 단계(clean) 앞에 모으는 iOS 레인의 규칙 그대로다.
+    key = tago_key
+    assert_release_keystore
+    UI.message("TAGO 키: #{key.length}자 주입")
+
+    code = options[:code]   # nil이면 flutter가 pubspec의 +N을 쓴다
+
+    reset_android_caches
+
+    Dir.mktmpdir do |tmp|
+      # 키를 argv에 실으면 fastlane의 `sh`가 실행 전에 명령 문자열을 그대로 찍는다.
+      # 파일 경로만 넘기면 echo·에러 양쪽에서 키가 사라진다(iOS와 같은 이유).
+      define_file = File.join(tmp, "tago.json")
+      File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
+
+      Dir.chdir("..") do
+        # ⚠️ --no-pub 을 붙이지 않는다. registrant 재생성이 `if (!shouldRunPub) return;`로
+        #    막혀 있어(flutter_command.dart:1963-1971) dev dependency가 release javac로
+        #    흘러들어간다. 위 (a)를 레인이 스스로 재현하게 되는 플래그다.
+        # ⚠️ --verbose 를 붙이지 않는다. 붙이면 flutter assemble 명령줄이
+        #    ~/.gradle/daemon/<ver>/daemon-<pid>.out.log 에 --DartDefines=<base64>로
+        #    남는다(실측). 권한 0600이라 iOS의 Generated.xcconfig(0644)보다 등급은
+        #    낮지만 로그는 몇 달씩 지워지지 않는다.
+        args = ["flutter", "build", "appbundle", "--release",
+                "--dart-define-from-file=#{define_file}"]
+        args << "--build-number=#{code}" if code
+        sh(*args)
+      end
+    end
+
+    UI.success("AAB 준비 완료#{code ? " (versionCode #{code})" : ''}")
+    code
+  end
+
+  desc "패키지명 확정용 첫 업로드 — internal 트랙 draft. 테스터에게 가지 않는다 (§순서 ③)"
+  lane :bootstrap do
+    assert_play_key
+    code = next_version_code
+    build_aab(code: code)
+
+    # internal·draft를 고정으로 박는다. 트랙을 옵션으로 받으면 실수로 실제 beta를
+    # internal에 올릴 수 있고, 그때 14일이 하루도 세지 않는다.
+    upload_to_play_store(
+      package_name: APP_PACKAGE,
+      track: "internal",
+      release_status: "draft",
+      aab: AAB_PATH,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("확정용 업로드 완료 (internal·draft, versionCode #{code}) — 패키지명이 확정됐다")
+  end
+
+  desc "비공개 테스트 트랙에 새 빌드 업로드"
+  lane :beta do
+    # ── 값싼 가드 셋을 clean 앞에 모은다 ──
+    assert_play_key            # ① 파일 존재
+    key = tago_key             # ②
+    assert_release_keystore    # ③
+    UI.message("TAGO 키: #{key.length}자 확인")
+
+    # ④ 여기서 처음 네트워크를 쓴다 — 인증·권한이 실제로 먹는지가 이 호출로 드러난다.
+    new_code = next_version_code
+
+    build_aab(code: new_code)
+    metadata = stage_changelog(new_code)
+
+    upload_to_play_store(
+      package_name: APP_PACKAGE,
+      track: CLOSED_TRACK,
+      aab: AAB_PATH,
+      release_status: "completed",
+      metadata_path: metadata,               # nil이면 supply가 기본 경로를 찾지만(options.rb:66)
+      skip_upload_metadata: true,            #   그때는 아래 skip이 true라 아무것도 올리지 않는다
+      skip_upload_changelogs: metadata.nil?, # 스토어 본문은 건드리지 않고 릴리즈 노트만 올린다
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+
+    UI.success("비공개 테스트 업로드 완료! versionCode #{new_code} (track: #{CLOSED_TRACK})")
+  end
+end

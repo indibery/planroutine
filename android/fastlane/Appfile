@@ -1,0 +1,8 @@
+# android/fastlane/Appfile
+package_name("com.planroutine.app")
+
+# Play Developer API 인증. 원본은 리포 밖에 둔다(iOS `.p8`과 같은 규칙).
+#
+# 경로는 `.claude/skills/deploy/SKILL.md`가 이미 차단 요인 3번으로 적어 둔 값을 그대로
+# 쓴다 — 운영 문서와 레인이 다른 경로를 말하면 다음 사람이 키를 두 곳에 만든다.
+json_key_file(File.expand_path("~/.google_play/service_account.json"))
