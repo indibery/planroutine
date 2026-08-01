@@ -330,6 +330,7 @@ AAR 메타데이터가 소비 측(`:app`)에도 강제한다. **C1·C2·C3과 C5
 
 ```kotlin
 // android/app/build.gradle.kts — 전문
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -358,7 +359,11 @@ val dartDefines: Map<String, String> =
         .filter { it.isNotBlank() }
         .mapNotNull { encoded ->
             runCatching {
-                String(java.util.Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+                // ⚠️ `java.util.Base64.…`로 정규화해 쓰면 **컴파일되지 않는다** —
+                // AGP 8.11.1이 `java`라는 이름의 프로젝트 확장을 등록해 Kotlin DSL의
+                // 식별자 해석에서 그것이 패키지보다 우선한다(실측, 2026-08-02).
+                // 그래서 위에서 `import java.util.Base64`로 끌어와 비한정으로 쓴다.
+                String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
             }.getOrNull()
                 ?.split("=", limit = 2)
                 ?.takeIf { it.size == 2 }

@@ -19,7 +19,7 @@
 - **release 빌드는 레인으로만** — `flutter build appbundle`을 손으로 치는 경로를 만들지 않는다. `build.gradle.kts`의 가드가 빌드 자체를 막는다.
 - **트랙**: `beta` 레인 = **비공개 테스트(closed testing)**. internal은 14일을 **하루도 세지 않는다** — 틀리면 14일을 태운다.
 - **하드코딩 금지**: 문자열은 도메인별 `*Strings` 클래스, 색상 `AppColors`, 크기 `AppSizes`.
-- **기존 테스트 삭제 금지.** 현재 베이스라인은 `flutter test` **926건 통과**, `flutter analyze` **이슈 0**. 매 태스크 끝에서 둘 다 유지되어야 한다.
+- **기존 테스트 삭제 금지.** 현재 베이스라인은 `flutter test` **917건 통과**, `flutter analyze` **이슈 0**. 매 태스크 끝에서 둘 다 유지되어야 한다.
 - **긴 코드는 §스펙에서 그대로 옮긴다.** `build.gradle.kts` 전문(§M1-C1)과 Fastfile 전문(§M1-C5)은 이 계획에 복사하지 않는다 — 복사하면 출처가 둘로 갈려 어긋난다(이 리포의 "출처를 갈라진 채 두지 않는다" 원칙). 절 이름으로 지목하니 그 블록을 통째로 쓸 것.
 
 ---
@@ -121,7 +121,7 @@ Expected: `package="com.planroutine.app"`
 
 ```bash
 flutter analyze    # 이슈 0
-flutter test       # 926건 통과
+flutter test       # 917건 통과
 ```
 
 - [ ] **Step 8: Commit**
