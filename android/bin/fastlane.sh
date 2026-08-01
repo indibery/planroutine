@@ -2,8 +2,8 @@
 # fastlane 실행 래퍼.
 #
 # 사용자 shell 전역 설정을 건드리지 않고, 이 스크립트 내부에서만 Homebrew Ruby
-# (/opt/homebrew/opt/ruby/bin)를 PATH 앞에 둬서 Gemfile에 고정한 fastlane +
-# cocoapods 짝을 동일 Ruby 환경에서 실행한다.
+# (/opt/homebrew/opt/ruby/bin)를 PATH 앞에 둬서 Gemfile에 고정한 fastlane을
+# 그 Ruby 환경에서 실행한다.
 #
 # 사용:
 #   ./android/bin/fastlane.sh check_tago_key   # TAGO 키 확인 (빌드·업로드 없음)

@@ -63,6 +63,40 @@ def assert_play_key
       "  Play Console › 설정 › API 액세스에서 발급해 리포 밖에 두십시오(§M1-H1.6)."
     )
   end
+
+  # 파일이 있다고 곧 우리 계정은 아니다(실측 사고, 2026-08-02): `~/.google_play/`는
+  # 여러 앱이 공유하는 디렉터리라, 그 안에 바로팀의 서비스 계정 JSON이 먼저 있었다.
+  # 존재만 보고 통과시키면 공직플랜 배포가 조용히 다른 앱의 자격증명으로 돈다 —
+  # 운이 좋으면 권한 오류로 끝나지만 최악은 엉뚱한 앱을 건드리는 것이다. 그래서
+  # client_email까지 열어 우리 앱 것인지 확인한다. private_key 등 비밀 필드는
+  # 메시지에 절대 싣지 않는다 — client_email까지만 드러낸다.
+  begin
+    data = JSON.parse(File.read(path))
+  rescue JSON::ParserError => e
+    UI.user_error!(
+      "Play 서비스 계정 JSON을 읽을 수 없습니다: #{path}\n" \
+      "  파일이 비어 있거나 JSON 형식이 깨졌습니다(#{e.message}).\n" \
+      "  Play Console › 설정 › API 액세스에서 다시 발급해 덮어쓰십시오."
+    )
+  end
+
+  client_email = data["client_email"].to_s
+  if client_email.empty?
+    UI.user_error!(
+      "Play 서비스 계정 JSON에 client_email이 없습니다: #{path}\n" \
+      "  서비스 계정 키 파일이 맞는지 확인하고, 맞다면 다시 발급하십시오."
+    )
+  end
+
+  unless client_email.include?("planroutine")
+    UI.user_error!(
+      "이 JSON은 공직플랜 서비스 계정이 아닙니다: #{path}\n" \
+      "  들어 있는 계정: #{client_email}\n" \
+      "  Play Console에서 공직플랜(com.planroutine.app) 앱 › 설정 › API 액세스로 발급한\n" \
+      "  서비스 계정 JSON을 #{path}에 두십시오. 다른 앱의 자격증명을 재사용하지 마십시오."
+    )
+  end
+
   path
 end
 
