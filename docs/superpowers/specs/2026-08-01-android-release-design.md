@@ -13,11 +13,18 @@
 빌드는 첫날부터 fastlane 레인으로만 만들고(수동 `flutter build appbundle` 경로를 만들지
 않는다), 업로드 키는 리포 밖에 둔다(iOS `.p8`과 같은 규칙).
 
-**이 작업은 iOS도 재배포 대상으로 만든다.** 브리프는 "iOS는 한 줄도 안 바뀐다"였는데 결정
-둘이 그것을 깼다 — 글꼴을 에셋으로 번들하는 것(§결정 A)은 플랫폼 공통
-`app_text_styles.dart`·`pubspec.yaml`을 건드리고 **온보딩의 글꼴 렌더까지 바꾸며**(§M2-⑧),
-인앱 처리방침 링크(§결정 B)는 **iOS 설정 화면에도 같은 행을 만든다**(양쪽 스토어가 같은
-요건이다). 여기에 `app_theme.dart`의 내비게이션 바 필드와 바텀시트 `useSafeArea`가 더해진다.
+**이 작업은 iOS도 재배포 대상으로 만든다.** 브리프는 "iOS는 한 줄도 안 바뀐다"였는데 둘이
+그것을 깼다 — 인앱 처리방침 링크(§결정 B)는 **iOS 설정 화면에도 같은 행을 만들고**(양쪽
+스토어가 같은 요건이다), 바텀시트 인셋(§M2-⑥-c)은 **지금 iOS에서 실제로 나는 겹침을
+고친다.** 후자는 Android 대응으로 시작했는데 실측해 보니 성격이 달랐다: `event_edit_dialog`의
+제목은 기본 조건에서 `dy = 210.0`으로 넉넉히 통과하지만 **키보드가 올라오는 순간 54.0**이 돼
+다이나믹 아일랜드(59) 밑으로 들어간다. 캘린더·오늘 탭 FAB로 매일 열리는 시트다.
+여기에 `app_theme.dart`의 내비게이션 바 필드가 더해지지만 그쪽은 iOS에 구조적으로 무영향이다.
+
+**글꼴은 iOS를 바꾸지 않는다.** 초안은 `google_fonts` 에셋 번들이 온보딩 렌더까지 바꾼다고
+봤는데, 결정 A가 **미사용 코드 제거**로 교체됐다(§결정 A · §M2-⑧) — 실행 경로가 없는 함수와
+의존성을 지우는 것이라 렌더가 바뀌지 않는다.
+
 확정 목록은 §범위 밖에 있다. 브랜치가 머지되면 **다음 iOS beta가 이 변경들을 함께 태우므로**
 검증 계층에 iPhone 시뮬레이터 회귀 행이 들어간다(§검증 계층).
 
@@ -63,11 +70,11 @@
 | 12 | 파일 앱 running은 `onNewIntent` | DocumentsUI가 `FLAG_ACTIVITY_NEW_TASK`를 안 붙여 **`onCreate`가 주 경로**다 | M2-② |
 | 13 | (없음) | `flutter_deeplinking_enabled` **기본 true** — 안 끄면 `content://`가 초기 라우트를 덮어 Page Not Found | M2-② |
 | 14 | ⑥ edge-to-edge는 코드 변경 없음 | **라이트 테마 내비게이션 바 아이콘 밝기가 틀렸다.** iOS는 구조적으로 무영향 | M2-⑥ |
-| 15 | 바텀시트 둘도 `useSafeArea: true` | 호출부는 **6곳**이고 `true`는 둘뿐. `isScrollControlled` + 누락이 3곳이며 **그 셋에 가드가 없다** | M2-⑥ |
+| 15 | 바텀시트 둘도 `useSafeArea: true` | 호출부는 **6곳**이고 `true`는 둘뿐. `isScrollControlled` + 누락이 3곳이며 **그 셋에 가드가 없다.** 실측하면 `event_edit_dialog`가 **키보드가 올라오는 순간 겹친다**(54.0 < 59.0) — Android 대응이 아니라 **현재 iOS 버그**다 | M2-⑥ |
 | 16 | ⑦ `openAppSettings()` | **배터리 최적화 화면이 아니라 앱 정보 화면**까지만 간다 | M2-⑦ |
 | 17 | (없음) | **온보딩에서 백 한 번에 앱이 종료된다**(ShellRoute 밖) | M2-③ |
 | 18 | `PopScope(canPop: false)` | 고정하면 Android 16 back-to-home 예측형 애니메이션이 꺼진다. **동작이 같은 동적 형태**가 있다 | M2-③ |
-| 19 | (없음) | `google_fonts`가 런타임에 `fonts.gstatic.com`을 부를 수 있다. **다만 지금 호출부가 0건**이라 방침 §6은 "거짓"이 아니라 **한 줄이면 거짓이 되는 상태**다 | 결정 A (에셋 번들) |
+| 19 | (없음) | `google_fonts`가 런타임에 `fonts.gstatic.com`을 부를 수 있는데 **호출부가 0건**이라 요청이 실제로 나가지 않는다. 방침 §6은 거짓이 **아니고**, 남은 것은 **미사용 코드 2파일 3곳**(`numeric()` 12줄 + import + 의존성)이다 | 결정 A (미사용 코드 제거) |
 | 20 | (없음) | **인앱 처리방침 링크가 없다** — Play User Data 정책이 요구 | M1-C6 |
 | 21 | internal은 카운트 안 됨 | 맞다. 추가로 **open testing도 우회로가 아니다** — 프로덕션 액세스를 먼저 받아야 들어간다 | M1-H5 · H6 |
 | 22 | (없음) | debug 산출물이 release로 새는 경로 둘(registrant, `libsqlite3.so` 5.1MB) → 레인에 clean 필요 | M1-C5 |
@@ -87,7 +94,7 @@
 | 36 | (없음) | Play 스크린샷 규격("최대변 ≤ 최소변 × 2")에 **기존 App Store 자료 두 세트와 Pixel 7이 전부 탈락**한다 | M3-H4 (촬영은 M2 기간) |
 | 37 | (없음) | E2E 19건 중 한 건이 mock 없이 네이티브 공유 시트를 띄우고 **그 뒤에 시나리오가 둘 더 있다** | M2 게이트 |
 | 38 | (없음) | `deploy` 스킬이 `android beta`를 **track: internal**로 적어 뒀다 — 그대로 따르면 14일이 0일이다. `CLAUDE.md`도 "Android는 코드만 존재하고 미검증"에서 멈춰 있다 | §리포 문서·규칙 갱신 |
-| 39 | (없음) | `onboarding_screen.dart:113`이 **등록되지 않은** `fontFamily: 'Space Grotesk'`를 쓴다(FontManifest에 없다 — 조용히 기본 글꼴로 그려진다). 결정 A로 **iOS 렌더가 실제로 바뀐다** | M2-⑧ |
+| 39 | (없음) | **등록되지 않은** `fontFamily: 'Space Grotesk'`가 **세 곳**에 있다(`onboarding_screen.dart:113` · `import_screen.dart:341` · `edufine_guide_section.dart:180`). FontManifest에 없어 전부 조용히 기본 글꼴로 그려진다 → **디자인 부채로 남긴다**(지우면 의도가 사라지고 살리면 iOS 렌더가 바뀐다) | §범위 밖 |
 | 40 | ③ 온보딩은 "3페이지"까지만 | `PageView.builder` + `_page` 상태 + `PageController` 실물 확인. 되돌림 판정은 **순수 함수로 뺄 수 있다** | M2-③ |
 
 ### 1. desugaring — 두 조사 갈래의 "무수정 통과"는 오염된 관측이다
@@ -1385,11 +1392,11 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
   **전제라고 가정하고 일정을 잡고**, 아니면 그만큼 빨리 끝나는 쪽으로 둔다.
 - **데이터 안전 답안이 미결이면 이 단계에서 막힌다.** 그 결정은 끝나 있다 — 기기 백업을 켠 채
   두기로 했으므로 전송을 인정하는 답안이 확정이다(§M3-H3 · §결정 E).
-- **방침 URL이 전제라면 §M2-⑧(결정 A)과 §M2-⑨(방침 개정)이 M1으로 올라온다.** Play는 방침이
-  정확할 것을 요구하고, `google_fonts`의 런타임 fetch가 살아 있는 동안은 방침 §6("이 셋이 통신
-  전부")이 **한 줄이면 거짓이 되는 상태**다. ⑧은 `main.dart` 한 줄 + `pubspec.yaml` +
-  에셋 넷(`.ttf` 둘 · `OFL-*.txt` 둘)이라 M1에 넣는 비용이 작다 — 방침 본문에 CDN을 임시로
-  적고 나중에 지우는 쪽은 문서를 두 번 고치게 된다. ⑨는 문서 작업이라 코드 일정과 병렬이다.
+- **방침 URL이 전제라면 §M2-⑨(방침 개정)가 M1으로 올라온다.** Play는 방침이 정확할 것을
+  요구하는데, 방침 §6("이 셋이 통신 전부")은 **지금도 사실이다** — `google_fonts` 호출부가
+  0건이라 요청이 나가지 않는다(§결정 A). 그래서 **§M2-⑧은 이 전제에 걸리지 않는다.** 다만
+  함께 당기는 비용이 사실상 0이라(2파일 3곳) 같이 옮기는 쪽이 낫다 — 남겨 두면 §6이
+  "한 줄이면 거짓이 되는 상태"로 M2까지 간다. ⑨는 문서 작업이라 코드 일정과 병렬이다.
 
 **H1.6 · Play 서비스 계정 (레인이 도는 전제)**
 
@@ -1481,11 +1488,13 @@ production to access open testing."** → **closed testing이 유일한 길이�
 M1의 14일이 흐르는 동안 코드를 맞춘다. 고칠 때마다 같은 트랙에 새 빌드를 올려 테스터가
 실기기에서 밟는다.
 
-항목은 아홉이다 — 브리프의 ①~⑦에 **⑧ 글꼴 에셋 번들**(§결정 A)과 **⑨ 처리방침 개정**이
-더해졌다. 둘은 브리프에 없었지만 **스토어 요건에 걸려 있어 선택이 아니다**: ⑧은 방침 §6의
-문장을 사실로 만드는 코드이고, ⑨는 Play User Data 정책이 요구하는 방침의 정확성이다. 그래서
-"기능 패리티"라는 이름보다 넓지만 같은 마일스톤에 둔다 — 둘 다 M3 제출의 선행조건이고
-릴리즈 공개의 전제일 수도 있다(§M1-H1.5).
+항목은 아홉이다 — 브리프의 ①~⑦에 **⑧ 미사용 `google_fonts` 제거**(§결정 A)와
+**⑨ 처리방침 개정**이 더해졌다. 둘은 브리프에 없었지만 **방침의 정확성에 걸려 있다**:
+⑧은 방침 §6이 "한 줄이면 거짓이 되는 상태"를 없애는 2파일 3곳 삭제이고, ⑨는 Play User Data
+정책이 요구하는 방침의 정확성이다. 그래서 "기능 패리티"라는 이름보다 넓지만 같은 마일스톤에
+둔다 — ⑨는 M3 제출의 선행조건이고 릴리즈 공개의 전제일 수도 있다(§M1-H1.5).
+**⑧은 크기가 작아졌다** — 초안의 에셋 번들 안이 미사용 코드 제거로 교체되면서 선행 작업
+(글꼴 파일 확보·라이선스 등록)이 통째로 사라졌다.
 
 ### M2 일정 — 임계경로는 14일이 아니다
 
@@ -2770,7 +2779,7 @@ DARK   statusBarIconBrightness=light  navBarIconBrightness=light  navBarColor=#0
 번쩍인다 — **에뮬레이터에서 눈으로 확인할 항목.** 고치려면 런치 테마를 한쪽으로 고정하는
 수밖에 없다(인앱 설정을 네이티브가 알 방법이 없다).
 
-#### ⑥-c 바텀시트 — `useSafeArea` 누락 3곳
+#### ⑥-c 바텀시트 — `useSafeArea` 누락 3곳 (**실측 완료 — 현재 iOS 버그다**)
 
 호출부는 **6곳**이고 `useSafeArea: true`는 둘뿐이다:
 
@@ -2786,8 +2795,65 @@ DARK   statusBarIconBrightness=light  navBarIconBrightness=light  navBarColor=#0
 `useSafeArea: false`(기본)면 `MediaQuery.removePadding(removeTop: true)`가 걸려 **시트 안쪽
 `SafeArea`의 상단이 무력화된다**(`bottom_sheet.dart:1121-1123`). CLAUDE.md가
 `bus_stop_confirm_sheet`에 대해 기록한 "다이나믹 아일랜드와 겹쳐 읽히지 않았다"와 **정확히 같은
-함정이 세 곳 더 남아 있다.** `isScrollControlled: true`라 높이 상한이 화면 전체여서 긴 폼
-(`event_edit_dialog`: 제목·연도칩·설명 4~6줄·날짜·성격 카드·버튼)은 상태바까지 닿을 수 있다.
+함정이 세 곳 더 남아 있다.**
+
+##### 실측 — 겹치는 조건이 확정됐다 (2026-08-02)
+
+임시 프로브로 시트를 실제로 띄워 제목의 `dy`를 쟀다(프로브는 삭제했고 값만 남긴다).
+조건: **iPhone 15 Pro (1179×2556, DPR 3.0)**, `tester.view.padding = FakeViewPadding(top: 177)`
+= **다이나믹 아일랜드 59 논리픽셀**. 픽스처는 각 시트의 **가장 긴 내용**(연도 둘이 든 제목 +
+설명 6줄 + 중요 스위치).
+
+**두 시트 × 키보드 × 글꼴을 곱해 전수로 쟀고, `useSafeArea: true`를 켠 상태(= 수정 후)도
+같은 축으로 함께 쟀다.**
+
+| 시트 | 조건 | 현재 `dy` | 판정 | 수정 후 |
+|---|---|---|---|---|
+| `event_edit_dialog` | 기본 | 210.0 | OK | 210.0 |
+| `event_edit_dialog` | 글꼴 ×1.3 | 141.9 | OK | 141.9 |
+| **`event_edit_dialog`** | **키보드** | **54.0** | **겹침** | **113.0** |
+| **`event_edit_dialog`** | **키보드 + 글꼴 ×1.3** | **50.5** | **겹침** | **109.5** |
+| `event_edit_dialog` | 글꼴 ×2.0 | 43.0 | 겹침 + 레이아웃 예외 | (가드 대상 아님) |
+| `schedule_edit_sheet` | 기본 | 502.0 | OK | 502.0 |
+| `schedule_edit_sheet` | 글꼴 ×1.3 | 453.6 | OK | 453.6 |
+| `schedule_edit_sheet` | 키보드 | 166.0 | OK | 166.0 |
+| `schedule_edit_sheet` | 키보드 + 글꼴 ×1.3 | **117.6** | OK | 117.6 |
+
+**세 가지가 확정된다.**
+
+1. **실제로 겹치는 것은 `event_edit_dialog` 하나다.** `schedule_edit_sheet`는 최악 조합에서도
+   117.6으로 기준(59)의 두 배 여유가 있다. 차이는 폼 길이다 — 하나는 제목·설명 두 필드뿐이고
+   (`schedule_edit_sheet.dart:88-95`), 다른 하나는 제목 + 연도 칩 + 설명 6줄 + 날짜 +
+   성격 카드 + 버튼이다.
+2. **`useSafeArea: true`가 실제로 고친다** — 54.0 → 113.0, 50.5 → 109.5. 값으로 확인했다.
+3. **비스크롤 시트가 오버플로로 바뀔 것이라는 우려는 기각됐다.** `schedule_edit_sheet`는
+   맨 `Column`이라(`:95`) 상단 인셋을 깎으면 `RenderFlex overflowed`가 날 수 있다는 가설이
+   있었는데, **수정 전후 값이 완전히 같고**(166.0 → 166.0) 예외도 나지 않았다. 그 시트는
+   애초에 top에 닿지 않아 `useSafeArea`가 **아무 일도 하지 않기** 때문이다.
+
+⚠️ **`ai_photo_flow`는 재지 못했다.** 본문 `_AiPreviewSheet`가 private이고 진입점이 클립보드를
+읽는 함수라 프로브로 띄우지 못했다. **미측정**이고 아래에서 "예방"으로 분류한다.
+
+**초안의 위험 분석이 축을 하나 놓쳤다.** 초안은 "긴 폼이 자라 상태바까지 닿는다"로 봤는데,
+겹침을 만드는 것은 **시트 크기가 아니라 키보드가 시트를 위로 밀어 올리는 것**이다.
+`isScrollControlled: true`여도 시트는 내용 높이만큼만 차지하므로 기본 조건에서는 210.0으로
+넉넉히 통과한다 — **제목을 편집하려 탭하는 순간** 키보드가 올라오고 그때 겹친다.
+
+> 즉 이것은 **Android edge-to-edge 대응이 아니라 현재 iOS의 실제 버그**다.
+> `event_edit_dialog`는 캘린더·오늘 탭 FAB로 **매일 열리는 시트**이고, 제목 편집은
+> 그 시트에서 가장 흔한 동작이다. Android 작업에 딸려 발견됐을 뿐 고쳐야 하는 이유는
+> 플랫폼과 무관하다(§범위 밖 · §개요).
+
+**고칠 곳은 셋이지만 근거의 등급이 다르다** — 이 구분을 지우면 TDD가 헛돈다.
+
+| 시트 | 근거 | 성격 |
+|---|---|---|
+| `event_edit_dialog` | **실측 겹침**(54.0 · 50.5) | **버그 수정.** 빨강이 나는 것은 여기 하나다 |
+| `schedule_edit_sheet` | 실측 OK(최악 117.6) | **회귀 방지.** 지금은 안 겹치지만 폼이 자라면 같은 길을 간다 |
+| `ai_photo_flow` | **미측정**(private 위젯) | **예방.** 항목 수에 따라 자라는 시트라 위험 구조는 같다 |
+
+`isScrollControlled: true`인 셋이 대상이라는 초안의 목록은 그대로다 — 바뀐 것은
+**왜 위험한가**(키보드)와 **지금 실제로 겹치는가**(하나뿐)다.
 
 **표가 규칙을 그대로 보여준다**: `useSafeArea: true`인 둘은 **안쪽에 `SafeArea`가 있고**,
 없는 셋은 **`viewInsets.bottom`을 손으로 더하고 있다**(`event_edit_dialog.dart:102,108` ·
@@ -2801,9 +2867,12 @@ DARK   statusBarIconBrightness=light  navBarIconBrightness=light  navBarColor=#0
       // 제거돼 안쪽 SafeArea가 무력해진다(stamp_style_sheet·bus_stop_confirm_sheet와 동일).
       useSafeArea: true,
 ```
-`calendar_integration_section.dart:67`에도 함께 넣는다. 지금은 시트가 짧아 상단에 닿지 않아
-증상이 없지만(안쪽 `SafeArea`는 있다), **호출부마다 관용구가 다른 상태를 남기지 않는다** —
-아래 정적 가드가 여섯 곳 전부를 같은 규칙으로 본다.
+`calendar_integration_section.dart:67`에도 함께 넣는다. 다만 **성격이 다르다는 것을 갈라 적는다** —
+그 호출부는 `isScrollControlled`가 **없어**(기본 false) 시트가 화면 절반을 넘지 못하고,
+안쪽 `SafeArea`도 있다. 즉 **구조적으로 위험이 낮다.** 그래서 **정적 가드에는 넣고 위젯
+가드에서는 뺀다**(아래 (가)·(나)). `useSafeArea`가 없는 것은 사실이고 라디오 항목이 늘면
+위험해지므로, **호출부마다 관용구가 다른 상태를 남기지 않는다** — 정적 가드가 여섯 곳 전부를
+같은 규칙으로 본다.
 
 **하단은 `useSafeArea`가 일부러 남긴다.** `bottom_sheet.dart:1121-1123`:
 ```dart
@@ -2852,23 +2921,52 @@ double sheetBottomInset(BuildContext context) {
 (`bus_stop_search_test.dart:224-242`). 이번이 4·5·6번째 사례이므로 고치는 것으로 끝내면
 다음 시트가 7번째가 된다 — 이 리포 규칙은 **재발한 함정을 문서에서 가드로 승격**하는 것이다.
 
-**(가) 위젯 테스트 3건** — 기존 가드와 같은 형태로, 파일은 각 시트의 테스트 자리에 둔다.
+**(가) 위젯 테스트 — 축 셋을 곱한다.** 파일은 각 시트의 테스트 자리에 둔다.
+
+**기존 가드는 내용 길이 한 축만 본다.** `bus_stop_search_test.dart:224-242`는 노선 10개
+픽스처로 시트를 키워 제목의 `dy`를 재는데, 그 형태를 그대로 복사하면 위 표의 **210.0을 재고
+통과한다.** 실측이 보여준 대로 겹침을 만드는 것은 키보드이므로, 축을 곱하지 않은 가드는
+`event_edit_dialog`의 실제 결함을 **한 건도 잡지 못한다.**
+
+```
+축 1  내용 길이   가장 긴 픽스처 (짧으면 시트가 top에 안 닿는다)
+축 2  키보드      viewInsets.bottom = 0 / 336        ← 실측이 새로 세운 축
+축 3  글꼴 배율   TextScaler.linear(1.0 / 1.3)       ← ⑥-d와 같은 축
+```
+
 ```dart
-// 패턴은 bus_stop_search_test.dart:224-242 그대로
+// 패턴은 bus_stop_search_test.dart:224-242에서 출발하되 축 둘을 더한다.
 tester.view.devicePixelRatio = 3.0;
 tester.view.padding = const FakeViewPadding(top: 177);   // 59 논리픽셀
 addTearDown(tester.view.reset);
+
+// 축 2 — 키보드. 이 줄이 없으면 210.0을 재고 초록이 된다.
+tester.view.viewInsets = const FakeViewPadding(bottom: 336 * 3);
+
 await <시트를 show()로 띄운다>;                            // ← 본문만 pump하면 안 된다
 expect(tester.getTopLeft(find.text(<제목>)).dy, greaterThanOrEqualTo(59.0));
 ```
+- **TDD로 쓴다** — 먼저 위 표의 값(54.0 · 50.5)을 **재현해 빨강**을 확인하고 그 다음
+  `useSafeArea: true`로 초록을 만든다. 순서를 뒤집으면 가드가 무엇을 잡는지 아무도 모른다.
+  - ⚠️ **빨강이 나는 것은 `event_edit_dialog` 하나다**(위 등급 표). `schedule_edit_sheet`는
+    수정 전에도 초록이고 `ai_photo_flow`는 미측정이다. 그 둘에서 빨강을 기다리면 "축이
+    틀렸나"에서 멈춘다 — 두 시트의 가드는 **회귀 방지**이므로 처음부터 초록이 정상이다.
 - **반드시 `show()`로 띄운다.** `stamp_style_sheet_test.dart:15-16`이 이미 적어 뒀다 —
   "시트 본문만 pump하면 `show()`의 `useSafeArea` 같은 설정이 **검증에서 빠진다**".
 - **픽스처는 가장 긴 내용으로.** 시트 높이가 내용 의존이라 짧은 입력으로 재면 시트가 top에
   닿지 않아 그냥 통과한다(CLAUDE.md가 "노선 10개 픽스처를 쓴다 — 3개로 재면 통과한다"로
   기록한 그 이유다). 각각:
-  - `event_edit_dialog` — 제목 + 연도 칩(연도 둘) + 설명 6줄 + 날짜 + 성격 카드 + 버튼
-  - `schedule_edit_sheet` — 제목 + 설명 여러 줄
+  - `event_edit_dialog` — 제목(연도 둘) + 연도 칩 + 설명 6줄 + 날짜 + 성격 카드 + 버튼
+  - `schedule_edit_sheet` — 제목 + 설명 6줄
   - `ai_photo_flow` — 붙여넣기 미리보기에 항목을 여러 건 넣은 상태
+- **대상은 셋뿐이다.** `calendar_integration_section`은 `isScrollControlled`가 없어 시트가
+  내용 높이만큼만 차지하고 위험이 구조적으로 낮다 — 위젯 가드를 붙이지 않고 아래 정적
+  가드로만 본다. (`stamp_style_sheet`·`bus_stop_confirm_sheet`는 이미 `true`이고
+  후자에는 가드도 있다.)
+- ⚠️ **글꼴 ×2.0은 가드로 못박지 않는다.** 실측에서 `dy = 43.0`과 함께 **레이아웃 예외**가
+  났다 — 그 구간은 `useSafeArea`로 해결되는 문제가 아니라 폼 자체를 다시 설계해야 하는
+  별 문제이고, ⑥-d가 `1.3`을 상한으로 고른 이유와 같다. **알고 두는 것이지 고쳐진 것이
+  아니다.**
 
 **(나) 정적 가드 1건 — `test/shared/sheet_safe_area_test.dart`**
 
@@ -2888,7 +2986,7 @@ expect(tester.getTopLeft(find.text(<제목>)).dy, greaterThanOrEqualTo(59.0));
 관용구가 공존하기 때문")대로 문제는 관용구가 둘이라는 것인데, `useSafeArea`만 검사하면
 없애는 것은 관용구 하나뿐이다. 네 번째 시트가 하단을 `MediaQuery.of(context).viewInsets.bottom`
 으로 손조립해도 전수 테스트가 초록이고, 그러면 CLAUDE.md에 남긴 규칙이 **잡힌다고 거짓말을
-한다.** 상단 인셋 가드 3건(위 (가))은 시트 본문을 pump해 보는 위젯 테스트이고, 하단은
+한다.** 상단 인셋 가드(위 (가) — 시트 3종 × 축 셋)는 시트를 실제로 띄워 보는 위젯 테스트이고, 하단은
 **소스 대조**가 맞다 — 제스처바 인셋은 `FakeViewPadding`으로 재현해도 시트 내부 여백과
 구별되지 않아 위젯 테스트로 판정하기 어렵다.
 
@@ -3029,155 +3127,102 @@ if (showBatteryHint ?? Platform.isAndroid)
 □ iOS 시뮬레이터: 이 행이 보이지 않는다
 ```
 
-### M2-⑧ 글꼴을 에셋으로 — 통신을 없앤다 (§결정 A)
+### M2-⑧ 미사용 `google_fonts` 제거 — iOS 렌더를 건드리지 않는다 (§결정 A)
 
-목적은 **처리방침 §6의 문장을 사실로 만드는 것**이다. "이 셋이 본 앱이 외부와 주고받는 통신
-전부입니다"를 고치는 대신 지키는 쪽을 골랐다(§결정 A).
+**초안의 전제가 틀렸다.** 초안·브리프는 "`google_fonts`가 런타임에 `fonts.gstatic.com`을 불러
+방침 §6이 거짓"이라고 보고 에셋 번들 + `allowRuntimeFetching = false`를 설계했는데,
+실측하면 **지금 요청이 실제로 나가지 않는다.**
 
-**먼저 지금 상태를 정확히 적는다 — 초안이 이 부분을 과장했다.**
-
-`app_text_styles.dart:2,77`이 `GoogleFonts.spaceGrotesk(...)`를 쓰고 `allowRuntimeFetching`
-기본값은 `true`다. 그러나 그 함수 `AppTextStyles.numeric()`은 **호출부가 0건이다**
-(`grep -rn 'numeric(' lib/ test/ integration_test/` → 선언 한 줄뿐). `google_fonts`는 스타일
-게터를 **부를 때** 로드를 걸므로, 지금 실제로 나가는 요청은 **없다.**
-
-> 즉 방침 §6은 "거짓"이 아니라 **한 줄이면 거짓이 되는 상태**다. 결정은 그대로 유지한다 —
-> `allowRuntimeFetching = false`는 그 상태를 **구조적으로 만들 수 없게** 하고, 그것이 이
-> 결정의 실효다. (`numeric()`과 `google_fonts` 의존성을 지우는 안도 통신을 없애지만, 그건
-> 이 마일스톤의 범위를 넘는 제거이고 판단이 사용자 몫이다.)
-
-**그리고 Space Grotesk를 쓰는 자리가 하나 더 있다 — 등록되지 않은 채로.**
-`onboarding_screen.dart:113`이 `fontFamily: 'Space Grotesk'`를 **문자열 리터럴로** 쓰는데
-그 family가 어디에도 선언돼 있지 않다. 실측 `FontManifest.json`은
-`MaterialIcons` · `Pretendard` · `packages/cupertino_icons/CupertinoIcons` 셋뿐이다 →
-지금 그 eyebrow(`GONGJIKPLAN · 2026`)는 **조용히 기본 글꼴로 그려진다.**
-번들하면 처음으로 의도한 글꼴이 나온다 — **iOS 온보딩 렌더가 실제로 바뀌는 지점이고**,
-§범위 밖에 적었다.
-
-#### `allowRuntimeFetching = false`의 자리 — `main.dart`
-
-```dart
-// lib/main.dart — WidgetsFlutterBinding.ensureInitialized() 직후
-import 'package:google_fonts/google_fonts.dart';
-
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // 글꼴을 런타임에 받아오지 않는다. 처리방침 §6("이 셋이 통신 전부")을 코드로 지키는 줄이고,
-  // 부수 이득으로 오프라인 첫 실행에서도 글꼴이 나온다.
-  //
-  // ⚠️ 첫 GoogleFonts.* 호출보다 먼저여야 한다. `AppTextStyles`는 static getter 모음이라
-  //    위젯이 그려지는 순간 평가되므로 `runApp` 앞이면 충분하다.
-  // ⚠️ 에셋이 없으면 이 플래그는 예외를 던진다(`google_fonts_base.dart:178-184`) —
-  //    플러그인이 그 예외를 잡아 print만 하고 `fontFamilyFallback`으로 떨어뜨리므로
-  //    **화면은 조용히 기본 글꼴이 된다.** 그래서 아래 번들과 **한 쌍**이다.
-  GoogleFonts.config.allowRuntimeFetching = false;
-```
-
-`AppTextStyles`에 두지 않는 이유: 그 클래스는 값만 만드는 getter 모음이고, 전역 설정을
-게터 부작용으로 켜면 **어떤 게터를 처음 부르느냐에 따라 켜지는 시점이 달라진다.**
-
-#### `pubspec.yaml` — 선언은 `fonts:`에 하고, **파일명이 계약이다**
-
-```yaml
-  fonts:
-    - family: Pretendard
-      fonts:
-        - asset: assets/fonts/PretendardVariable.ttf
-    # family 이름은 `onboarding_screen.dart:113`의 리터럴과 **정확히 같아야** 한다.
-    # 파일명은 Google Fonts API 규약을 **바꾸지 말 것** — google_fonts가 애셋을 찾는 기준이다.
-    - family: Space Grotesk
-      fonts:
-        - asset: assets/fonts/SpaceGrotesk-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/SpaceGrotesk-SemiBold.ttf
-          weight: 600
-```
-
-**`assets:`가 아니라 `fonts:`로 충분하다 — 실측으로 확인했다.** `google_fonts`는
-`AssetManifest`를 훑어 애셋 **경로**를 찾는데(`google_fonts_base.dart:147-154`), `fonts:`로만
-선언한 파일도 AssetManifest에 들어간다: 이 리포의 `assets/fonts/PretendardVariable.ttf`는
-`assets:`에 없고 `fonts:`에만 있는데 빌드 산출물
-`build/app/intermediates/flutter/release/flutter_assets/AssetManifest.bin`에 그대로 있다.
-(README는 `assets:`에 넣으라고만 안내하지만 필요조건은 그것이 아니다.)
-
-**진짜 계약은 파일명이다.** `_findFamilyWithVariantAssetPath`(`:308-333`)가 애셋 경로에서
-확장자를 떼고 **`${family}-${variant}`로 끝나는지**만 본다
-(`google_fonts_family_with_variant.dart:20-22`). 그래서:
-
-| 요청 굵기 | 찾는 접미사 | 파일명 |
-|---|---|---|
-| w400 | `SpaceGrotesk-Regular` | `SpaceGrotesk-Regular.ttf` |
-| w500 | `SpaceGrotesk-Medium` | `SpaceGrotesk-Medium.ttf` |
-| w600 | `SpaceGrotesk-SemiBold` | `SpaceGrotesk-SemiBold.ttf` |
-
-**번들 대상은 실제로 요청되는 굵기뿐이다** — 지금은 둘이다: `numeric()`의 기본값 w600과
-온보딩의 w500. Space Grotesk는 API에 w300~w700 다섯 변형이 있지만(`part_s.g.dart:10252-10287`,
-각 ~69KB) 안 쓰는 굵기를 넣지 않는다.
-
-> **규칙: `GoogleFonts.*`에 새 굵기를 넘기면 그 변형 파일도 함께 번들한다.** 안 하면
-> `allowRuntimeFetching = false`가 예외를 던지고 **화면이 조용히 기본 글꼴로 떨어진다**
-> (컴파일도 테스트도 통과한다). 이 규칙은 `CLAUDE.md`에 적는다(§리포 문서·규칙 갱신).
-
-#### 라이선스 — 확인했다
-
-- **Space Grotesk: SIL Open Font License 1.1.** 배포본 `OFL.txt` 1행 verbatim:
-  `Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)`,
-  3행: `This Font Software is licensed under the SIL Open Font License, Version 1.1.`
-  (google/fonts 저장소 `ofl/spacegrotesk/`, `METADATA.pb`의 license 필드도 `OFL`).
-  → **에셋 번들·재배포가 허용된다.** 의무는 **라이선스 사본과 저작권 고지를 함께 배포하는
-  것**이다(OFL §2).
-- **예약 이름(Reserved Font Name) 의무는 Space Grotesk에 없다** — 저작권 행에
-  `with Reserved Font Name`이 **선언되지 않았다**(실물 확인). 이름을 바꿔 파생본을 만들
-  계획도 없으므로 이 조항은 이 작업에 걸리지 않는다.
-- ⚠️ **Pretendard는 다르다.** 리포가 이미 `assets/fonts/PretendardVariable.ttf`를 담고 있고
-  그 라이선스는 OFL 1.1이며 **예약 이름이 네 개 선언돼 있다**(`Pretendard` · `Source` ·
-  `Inter` · `M PLUS 1` — Pretendard가 세 글꼴을 합친 결과다). 그런데 **리포에 라이선스 사본이
-  없다.** 이번에 함께 채운다.
+**실측 (2026-08-02)**
 
 ```
-assets/fonts/OFL-SpaceGrotesk.txt    ← 배포본 OFL.txt 그대로
-assets/fonts/OFL-Pretendard.txt      ← 기존 부채를 여기서 갚는다
+$ grep -rn "google_fonts\|GoogleFonts" lib/ test/ integration_test/
+lib/core/theme/app_text_styles.dart:2:import 'package:google_fonts/google_fonts.dart';
+lib/core/theme/app_text_styles.dart:77:      GoogleFonts.spaceGrotesk(
+                                          → 두 줄, 한 파일
+
+$ grep -rn "numeric(" lib/ test/ integration_test/
+lib/core/theme/app_text_styles.dart:71:  static TextStyle numeric({
+                                          → 선언 한 줄. 호출부 0건
 ```
-`pubspec.yaml`의 `assets:`에 `assets/fonts/`를 더해 두 텍스트가 번들에 들어가게 하고,
-`main.dart`에서 `LicenseRegistry.addLicense`로 등록한다(google_fonts README가 같은 형태를
-든다) — 그러면 `설정 › 앱 정보`에서 열리는 Flutter 기본 라이선스 화면에 나타나 **"함께
-배포한다"가 사용자 눈에 보이는 형태로** 성립한다.
+
+`google_fonts`는 스타일 게터를 **부를 때** 로드를 건다. 그 게터를 감싼
+`AppTextStyles.numeric()`을 아무도 부르지 않으므로 **실행 경로가 없고 네트워크 요청도 없다.**
+방침 §6("이 셋이 본 앱이 외부와 주고받는 통신 전부입니다")은 **거짓이 아니라 "한 줄이면
+거짓이 되는 상태"** 다.
+
+**그래서 작업은 셋이 아니라 둘이다 — 이게 ⑧의 전부다.**
+
+```
+1. lib/core/theme/app_text_styles.dart
+   - `numeric()` 함수 삭제 (:71-…)
+   - `import 'package:google_fonts/google_fonts.dart';` 삭제 (:2)
+2. pubspec.yaml
+   - `google_fonts: ^6.2.1` 삭제 (:70)
+```
+
+**iOS 영향 0.** 실행되지 않던 코드를 지우는 것이라 **렌더가 바뀌지 않는다.** 플랫폼 공통
+파일을 건드리지만 §범위 밖의 iOS 영향 표에서 "영향 0" 쪽에 든다.
+
+#### 하지 않는 것
+
+초안의 설계가 통째로 불필요해진다. **되살리지 말 것** — 아래는 전부 "요청이 나간다"는
+틀린 전제 위에 세워져 있었다.
+
+- 에셋 번들(Space Grotesk `.ttf` 둘 확보 · `pubspec.yaml`의 `fonts:` 선언)
+- `main.dart`의 `GoogleFonts.config.allowRuntimeFetching = false`
+- OFL 라이선스 텍스트 둘 + `LicenseRegistry.addLicense` 등록
+- 처리방침 §6 수정 (§M2-⑨ — 지금도 사실이므로 그대로 둔다)
+- `rootBundle` 글꼴 에셋 가드 (§검증 계층에서 그 행을 **뺐다**)
+- "`GoogleFonts.*`에 새 굵기를 넘기면 그 변형 파일도 번들한다" 규칙
+  (§리포 문서·규칙 갱신 — `google_fonts`가 사라지므로 규칙 자체가 없어진다)
+- 기내 모드 에뮬레이터 + 앱 데이터 삭제 후 첫 실행 검증
+
+> ⚠️ **Pretendard의 OFL 라이선스 사본 부재는 그대로 남는다.** 리포가
+> `assets/fonts/PretendardVariable.ttf`를 라이선스 사본 없이 담고 있고 그 라이선스는
+> OFL 1.1이며 **예약 이름이 네 개 선언돼 있다**(`Pretendard` · `Source` · `Inter` ·
+> `M PLUS 1` — Pretendard가 세 글꼴을 합친 결과다). 초안은 Space Grotesk 번들에 얹어
+> 이 부채를 함께 갚으려 했는데, 번들이 없어지면서 얹을 자리가 사라졌다. **이 마일스톤의
+> 범위 밖으로 남긴다** — 별 작업이고, Android 출시가 새로 만든 문제가 아니다.
+
+#### `fontFamily: 'Space Grotesk'` 세 곳은 그대로 둔다 — 디자인 부채
+
+`pubspec.yaml`의 `fonts:`에는 Pretendard만 있어(실측 `FontManifest.json`은
+`MaterialIcons` · `Pretendard` · `packages/cupertino_icons/CupertinoIcons` 셋뿐) 아래 셋은
+**지금 조용히 기본 글꼴로 렌더된다.** 초안은 온보딩 1곳만 적었는데 **세 곳이다**(grep 실측):
+
+```
+lib/features/onboarding/presentation/screens/onboarding_screen.dart:113
+lib/features/import/presentation/screens/import_screen.dart:341
+lib/features/import/presentation/widgets/edufine_guide_section.dart:180
+```
+
+지우면 디자인 의도가 사라지고, 살리면(글꼴을 등록하면) **iOS 렌더가 바뀐다.**
+**사용자가 후자를 명시적으로 기각했다**(2026-08-02) — 그래서 셋 다 손대지 않고 부채로
+남긴다. §범위 밖에 별 항목으로 적었다.
 
 #### 검증
 
 ```
-□ 선행: 두 ttf(SpaceGrotesk-Medium/-SemiBold)와 두 OFL 텍스트를 **파일로 확보한다**
-   — Google Fonts 저장소(github.com/google/fonts, OFL)에서 받아 assets/fonts/에 넣고
-   pubspec `fonts:`·`assets:`에 선언한다. 아래 rootBundle 가드의 선행조건이다
-   (초안은 경로만 정하고 파일을 어디서 받는지를 작업으로 세우지 않았다)
-□ ~~flutter test — google_fonts가 네트워크를 시도하지 않는다~~ **이 검증은 쓰지 않는다.**
-   플래그를 켜는 자리가 `main.dart`의 `main()`이고 `flutter test`는 그것을 실행하지 않아
-   테스트 환경의 `allowRuntimeFetching`은 **기본값 true로 남는다** — 에셋 이름이 어긋나면
-   조용히 fetch 쪽으로 떨어진다. 판정은 아래 rootBundle 가드가 한다
-□ 가드 1건 — rootBundle.load로 두 ttf와 두 OFL 텍스트가 **실제로 로드된다**
-   이 리포의 선례를 그대로 따른다: 에셋 마크는 위젯 존재 검증으로 못 지킨다(파일이나
-   pubspec 선언이 빠져도 트리에는 Image/TextStyle이 그대로 있고 **런타임에만** 빈다).
-   CLAUDE.md의 "가드는 rootBundle로 실제 로드까지 확인한다"가 이 경우다
-□ 가드 1건 — AppTextStyles.numeric()이 반환하는 fontFamily가 SpaceGrotesk 계열이고
-   예외가 print되지 않는다(debugPrint를 가로채 'unable to load font'가 없음을 본다)
-□ 기내 모드 에뮬레이터 + **앱 데이터 삭제 후 첫 실행** — Space Grotesk를 쓰는 화면이
-   같은 글꼴로 뜬다. 데이터를 안 지우면 기기 파일시스템 캐시가 남아 통과해 버린다
-   (`google_fonts_base.dart:159-167`이 캐시를 먼저 본다)
-□ iOS 시뮬레이터 — 온보딩 eyebrow가 **바뀐다**(기본 글꼴 → Space Grotesk).
-   의도된 변화이므로 스크린샷으로 남긴다. 나머지 화면은 그대로여야 한다
-□ 설정 › 앱 정보 › 라이선스에 두 OFL이 나타난다
+□ flutter analyze — 미사용 import·죽은 코드 없음
+□ flutter test — 908건이 그대로 초록 (numeric()의 호출부가 0건이므로 한 건도 안 깨져야 한다.
+   깨지면 grep이 놓친 참조가 있다는 뜻이다)
+□ grep -rn "google_fonts\|GoogleFonts" lib/ test/ integration_test/ pubspec.yaml → 0건
+□ pubspec.lock에서 google_fonts가 빠졌다 (`flutter pub get` 후)
+□ iOS 시뮬레이터 — **아무것도 바뀌지 않는다.** 온보딩·가져오기 화면이 종전과 같다
+   (실행되지 않던 코드를 지웠으므로 변화가 보이면 그것이 결함이다)
 ```
 
-**착수 시점**: 기본은 M2다. 단 **방침 URL이 비공개 테스트 공개의 전제로 확인되면 M1로
-당긴다**(§M1-H1.5) — Dart 두 줄 + 에셋 넷 + `pubspec.yaml`이라 옮기는 비용이 작고, 방침 본문에
-CDN을 임시로 적고 나중에 지우는 쪽은 문서를 두 번 고치게 된다.
+**착수 시점**: 기본은 M2다. 2파일 3곳이라 M1으로 당기는 비용도 사실상 0이고(§M1-H1.5),
+방침 URL 전제와 무관하게 언제 해도 된다.
 
 ### M2-⑨ 처리방침 개정 — iOS 서술 8곳 + §2 표 + 새 절
 
 Play User Data 정책은 방침이 **정확할 것**을 요구한다. 지금 `docs/privacy_policy.md`는 iOS를
-전제로 쓰여 있어 Android에서 사실과 다른 문장이 여럿이고, 여기에 이 작업이 만든 사실 둘
-(기기 백업 · 글꼴 통신 제거)이 더해진다. **URL은 그대로 둔다** — 바꾸면 Google OAuth 동의 화면
+전제로 쓰여 있어 Android에서 사실과 다른 문장이 여럿이고, 여기에 이 작업이 만든 사실 하나
+(기기 백업)가 더해진다. **URL은 그대로 둔다** — 바꾸면 Google OAuth 동의 화면
 필드가 바뀌어 재검증 트리거가 된다(§M2-④). 본문 수정 자체는 트리거가 아니다.
+(초안은 "글꼴 통신 제거"를 두 번째 사실로 꼽았는데, 그 통신은 **애초에 없었다** — §M2-⑧.)
 
 **대상은 8곳이다**(grep 실측, 초안이 "세 곳"으로 적었던 것을 확정):
 
@@ -3188,7 +3233,7 @@ Play User Data 정책은 방침이 **정확할 것**을 요구한다. 지금 `do
 | `:32` | `iOS 기기 시스템에 예약하기 위해` | `기기 시스템` — 플랫폼 이름을 뺀다(양쪽 다 맞는 서술이 된다) |
 | `:35` | `OAuth 토큰을 Keychain에 저장합니다` | 아래 §2 표와 같은 사실로 다시 쓴다 |
 | `:109` | §6 `iOS Keychain(kSecClass = …)에 저장돼` | 같음. Android 문장을 나란히 둔다 |
-| `:115` | §6 `이 셋이 … 통신 전부입니다` | **그대로 둔다** — §M2-⑧이 이 문장을 사실로 만든다 |
+| `:115` | §6 `이 셋이 … 통신 전부입니다` | **그대로 둔다** — **지금도 사실이다**(`google_fonts` 호출부 0건). §M2-⑧의 삭제가 그 상태를 되돌릴 수 없게 만든다 |
 | `:130-131` | `iOS 홈 화면에서 앱을 삭제하면 … iOS 표준 동작` | Android 앱 삭제도 같은 결과다. 단 **기기 백업 사본은 남는다**(새 절이 설명) |
 | `:163` | 각주 `App Store Review Guidelines §5.1.1` | Google Play User Data 정책을 함께 적는다 |
 
@@ -3231,7 +3276,7 @@ Play User Data 정책은 방침이 **정확할 것**을 요구한다. 지금 `do
 
 **`§9 개정 이력`에 항목을 추가한다**(리포 관례 — 기존 4건 모두 무엇을 왜 고쳤는지 적는다):
 Android 출시에 맞춰 iOS 전용 서술 정정 · §2 표의 토큰 저장 위치를 플랫폼별로 분리 ·
-기기 백업 절(§5-4) 추가 · 글꼴 CDN 요청을 없애 §6의 통신 열거를 유지.
+기기 백업 절(§5-4) 추가. **§6의 통신 열거는 손대지 않는다** — 항목이 늘지도 줄지도 않았다.
 
 **검증**
 ```
@@ -3388,7 +3433,7 @@ device and not sent off device does not need to be disclosed."
 | 기기 캘린더 쓰기(`WRITE_CALENDAR`) | 기기 내 CalendarProvider | **No** | 로컬 처리 면제 |
 | 캘린더 이벤트 → 사용자 본인 Google 캘린더 | Google | **No**(유추) | 아래 FAQ |
 | 버스 조회(정류장 ID·도시코드·검색어) | `apis.data.go.kr` | **No**(매핑 대상 없음) | 아래 |
-| 폰트 파일 요청 | (없어진다) | **해당 없음** | Space Grotesk를 에셋으로 번들하고 런타임 fetch를 끈다(§결정 A) |
+| 폰트 파일 요청 | **애초에 없다** | **해당 없음** | `google_fonts` 호출부가 0건이라 요청이 나가지 않는다(실측). §M2-⑧이 그 코드를 지워 되살아날 수 없게 한다(§결정 A) |
 
 **Google 캘린더 판정의 근거는 Drive/Dropbox FAQ verbatim이다:**
 > "If the user chooses to upload their data directly to their own external drive or cloud storage
@@ -3456,8 +3501,9 @@ Calendar events → Collected: Yes / Shared: No / 목적: App functionality /
 > 않아 기본값으로 출시된 것"과 "정해서 켠 것"이 구별되지 않는다.
 
 **"암호화 Yes"의 근거**: 실제 나가는 통신 전부가 HTTPS다(Google 로그인·Calendar API·
-`apis.data.go.kr` TLS 1.3 실측). **폰트 CDN은 목록에서 빠진다** — §결정 A로 요청 자체가
-없어진다(§M2-⑧). 기기 백업 경로도 Google/Apple의 백업 전송이 TLS이고 Android 9+는 사용자
+`apis.data.go.kr` TLS 1.3 실측). **폰트 CDN은 목록에 애초에 없다** — `google_fonts` 호출부가
+0건이라 요청이 나가지 않고, §M2-⑧이 그 코드를 지운다. 기기 백업 경로도 Google/Apple의 백업
+전송이 TLS이고 Android 9+는 사용자
 화면 잠금으로 백업을 암호화한다.
 **"삭제 가능 Yes"의 근거**: 공식 정의가 "a discoverable mechanism like in-app features, contact
 forms, or email aliases"이고 셋 다 있다. ⚠️ 방침 §4·§7이 "전체 데이터 초기화는 DB만 지우고
@@ -3570,7 +3616,7 @@ M1이 결정 대기에 막히지 않는다** — 특히 E(데이터 안전)는 �
 
 | | 결정 | 어디에 살는가 |
 |---|---|---|
-| **A** `google_fonts`가 방침을 반박 | **통신을 없앤다** — `GoogleFonts.config.allowRuntimeFetching = false` + Space Grotesk를 `assets/fonts/`에 번들. 방침 §6 문장을 고치는 대신 **문장을 사실로 만든다** | **M2-⑧.** 단 방침 URL이 릴리즈 공개의 전제면 **M1으로 당긴다**(§M1-H1.5) |
+| **A** `google_fonts`가 방침을 반박**할 수 있다** | **미사용 코드를 지운다**(C안, 2026-08-02 확정) — `numeric()` + import + `pubspec` 의존성 삭제. 요청은 **애초에 나가지 않으므로**(호출부 0건) 방침은 지금도 사실이고, 삭제가 그 상태를 되돌릴 수 없게 만든다. **iOS 렌더 영향 0** | **M2-⑧.** 2파일 3곳이라 M1으로 당기는 비용도 0이다 |
 | **B** 인앱 방침 링크의 형태 | **`url_launcher` 추가, 브라우저로 연다.** 방침을 고칠 때 앱 재배포가 필요 없고 리포/웹 이중 출처를 만들지 않는다 | M1-C6 |
 | **C** `application/octet-stream` | **넣지 않는다.** `text/plain`을 뺀 것과 같은 이유 — 사진·zip·apk 공유 목록까지 오염된다. 메일 첨부는 "파일 앱에 저장 후 열기"로 충분하다 | M2-② |
 | **D** 온보딩 뒤로가기 | **페이지를 되돌린다. 첫 페이지에서 누르면 종료.** 이미 정한 원칙("한 단계 되돌린다, 되돌릴 게 없으면 종료")의 예외가 될 이유가 없다 | M2-③ |
@@ -3596,13 +3642,16 @@ M2-①이 고치는 사망 지점 2가 그 대상이다 — `requestPermission()
 발판을 만들어 두었으므로, 아무도 안 쓰는 헬퍼를 남기는 것은 CLAUDE.md의 "과잉 엔지니어링
 금지"에 걸린다.
 
-⚠️ **A와 B는 브리프의 "iOS는 한 줄도 안 바뀐다"를 깬다** — A는 플랫폼 공통
-`app_text_styles.dart`와 `pubspec.yaml`을, B는 iOS 설정 화면까지 바꾼다(양쪽 스토어가 같은
-요건이다). **숨기지 않고 범위 선언에 적는다**(§범위 밖). iOS도 재배포 대상이다.
+⚠️ **브리프의 "iOS는 한 줄도 안 바뀐다"는 깨진다 — 다만 A 때문이 아니다.** A는 플랫폼 공통
+`app_text_styles.dart`·`pubspec.yaml`을 건드리지만 **실행되지 않던 코드를 지우는 것이라
+렌더가 바뀌지 않는다**(§M2-⑧). 실제로 깨는 것은 **B**(iOS 설정 화면에 방침 행이 하나 는다)와
+**⑥-c**(바텀시트 인셋 — 지금 iOS에서 나는 겹침을 고친다)다.
+**숨기지 않고 범위 선언에 적는다**(§범위 밖). iOS도 재배포 대상이다.
 
 > **사용자 확인 (2026-08-02)**: iOS 재배포를 감수하고 같이 고치는 쪽으로 확정했다. 대안
-> ("Android만 먼저 내고 iOS는 다음 정기 배포에 묶기")은 기각됐다 — 그러면 그때까지 iOS 앱의
-> 방침 문장이 부정확한 상태로 남는다.
+> ("Android만 먼저 내고 iOS는 다음 정기 배포에 묶기")은 기각됐다 — ⑥-c가 고치는 것이
+> **지금 iOS 사용자가 매일 밟는 겹침**이라(제목을 편집하려 탭하면 키보드가 시트를 밀어
+> 올린다) 다음 정기 배포까지 미룰 이유가 없다.
 >
 > **다만 두 스토어의 출시 시점이 같아야 하는 것은 아니다.** 공통 코드가 준비되는 M2 시점에
 > iOS `beta` → `release`를 따로 태운다. Android는 14일 테스트에 묶여 있어 어차피 늦다 —
@@ -3610,32 +3659,35 @@ M2-①이 고치는 사망 지점 2가 그 대상이다 — `requestPermission()
 
 아래는 각 결정의 배경이다 — 왜 그 선택이 문제였는지가 남아 있어야 다음 사람이 되돌리지 않는다.
 
-**A. `google_fonts`가 처리방침을 반박할 수 있었다.**
+**A. `google_fonts`가 처리방침을 반박할 수 있었다 — "할 수 있었다"가 정확한 시제다.**
 `app_text_styles.dart:2,77`이 `GoogleFonts.spaceGrotesk(...)`를 쓰고 `allowRuntimeFetching`
-기본값이 `true`, `pubspec.yaml`의 `fonts:`에는 Pretendard만 있다 → 그 스타일이 쓰이는 순간
+기본값이 `true`, `pubspec.yaml`의 `fonts:`에는 Pretendard만 있다 → 그 스타일이 **쓰이는 순간**
 Space Grotesk가 `https://fonts.gstatic.com/s/a/<hash>.ttf`에서 다운로드된다.
-- **초안의 단정을 고쳤다**: 그 함수 `AppTextStyles.numeric()`은 **호출부가 0건이라**(grep)
-  지금 실제로 나가는 요청은 **없다.** `docs/privacy_policy.md:115`의 "이 셋이 본 앱이 외부와
-  주고받는 통신 전부입니다"는 **거짓이 아니라 한 줄이면 거짓이 되는 상태**다.
-- 결정은 그대로다. `allowRuntimeFetching = false`는 그 상태를 **구조적으로 만들 수 없게** 하고,
-  Play User Data 정책이 요구하는 것은 방침이 **계속** 정확한 것이다.
-- ① **(채택)** `GoogleFonts.config.allowRuntimeFetching = false` + 에셋 번들 — 통신을 없앤다.
-  방침 문장을 고치는 대신 **문장을 지키는 쪽**이다. 부수 이득: 오프라인 첫 실행에서도 글꼴이
-  나온다. **둘은 한 쌍이어야 한다** — 끄기만 하면 `numeric()`을 살리는 순간 글꼴이 조용히
-  기본 폰트로 떨어진다(플러그인이 예외를 잡아 print만 한다).
-- ② (기각) 방침 §6 문장만 수정 — 코드 0. 대신 방침에 폰트 CDN이 영구히 등장한다.
-- **라이선스는 실물로 확인했다**(google/fonts `ofl/spacegrotesk/`):
-  - `OFL.txt` 3행 verbatim — `This Font Software is licensed under the SIL Open Font License,
-    Version 1.1.` / 1행 — `Copyright 2020 The Space Grotesk Project Authors
-    (https://github.com/floriankarsten/space-grotesk)`. `METADATA.pb`의 license 필드도 `OFL`.
-    → **에셋 번들·재배포가 허용된다.** 남는 의무는 OFL §2의 **라이선스 사본 + 저작권 고지 동봉**이다.
-  - **예약 이름(Reserved Font Name) 조항은 Space Grotesk에 걸리지 않는다** — 저작권 행에
-    `with Reserved Font Name`이 **선언되지 않았다.** (초안이 이것을 의무로 적었던 것을 고쳤다.)
-  - ⚠️ **Pretendard는 다르다.** 같은 OFL 1.1이지만 예약 이름이 **네 개** 선언돼 있다
-    (`Pretendard` · `Source` · `Inter` · `M PLUS 1`). 그런데 리포는
-    `assets/fonts/PretendardVariable.ttf`를 **라이선스 사본 없이** 담고 있다 — 기존 부채이고
-    이번에 함께 갚는다(§M2-⑧의 `OFL-*.txt` 둘).
-- 실행 세부(자리·파일명·굵기·검증)는 **§M2-⑧**에 있다.
+- **그런데 쓰이지 않는다.** 그 게터를 감싼 `AppTextStyles.numeric()`은 **호출부가 0건이다**
+  (`grep -rn 'numeric(' lib/ test/ integration_test/` → 선언 한 줄뿐). 실행 경로가 없어
+  요청도 없다. `docs/privacy_policy.md:115`의 "이 셋이 본 앱이 외부와 주고받는 통신
+  전부입니다"는 **거짓이 아니라 한 줄이면 거짓이 되는 상태**다.
+- 안은 셋이었다:
+  - ① (기각) 방침 §6 문장만 수정 — 코드 0. 대신 방침에 폰트 CDN이 **영구히** 등장한다.
+    나가지도 않는 요청을 방침에 적는 것은 그 자체로 부정확하다.
+  - ② (기각) `allowRuntimeFetching = false` + 에셋 번들 — 초안이 채택했던 안. 통신을 구조적으로
+    막지만 **대가가 크다**: `.ttf` 둘과 OFL 텍스트 둘을 확보·등록해야 하고, `pubspec`의
+    `fonts:`에 Space Grotesk를 선언하는 순간 지금 등록되지 않아 기본 글꼴로 그려지던
+    `fontFamily: 'Space Grotesk'` **세 곳의 iOS 렌더가 바뀐다.**
+  - ③ **(채택 — C안, 사용자 확정 2026-08-02)** `numeric()`·import·`pubspec` 의존성을 **지운다.**
+    ②와 같은 결과("한 줄이면 거짓이 되는 상태"의 제거)를 2파일 3곳 삭제로 얻고, **iOS 영향이 0**이다.
+- ③을 고른 이유는 대칭이다 — ②는 **쓰지 않는 기능을 지키기 위해** 에셋·라이선스·규칙·검증을
+  네 겹 쌓는다. 지금 없는 것을 없는 채로 두는 쪽이 싸다.
+- ⚠️ **되살리려면 ②로 돌아와야 한다.** `numeric()`이 다시 필요해지면 `google_fonts`를 되넣는
+  대신 **글꼴을 에셋으로 등록하는 쪽**을 먼저 볼 것 — 그때는 세 곳의 렌더 변경을 함께 결정해야
+  한다. (초안의 ② 설계 근거는 이 커밋 이전 판에 남아 있다.)
+- **Space Grotesk 라이선스 조사(OFL 1.1, 예약 이름 없음)는 이번에 쓰이지 않는다** — 번들하지
+  않으므로 배포 의무가 발생하지 않는다.
+- ⚠️ **Pretendard의 라이선스 사본 부재는 남는다.** 리포가
+  `assets/fonts/PretendardVariable.ttf`를 사본 없이 담고 있고 OFL 1.1 + 예약 이름 넷
+  (`Pretendard` · `Source` · `Inter` · `M PLUS 1`)이다. 초안은 Space Grotesk 번들에 얹어
+  갚으려 했는데 얹을 자리가 사라졌다 — **기존 부채로 남기고 별 작업으로 뺀다**(§M2-⑧).
+- 실행 세부(삭제 대상·하지 않는 것·검증)는 **§M2-⑧**에 있다.
 
 **B. 인앱 처리방침 링크의 형태 → `url_launcher`.** 정책은 "link **or text**"를 허용하므로 방침
 **본문을 인앱 화면**으로 넣는 안도 있었다(의존성 0). 기각 이유는 **문서 이중 관리**다 — 방침을
@@ -3691,15 +3743,14 @@ Android 분기에 유닛 테스트를 붙일 발판이 생기고, CLAUDE.md의 "
 | 신규 유닛 `backTargetFor` · `backPageFor` | 뒤로가기 판정(탭 4 + push 4 + 미지 / 온보딩 3페이지 + 경계) | M2-③ |
 | 신규 유닛 `test/android/release_guard_test.dart` | **빌드 가드가 지워지는 것** — gradle 키 가드 둘 + 레인의 가드 순서 | 매 커밋 |
 | 신규 유닛 `notification_details_test` | `BigTextStyleInformation` 본문 · 채널 이름·설명의 출처 · **`inexactAllowWhileIdle`** · iOS `timeSensitive` | M2-① |
-| 신규 정적 가드 (소스 읽기) | ① 알림 스케줄 모드가 두 곳에서 갈라지는 것 ② `showModalBottomSheet` 호출부의 `useSafeArea` 누락 — **호출부를 전수 검색한다**(개수를 박지 않는다) | M2-①·⑥ |
-| 신규 위젯 가드 | 시트 3종 상단 인셋(`FakeViewPadding`, **가장 긴 내용**으로) · 방침 행 존재+탭 · 배터리 행 두 경우+탭 | M2-⑥·M1-C6·M2-⑦ |
-| 신규 에셋 가드 (`rootBundle`) | 글꼴 `.ttf` 둘 + `OFL-*.txt` 둘이 **실제로 로드된다** — 선언·파일이 빠져도 트리는 멀쩡하고 런타임에만 빈다 | M2-⑧ |
+| 신규 정적 가드 (소스 읽기) | ① 알림 스케줄 모드가 두 곳에서 갈라지는 것 ② `showModalBottomSheet` 호출부의 `useSafeArea` 누락 ③ 그 파일들의 `viewInsets.bottom` **직접 참조 0건**(전부 `sheetBottomInset` 경유) — 둘 다 **호출부를 전수 검색한다**(개수를 박지 않는다). ③이 빠지면 가드가 절반만 지킨다(§⑥-c) | M2-①·⑥ |
+| 신규 위젯 가드 | 시트 3종 상단 인셋 — **축 셋을 곱한다**(가장 긴 내용 × **키보드** × 글꼴 배율 1.3). 키보드 축이 없으면 `dy = 210.0`을 재고 통과한다(실측) · 방침 행 존재+탭 · 배터리 행 두 경우+탭 | M2-⑥·M1-C6·M2-⑦ |
 | 기존 폭 가드 **× 글꼴 배율** | 긴 정류장 이름이 `TextScaler.linear(1.3)`에서 무너지는 것 — 리포가 한 번도 안 본 축 | M2-⑥ |
 | `flutter analyze` | — | 매 커밋 |
 | `integration_test` 19개를 **Android 에뮬레이터에서** | 플러그인 채널 실호출. ⚠️ 한 건이 별 Activity를 띄운다(§M2 게이트) | M2 게이트 |
 | API 35+ 에뮬레이터 수동 (**debug**) | edge-to-edge, 인텐트, 권한 다이얼로그, 아이콘 마스크, **글꼴 크기·화면 크기 최대** | M2 |
 | **release AAB를 bundletool로 설치해 수동** | 축소가 지운 것(알림 아이콘·Gson 역직렬화) · 서명 · TAGO 키 주입 | M1 스모크 · M2-① |
-| **iPhone 시뮬레이터 회귀** | 이 브랜치가 바꾸는 **공유 코드** — 시트 3종 상단·하단 인셋, 라이트/다크 상태바, 온보딩 글꼴, 설정 방침 행, 알림 details | M2 끝 (다음 iOS beta 전) |
+| **iPhone 시뮬레이터 회귀** | 이 브랜치가 바꾸는 **공유 코드** — 시트 3종 상단·하단 인셋(**키보드를 올린 채** 볼 것), 라이트/다크 상태바, 설정 방침 행, 알림 details. ⑧은 **아무것도 바뀌지 않아야** 한다 | M2 끝 (다음 iOS beta 전) |
 | 테스터 12명 + 사전 출시 보고서 | 실기기 — 렌더·크래시·제조사 차이·**배터리 최적화**·글꼴 크게 | M1부터 상시 |
 
 ⚠️ **iPhone 시뮬레이터 행이 빠지면 이 브랜치의 대가를 아무도 안 본다.** 브리프의 "iOS 한 줄도
@@ -3764,8 +3815,8 @@ Android 분기에 유닛 테스트를 붙일 발판이 생기고, CLAUDE.md의 "
 | `flutter_deeplinking_enabled="false"`의 **이유** | 값만 남으면 다음 사람이 딥링크를 붙이려고 켠다 → `content://`가 `initialLocation`을 덮어 **제공자에 따라** Page Not Found(§M2-②). 공유 파일은 `planroutine/shared_file` 채널이 전담한다 |
 | 알림 채널 규칙 | **id는 `notification_details.dart`의 공개 상수 `kAndroidChannelId`, 이름·설명은 `NotificationStrings`.** id를 `*Strings`에 두면 문구 정리로 바뀌어 채널이 갈라진다. 소비처가 두 파일이라 `_` 접두를 쓸 수 없다(라이브러리 private). 그리고 `channelName`과 `digestTitle`은 값이 같아도 **공유하지 않는다** |
 | 스케줄 모드 | `inexactAllowWhileIdle`을 고른 이유(권한 화면 없음 · Play 고위험 권한 양식 회피)와 그것을 떠받치는 구조(`computeNotifications`가 **하루 1건**으로 병합해 Doze 9분 규칙이 무해하다). **개별 이벤트마다 알림을 만들면 이 결정이 무너진다** |
-| 글꼴 굵기 규칙 | `GoogleFonts.*`에 새 굵기를 넘기면 **그 변형 파일도 번들한다.** `allowRuntimeFetching = false`라 안 하면 화면이 조용히 기본 글꼴로 떨어진다(§M2-⑧) |
 | 바텀시트 규칙 | `showModalBottomSheet`에는 **항상 `useSafeArea: true`** + 하단은 `sheetBottomInset(context)`. `sheet_safe_area_test.dart`가 **둘 다** 전수 검사하지만(호출부에 `useSafeArea`, 그 파일에 `viewInsets.bottom` 직접 참조 0건) 이유는 여기 적는다 — `useSafeArea`는 `SafeArea(bottom: false)`라 하단을 일부러 남긴다 |
+| **시트 인셋 가드는 키보드를 올린다** | 겹침을 만드는 것은 시트 크기가 아니라 **키보드가 시트를 밀어 올리는 것**이다. 기본 조건만 재면 `event_edit_dialog`가 `dy = 210.0`으로 통과하고, 키보드를 올리면 **54.0**이다(실측). 내용 길이만 보는 가드는 절반이 아니라 **0이다**(§⑥-c) |
 | 기기 백업 | `allowBackup="true"`는 **결정**이고 §M3-H3 데이터 안전 답안의 전제다. 뒤집으면 양식과 방침을 함께 뒤집어야 한다. 키 단위 제외가 불가능한 이유(`FlutterSharedPreferences.xml` 한 파일)도 |
 | 글꼴 배율 축 | 오버플로 가드는 **폭 × 글꼴 배율** 두 축이다. 폭만 훑는 가드는 절반이다(§⑥-d) |
 
@@ -3830,15 +3881,27 @@ Android 분기에 유닛 테스트를 붙일 발판이 생기고, CLAUDE.md의 "
 - **iOS Fastfile 리팩터**(`tago_key` 공용화) — 돌고 있는 배포 경로를 건드리는 위험이 이득보다 크다
 - **`file_picker` 캐시 누수 정리**(`clearTemporaryFiles()` 미호출, iOS 포함 기존 부채) — 새
   `shared_csv` 경로는 스스로 정리하지만 기존 누수는 별 작업이다
-- **iOS 코드 변경** — 브리프는 "한 줄도 안 바뀐다"였지만 **결정 A·B로 그 선언은 깨졌다.**
+- **등록되지 않은 `fontFamily: 'Space Grotesk'` 세 곳** — `onboarding_screen.dart:113` ·
+  `import_screen.dart:341` · `edufine_guide_section.dart:180`. `pubspec`의 `fonts:`에 없어
+  **지금 조용히 기본 글꼴로 렌더된다**(FontManifest 실측). **디자인 부채로 남긴다** —
+  지우면 디자인 의도가 사라지고, 글꼴을 등록해 살리면 **iOS 렌더가 바뀐다**.
+  **사용자가 후자를 명시적으로 기각했다**(2026-08-02). 결정 A가 C안(미사용 코드 제거)으로
+  바뀌면서 이 셋에 손댈 이유가 사라졌다(§M2-⑧).
+- **Pretendard OFL 라이선스 사본 동봉** — 리포가 `assets/fonts/PretendardVariable.ttf`를
+  사본 없이 담고 있다(OFL 1.1 + 예약 이름 넷). 초안은 Space Grotesk 번들에 얹어 갚으려 했는데
+  번들이 없어져 얹을 자리가 사라졌다 — **기존 부채이고 Android 출시가 만든 문제가 아니다.**
+  별 작업으로 뺀다(§결정 A)
+- **iOS 코드 변경** — 브리프는 "한 줄도 안 바뀐다"였지만 **결정 B와 ⑥-c로 그 선언은 깨졌다**
+  (결정 A는 깨지 않는다 — 아래 표의 마지막 행).
   아래가 확정 목록이고, **iOS 렌더가 실제로 바뀌는 것과 구조적으로 무영향인 것을 갈라 적는다** —
   회귀 검증의 대상이 앞의 것들이다(§검증 계층의 iPhone 시뮬레이터 행).
 
   | 파일 | 무엇 | iOS 영향 |
   |---|---|---|
-  | `app_text_styles.dart` · `pubspec.yaml` · `main.dart` | 결정 A — 글꼴 에셋 번들 + 런타임 fetch 차단 | **렌더가 바뀐다.** `onboarding_screen.dart:113`의 `fontFamily: 'Space Grotesk'`가 지금은 등록돼 있지 않아 기본 글꼴로 그려진다(FontManifest 실측) — 번들하면 처음으로 의도한 글꼴이 나온다 |
   | 설정 › 앱 정보 위의 방침 행 | 결정 B — 인앱 방침 링크 | **화면이 바뀐다.** 행이 하나 늘고 `url_launcher` 의존성이 붙는다(양쪽 스토어가 같은 요건) |
-  | 바텀시트 3종 `useSafeArea` + `sheetBottomInset` | ⑥-c | **렌더가 바뀐다.** 상단은 **이득**이고(CLAUDE.md가 기록한 다이나믹 아일랜드 함정) 하단은 홈 인디케이터만큼 여백이 는다. 키보드가 올라온 상태는 픽셀 단위로 동일하다 |
+  | `calendar_integration_section.dart:67` `useSafeArea` | ⑥-c | **무영향.** 시트가 짧아(`isScrollControlled` 없음) 상단에 닿지 않는다 — `useSafeArea`가 그 시트에는 아무 일도 하지 않는다. 같은 성질을 실측으로 확인한 사례가 `schedule_edit_sheet`(수정 전후 166.0 동일)다 |
+  | 바텀시트 3종 `useSafeArea` + `sheetBottomInset` | ⑥-c | **렌더가 바뀐다 — 그리고 그것이 목적이다.** 상단은 **지금 나는 겹침을 고치는 것**이다(키보드가 올라오면 `event_edit_dialog` 제목이 `dy = 54.0`으로 다이나믹 아일랜드 59 밑에 든다, 실측). 하단은 홈 인디케이터만큼 여백이 늘고, 키보드가 올라온 상태의 하단은 픽셀 단위로 동일하다 |
+  | `app_text_styles.dart` · `pubspec.yaml` | 결정 A — 미사용 `google_fonts` 제거 | **영향 0.** 실행 경로가 없던 `numeric()`과 그 의존성을 지운다 — 렌더가 바뀌지 않는다(§M2-⑧). 초안의 에셋 번들 안이었다면 온보딩 렌더가 바뀌었을 자리다 |
   | `app_theme.dart:35-36` | ⑥-a 내비게이션 바 필드 | **무영향.** `rendering/view.dart:485-489`가 iOS에서 `systemNavigationBar*` 네 필드를 전부 null로 만든다. `statusBarBrightness`는 값이 종전과 같다(가드 테스트가 고정한다) |
   | `notification_service.dart` + 새 `notification_details.dart` | ①의 Android 분기 · details `const` 해제 | **무영향이어야 한다.** iOS는 `DarwinNotificationDetails`만 보고 `interruptionLevel`이 그대로다 — 유닛 가드가 이 값을 고정한다 |
   | `gen_app_icon.dart` | 전경·배경 출력 추가 | **무영향.** 기존 1024 출력과 iOS 아이콘 경로는 그대로다 |
@@ -3852,6 +3915,9 @@ Android 분기에 유닛 테스트를 붙일 발판이 생기고, CLAUDE.md의 "
 - `test/tmp_verify/`(조사 중 임시 프로브 자리)와 오염된 `build/app/outputs/`는 **이미 삭제됐다**
   (실측 부재 확인). `~/.gradle/init.d/`도 없다 — §브리프 수정 1의 "오염된 관측"을 만든 전역
   주입 스크립트가 남아 있지 않다는 뜻이다.
+- **⑥-c 실측에 쓴 임시 프로브는 삭제했다**(2026-08-02). 시트를 띄워 제목의 `dy`를 찍어 보던
+  일회용 테스트이고, 값은 §⑥-c의 표에 남겼다. **가드는 그 프로브가 아니라 새로 쓴다** —
+  프로브는 현재 상태를 재는 물건이고 가드는 축 셋을 곱해 회귀를 막는 물건이다.
 - 직전까지 `build/`에 있던 `app-release.aab`는 **debug 키 서명 + TAGO 키 없음**이었다. 지금은
   없어졌지만, 같은 것이 다시 생기지 않게 하는 것이 §C5의 gradle 가드 둘이다 — 그 산출물은
   브리프가 경계한 함정의 실물이었고, **이제는 만들 수 없다.**
