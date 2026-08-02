@@ -30,10 +30,11 @@ class SettingsStrings {
 
   /// 인앱 개인정보처리방침 링크. **Play User Data 정책이 요구하는 항목이다** —
   /// "a privacy policy link **or text** within the app itself".
-  /// 이 URL을 바꾸면 Google OAuth 동의 화면 필드가 바뀌어 **재검증 트리거가 된다**.
-  /// 방침 본문만 고칠 때는 URL을 건드리지 않는다.
+  /// `/privacy_policy`는 **Google OAuth 동의 화면에 실제 등록된 값**이다(홈페이지
+  /// 루트가 아니다 — 루트는 지원 페이지). 이 URL을 바꾸면 그 필드가 바뀌어
+  /// **재검증 트리거가 된다**. 방침 본문만 고칠 때는 URL을 건드리지 않는다.
   static const privacyPolicyTitle = '개인정보처리방침';
-  static const privacyPolicyUrl = 'https://planroutine.indibery.dev';
+  static const privacyPolicyUrl = 'https://planroutine.indibery.dev/privacy_policy';
   static const privacyPolicyFailed = '브라우저를 열 수 없습니다';
 
   /// 공공데이터 출처 표시 — **라이선스 의무다.**

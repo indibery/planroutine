@@ -41,6 +41,10 @@ class PrivacyPolicyListTile extends StatelessWidget {
     return ListTile(
       leading: Icon(Icons.privacy_tip_outlined, color: AppColors.textSecondary),
       title: const Text(SettingsStrings.privacyPolicyTitle),
+      // 탭 가능하다는 시각 단서 — 바로 아래 AppInfoListTile·DataSourceListTile은
+      // 정보성(탭 없음)이라 겉모습이 같으면 구분이 안 된다. TrashListTile과 같은
+      // chevron 패턴을 따른다.
+      trailing: const Icon(Icons.chevron_right),
       onTap: () => _onTap(context),
     );
   }

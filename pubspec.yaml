@@ -68,6 +68,8 @@ dependencies:
 
   # 커스텀 폰트 (디자인 시스템 적용용)
   google_fonts: ^6.2.1
+
+  # 인앱 개인정보처리방침 링크를 브라우저로 연다 (Play·App Store 공통 요건)
   url_launcher: ^6.3.2
 
 dev_dependencies:
