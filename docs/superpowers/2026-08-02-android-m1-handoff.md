@@ -72,14 +72,13 @@ GCP 프로젝트 **planroutine**(번호 73700230470, iOS와 같은 것).
 
 ---
 
-## 브랜치를 어떻게 할까 (결정 대기)
+## ✅ 브랜치는 main에 머지됐다 (2026-08-02)
 
-`feat/android-m1-shell-release` 19커밋. 최종 리뷰 Critical 0.
+`feat/android-m1-shell-release` 19커밋 → merge commit `2db74d0`, `origin/main`에 push 완료.
+머지 후 `flutter analyze` 0 / `flutter test` 919 재확인했다.
+방침 커밋은 main의 cherry-pick(`40bcce3`)과 patch-id가 같아 충돌 없이 흡수됐다.
 
-- **머지** — 다음 `beta` 실행이 깔끔해진다. 코드는 완성됐고 리뷰도 끝났다
-- **브랜치 유지** — 53이 검토를 통과할 때까지 기다린다
-
-어느 쪽이든 코드 상태는 같다. 사용자에게 물을 것.
+**즉 다음 세션은 `main`에서 바로 작업하면 된다.** 브랜치는 남겨 뒀다(정리해도 무해).
 
 ---
 
