@@ -96,6 +96,8 @@ def assert_play_key
       "이 JSON은 공직플랜 서비스 계정이 아닙니다: #{path}\n" \
       "  들어 있는 계정: #{client_email}\n" \
       "  공직플랜(com.planroutine.app) 전용 서비스 계정으로 발급한\n" \
+      "  JSON이어야 합니다. 만드는 절차는 §M1-H1.6 — GCP에서 서비스 계정을 만들고\n" \
+      "  (이름에 planroutine 포함) Play `사용자 및 권한`에 그 이메일을 초대합니다.\n" \
       "  서비스 계정 JSON을 #{path}에 두십시오. 다른 앱의 자격증명을 재사용하지 마십시오."
     )
   end

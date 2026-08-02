@@ -262,7 +262,7 @@ git commit -m "build(android): fastlane 레인 5개를 배선한다 — 빌드�
    - 앱 콘텐츠·데이터 안전이 전제면 → M3-H2·H3를 GATE 4 앞으로.
    - **방침 URL 제출이 전제면 → M2-⑧(미사용 `google_fonts` 제거)과 M2-⑨(처리방침 개정)도 M1으로.** ⑧은 2파일 3곳 삭제라 당기는 비용이 사실상 0이다. ⑨는 방침 본문에 기기 백업 절을 추가하는 작업이라 Task 6(백업을 켠 것으로 선언)과 짝이다.
    - 셋 다 전제가 아니면 그대로 M2·M3에 둔다.
-3. **H1.6 서비스 계정** — Play Console `설정 › API 액세스` → GCP 프로젝트 연결(iOS와 같은 프로젝트 가능) → 서비스 계정 생성 → **릴리스 관리자** 권한 → JSON을 `~/.google_play/planroutine.json`에 둔다.
+3. **H1.6 서비스 계정** — ⚠️ `설정 › API 액세스`는 **없어졌다**(Google이 GCP 연결 요구를 폐지). **GCP에서 만들고 Play에 초대**한다: GCP `API 및 서비스 › 라이브러리`에서 `Google Play Android Developer API` 사용 설정 → `IAM › 서비스 계정` 생성(이름 `planroutine-playstore`, GCP 역할 없음) → JSON을 `~/.google_play/planroutine.json`(600) → Play Console `사용자 및 권한`에 그 이메일 초대, 앱은 공직플랜만 · 권한 **출시 관리자**. 전문은 §스펙 M1-H1.6.
    - 완료 신호는 **콘솔 육안**(사용자 및 권한에 서비스 계정이 보인다)까지다. `check_play_key`는 아직 돌지 않는다 — 패키지 미바인딩이라 API가 404다.
    - 신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.
 

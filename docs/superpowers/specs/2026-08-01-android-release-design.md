@@ -1415,14 +1415,27 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 
 **H1.6 · Play 서비스 계정 (레인이 도는 전제)**
 
+⚠️ **`설정 › API 액세스`는 없어졌다**(콘솔 실측 2026-08-02). Google이 서비스 계정과 GCP
+프로젝트를 **연결하라는 요구 자체를 폐지**해서 그 진입점이 사라졌다. 방향이 반대가 됐다 —
+예전에는 Play에서 GCP를 끌어왔는데, 지금은 **GCP에서 만들고 Play에 사람처럼 초대**한다.
+
 ```
-Play Console
-  → [설정] → [API 액세스]
-  → Google Cloud 프로젝트 연결 (iOS와 같은 프로젝트를 써도 된다 — 번호 73700230470)
-  → [서비스 계정 만들기] → GCP 콘솔에서 계정 생성 → 키(JSON) 발급
-  → Play Console로 돌아와 [액세스 권한 부여] → 앱 권한: **릴리스 관리자**
-     (필요한 것은 "프로덕션·비공개 테스트 트랙에 출시" + "앱 정보 보기")
-  → JSON을 리포 밖으로: ~/.google_play/planroutine.json  (Appfile이 이 경로를 가리킨다)
+① GCP Console (console.cloud.google.com)
+   → 프로젝트 planroutine 선택 (번호 73700230470 — iOS 클라이언트로 대조 확인)
+   → [API 및 서비스 › 라이브러리] → "Google Play Android Developer API" 사용 설정
+      ⚠️ 이걸 빠뜨리면 인증은 통과하고 **호출에서** 죽는다
+   → [IAM 및 관리자 › 서비스 계정] → 만들기
+      이름: planroutine-playstore   ← `client_email`에 `planroutine`이 들어가야 한다
+                                       (가드가 검사한다. 바로팀 계정 오용 방지)
+      GCP 역할: **부여하지 않는다** (Play 권한은 ②에서 준다)
+   → [키 › 키 추가 › JSON] → 다운로드
+   → mv ~/Downloads/planroutine-*.json ~/.google_play/planroutine.json && chmod 600
+
+② Play Console
+   → [사용자 및 권한] → [새 사용자 초대]
+   → 이메일: planroutine-playstore@planroutine.iam.gserviceaccount.com
+   → 앱 권한: **공직플랜 하나만** / 권한: **출시 관리자**
+      (계정 전체 권한은 주지 않는다 — 키가 새어도 다른 앱에 못 닿는다)
 ```
 - **신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.** 그래서 H2·C1보다 앞,
   H1 바로 뒤에 착수한다 — 기다리는 동안 코드 작업이 돈다. 소요 시간은 **미확인**.
@@ -3610,7 +3623,8 @@ H4 등록정보 자료 (승인 대기 중에 병행 가능)
 공개의 전제로 확인되면 그렇게 한다. 그러면 M3에 남는 것은 H1 신청서·H4 자료·최종 제출이다.
 
 **Android 릴리즈 노트는 리포가 단일 출처를 유지한다.** `beta` 레인이
-`docs/release_notes/<versionName>.ko.txt`를 읽어
+`docs/release_notes/<versionName>-android.ko.txt`를 **먼저** 찾고(없으면 iOS와 같은
+`<versionName>.ko.txt`로 폴백) 그것을 읽어
 `android/fastlane/metadata/android/ko-KR/changelogs/<versionCode>.txt`로 깔고 supply가 그것을
 올린다(§C5 `stage_changelog`). `skip_upload_metadata`는 changelog를 포함하지 않으므로 스토어
 등록정보 본문은 건드리지 않는다.
