@@ -1136,10 +1136,17 @@ within Play Console, **and a privacy policy link or text within the app itself**
   /// 웹 호스팅본과 같은 URL이고, 이 값을 바꾸면 Google OAuth 동의 화면 필드가 바뀌어
   /// **재검증 트리거가 된다**(§M2-④). 본문만 고칠 때는 URL을 건드리지 않는다.
   static const privacyPolicyTitle = '개인정보처리방침';
-  static const privacyPolicyUrl = 'https://planroutine.indibery.dev';
+  static const privacyPolicyUrl = 'https://planroutine.indibery.dev/privacy_policy';
   static const privacyPolicyFailed = '브라우저를 열 수 없습니다';
 ```
 
+⚠️ **경로를 빼면 안 된다.** 루트(`/`)는 **앱 소개 페이지**이고 방침은 `/privacy_policy`다
+(실측: 루트 title `공직플랜 | … 공식 지원 페이지` / `/privacy_policy` title
+`공직플랜(PlanRoutine) 개인정보 처리방침`). 초안이 루트를 적어 뒀는데 그대로 두면
+**탭했을 때 방침이 아니라 홈페이지가 뜬다** — Play가 요구하는 "앱 안의 방침 링크"의 실효가
+없어진다. 리포의 다른 문서들도 전부 `/privacy_policy`를 쓰고(`docs/release_checklist.md:17`,
+`docs/oauth_verification_demo_script.md:44`), **OAuth 동의 화면 등록값도 그것**이다.
+확장자 없는 pretty URL을 쓴다 — GitHub Pages가 `.html`로 매핑한다.
 ```dart
 // lib/features/settings/presentation/widgets/privacy_policy_list_tile.dart
 // 탭이 있는 행이라 AppInfoListTile·DataSourceListTile의 Column에 **넣지 않는다** —
