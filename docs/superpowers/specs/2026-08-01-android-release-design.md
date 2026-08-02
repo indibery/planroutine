@@ -81,7 +81,7 @@
 | 23 | iOS `strip_dart_defines` 재사용 | Android는 **대응물이 불필요하다**(dart-define가 파일로 안 남는다). 대신 `--verbose` 금지 | M1-C5 |
 | 24 | (없음) | 16 KB page size 요건은 **이미 통과한다**(작업 0) | 범위 밖 |
 | 25 | (없음) | Play `정부 앱` 선언이 저평가된 리스크 — 조직 계정 제한 여지 | M3-H2 |
-| 26 | (없음) | **Play 서비스 계정이 없으면 레인이 한 줄도 못 돈다.** `Appfile` + `~/.google_play/service_account.json` | M1-H1.6 · C5 |
+| 26 | (없음) | **Play 서비스 계정이 없으면 레인이 한 줄도 못 돈다.** `Appfile` + `~/.google_play/planroutine.json` | M1-H1.6 · C5 |
 | 27 | (없음) | Play Console `앱 만들기`에 **패키지명 입력란이 없다** — 첫 AAB 업로드가 바인딩한다 | §순서 ③ · M1-H3 |
 | 28 | (없음) | release는 R8 축소 + **리소스 축소**가 기본 ON이다 → `ic_notification`·GSON 역직렬화가 죽는다 | M1-C8 |
 | 29 | versionCode = Play 최신 + 1 (iOS와 대칭) | `google_play_track_version_codes`는 **그 트랙만** 본다 — iOS의 계정 스코프와 대칭이 아니다 | M1-C5 |
@@ -330,6 +330,7 @@ AAR 메타데이터가 소비 측(`:app`)에도 강제한다. **C1·C2·C3과 C5
 
 ```kotlin
 // android/app/build.gradle.kts — 전문
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -358,7 +359,11 @@ val dartDefines: Map<String, String> =
         .filter { it.isNotBlank() }
         .mapNotNull { encoded ->
             runCatching {
-                String(java.util.Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+                // ⚠️ `java.util.Base64.…`로 정규화해 쓰면 **컴파일되지 않는다** —
+                // AGP 8.11.1이 `java`라는 이름의 프로젝트 확장을 등록해 Kotlin DSL의
+                // 식별자 해석에서 그것이 패키지보다 우선한다(실측, 2026-08-02).
+                // 그래서 위에서 `import java.util.Base64`로 끌어와 비한정으로 쓴다.
+                String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
             }.getOrNull()
                 ?.split("=", limit = 2)
                 ?.takeIf { it.size == 2 }
@@ -600,17 +605,20 @@ cd android && ./gradlew :app:assembleRelease
 일정)와 `shared_prefs/FlutterSharedPreferences.xml`을 사용자 **본인** Google Drive로 보낸다.
 
 ```xml
+<!-- 기기를 바꿔도 1년치 일정이 복원된다. 교사에게 실질 가치가 크고, iOS의 iCloud
+     백업이 이미 같은 성질이라 방침 한 문단이 양쪽을 덮는다.
+     ⚠️ 기본값에 맡기지 않고 명시한다. "정하지 않아 기본값으로 출시된 것"과
+        "정해서 켠 것"은 다르고, 이 한 줄이 §M3-H3 데이터 안전 답안의 전제다.
+        뒤집으면 그 양식도 함께 뒤집어야 한다. -->
 <application
     android:label="공직플랜"
     android:name="${applicationName}"
     android:icon="@mipmap/ic_launcher"
-    <!-- 기기를 바꿔도 1년치 일정이 복원된다. 교사에게 실질 가치가 크고, iOS의 iCloud
-         백업이 이미 같은 성질이라 방침 한 문단이 양쪽을 덮는다.
-         ⚠️ **기본값에 맡기지 않고 명시한다.** "정하지 않아 기본값으로 출시된 것"과
-            "정해서 켠 것"은 다르고, 이 한 줄이 §M3-H3 데이터 안전 답안의 전제다.
-            뒤집으면 그 양식도 함께 뒤집어야 한다. -->
     android:allowBackup="true">
 ```
+⚠️ **주석은 시작 태그 *위*에 둔다.** 초안은 속성 사이에 끼워 뒀는데 그것은 **유효하지 않은
+XML**이다(`xml.dom.minidom`이 `not well-formed`로 거부한다 — Task 6 구현 중 실측).
+XML 주석은 태그 안에 들어갈 수 없다.
 
 **제외 규칙(`dataExtractionRules`·`fullBackupContent`)은 만들지 않는다.** 버스 정류장 설정이
 생활 반경 정보라 제외 후보였고, 실제로 검토했다 — **키 단위로는 제외할 수 없다.**
@@ -719,7 +727,7 @@ package_name("com.planroutine.app")
 #
 # 경로는 `.claude/skills/deploy/SKILL.md`가 이미 차단 요인 3번으로 적어 둔 값을 그대로
 # 쓴다 — 운영 문서와 레인이 다른 경로를 말하면 다음 사람이 키를 두 곳에 만든다.
-json_key_file(File.expand_path("~/.google_play/service_account.json"))
+json_key_file(File.expand_path("~/.google_play/planroutine.json"))
 ```
 
 `supply` 계열 액션(`upload_to_play_store`·`google_play_track_version_codes`)은 `json_key`의
@@ -1040,7 +1048,7 @@ project property(`-Pdart-defines=<base64 CSV>`)로만 넘어가고 `android/`·`
 ./android/bin/fastlane.sh check_play_key       # 인증·권한 + 트랙 4개 versionCode
 
 # ② 가드 셋이 각각 clean 앞에서 죽는지
-mv ~/.google_play/service_account.json /tmp/ && ./android/bin/fastlane.sh beta       # 즉시 실패
+mv ~/.google_play/planroutine.json /tmp/ && ./android/bin/fastlane.sh beta       # 즉시 실패
 mv /tmp/service_account.json ~/.google_play/                                         # ← 복구
 mv ~/.planroutine/tago.env /tmp/            && ./android/bin/fastlane.sh build_aab   # 즉시 실패
 mv /tmp/tago.env ~/.planroutine/                                                     # ← 복구
@@ -1128,10 +1136,17 @@ within Play Console, **and a privacy policy link or text within the app itself**
   /// 웹 호스팅본과 같은 URL이고, 이 값을 바꾸면 Google OAuth 동의 화면 필드가 바뀌어
   /// **재검증 트리거가 된다**(§M2-④). 본문만 고칠 때는 URL을 건드리지 않는다.
   static const privacyPolicyTitle = '개인정보처리방침';
-  static const privacyPolicyUrl = 'https://planroutine.indibery.dev';
+  static const privacyPolicyUrl = 'https://planroutine.indibery.dev/privacy_policy';
   static const privacyPolicyFailed = '브라우저를 열 수 없습니다';
 ```
 
+⚠️ **경로를 빼면 안 된다.** 루트(`/`)는 **앱 소개 페이지**이고 방침은 `/privacy_policy`다
+(실측: 루트 title `공직플랜 | … 공식 지원 페이지` / `/privacy_policy` title
+`공직플랜(PlanRoutine) 개인정보 처리방침`). 초안이 루트를 적어 뒀는데 그대로 두면
+**탭했을 때 방침이 아니라 홈페이지가 뜬다** — Play가 요구하는 "앱 안의 방침 링크"의 실효가
+없어진다. 리포의 다른 문서들도 전부 `/privacy_policy`를 쓰고(`docs/release_checklist.md:17`,
+`docs/oauth_verification_demo_script.md:44`), **OAuth 동의 화면 등록값도 그것**이다.
+확장자 없는 pretty URL을 쓴다 — GitHub Pages가 `.html`로 매핑한다.
 ```dart
 // lib/features/settings/presentation/widgets/privacy_policy_list_tile.dart
 // 탭이 있는 행이라 AppInfoListTile·DataSourceListTile의 Column에 **넣지 않는다** —
@@ -1333,7 +1348,7 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 | `flutter build appbundle --release` 직접 호출 | `build_aab` 레인(가드 → clean → `--dart-define-from-file`) | 수동 경로에는 TAGO 키가 없다. 관통 원칙 ①이 막으려는 그 명령이 런북에 적혀 있다 |
 | "iOS의 `reset_ios_caches`는 Android에 불필요" | `reset_android_caches` **필수** | 실측 둘(registrant의 `integration_test`, `libsqlite3.so` 5.1MB, §M1-C5) |
 | 차단 요인 1·2(서명·applicationId) | C2·C3가 해소한다 | 완료 후 **사실이 아니게 된다** |
-| 차단 요인 3의 `~/.google_play/service_account.json` | **이 경로를 그대로 쓴다**(§Appfile) | 여기만 맞다. 스펙이 경로를 새로 정하지 않고 이 값을 따라간 이유다 |
+| 차단 요인 3의 `~/.google_play/planroutine.json` | **이 경로를 그대로 쓴다**(§Appfile) | 여기만 맞다. 스펙이 경로를 새로 정하지 않고 이 값을 따라간 이유다 |
 | frontmatter `Android는 아직 미배선(차단 요인 안내)` | 배선 완료 | 스킬이 배포를 **거부**한다 |
 
 작업은 「Android (계획 — 아직 미배선)」 절을 **런북으로 교체**하는 것이다:
@@ -1348,7 +1363,7 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 □ 게이트: iOS와 동일(analyze + test) + Android는 여기에 **release AAB 스모크**가 붙는다
   (debug로는 축소가 지운 것을 못 잡는다, §M1-C8)
 □ reset_android_caches를 하는 이유 두 줄(registrant · libsqlite3.so)
-□ 서비스 계정 경로는 `~/.google_play/service_account.json` **하나로 통일**
+□ 서비스 계정 경로는 `~/.google_play/planroutine.json` **하나로 통일**
 □ versionCode 규칙: 트랙 전수 최대 + 1, pubspec `+N`이 하한(iOS의 계정 스코프와 대칭이 아니다)
 □ 프로덕션 릴리즈는 레인이 없다 — 사람이 콘솔에서 만든다(§M3)
 ```
@@ -1400,14 +1415,27 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 
 **H1.6 · Play 서비스 계정 (레인이 도는 전제)**
 
+⚠️ **`설정 › API 액세스`는 없어졌다**(콘솔 실측 2026-08-02). Google이 서비스 계정과 GCP
+프로젝트를 **연결하라는 요구 자체를 폐지**해서 그 진입점이 사라졌다. 방향이 반대가 됐다 —
+예전에는 Play에서 GCP를 끌어왔는데, 지금은 **GCP에서 만들고 Play에 사람처럼 초대**한다.
+
 ```
-Play Console
-  → [설정] → [API 액세스]
-  → Google Cloud 프로젝트 연결 (iOS와 같은 프로젝트를 써도 된다 — 번호 73700230470)
-  → [서비스 계정 만들기] → GCP 콘솔에서 계정 생성 → 키(JSON) 발급
-  → Play Console로 돌아와 [액세스 권한 부여] → 앱 권한: **릴리스 관리자**
-     (필요한 것은 "프로덕션·비공개 테스트 트랙에 출시" + "앱 정보 보기")
-  → JSON을 리포 밖으로: ~/.google_play/service_account.json  (Appfile이 이 경로를 가리킨다)
+① GCP Console (console.cloud.google.com)
+   → 프로젝트 planroutine 선택 (번호 73700230470 — iOS 클라이언트로 대조 확인)
+   → [API 및 서비스 › 라이브러리] → "Google Play Android Developer API" 사용 설정
+      ⚠️ 이걸 빠뜨리면 인증은 통과하고 **호출에서** 죽는다
+   → [IAM 및 관리자 › 서비스 계정] → 만들기
+      이름: planroutine-playstore   ← `client_email`에 `planroutine`이 들어가야 한다
+                                       (가드가 검사한다. 바로팀 계정 오용 방지)
+      GCP 역할: **부여하지 않는다** (Play 권한은 ②에서 준다)
+   → [키 › 키 추가 › JSON] → 다운로드
+   → mv ~/Downloads/planroutine-*.json ~/.google_play/planroutine.json && chmod 600
+
+② Play Console
+   → [사용자 및 권한] → [새 사용자 초대]
+   → 이메일: planroutine-playstore@planroutine.iam.gserviceaccount.com
+   → 앱 권한: **공직플랜 하나만** / 권한: **출시 관리자**
+      (계정 전체 권한은 주지 않는다 — 키가 새어도 다른 앱에 못 닿는다)
 ```
 - **신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.** 그래서 H2·C1보다 앞,
   H1 바로 뒤에 착수한다 — 기다리는 동안 코드 작업이 돈다. 소요 시간은 **미확인**.
@@ -3382,7 +3410,7 @@ Android의 chooser는 **별 Activity**라 우리 액티비티가 stop되고 vsyn
 ### M3-H2 · 앱 콘텐츠 선언
 
 ```
-개인정보처리방침 URL : https://planroutine.indibery.dev
+개인정보처리방침 URL : https://planroutine.indibery.dev/privacy_policy
 앱 액세스 권한       : 모든 기능을 특별한 액세스 권한 없이 사용 가능
 광고                 : 아니요, 앱에 광고가 없습니다
 광고 ID              : 아니요
@@ -3595,7 +3623,8 @@ H4 등록정보 자료 (승인 대기 중에 병행 가능)
 공개의 전제로 확인되면 그렇게 한다. 그러면 M3에 남는 것은 H1 신청서·H4 자료·최종 제출이다.
 
 **Android 릴리즈 노트는 리포가 단일 출처를 유지한다.** `beta` 레인이
-`docs/release_notes/<versionName>.ko.txt`를 읽어
+`docs/release_notes/<versionName>-android.ko.txt`를 **먼저** 찾고(없으면 iOS와 같은
+`<versionName>.ko.txt`로 폴백) 그것을 읽어
 `android/fastlane/metadata/android/ko-KR/changelogs/<versionCode>.txt`로 깔고 supply가 그것을
 올린다(§C5 `stage_changelog`). `skip_upload_metadata`는 changelog를 포함하지 않으므로 스토어
 등록정보 본문은 건드리지 않는다.

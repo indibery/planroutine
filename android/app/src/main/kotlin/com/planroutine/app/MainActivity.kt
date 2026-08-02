@@ -1,4 +1,4 @@
-package com.schedulenote.schedule_app
+package com.planroutine.app
 
 import io.flutter.embedding.android.FlutterActivity
 

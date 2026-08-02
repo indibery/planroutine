@@ -1,0 +1,10 @@
+# android/fastlane/Appfile
+package_name("com.planroutine.app")
+
+# Play Developer API 인증. 원본은 리포 밖에 둔다(iOS `.p8`과 같은 규칙).
+#
+# 파일명은 `service_account.json`이 아니라 `planroutine.json`이다 — `~/.google_play/`는
+# 여러 앱이 공유하는 디렉터리라(바로팀이 이미 `service_account.json`을 그 이름으로 쓰고
+# 있었다), 앱 이름이 없는 파일명은 다음 앱이 같은 자리를 덮어쓰거나 엉뚱한 앱의 자격증명을
+# 집는 사고로 이어진다(실측, 2026-08-02: 이 경로에 바로팀 서비스 계정이 이미 있었다).
+json_key_file(File.expand_path("~/.google_play/planroutine.json"))

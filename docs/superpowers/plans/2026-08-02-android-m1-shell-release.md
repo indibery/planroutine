@@ -19,7 +19,7 @@
 - **release 빌드는 레인으로만** — `flutter build appbundle`을 손으로 치는 경로를 만들지 않는다. `build.gradle.kts`의 가드가 빌드 자체를 막는다.
 - **트랙**: `beta` 레인 = **비공개 테스트(closed testing)**. internal은 14일을 **하루도 세지 않는다** — 틀리면 14일을 태운다.
 - **하드코딩 금지**: 문자열은 도메인별 `*Strings` 클래스, 색상 `AppColors`, 크기 `AppSizes`.
-- **기존 테스트 삭제 금지.** 현재 베이스라인은 `flutter test` **926건 통과**, `flutter analyze` **이슈 0**. 매 태스크 끝에서 둘 다 유지되어야 한다.
+- **기존 테스트 삭제 금지.** 현재 베이스라인은 `flutter test` **917건 통과**, `flutter analyze` **이슈 0**. 매 태스크 끝에서 둘 다 유지되어야 한다.
 - **긴 코드는 §스펙에서 그대로 옮긴다.** `build.gradle.kts` 전문(§M1-C1)과 Fastfile 전문(§M1-C5)은 이 계획에 복사하지 않는다 — 복사하면 출처가 둘로 갈려 어긋난다(이 리포의 "출처를 갈라진 채 두지 않는다" 원칙). 절 이름으로 지목하니 그 블록을 통째로 쓸 것.
 
 ---
@@ -121,7 +121,7 @@ Expected: `package="com.planroutine.app"`
 
 ```bash
 flutter analyze    # 이슈 0
-flutter test       # 926건 통과
+flutter test       # 917건 통과
 ```
 
 - [ ] **Step 8: Commit**
@@ -217,7 +217,7 @@ chmod +x android/bin/fastlane.sh
 
 - [ ] **Step 2: `Appfile` 작성**
 
-§스펙 `#### android/fastlane/Appfile` 블록 그대로. `package_name("com.planroutine.app")` + 서비스 계정 JSON **경로**(`~/.google_play/service_account.json` — `.claude/skills/deploy/SKILL.md`가 이미 적어 둔 값과 일원화). **이 파일은 커밋한다** — 경로만 들고 있고 비밀이 아니다.
+§스펙 `#### android/fastlane/Appfile` 블록 그대로. `package_name("com.planroutine.app")` + 서비스 계정 JSON **경로**(`~/.google_play/planroutine.json` — `.claude/skills/deploy/SKILL.md`가 이미 적어 둔 값과 일원화). **이 파일은 커밋한다** — 경로만 들고 있고 비밀이 아니다.
 
 - [ ] **Step 3: `Fastfile` 작성**
 
@@ -262,7 +262,7 @@ git commit -m "build(android): fastlane 레인 5개를 배선한다 — 빌드�
    - 앱 콘텐츠·데이터 안전이 전제면 → M3-H2·H3를 GATE 4 앞으로.
    - **방침 URL 제출이 전제면 → M2-⑧(미사용 `google_fonts` 제거)과 M2-⑨(처리방침 개정)도 M1으로.** ⑧은 2파일 3곳 삭제라 당기는 비용이 사실상 0이다. ⑨는 방침 본문에 기기 백업 절을 추가하는 작업이라 Task 6(백업을 켠 것으로 선언)과 짝이다.
    - 셋 다 전제가 아니면 그대로 M2·M3에 둔다.
-3. **H1.6 서비스 계정** — Play Console `설정 › API 액세스` → GCP 프로젝트 연결(iOS와 같은 프로젝트 가능) → 서비스 계정 생성 → **릴리스 관리자** 권한 → JSON을 `~/.google_play/service_account.json`에 둔다.
+3. **H1.6 서비스 계정** — ⚠️ `설정 › API 액세스`는 **없어졌다**(Google이 GCP 연결 요구를 폐지). **GCP에서 만들고 Play에 초대**한다: GCP `API 및 서비스 › 라이브러리`에서 `Google Play Android Developer API` 사용 설정 → `IAM › 서비스 계정` 생성(이름 `planroutine-playstore`, GCP 역할 없음) → JSON을 `~/.google_play/planroutine.json`(600) → Play Console `사용자 및 권한`에 그 이메일 초대, 앱은 공직플랜만 · 권한 **출시 관리자**. 전문은 §스펙 M1-H1.6.
    - 완료 신호는 **콘솔 육안**(사용자 및 권한에 서비스 계정이 보인다)까지다. `check_play_key`는 아직 돌지 않는다 — 패키지 미바인딩이라 API가 404다.
    - 신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.
 
@@ -445,10 +445,17 @@ Expected: FAIL — `privacy_policy_list_tile.dart` 없음.
   /// 이 URL을 바꾸면 Google OAuth 동의 화면 필드가 바뀌어 **재검증 트리거가 된다**.
   /// 방침 본문만 고칠 때는 URL을 건드리지 않는다.
   static const privacyPolicyTitle = '개인정보처리방침';
-  static const privacyPolicyUrl = 'https://planroutine.indibery.dev';
+  static const privacyPolicyUrl = 'https://planroutine.indibery.dev/privacy_policy';
   static const privacyPolicyFailed = '브라우저를 열 수 없습니다';
 ```
 
+⚠️ **경로를 빼면 안 된다.** 루트(`/`)는 **앱 소개 페이지**이고 방침은 `/privacy_policy`다
+(실측: 루트 title `공직플랜 | … 공식 지원 페이지` / `/privacy_policy` title
+`공직플랜(PlanRoutine) 개인정보 처리방침`). 초안이 루트를 적어 뒀는데 그대로 두면
+**탭했을 때 방침이 아니라 홈페이지가 뜬다** — Play가 요구하는 "앱 안의 방침 링크"의 실효가
+없어진다. 리포의 다른 문서들도 전부 `/privacy_policy`를 쓰고(`docs/release_checklist.md:17`,
+`docs/oauth_verification_demo_script.md:44`), **OAuth 동의 화면 등록값도 그것**이다.
+확장자 없는 pretty URL을 쓴다 — GitHub Pages가 `.html`로 매핑한다.
 - [ ] **Step 4: 위젯 구현**
 
 §스펙 `### M1-C6`의 `privacy_policy_list_tile.dart` 블록을 그대로 옮기되, `onOpen` 주입 파라미터를 둔다(기본값이 `url_launcher`의 `launchUrl`). 실패 시 `SettingsStrings.privacyPolicyFailed` 스낵바.

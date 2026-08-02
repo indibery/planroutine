@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: 공직플랜 배포 — iOS는 게이트 검사(analyze/test) 후 fastlane.sh 실행(TestFlight/App Store), green이면 승인 없이 바로 진행. Android는 아직 미배선(차단 요인 안내). "배포", "release", "beta", "fastlane 올려줘", "안드로이드/Play Store 배포" 요청 시 사용.
+description: 공직플랜 배포 — iOS는 게이트 검사(analyze/test) 후 fastlane.sh 실행(TestFlight/App Store), green이면 승인 없이 바로 진행. Android는 게이트(analyze/test + release AAB 스모크) 후 `./android/bin/fastlane.sh <레인>` 실행 — 비공개 테스트는 `beta`(트랙 `Alpha`), 첫 업로드는 `bootstrap`(트랙 `internal`·draft). "배포", "release", "beta", "fastlane 올려줘", "안드로이드/Play Store 배포" 요청 시 사용.
 ---
 
 # 공직플랜 배포 런북
@@ -202,23 +202,59 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
   **반드시 `check_builds`로 해당 빌드번호가 VALID로 올라왔는지 먼저 확인**하고, 올라왔으면 재시도 금지.
   (v90 "HTTP 500" / v91 "network lost" 둘 다 실제로는 업로드 성공 → 불필요 재시도로 v90·v91·v92 중복.)
 
-## Android (계획 — 아직 미배선)
+## Android
 
-현재 iOS 전용. Android는 코드만 존재하고 **출시 불가 상태**라 Play Store 레인을
-의도적으로 만들지 않았다(만들면 죽은 코드). 실제 Android 출시를 결정하면 아래 차단
-요인을 먼저 해소한 뒤 레인을 추가한다.
+fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`beta`)을
+**게이트 → 실행** 순서로 돌린다. 기본 레인은 `android beta`.
 
-**차단 요인 체크리스트 (해소 순서):**
-1. **release 서명 분리** — `android/app/build.gradle.kts`의 `release` 블록이 현재
-   `signingConfig = signingConfigs.getByName("debug")` (디버그 키). 업로드 keystore
-   생성(`keytool`) + `android/key.properties`(리포 밖/gitignore) + release용 signingConfig로 교체.
-2. **applicationId 통일** — 현재 `com.schedulenote.schedule_app` (리브랜딩 이전 ID).
-   iOS와 맞춰 `com.planroutine.app`으로 변경(Play Console 등록 ID와 일치해야 함).
-3. **Play 서비스계정** — Google Play Console에서 service account json 발급 →
-   리포 밖(예: `~/.google_play/service_account.json`)에 보관.
+실행은 항상 wrapper로 한다 — `./android/bin/fastlane.sh`가 Homebrew Ruby를 PATH 앞에
+주입한다(iOS wrapper와 같은 패턴). 맨 `fastlane`을 직접 부르지 않는다.
 
-**준비 완료 후 추가할 레인 패턴** (바로팀 `fastlane/` 참조 — 검증된 레퍼런스):
-- `fastlane/Appfile`에 `json_key_file(...)` + `package_name "com.planroutine.app"`.
-- `android beta`(track: internal) / `android release`(track: production) 레인:
-  `flutter build appbundle --release` → `upload_to_play_store(aab: "build/app/outputs/bundle/release/app-release.aab", ...)`.
-- iOS의 `reset_ios_caches`는 Android에 불필요(시뮬 슬라이스 함정은 iOS 전용).
+**레인 5개:**
+
+| 레인 | 하는 일 | Play 인증 | 트랙 | 파괴적 |
+|---|---|---|---|---|
+| `check_tago_key` | TAGO 키 파일 확인 | 불필요 | – | 없음 |
+| `check_play_key` | 서비스 계정 JSON + client_email 검증 + 트랙 4개 versionCode 조회 | 필요 | – | 없음 |
+| `build_aab` | 가드 → clean → release AAB 생성 (**업로드하지 않는다**) | 불필요 | – | clean |
+| `bootstrap` | `build_aab` + internal 트랙 draft 업로드(패키지명 확정용, 최초 1회만) | 필요 | `internal`(draft) | clean |
+| `beta` | 가드 → versionCode 계산 → `build_aab` → **비공개 테스트** 업로드 | 필요 | `Alpha`(비공개 테스트) | clean |
+
+```bash
+./android/bin/fastlane.sh check_tago_key   # TAGO 키 확인 (빌드·업로드 없음)
+./android/bin/fastlane.sh check_play_key   # Play 서비스 계정 + 트랙 4개 versionCode 확인
+./android/bin/fastlane.sh build_aab        # release AAB만 생성 (업로드 없음)
+./android/bin/fastlane.sh bootstrap        # 패키지명 확정용 첫 업로드 (internal·draft, 최초 1회만)
+./android/bin/fastlane.sh beta             # 비공개 테스트(Alpha) 업로드
+```
+
+⚠️ **`track: internal`은 `bootstrap` 전용이다.** internal은 비공개 테스트 14일
+요건을 **하루도 세지 않는다**. 테스터에게 실제로 보낼 빌드는 반드시 `beta`(트랙
+`Alpha` = Play 콘솔의 "비공개 테스트")로 올린다. **콘솔에서 트랙 이름을 육안
+확인**할 것 — `테스트 및 출시 › 비공개 테스트`이지 "내부 테스트"가 아니다.
+
+**`reset_android_caches`가 매 빌드 필수다** — `build_aab`가 자동 실행한다. 근거는
+실측 둘:
+- debug 빌드가 소스 위치에 심는 `GeneratedPluginRegistrant.java`가
+  `integration_test`(dev dependency)를 참조해 release javac가 실패한다
+  (`flutter clean`만으로는 이 파일이 안 지워져 직접 rm한다).
+- `sqflite_common_ffi`(dev dependency)가 스테이징한 `libsqlite3.so`가 release
+  APK에 그대로 섞여 들어간다(실측 70.4MB → 65.3MB로 축소 확인).
+
+**서비스 계정 JSON은 `~/.google_play/planroutine.json` 하나로 일원화한다.** 같은
+디렉터리의 `service_account.json`은 **바로팀이 이미 쓰고 있는 자리**라 잘못 집으면
+엉뚱한 앱 자격증명으로 배포한다 — `assert_play_key`가 `client_email`에
+`planroutine`이 있는지까지 확인해 막는다.
+
+**게이트는 iOS와 동일**(`flutter analyze` + `flutter test`) **+ release AAB
+스모크**: bundletool로 AAB를 에뮬레이터에 설치해 버스 카드가 실제 도착 정보를
+그리는지 확인한다 — TAGO 키가 release 빌드에 실제로 주입됐다는 유일한 증거다.
+
+⚠️ **첫 업로드는 레인으로 할 수 없다.** Play API는 패키지가 앱에 바인딩되기
+전엔 `insert_edit`에서 404를 던진다. 이 앱은 이미 콘솔 수동 업로드로 그 벽을
+지났지만, **다음 앱을 낼 때 같은 벽을 다시 만난다** — 그때는 콘솔에서 최초
+1건을 수동으로 올려 패키지를 바인딩한 뒤에야 `bootstrap`/`beta`가 동작한다.
+
+**되돌릴 수 없는 것**: 패키지명 · keystore · 최종 심사 제출. `beta`는
+`release_status: "completed"`라 업로드 즉시 Play 심사로 들어간다 — 실기기(또는
+최소 release AAB 스모크) 검증 후에만 실행한다.

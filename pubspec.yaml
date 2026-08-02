@@ -1,7 +1,7 @@
 name: planroutine
 description: "공직플랜 — 공직자를 위한 업무 일정 관리 앱"
 publish_to: 'none'
-version: 1.3.0+52
+version: 1.3.0+53
 
 environment:
   sdk: ^3.11.4
@@ -69,6 +69,9 @@ dependencies:
   # 커스텀 폰트 (디자인 시스템 적용용)
   google_fonts: ^6.2.1
 
+  # 인앱 개인정보처리방침 링크를 브라우저로 연다 (Play·App Store 공통 요건)
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -90,12 +93,24 @@ dev_dependencies:
 
 # 앱 아이콘 설정 — 원본 이미지는 `flutter test test/tools/gen_app_icon.dart`로
 # LogoHybrid(BrandLogo)를 1024×1024 PNG로 렌더한 뒤, `dart run
-# flutter_launcher_icons`로 각 iOS 사이즈를 재생성한다.
+# flutter_launcher_icons`로 각 iOS/Android 사이즈를 재생성한다.
 flutter_launcher_icons:
   ios: true
-  android: false # Android는 미검증 상태 (CLAUDE.md 참조)
+  android: "ic_launcher"
   image_path: "assets/icon/app_icon.png"
   remove_alpha_ios: true # App Store 업로드 요구 (iOS 아이콘 alpha 금지)
+  # 색 hex를 여기 박지 않는다 — `adaptive_icon_background`는 이미지 경로도 받는다.
+  # hex로 두면 네이비의 출처가 AppColors와 pubspec 둘이 되고, 팔레트를 손볼 때
+  # 아이콘 배경만 옛 색으로 남는다(그 사실은 홈 화면을 눈으로 봐야 드러난다).
+  # gen_app_icon.dart가 이미 `Paint()..color = AppColors.navy`로 같은 색을 쓰고 있어
+  # 배경 한 장을 더 뽑으면 출처가 코드 하나로 남는다.
+  adaptive_icon_background: "assets/icon/app_icon_background.png"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # 도구가 기본으로 전경에 16% inset을 더 넣는다 — gen_app_icon.dart의 markScale이
+  # 이미 안전 영역을 겨냥해 줄여 그린 값이라 겹치면 이중으로 줄어든다(실측: 60%로
+  # 그려도 최종 로고가 안전 영역의 44%만 채움). markScale이 안전 영역 계산을 전담하므로
+  # inset은 0으로 끈다 — 어느 한쪽만 바꾸면 다시 어긋난다.
+  adaptive_icon_foreground_inset: 0
 
 flutter:
   uses-material-design: true

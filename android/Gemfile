@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+# Homebrew로 설치한 fastlane이 자체 Ruby를 쓰면서 시스템 Ruby와 서로 다른
+# 인스턴스로 분리되는 문제가 있다. 프로젝트 레벨 bundler로 고정해 충돌을 차단한다.
+# Android에는 CocoaPods가 없다 — iOS Gemfile의 CocoaPods 짝은 여기 해당 없음.
+gem "fastlane"

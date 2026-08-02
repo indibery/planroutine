@@ -31,7 +31,7 @@
 
 | 레이어 | 기술 | 비고 |
 |--------|------|------|
-| 앱 | Flutter 3.x (Dart) | iOS 배포 중. Android는 코드는 있으나 미검증 |
+| 앱 | Flutter 3.x (Dart) | iOS 배포 중(App Store). Android는 M1 셸 배포 완료 — Play 비공개 테스트 트랙 업로드·심사 대기(알림 100%·CSV 공유 목록 노출은 M2에서) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
 | 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import, /bus/settings, /bus/stops). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 908 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 919 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -171,6 +171,16 @@ planroutine/
 │   ├── fastlane/Fastfile               # beta/release 레인 (IPA glob: Dir.entries)
 │   ├── Gemfile (+ Gemfile.lock)        # fastlane + cocoapods 동일 Ruby 환경
 │   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper
+├── android/
+│   ├── app/
+│   │   ├── build.gradle.kts            # release 서명·R8·desugaring
+│   │   ├── proguard-rules.pro          # Gson TypeToken 시그니처 보존 (알림 재예약 경로)
+│   │   └── src/main/res/raw/keep.xml   # 리소스 축소로부터 ic_notification 보존
+│   ├── fastlane/
+│   │   ├── Appfile                     # package_name + json_key_file(~/.google_play/planroutine.json)
+│   │   └── Fastfile                    # check_tago_key/check_play_key/build_aab/bootstrap/beta 5개 레인
+│   ├── Gemfile (+ Gemfile.lock)        # fastlane 고정 (iOS와 같은 Ruby 환경 규칙)
+│   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper (iOS와 동일 패턴)
 ├── assets/
 │   ├── icon/app_icon.png               # 1024x1024 원본 (test/tools/gen_app_icon.dart로 재생성)
 │   ├── images/edufine_csv_guide.png    # Import 가이드 annotation 스크린샷
@@ -731,6 +741,12 @@ planroutine/
 ./ios/bin/fastlane.sh withdraw_review     # 심사 철회 (편집 가능 상태로)
 ./ios/bin/fastlane.sh asc_state           # 심사 단계 + 선택된 빌드 조회
 ./ios/bin/fastlane.sh check_builds  # 최근 빌드 processing_state 조회 (post-deploy)
+
+./android/bin/fastlane.sh check_tago_key   # TAGO 키 파일 확인 (빌드·업로드 없음)
+./android/bin/fastlane.sh check_play_key   # 서비스 계정 JSON + client_email 검증 + 트랙 4개 versionCode 조회
+./android/bin/fastlane.sh build_aab        # 가드 → clean → release AAB만 생성 (업로드하지 않는다)
+./android/bin/fastlane.sh bootstrap        # build_aab + internal 트랙 draft 업로드 (패키지명 확정용, 최초 1회만)
+./android/bin/fastlane.sh beta             # 가드 → versionCode → build_aab → 비공개 테스트(Alpha) 업로드
 ```
 - Wrapper가 Homebrew Ruby(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입해 `bundle exec fastlane`을 돌린다. 사용자 shell 설정은 건드리지 않는다.
 - `ios/Gemfile`에 fastlane + cocoapods 고정. 최초 실행 시 wrapper가 자동으로 `bundle install`.
@@ -742,8 +758,38 @@ planroutine/
 - **릴리즈 노트는 `docs/release_notes/<버전>.ko.txt`** — release가 읽어 ASC에 넣는다. 버전을 올리면 이 파일을 먼저 만든다.
 - **beta 레인**은 시작 시 `reset_ios_caches`(flutter clean + Pods/build 제거)를 자동 실행 — 시뮬 슬라이스 함정(#6) 차단. clean 때문에 매 beta가 수 분 더 걸린다. release는 빌드가 없어 해당 없음.
 
+### Android 레인
+
+- **트랙은 값과 함께 기억할 것**: `beta` = 비공개 테스트(Play 콘솔 API identifier `alpha`,
+  콘솔 화면 이름은 **`Alpha`/"비공개 테스트"**) / `bootstrap` = `internal`(draft, 패키지명
+  확정용 1회성). ⚠️ **`internal`은 비공개 테스트 14일 요건을 하루도 세지 않는다** — 트랙을
+  착각해 `internal`에 올리면 14일이 0일이 된다. 첫 `beta` 실행 후에는 **콘솔에서 트랙 이름을
+  육안 확인**한다(`테스트 및 출시 › 비공개 테스트`, "내부 테스트"가 아니다).
+- **`reset_android_caches`가 매 빌드 필수다**(`build_aab`가 자동 실행) — 실측 둘이 근거:
+  debug가 소스 위치에 심는 `GeneratedPluginRegistrant.java`가 `integration_test`(dev
+  dependency)를 참조해 release javac가 실패하고, `sqflite_common_ffi`가 스테이징한
+  `libsqlite3.so`가 release APK에 섞여 들어간다(실측 70.4MB → 65.3MB로 축소 확인).
+- **서비스 계정 JSON은 `~/.google_play/planroutine.json` 하나로 일원화**한다 — 같은
+  디렉터리의 `service_account.json`은 **바로팀이 이미 쓰는 자리**라, 그 파일명을 쓰면
+  엉뚱한 앱 자격증명으로 배포한다(실측 사고, 2026-08-02). `assert_play_key`가
+  `client_email`에 `planroutine`이 있는지까지 확인해 막는다.
+- **게이트는 iOS와 동일**(`flutter analyze` + `flutter test`) **+ release AAB 스모크** —
+  bundletool로 AAB를 에뮬레이터에 설치해 버스 카드가 실제 도착 정보를 그리는지 확인한다
+  (TAGO 키가 release 빌드에 실제로 주입됐다는 유일한 증거).
+- **첫 업로드는 레인으로 할 수 없다** — Play API는 패키지가 앱에 바인딩되기 전엔
+  `insert_edit`에서 404를 던진다. 이 앱은 콘솔 수동 업로드로 이미 지났지만, **다음 앱을
+  낼 때 같은 벽을 다시 만난다.**
+- **되돌릴 수 없는 것**: 패키지명 확정(`bootstrap`의 첫 업로드) · keystore(업로드 키 —
+  분실·교체 시 같은 앱으로 업데이트를 낼 방법이 없다, 리포 밖 보관 필수) · 최종 심사
+  제출(`beta`는 `release_status: "completed"`라 업로드 즉시 Play 심사로 들어간다).
+
 ### 배포 플로우 정책 (메모리에 기록됨)
 `flutter analyze` + `flutter test` 통과 시 사용자 승인 없이 바로 `./ios/bin/fastlane.sh beta` 실행 후 push까지 진행. 배포 실패 시에만 멈춰서 보고.
+
+**예외 — Android 첫 `beta`는 콘솔 육안 확인을 끼운다.** 자동으로 push까지 진행하지 않고,
+Play 콘솔에서 트랙이 실제로 `비공개 테스트`(`Alpha`)에 올라갔는지 확인한 뒤에만 완료로
+보고한다 — 트랙을 `internal`로 착각하면 14일 비공개 테스트 요건이 하루도 안 세는,
+되돌릴 수 없는 손실이기 때문이다.
 
 ### 앱 아이콘 재생성
 ```
@@ -793,3 +839,14 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 날짜 문자열 포맷은 `date_utils.formatDate(DateTime) → 'YYYY-MM-DD'` 공용 함수 사용
 - 확인 다이얼로그는 `ConfirmDialog.show()` 공통 위젯 사용 (신규 AlertDialog 직접 만들지 않기)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리
+- **플랫폼 분기는 `dart:io`의 `Platform.isAndroid`를 쓴다.** `defaultTargetPlatform`은
+  `flutter test`에서 **항상 `android`로 강제된다**(`_platform_io.dart`의 assert 블록) —
+  그걸로 분기하면 macOS 호스트에서 도는 위젯 테스트 전체에 Android 전용 UI가 나타난다.
+  `Platform.isAndroid`는 위젯 테스트로 직접 못 밟으므로, 새 플랫폼 분기 UI는 기본값이
+  `Platform.isAndroid`인 주입점(예: `showXxx: bool?`)을 둬서 테스트 가능하게 만든다.
+- **adaptive 아이콘의 `markScale 0.85`(`test/tools/gen_app_icon.dart`)와
+  `adaptive_icon_foreground_inset: 0`(`pubspec.yaml`)은 짝이다.** `flutter_launcher_icons`가
+  기본으로 전경에 16% inset을 더 넣는데, `LogoHybridPainter`가 이미 캔버스의 65.2%만
+  실제로 칠하는 것까지 계산해 안전 영역(원형 마스크 기준 66%)을 맞춘 값이 `markScale`이다
+  — 하나만 바꾸면 로고 크기가 안전 영역보다 작거나(이중 축소, 실측: markScale 0.6 +
+  inset 16% → 안전 영역의 44%만 채움) 마스크 가장자리에 닿는 쪽으로 어긋난다.
