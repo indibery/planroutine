@@ -106,6 +106,11 @@ flutter_launcher_icons:
   # 배경 한 장을 더 뽑으면 출처가 코드 하나로 남는다.
   adaptive_icon_background: "assets/icon/app_icon_background.png"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # 도구가 기본으로 전경에 16% inset을 더 넣는다 — gen_app_icon.dart의 markScale이
+  # 이미 안전 영역을 겨냥해 줄여 그린 값이라 겹치면 이중으로 줄어든다(실측: 60%로
+  # 그려도 최종 로고가 안전 영역의 44%만 채움). markScale이 안전 영역 계산을 전담하므로
+  # inset은 0으로 끈다 — 어느 한쪽만 바꾸면 다시 어긋난다.
+  adaptive_icon_foreground_inset: 0
 
 flutter:
   uses-material-design: true
