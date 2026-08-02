@@ -81,7 +81,7 @@
 | 23 | iOS `strip_dart_defines` 재사용 | Android는 **대응물이 불필요하다**(dart-define가 파일로 안 남는다). 대신 `--verbose` 금지 | M1-C5 |
 | 24 | (없음) | 16 KB page size 요건은 **이미 통과한다**(작업 0) | 범위 밖 |
 | 25 | (없음) | Play `정부 앱` 선언이 저평가된 리스크 — 조직 계정 제한 여지 | M3-H2 |
-| 26 | (없음) | **Play 서비스 계정이 없으면 레인이 한 줄도 못 돈다.** `Appfile` + `~/.google_play/service_account.json` | M1-H1.6 · C5 |
+| 26 | (없음) | **Play 서비스 계정이 없으면 레인이 한 줄도 못 돈다.** `Appfile` + `~/.google_play/planroutine.json` | M1-H1.6 · C5 |
 | 27 | (없음) | Play Console `앱 만들기`에 **패키지명 입력란이 없다** — 첫 AAB 업로드가 바인딩한다 | §순서 ③ · M1-H3 |
 | 28 | (없음) | release는 R8 축소 + **리소스 축소**가 기본 ON이다 → `ic_notification`·GSON 역직렬화가 죽는다 | M1-C8 |
 | 29 | versionCode = Play 최신 + 1 (iOS와 대칭) | `google_play_track_version_codes`는 **그 트랙만** 본다 — iOS의 계정 스코프와 대칭이 아니다 | M1-C5 |
@@ -727,7 +727,7 @@ package_name("com.planroutine.app")
 #
 # 경로는 `.claude/skills/deploy/SKILL.md`가 이미 차단 요인 3번으로 적어 둔 값을 그대로
 # 쓴다 — 운영 문서와 레인이 다른 경로를 말하면 다음 사람이 키를 두 곳에 만든다.
-json_key_file(File.expand_path("~/.google_play/service_account.json"))
+json_key_file(File.expand_path("~/.google_play/planroutine.json"))
 ```
 
 `supply` 계열 액션(`upload_to_play_store`·`google_play_track_version_codes`)은 `json_key`의
@@ -1048,7 +1048,7 @@ project property(`-Pdart-defines=<base64 CSV>`)로만 넘어가고 `android/`·`
 ./android/bin/fastlane.sh check_play_key       # 인증·권한 + 트랙 4개 versionCode
 
 # ② 가드 셋이 각각 clean 앞에서 죽는지
-mv ~/.google_play/service_account.json /tmp/ && ./android/bin/fastlane.sh beta       # 즉시 실패
+mv ~/.google_play/planroutine.json /tmp/ && ./android/bin/fastlane.sh beta       # 즉시 실패
 mv /tmp/service_account.json ~/.google_play/                                         # ← 복구
 mv ~/.planroutine/tago.env /tmp/            && ./android/bin/fastlane.sh build_aab   # 즉시 실패
 mv /tmp/tago.env ~/.planroutine/                                                     # ← 복구
@@ -1348,7 +1348,7 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 | `flutter build appbundle --release` 직접 호출 | `build_aab` 레인(가드 → clean → `--dart-define-from-file`) | 수동 경로에는 TAGO 키가 없다. 관통 원칙 ①이 막으려는 그 명령이 런북에 적혀 있다 |
 | "iOS의 `reset_ios_caches`는 Android에 불필요" | `reset_android_caches` **필수** | 실측 둘(registrant의 `integration_test`, `libsqlite3.so` 5.1MB, §M1-C5) |
 | 차단 요인 1·2(서명·applicationId) | C2·C3가 해소한다 | 완료 후 **사실이 아니게 된다** |
-| 차단 요인 3의 `~/.google_play/service_account.json` | **이 경로를 그대로 쓴다**(§Appfile) | 여기만 맞다. 스펙이 경로를 새로 정하지 않고 이 값을 따라간 이유다 |
+| 차단 요인 3의 `~/.google_play/planroutine.json` | **이 경로를 그대로 쓴다**(§Appfile) | 여기만 맞다. 스펙이 경로를 새로 정하지 않고 이 값을 따라간 이유다 |
 | frontmatter `Android는 아직 미배선(차단 요인 안내)` | 배선 완료 | 스킬이 배포를 **거부**한다 |
 
 작업은 「Android (계획 — 아직 미배선)」 절을 **런북으로 교체**하는 것이다:
@@ -1363,7 +1363,7 @@ grep -c 'proguard-rules.pro' build/app/outputs/mapping/release/configuration.txt
 □ 게이트: iOS와 동일(analyze + test) + Android는 여기에 **release AAB 스모크**가 붙는다
   (debug로는 축소가 지운 것을 못 잡는다, §M1-C8)
 □ reset_android_caches를 하는 이유 두 줄(registrant · libsqlite3.so)
-□ 서비스 계정 경로는 `~/.google_play/service_account.json` **하나로 통일**
+□ 서비스 계정 경로는 `~/.google_play/planroutine.json` **하나로 통일**
 □ versionCode 규칙: 트랙 전수 최대 + 1, pubspec `+N`이 하한(iOS의 계정 스코프와 대칭이 아니다)
 □ 프로덕션 릴리즈는 레인이 없다 — 사람이 콘솔에서 만든다(§M3)
 ```
@@ -1422,7 +1422,7 @@ Play Console
   → [서비스 계정 만들기] → GCP 콘솔에서 계정 생성 → 키(JSON) 발급
   → Play Console로 돌아와 [액세스 권한 부여] → 앱 권한: **릴리스 관리자**
      (필요한 것은 "프로덕션·비공개 테스트 트랙에 출시" + "앱 정보 보기")
-  → JSON을 리포 밖으로: ~/.google_play/service_account.json  (Appfile이 이 경로를 가리킨다)
+  → JSON을 리포 밖으로: ~/.google_play/planroutine.json  (Appfile이 이 경로를 가리킨다)
 ```
 - **신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.** 그래서 H2·C1보다 앞,
   H1 바로 뒤에 착수한다 — 기다리는 동안 코드 작업이 돈다. 소요 시간은 **미확인**.
@@ -3397,7 +3397,7 @@ Android의 chooser는 **별 Activity**라 우리 액티비티가 stop되고 vsyn
 ### M3-H2 · 앱 콘텐츠 선언
 
 ```
-개인정보처리방침 URL : https://planroutine.indibery.dev
+개인정보처리방침 URL : https://planroutine.indibery.dev/privacy_policy
 앱 액세스 권한       : 모든 기능을 특별한 액세스 권한 없이 사용 가능
 광고                 : 아니요, 앱에 광고가 없습니다
 광고 ID              : 아니요

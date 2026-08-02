@@ -217,7 +217,7 @@ chmod +x android/bin/fastlane.sh
 
 - [ ] **Step 2: `Appfile` 작성**
 
-§스펙 `#### android/fastlane/Appfile` 블록 그대로. `package_name("com.planroutine.app")` + 서비스 계정 JSON **경로**(`~/.google_play/service_account.json` — `.claude/skills/deploy/SKILL.md`가 이미 적어 둔 값과 일원화). **이 파일은 커밋한다** — 경로만 들고 있고 비밀이 아니다.
+§스펙 `#### android/fastlane/Appfile` 블록 그대로. `package_name("com.planroutine.app")` + 서비스 계정 JSON **경로**(`~/.google_play/planroutine.json` — `.claude/skills/deploy/SKILL.md`가 이미 적어 둔 값과 일원화). **이 파일은 커밋한다** — 경로만 들고 있고 비밀이 아니다.
 
 - [ ] **Step 3: `Fastfile` 작성**
 
@@ -262,7 +262,7 @@ git commit -m "build(android): fastlane 레인 5개를 배선한다 — 빌드�
    - 앱 콘텐츠·데이터 안전이 전제면 → M3-H2·H3를 GATE 4 앞으로.
    - **방침 URL 제출이 전제면 → M2-⑧(미사용 `google_fonts` 제거)과 M2-⑨(처리방침 개정)도 M1으로.** ⑧은 2파일 3곳 삭제라 당기는 비용이 사실상 0이다. ⑨는 방침 본문에 기기 백업 절을 추가하는 작업이라 Task 6(백업을 켠 것으로 선언)과 짝이다.
    - 셋 다 전제가 아니면 그대로 M2·M3에 둔다.
-3. **H1.6 서비스 계정** — Play Console `설정 › API 액세스` → GCP 프로젝트 연결(iOS와 같은 프로젝트 가능) → 서비스 계정 생성 → **릴리스 관리자** 권한 → JSON을 `~/.google_play/service_account.json`에 둔다.
+3. **H1.6 서비스 계정** — Play Console `설정 › API 액세스` → GCP 프로젝트 연결(iOS와 같은 프로젝트 가능) → 서비스 계정 생성 → **릴리스 관리자** 권한 → JSON을 `~/.google_play/planroutine.json`에 둔다.
    - 완료 신호는 **콘솔 육안**(사용자 및 권한에 서비스 계정이 보인다)까지다. `check_play_key`는 아직 돌지 않는다 — 패키지 미바인딩이라 API가 404다.
    - 신규 계정은 API 액세스 활성·권한 전파가 즉시가 아닐 수 있다.
 
