@@ -13,6 +13,7 @@ import '../widgets/data_source_list_tile.dart';
 import '../widgets/export_list_tile.dart';
 import '../widgets/calendar_integration_section.dart';
 import '../widgets/notification_settings_tiles.dart';
+import '../widgets/privacy_policy_list_tile.dart';
 import '../widgets/reset_list_tile.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/stamp_settings_tiles.dart';
@@ -79,6 +80,9 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(child: NotificationSettingsTiles()),
           const SettingsSection(child: TrashListTile()),
           const SettingsSection(child: ResetListTile()),
+          // 법적 표시(Play User Data 정책)라 탭 가능한 별 섹션으로 둔다 —
+          // 아래 앱 정보 Column(정보성, 탭 없음)에 섞지 않는다.
+          const SettingsSection(child: PrivacyPolicyListTile()),
           const SettingsSection(
             showDivider: false,
             // 출처 표시는 앱 정보 아래에 붙인다 — 둘 다 정보성이고 탭이 없다.

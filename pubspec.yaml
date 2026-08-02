@@ -68,6 +68,7 @@ dependencies:
 
   # 커스텀 폰트 (디자인 시스템 적용용)
   google_fonts: ^6.2.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
