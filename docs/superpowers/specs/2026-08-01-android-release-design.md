@@ -605,17 +605,20 @@ cd android && ./gradlew :app:assembleRelease
 일정)와 `shared_prefs/FlutterSharedPreferences.xml`을 사용자 **본인** Google Drive로 보낸다.
 
 ```xml
+<!-- 기기를 바꿔도 1년치 일정이 복원된다. 교사에게 실질 가치가 크고, iOS의 iCloud
+     백업이 이미 같은 성질이라 방침 한 문단이 양쪽을 덮는다.
+     ⚠️ 기본값에 맡기지 않고 명시한다. "정하지 않아 기본값으로 출시된 것"과
+        "정해서 켠 것"은 다르고, 이 한 줄이 §M3-H3 데이터 안전 답안의 전제다.
+        뒤집으면 그 양식도 함께 뒤집어야 한다. -->
 <application
     android:label="공직플랜"
     android:name="${applicationName}"
     android:icon="@mipmap/ic_launcher"
-    <!-- 기기를 바꿔도 1년치 일정이 복원된다. 교사에게 실질 가치가 크고, iOS의 iCloud
-         백업이 이미 같은 성질이라 방침 한 문단이 양쪽을 덮는다.
-         ⚠️ **기본값에 맡기지 않고 명시한다.** "정하지 않아 기본값으로 출시된 것"과
-            "정해서 켠 것"은 다르고, 이 한 줄이 §M3-H3 데이터 안전 답안의 전제다.
-            뒤집으면 그 양식도 함께 뒤집어야 한다. -->
     android:allowBackup="true">
 ```
+⚠️ **주석은 시작 태그 *위*에 둔다.** 초안은 속성 사이에 끼워 뒀는데 그것은 **유효하지 않은
+XML**이다(`xml.dom.minidom`이 `not well-formed`로 거부한다 — Task 6 구현 중 실측).
+XML 주석은 태그 안에 들어갈 수 없다.
 
 **제외 규칙(`dataExtractionRules`·`fullBackupContent`)은 만들지 않는다.** 버스 정류장 설정이
 생활 반경 정보라 제외 후보였고, 실제로 검토했다 — **키 단위로는 제외할 수 없다.**
