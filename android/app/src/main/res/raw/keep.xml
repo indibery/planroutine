@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- release는 리소스 축소가 기본 ON이다(FlutterPlugin.kt:262-268).
+     ic_notification을 참조하는 곳은 Dart 문자열뿐이라 축소기가 "안 쓰는 리소스"로 지운다.
+     지워지면 initialize()가 아이콘 검증에 실패해 **알림이 한 건도 뜨지 않는다.** -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />
