@@ -11,10 +11,10 @@
 2. **작년 업무 가져오기(보조)** — 입력 탭 히어로 아래 테두리 카드 한 줄 → `/import` 풀스크린에서 CSV 업로드. **진입점은 이 한 곳뿐**(설정 탭에서 제거). 플랜루틴 자체 포맷 CSV는 재임포트 시 확정 상태로 즉시 복원.
 3. **업무 / 행사 구분** — `EntryKind`(task/event). CSV 경로 = 업무, 사진 AI 경로 = 행사. 오늘 탭에는 업무만, 캘린더에는 둘 다.
 4. **검토 후 확정** — 입력 탭 검토 목록에서 슬라이드로 확정(→) / 삭제(←). 하단 `일괄 업무 등록 N건` / `일괄 행사 등록 N건` pill로 종류별 일괄 확정(해당 종류 0건이면 숨김). 확정 시 캘린더 이벤트 자동 생성(종류 승계). 대기가 없으면 검토 영역은 요약 한 줄로 축소.
-5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ Google 저장 / ← 완료 토글). 에듀파인 CSV로 가져왔고 아직 검토(편집 시트를 열어 저장)하지 않은 이벤트는 리스트에 테두리형 `작년` 출처 배지 노출(연도 자체는 보지 않는다 — 아래 "작년 배지" 참고) → 시트를 저장하면 배지가 꺼진다. 제목의 연도를 한 해씩 미는 칩은 편집 다이얼로그(수정 경로) 안에만 있고, 한 시트 안에서 한 번 누르면 다시 누를 수 없다.
+5. **자체 캘린더** — 앱 내 이벤트 CRUD, 양방향 스와이프 (→ 외부 캘린더 저장 / ← 완료 토글). 에듀파인 CSV로 가져왔고 아직 검토(편집 시트를 열어 저장)하지 않은 이벤트는 리스트에 테두리형 `작년` 출처 배지 노출(연도 자체는 보지 않는다 — 아래 "작년 배지" 참고) → 시트를 저장하면 배지가 꺼진다. 제목의 연도를 한 해씩 미는 칩은 편집 다이얼로그(수정 경로) 안에만 있고, 한 시트 안에서 한 번 누르면 다시 누를 수 없다.
 6. **휴지통** — 일정/이벤트 soft-delete, 30일 후 자동 영구 삭제.
 7. **내보내기** — 확정된 일정을 UTF-8 BOM CSV로 공유시트에 전달.
-8. **Google 캘린더 연동** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지.
+8. **Google 캘린더 연동(iOS 전용)** — 단방향(앱 → Google) 이벤트 저장, `google_event_id`로 중복 방지. **안드로이드에서는 선택지를 감춘다** — 거기서는 기기 캘린더가 이미 구글 캘린더다(아래 설계 결정 참고).
 9. **로컬 알림** — 이번 주(월요일) · 당일 아침 08:00 알림 (timeSensitive).
 10. **오늘 탭(첫 화면)** — 오늘 처리할 **업무**만 모아 체크 원 탭으로 완료. 완료 순간 골드
    도장이 찍히고 상단 결산 링이 차오른다. 기한이 지난 항목은 롤링 7일까지만 기본 접힘.
@@ -41,11 +41,11 @@
 | 공유 | share_plus, path_provider | 임시 디렉토리 + 공유시트 |
 | 앱 정보 | package_info_plus | 설정 탭 버전 표시 |
 | 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장, 버스 설정 |
-| 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API |
+| 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API. **iOS 전용** — 안드로이드는 선택지를 감춘다 |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 919 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 927 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -162,6 +162,7 @@ planroutine/
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
 │           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle
+│           ├── keyboard_inset.dart     # 키보드 여백 — 포커스 전환 시 튐 방지
 │           └── confirm_dialog.dart     # 2-버튼 확인 다이얼로그 공통
 ├── ios/
 │   ├── Runner/
@@ -336,10 +337,34 @@ planroutine/
     파일이나 pubspec 선언이 빠져도 트리에는 `Image`가 그대로 있어 테스트가 통과하고
     **런타임에만** 빈 자리가 된다. 가드는 `rootBundle`로 실제 로드까지 확인한다.
 
-### Google Calendar 연동
+### Google Calendar 연동 (**iOS 전용**)
 - `google_sign_in`으로 `authHeaders` 획득 → 커스텀 `http.BaseClient`로 `googleapis` 호출.
 - 단방향(생성만) — 수정/삭제 동기화 없음 (개인정보 최소 노출).
 - GCP OAuth client는 "테스트" 모드, 테스트 사용자 수동 등록 필요. App Store 출시 시 verification 필요.
+
+#### 안드로이드에서는 이 선택지를 제공하지 않는다 (2026-08-03)
+
+**안드로이드의 "기기 캘린더"가 이미 구글 캘린더다.** `CalendarContract`에 쓰면 동기화된
+구글 계정 캘린더로 들어간다(실측: 저장한 이벤트가 `account_type=com.google`인 캘린더에
+들어갔다). 즉 REST API 경로는 **같은 곳에 두 번 가는 중복**인데, 값은 GCP Android OAuth
+클라이언트 등록 + 동의 화면 검증이다. 등록이 없으면 사용자에게는
+`ApiException: 10`(DEVELOPER_ERROR)로만 보인다(실측).
+
+iOS는 정반대다 — EventKit은 iCloud/로컬이라 **구글로 가는 유일한 길**이 이 경로다.
+그래서 지우지 않고 플랫폼으로 가린다.
+
+- **판정은 `googleTargetSupportedProvider` 한 곳뿐이다**(`calendar_target_provider.dart`).
+  설정 선택지와 스와이프 분기가 같은 값을 봐야 한다 — UI만 감췄더니 저장돼 있던
+  `google` 값 때문에 **고를 수는 없는데 스와이프는 계속 Google로 가는** 막다른 길이
+  남았다(`calendar_screen.dart`가 target으로 분기한다).
+- `CalendarTargetNotifier.build()`가 지원하지 않는 플랫폼의 저장값을 `none`으로 **낮춘다**.
+  저장값 자체는 지우지 않는다 — 그래야 지원되는 플랫폼에서 선택이 살아난다.
+- ⚠️ `defaultTargetPlatform`이 아니라 `dart:io`의 `Platform.isAndroid`를 쓴다(리포 규칙).
+  `Platform.isAndroid`는 위젯 테스트로 못 밟으므로 **provider로 감싸** override 가능하게 뒀다.
+- 남은 문제: `_resolveDefaultCalendarId`는 `isDefault`(= `IS_PRIMARY`)인 첫 캘린더를 집는데,
+  **구글 계정이 둘이면 primary도 둘**이라 먼저 온 쪽이 이긴다(실측: 학교 계정으로 들어갔다).
+  계정이 하나면 정확하다. 기기 저장이 안드로이드의 유일한 경로가 됐으니 계정이 여럿인
+  사용자에게는 남아 있는 문제다.
 
 ### 캘린더 그리드 가시성
 - **주말 열 배경**: 토·일 열에 옅은 tint(`calendarWeekendTint`/`calendarSaturdayTint`)를
@@ -366,6 +391,32 @@ planroutine/
   기간 이벤트를 내보낼 때뿐이라 **DB 컬럼·모델·내보내기 경로는 그대로 두고 입력만** 없앴다.
   회수한 48+8px은 설명칸이 가져갔다.
 - 중요 표시는 **두 종류 모두에서** 유지한다 — 캘린더 ★ 강조는 학교 행사에도 의미가 있다.
+
+#### 키보드 여백은 `viewInsets`에 직접 묶지 않는다 — `KeyboardInset`
+
+`Padding(bottom: MediaQuery.viewInsets.bottom)`을 그대로 쓰면 **제목 ↔ 설명으로 포커스를
+옮길 때 시트가 키보드 높이만큼 떨어졌다 올라온다**(실기 신고 2026-08-03).
+
+포커스가 옮겨가는 찰나 iOS가 키보드를 내렸다 다시 올린다 — 실측(iPhone 17 Pro 시뮬레이터)
+인셋 `335 → 6 → 335`, 시트 진폭 **334.8**. 여백이 그 값을 1:1로 따라간 것이 원인이다.
+
+- **스크롤은 무관하다.** `SingleChildScrollView`를 의심했지만 그때 `maxScrollExtent`는 0이었다.
+- **다행 입력칸과도 무관하다.** 순수 Flutter 위젯으로 격리하니 **단선 → 단선 전환에서도**
+  진폭 334.8이 났다. 그래서 입력칸 설정이 아니라 여백 쪽에서 막는다.
+- **안드로이드에는 이 증상이 없다** — 전환 내내 인셋이 312로 일정했다(실측). iOS 증상이다.
+
+`shared/widgets/keyboard_inset.dart`의 규칙: 인셋이 **늘어나면 즉시** 따라가고, **줄어들 때**
+포커스가 없으면 즉시 돌려주고, 포커스가 있으면 `KeyboardInset.grace`(200ms)만 기다린다.
+
+- **유예가 급소다.** 포커스만 보고 붙들면 **안드로이드에서 뒤로 키로 키보드만 내렸을 때**
+  (포커스는 남는다) 버튼 아래 **292pt 빈 공간**이 남는다(실측 — 첫 수정이 만든 회귀).
+  두 경우를 가르는 신호는 시간뿐이다: 전환 붕괴는 100ms 안에 복구되고, 뒤로 키는 0에 머문다.
+- "인셋이 0이면 해제"로 가르지 않는다 — 전환 중 한 프레임이 우연히 0에 앉으면 무너진다.
+- 가드는 `event_edit_dialog_focus_jump_test.dart` 셋(전환 시 고정 / 포커스 없으면 해제 /
+  뒤로 키면 유예 뒤 해제). 되돌리면 첫 번째가 진폭 335로 깨진다(확인함).
+- ⚠️ **같은 패턴이 아직 두 곳에 남아 있다** — `schedule_edit_sheet.dart`(입력 탭 편집,
+  제목+설명 구조가 동일)와 `ai_photo_flow.dart`. 격리 실험이 패턴 자체를 재현했으므로
+  구조적으로 같은 증상이다.
 
 ### 목록의 중요 표시는 세로를 쓰지 않는다
 - 중요 이벤트는 골드 신호가 네 겹이었다: 레일 · 카드 배경 14% · 테두리 50% · `★ 중요` 배지.
@@ -444,8 +495,11 @@ planroutine/
 | 탭 | 오른쪽(→) | 왼쪽(←) |
 |---|---|---|
 | 입력(검토 목록) | 확정 | 삭제(soft) |
-| 캘린더 | Google 저장 | 완료 토글 |
+| 캘린더 | 외부 캘린더 저장 | 완료 토글 |
 - 각 탭 상단에 2줄 안내 바 (SharedPreferences로 영구 닫기 가능).
+- 오른쪽 스와이프의 **행선지는 `calendarTargetProvider`가 정한다**(Google / 기기 / 없음).
+  안내 바 문구도 따라 바뀐다(`기기 저장`). 안드로이드에서는 Google이 선택지에서
+  빠지므로 사실상 `기기 저장`이다.
 
 ### 제목 연도 바꾸기
 - 임포트는 날짜(scheduled_date)만 올해로 변환하고 **제목 문자열의 연도는 원본 유지**(의도적). 그래서 "2025학년도 …" 제목이 남는다.
