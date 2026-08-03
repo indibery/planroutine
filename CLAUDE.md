@@ -822,6 +822,10 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
   - **잊어도 깨지지 않는다** — 안드로이드는 자기 `Play최대+1`로 굴러가고 그때만 한 칸 어긋난다. 정렬은 릴리스 빈도 차이만큼 서서히 마모된다(iOS 142회 대 Android 54회가 그 누적이다).
   - ⚠️ 트랙 조회가 **전부** 실패하면 하한이 단독으로 결정한다(`Fastfile:178`). 이미 올린 번호가 하한이면 중복으로 거부되므로 그때 하한을 올린다.
 - **release는 promote 전용 + 제출하지 않는다**: 재빌드/재업로드 없이 TestFlight 빌드를 `skip_binary_upload`로 승격하고, 버전 페이지 생성·릴리즈 노트 주입까지 한다. **최종 '심사를 위해 제출' 버튼은 사람이 ASC에서 누른다** (`submit:true`를 명시하면 자동 제출하지만 기본은 아님). 되돌리기 어려운 외부 작업이라 제출 직전에 눈으로 확인할 여지를 남긴다.
+- ⚠️ **처리에서 거부된 빌드도 번호를 소비한다.** `latest_testflight_build_number`는
+  `Build.all`에 나타나지 않는 거부된 빌드까지 본다(실측: `v143` 거부 뒤 다음 `beta`가
+  `143 → 144`를 집었다). 그래서 **업로드 실패는 두 스토어 번호 정렬을 한 칸 깨뜨린다** —
+  정렬을 유지하려면 실패한 쪽에 맞춰 다음 릴리스에서 하한을 다시 올려야 한다.
 - **승격 대상은 `build:<N>`으로 못박을 것.** 미지정 시 최신을 집는데, 실기기 검증 후 `beta`를 한 번 더 돌렸다면 검증하지 않은 빌드가 올라간다.
 - **빌드 연결은 레인이 `select_build`로 직접 한다** — deliver는 `submit_for_review: false`면 `build_number`를 받고도 빌드 선택을 건너뛴다(실측 v124: deliver 성공인데 선택 빌드는 v115 유지). 성공 신호는 로그의 `빌드 연결: vNN`이고, `asc_state`의 `선택된 빌드`로 교차 확인한다.
 - **가드 4개**: A(버전>승인본) / B(빌드 VALID) / D(이미 심사 단계면 손대지 않음) / E(릴리즈 노트 존재). 버전 페이지는 없으면 자동 생성된다(minor·major에서는 항상 없다).
@@ -876,16 +880,22 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 
 ### 알려진 빌드 이슈
 - **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환). `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로 남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등). `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조, `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved` 두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라 Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager` 후 재빌드.
-  - 검증됨: analyze · 유닛/위젯 · E2E 19 · 릴리스 IPA 빌드(28.0MB) · Android `beta`
-    (2026-08-03 `versionCode 143 / track alpha` 업로드 성공). TAGO 키는 IPA와 AAB 양쪽
-    스냅샷에서 문자열로 확인했다(양성 대조 포함).
-  - ⚠️ **iOS `beta`는 미완이다.** 레인은 성공했고(`Successfully uploaded package`) Transporter가
-    패키지를 수락했지만, **업로드 1.5시간 뒤에도 `v143`이 TestFlight에 나타나지 않았다**
-    (ASC 4회 조회 모두 최신 `v142`). 레인이 `skip_waiting_for_build_processing`이라
-    처리 결과를 보지 않으므로 **성공 로그만으로는 빌드 도착을 확신할 수 없다.**
-    이번이 **SPM으로 만든 첫 IPA**라 처리 단계 거부가 유력한 용의자다 — 확인은
-    ASC `TestFlight › 빌드 업로드` 섹션의 상태/오류와 Apple이 보낸 메일.
-    iOS 빌드 번호는 **소비되지 않았다**(TestFlight에 143이 없으므로 다음 `beta`도 143).
+  - 검증됨: analyze · 유닛/위젯 · E2E 19 · **두 스토어 `beta` 레인**
+    (Android `versionCode 143 / alpha` 2026-08-03 · iOS `TestFlight v144 VALID` 2026-08-04).
+    TAGO 키는 IPA와 AAB 양쪽 스냅샷에서 문자열로 확인했다(양성 대조 포함).
+    ⚠️ iOS는 **CocoaPods 구성**으로 통과했다 — SPM 빌드(`v143`)는 거부됐다(아래 참고).
+  - ⚠️ **SPM은 되돌렸다**(2026-08-04). SPM으로 만든 첫 IPA(`v143`)가 Apple 처리에서
+    거부됐다 — `90683 Missing purpose string in Info.plist` (`NSCameraUsageDescription`).
+    기제는 링크 구조 변경이다: `file_picker`의 카메라 참조 코드가 CocoaPods에서는
+    별개 프레임워크 번들에 있었는데 SPM에서는 **`Runner.app` 본체에 정적 링크**되고,
+    Apple의 purpose string 검사는 **번들 단위**다(오류 문구도 "the Info.plist file for
+    the **Runner.app** bundle"). 같은 `Info.plist`로 CocoaPods 빌드인 `v142`는 통과했다.
+    - **SPM을 다시 도입할 때는** `NSCameraUsageDescription`을 넣고, 경고로만 나온
+      `NSLocationWhenInUseUsageDescription`처럼 **플러그인이 자기 번들에 갖고 있던
+      purpose string 전수를 옮겨야 한다** — 이번 오류가 마지막이라는 보장이 없다.
+      릴리스 중간에 섞지 말 것.
+    - 이 실패는 **로컬에서 잡을 수 없다.** `flutter build ipa`는 성공하고 IPA에 키까지
+      들어 있었다 — purpose string 검사는 Apple 서버에서만 돈다.
 - **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면 캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다(실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이 공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
 - 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
 - **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).

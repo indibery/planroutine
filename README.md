@@ -22,7 +22,7 @@
 
 ## 기술 스택
 
-- **Flutter 3.44.8** (Dart 3.12.2) — iOS 배포 중(App Store, TestFlight `v142`), Android는 Play 비공개 테스트(`versionCode 143`)
+- **Flutter 3.44.8** (Dart 3.12.2) — iOS 배포 중(App Store, TestFlight `v144`), Android는 Play 비공개 테스트(`versionCode 143`)
 - **Riverpod**(상태) · **GoRouter**(4탭 Shell + push) · **sqflite**(로컬 DB v8)
 - **Freezed + json_serializable**(불변 모델)
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
