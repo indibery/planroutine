@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 927 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 929 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -414,9 +414,15 @@ iOS는 정반대다 — EventKit은 iCloud/로컬이라 **구글로 가는 유�
 - "인셋이 0이면 해제"로 가르지 않는다 — 전환 중 한 프레임이 우연히 0에 앉으면 무너진다.
 - 가드는 `event_edit_dialog_focus_jump_test.dart` 셋(전환 시 고정 / 포커스 없으면 해제 /
   뒤로 키면 유예 뒤 해제). 되돌리면 첫 번째가 진폭 335로 깨진다(확인함).
-- ⚠️ **같은 패턴이 아직 두 곳에 남아 있다** — `schedule_edit_sheet.dart`(입력 탭 편집,
-  제목+설명 구조가 동일)와 `ai_photo_flow.dart`. 격리 실험이 패턴 자체를 재현했으므로
-  구조적으로 같은 증상이다.
+  `schedule_edit_sheet_focus_jump_test.dart`가 입력 탭 시트에 같은 규칙을 걸어 둔다.
+- **적용 대상은 "입력칸이 둘 이상인 시트"다.** `event_edit_dialog`(제목·설명)와
+  `schedule_edit_sheet`(제목·설명) 둘. `ai_photo_flow`의 미리보기 시트는
+  `viewInsets` 패딩을 쓰지만 **입력칸이 하나도 없어** 옮길 포커스가 없다 — 이 결함이
+  존재하지 않으므로 `KeyboardInset`(FocusNode + Timer)을 넣지 않는다.
+  ⚠️ 그 시트에 입력칸을 추가하면 그때 함께 감싼다.
+- 가드 테스트에서 유예를 넘길 때는 **먼저 `pump()` 한 번**으로 타이머를 걸고 그 다음
+  `pump(grace)`로 시간을 넘긴다. 대기 중인 `Timer`는 프레임을 예약하지 않아
+  `pumpAndSettle`만으로는 시간이 흐르지 않는다(이 함정으로 가드가 한 번 잘못 실패했다).
 
 ### 목록의 중요 표시는 세로를 쓰지 않는다
 - 중요 이벤트는 골드 신호가 네 겹이었다: 레일 · 카드 배경 14% · 테두리 50% · `★ 중요` 배지.

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../shared/widgets/keyboard_inset.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 
@@ -44,8 +45,9 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.schedule.title);
-    _descController =
-        TextEditingController(text: widget.schedule.description ?? '');
+    _descController = TextEditingController(
+      text: widget.schedule.description ?? '',
+    );
     _selectedDate =
         DateTime.tryParse(widget.schedule.scheduledDate) ?? DateTime.now();
   }
@@ -72,12 +74,15 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
 
   void _save() {
     if (widget.schedule.id case final id?) {
-      ref.read(schedulesProvider.notifier).updateSchedule(
+      ref
+          .read(schedulesProvider.notifier)
+          .updateSchedule(
             id,
             title: _titleController.text,
             date: _selectedDate,
-            description:
-                _descController.text.isEmpty ? null : _descController.text,
+            description: _descController.text.isEmpty
+                ? null
+                : _descController.text,
           );
     }
     Navigator.of(context).pop();
@@ -85,72 +90,71 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSizes.spacing24,
-        AppSizes.spacing24,
-        AppSizes.spacing24,
-        MediaQuery.of(context).viewInsets.bottom + AppSizes.spacing24,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            ScheduleStrings.editTitle,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+    // 여백을 `viewInsets`에 직접 묶지 않는다 — 제목 ↔ 설명으로 포커스를 옮길 때
+    // iOS가 키보드를 내렸다 올려 시트가 통째로 떨어졌다 올라온다.
+    return KeyboardInset(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              ScheduleStrings.editTitle,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSizes.spacing16),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: ScheduleStrings.titleLabel,
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacing12),
-          TextField(
-            controller: _descController,
-            decoration: const InputDecoration(
-              labelText: ScheduleStrings.descriptionHint,
-            ),
-            maxLines: 2,
-          ),
-          const SizedBox(height: AppSizes.spacing12),
-          InkWell(
-            onTap: _pickDate,
-            child: InputDecorator(
+            const SizedBox(height: AppSizes.spacing16),
+            TextField(
+              controller: _titleController,
               decoration: const InputDecoration(
-                labelText: ScheduleStrings.dateLabel,
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
-              child: Text(
-                DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(_selectedDate),
+                labelText: ScheduleStrings.titleLabel,
               ),
             ),
-          ),
-          const SizedBox(height: AppSizes.spacing24),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(AppStrings.cancel),
+            const SizedBox(height: AppSizes.spacing12),
+            TextField(
+              controller: _descController,
+              decoration: const InputDecoration(
+                labelText: ScheduleStrings.descriptionHint,
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: AppSizes.spacing12),
+            InkWell(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: ScheduleStrings.dateLabel,
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(_selectedDate),
                 ),
               ),
-              const SizedBox(width: AppSizes.spacing12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _save,
-                  child: const Text(AppStrings.save),
+            ),
+            const SizedBox(height: AppSizes.spacing24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(AppStrings.cancel),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: AppSizes.spacing12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _save,
+                    child: const Text(AppStrings.save),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
