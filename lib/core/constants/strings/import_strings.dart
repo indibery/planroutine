@@ -7,6 +7,11 @@ class ImportStrings {
   /// 행사 사진 AI는 입력 탭 히어로가 맡는다.
   static const screenTitle = '작년 업무 가져오기';
   static const description = '에듀파인 생산문서등록대장 CSV를 올리면 작년에 처리한 업무가 올해 일정으로 들어옵니다';
+
+  /// 온보딩 첫 장 본문. **처음 쓰는 사람에게 이 한 줄이 CSV 경로 소개다** —
+  /// 여기서 시스템 이름을 틀리면 엉뚱한 곳에서 파일을 찾는다.
+  /// 짧은 형태는 [heroCsvLink]와 같은 `에듀파인 CSV`로 맞춘다.
+  static const onboardingCsvBody = '에듀파인 CSV를 업로드하면\n작년 업무 일정이 자동 등록됩니다';
   static const selectFile = '파일 선택';
   static const selectFileAgain = '새 파일 가져오기';
   static const parsing = '파일 분석 중...';

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/widgets/brand_logo.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
@@ -26,7 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardingPageData(
       icon: Icons.upload_file,
       heading: '작년 일정 가져오기',
-      body: '나이스 CSV를 업로드하면\n작년 업무 일정이 자동 등록됩니다',
+      body: ImportStrings.onboardingCsvBody,
     ),
     _OnboardingPageData(
       icon: Icons.checklist_rtl,
