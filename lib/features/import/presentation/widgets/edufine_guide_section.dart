@@ -18,10 +18,13 @@ class EdufineGuideSection extends StatelessWidget {
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSizes.radius14),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.glass,
-            border: Border.all(color: AppColors.line, width: 0.6),
+        // 배경을 Material이 직접 진다. 색칠된 Container를 Material과 ExpansionTile
+        // 사이에 끼우면 그 안의 ListTile이 배경·잉크를 더 먼 Material에 그려 탭
+        // 반응이 가려진다(Flutter 3.44부터 assert가 이 조합을 잡는다).
+        child: Material(
+          color: AppColors.glass,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: AppColors.line, width: 0.6),
             borderRadius: BorderRadius.circular(AppSizes.radius14),
           ),
           child: ExpansionTile(
