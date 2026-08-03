@@ -92,6 +92,50 @@ def asc_app(api_key)
   app
 end
 
+# 업로드한 빌드가 실제로 TestFlight에 **도착했는지** 확인한다.
+#
+# `upload_to_testflight`의 성공은 Transporter가 패키지를 받은 것까지다. 그 뒤
+# Apple의 에셋 검증에서 거부되면 빌드가 ASC에 나타나지 않고, 사유는
+# `TestFlight › 빌드 업로드` 화면과 계정 메일에만 남는다. `skip_waiting_for_
+# build_processing: true`라 레인은 그 결과를 보지 않으므로, 여기서 직접 본다.
+#
+# 실패 모드가 둘이라 분기도 둘이다.
+#   - 빌드가 나타났지만 INVALID/FAILED → 즉시 실패(기다릴 이유가 없다)
+#   - 아예 나타나지 않음 → 타임아웃까지 기다린 뒤 실패(검증 거부의 실제 모습이다)
+def assert_build_arrived(api_key, build_number, timeout_min: 20)
+  app = asc_app(api_key)
+  deadline = Time.now + (timeout_min * 60)
+  loop do
+    builds = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id, limit: 20, sort: "-uploadedDate"
+    )
+    found = builds.find { |b| b.version.to_s == build_number.to_s }
+    if found
+      state = found.processing_state
+      UI.message("빌드 v#{build_number} 처리 상태: #{state}")
+      return true if state == "VALID"
+      if %w[INVALID FAILED].include?(state)
+        UI.user_error!(
+          "빌드 v#{build_number}가 #{state}입니다. ASC의 " \
+          "'TestFlight › 빌드 업로드'에서 오류를 확인하세요."
+        )
+      end
+    else
+      UI.message("빌드 v#{build_number} 아직 미도착 — 기다립니다...")
+    end
+
+    if Time.now > deadline
+      UI.user_error!(
+        "빌드 v#{build_number}가 #{timeout_min}분 안에 TestFlight에 나타나지 " \
+        "않았습니다. 업로드는 수락됐지만 Apple 처리에서 거부된 것으로 보입니다 — " \
+        "ASC의 'TestFlight › 빌드 업로드' 오류와 계정 메일을 확인하세요. " \
+        "(실측 사례: 90683 Missing purpose string in Info.plist)"
+      )
+    end
+    sleep(30)
+  end
+end
+
 # 편집 중(제출 준비 중) 버전. 없으면 nil — 조회 실패도 nil로 접는다.
 def edit_version(app)
   app.get_edit_app_store_version
@@ -369,6 +413,16 @@ platform :ios do
       ipa: ipa_path,
       skip_waiting_for_build_processing: true,
     )
+
+    # [가드] 업로드 성공은 **Transporter가 패키지를 받았다**까지다. Apple의 처리
+    # (에셋 검증)에서 거부되면 빌드가 ASC에 **아예 나타나지 않는다**.
+    #
+    # 실측(2026-08-03 v143): 레인이 `Successfully uploaded package`를 찍고
+    # 성공으로 끝났는데 3시간 뒤에도 TestFlight 최신은 v142였다. 사유는
+    # `90683 Missing purpose string in Info.plist`(NSCameraUsageDescription)로,
+    # ASC의 `TestFlight › 빌드 업로드`에서만 볼 수 있었다. 이 조용한 실패를
+    # 큰 소리로 바꾼다 — 도착을 확인하고 못 오면 레인을 실패시킨다.
+    assert_build_arrived(api_key, new_build_number)
 
     UI.success("TestFlight 배포 완료! v#{new_build_number}")
   end
