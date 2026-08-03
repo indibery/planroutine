@@ -876,9 +876,16 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 
 ### 알려진 빌드 이슈
 - **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환). `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로 남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등). `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조, `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved` 두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라 Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager` 후 재빌드.
-  - 검증됨: analyze · 유닛/위젯 · E2E 19 · 릴리스 IPA(28.0MB) · **두 스토어 `beta` 레인**
-    (2026-08-03: iOS `TestFlight v143`, Android `versionCode 143 / track alpha`). TAGO 키는
-    IPA와 AAB 양쪽 스냅샷에서 문자열로 확인했다(양성 대조 포함).
+  - 검증됨: analyze · 유닛/위젯 · E2E 19 · 릴리스 IPA 빌드(28.0MB) · Android `beta`
+    (2026-08-03 `versionCode 143 / track alpha` 업로드 성공). TAGO 키는 IPA와 AAB 양쪽
+    스냅샷에서 문자열로 확인했다(양성 대조 포함).
+  - ⚠️ **iOS `beta`는 미완이다.** 레인은 성공했고(`Successfully uploaded package`) Transporter가
+    패키지를 수락했지만, **업로드 1.5시간 뒤에도 `v143`이 TestFlight에 나타나지 않았다**
+    (ASC 4회 조회 모두 최신 `v142`). 레인이 `skip_waiting_for_build_processing`이라
+    처리 결과를 보지 않으므로 **성공 로그만으로는 빌드 도착을 확신할 수 없다.**
+    이번이 **SPM으로 만든 첫 IPA**라 처리 단계 거부가 유력한 용의자다 — 확인은
+    ASC `TestFlight › 빌드 업로드` 섹션의 상태/오류와 Apple이 보낸 메일.
+    iOS 빌드 번호는 **소비되지 않았다**(TestFlight에 143이 없으므로 다음 `beta`도 143).
 - **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면 캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다(실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이 공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
 - 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
 - **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).
