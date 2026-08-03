@@ -10,6 +10,7 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../features/settings/presentation/providers/ai_task_share_provider.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
+import '../../../../shared/widgets/keyboard_inset.dart';
 import '../../../../shared/widgets/segmented_setting_row.dart';
 import '../../../schedule/domain/entry_kind.dart';
 import '../../data/ai_task_exporter.dart';
@@ -99,13 +100,13 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     // 고급 기능: AI 자동화 공유 토글이 ON이고 기존 이벤트 편집일 때만 노출(기본 OFF).
     final aiEnabled =
         ref.watch(aiTaskShareEnabledProvider).valueOrNull ?? false;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
+    // 여백을 `viewInsets`에 직접 묶지 않는다 — 제목 ↔ 설명으로 포커스를 옮길 때
+    // iOS가 키보드를 내렸다 올려 시트가 통째로 떨어졌다 올라온다.
+    return KeyboardInset(
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.spacing24),
