@@ -31,7 +31,7 @@
 
 | 레이어 | 기술 | 비고 |
 |--------|------|------|
-| 앱 | Flutter 3.x (Dart) | iOS 배포 중(App Store). Android는 M1 셸 배포 완료 — Play 비공개 테스트 트랙 업로드·심사 대기(알림 100%·CSV 공유 목록 노출은 M2에서) |
+| 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 M1 셸 배포 완료 — Play 비공개 테스트 트랙 업로드·심사 대기(알림 100%·CSV 공유 목록 노출은 M2에서). ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
 | 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import, /bus/settings, /bus/stops). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
@@ -392,18 +392,40 @@ iOS는 정반대다 — EventKit은 iCloud/로컬이라 **구글로 가는 유�
   회수한 48+8px은 설명칸이 가져갔다.
 - 중요 표시는 **두 종류 모두에서** 유지한다 — 캘린더 ★ 강조는 학교 행사에도 의미가 있다.
 
-#### 키보드 여백은 `viewInsets`에 직접 묶지 않는다 — `KeyboardInset`
+#### `KeyboardInset` — **제거 후보다** (원인이 SDK에서 사라졌다)
+
+이 위젯은 **Flutter 3.41.x 엔진 회귀의 workaround**다. 그 회귀가 3.44.8에서 고쳐졌으므로
+지금은 흡수할 인셋 붕괴가 **없다**.
+
+- 원인은 iOS 증상이 아니라 **회귀**였다: 포커스를 옮길 때 엔진이 입력 연결을 갈아 끼우며
+  키보드를 내렸다 올렸다 — flutter/flutter#184875 (Affected `3.41.0 → 3.41.6` /
+  Not affected `3.38.10`). 고친 것은 flutter/flutter#182661
+  `[ios][engine] Fix keyboard flicker when switching text fields`.
+- **3.44.8 실측**(2026-08-03, 기기 녹화 40ms 간격 248프레임): 전환 3회 동안 키보드 상단
+  경계가 `1442px`에 고정, 변화 **0px**. 같은 측정기가 대조군(시트 닫기)에서는
+  `1442 → 2069px`를 잡았다 — 측정기가 움직임을 볼 수 있음이 증명된 상태의 0px이다.
+
+**제거 전에 확인할 것 셋:**
+1. **음수 패딩 assert의 원인.** 3.41.6에서 1회 관측했다 —
+   `RenderPadding.padding` 의 `value.isNonNegative` 실패, 원인 위젯은
+   `keyboard_inset.dart:92`의 `Focus`. `_reserved`는 `viewInsets.bottom` 값만 받으므로
+   **그 순간 플랫폼이 음수 인셋을 보고했다**는 결론이 나온다. 3.44.8에서는 재현되지
+   않았지만(실기 확인 + 세션 중 예외 0건) **트리거를 밟았다는 증거가 없다.**
+2. **가드 테스트는 인셋 시퀀스를 직접 주입하므로 SDK와 무관하게 통과한다** — 위젯을 지우면
+   그 테스트 다섯도 함께 사라진다. "기존 테스트 삭제 금지"와 부딪히는 지점이니, 지울 때는
+   무엇을 잃는지 적어 둘 것.
+3. 3.41.x로 되돌아갈 환경(다른 개발 머신·CI)이 없는지.
+
+--- 아래는 회귀가 살아 있던 동안의 기록이다. 위젯을 지울 때 함께 지운다. ---
 
 `Padding(bottom: MediaQuery.viewInsets.bottom)`을 그대로 쓰면 **제목 ↔ 설명으로 포커스를
-옮길 때 시트가 키보드 높이만큼 떨어졌다 올라온다**(실기 신고 2026-08-03).
-
-포커스가 옮겨가는 찰나 iOS가 키보드를 내렸다 다시 올린다 — 실측(iPhone 17 Pro 시뮬레이터)
-인셋 `335 → 6 → 335`, 시트 진폭 **334.8**. 여백이 그 값을 1:1로 따라간 것이 원인이다.
+옮길 때 시트가 키보드 높이만큼 떨어졌다 올라왔다**(실기 신고 2026-08-03).
+실측(iPhone 17 Pro 시뮬레이터) 인셋 `335 → 6 → 335`, 시트 진폭 **334.8**.
 
 - **스크롤은 무관하다.** `SingleChildScrollView`를 의심했지만 그때 `maxScrollExtent`는 0이었다.
 - **다행 입력칸과도 무관하다.** 순수 Flutter 위젯으로 격리하니 **단선 → 단선 전환에서도**
-  진폭 334.8이 났다. 그래서 입력칸 설정이 아니라 여백 쪽에서 막는다.
-- **안드로이드에는 이 증상이 없다** — 전환 내내 인셋이 312로 일정했다(실측). iOS 증상이다.
+  진폭 334.8이 났다. 그래서 입력칸 설정이 아니라 여백 쪽에서 막았다.
+- **안드로이드에는 이 증상이 없었다** — 전환 내내 인셋이 312로 일정했다(실측).
 
 `shared/widgets/keyboard_inset.dart`의 규칙: 인셋이 **늘어나면 즉시** 따라가고, **줄어들 때**
 포커스가 없으면 즉시 돌려주고, 포커스가 있으면 `KeyboardInset.grace`(200ms)만 기다린다.
@@ -810,7 +832,11 @@ iOS는 정반대다 — EventKit은 iCloud/로컬이라 **구글로 가는 유�
 ```
 - Wrapper가 Homebrew Ruby(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입해 `bundle exec fastlane`을 돌린다. 사용자 shell 설정은 건드리지 않는다.
 - `ios/Gemfile`에 fastlane + cocoapods 고정. 최초 실행 시 wrapper가 자동으로 `bundle install`.
-- beta의 build_number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산.
+- beta의 build_number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산. **iOS는 `pubspec.yaml`의 `+N`을 읽지 않는다** — `pubspec_version_name`이 `X.Y.Z`만 파싱하고 계산값을 `--build-number=`로 넘긴다.
+- **`pubspec.yaml`의 `+N`은 안드로이드 전용 하한이다** (`next_version_code` = `max(하한, Play 트랙 최대 + 1)`). 한 필드가 두 플랫폼에서 **다른 뜻**을 갖는 것이 함정의 뿌리다 — iOS에서 무해하니 손으로 올려도 된다고 생각하면, **다음 안드로이드 업로드가 그 값으로 튀고 versionCode는 감소할 수 없다**(실제로 `+143`이 그렇게 들어왔다: Play가 54인데 다음 업로드가 143이 될 상태였다).
+  - **두 스토어 번호를 맞추려면** 하한을 `TestFlight 최신 + 1`로 둔다. iOS는 스스로 그 값에 도달하고 안드로이드는 하한이 `Play최대+1`을 이겨 같은 번호가 된다 — **레인을 고칠 필요가 없다**(2026-08-03 실측: ASC `v142` · Play `54` → 양쪽 `143`).
+  - **잊어도 깨지지 않는다** — 안드로이드는 자기 `Play최대+1`로 굴러가고 그때만 한 칸 어긋난다. 정렬은 릴리스 빈도 차이만큼 서서히 마모된다(iOS 142회 대 Android 54회가 그 누적이다).
+  - ⚠️ 트랙 조회가 **전부** 실패하면 하한이 단독으로 결정한다(`Fastfile:178`). 이미 올린 번호가 하한이면 중복으로 거부되므로 그때 하한을 올린다.
 - **release는 promote 전용 + 제출하지 않는다**: 재빌드/재업로드 없이 TestFlight 빌드를 `skip_binary_upload`로 승격하고, 버전 페이지 생성·릴리즈 노트 주입까지 한다. **최종 '심사를 위해 제출' 버튼은 사람이 ASC에서 누른다** (`submit:true`를 명시하면 자동 제출하지만 기본은 아님). 되돌리기 어려운 외부 작업이라 제출 직전에 눈으로 확인할 여지를 남긴다.
 - **승격 대상은 `build:<N>`으로 못박을 것.** 미지정 시 최신을 집는데, 실기기 검증 후 `beta`를 한 번 더 돌렸다면 검증하지 않은 빌드가 올라간다.
 - **빌드 연결은 레인이 `select_build`로 직접 한다** — deliver는 `submit_for_review: false`면 `build_number`를 받고도 빌드 선택을 건너뛴다(실측 v124: deliver 성공인데 선택 빌드는 v115 유지). 성공 신호는 로그의 `빌드 연결: vNN`이고, `asc_state`의 `선택된 빌드`로 교차 확인한다.
@@ -865,6 +891,9 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
 
 ### 알려진 빌드 이슈
+- **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환). `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로 남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등). `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조, `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved` 두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라 Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager` 후 재빌드.
+  - 검증 범위: analyze · 유닛/위젯 929 · E2E 19 · 릴리스 IPA 빌드(28.0MB, TAGO 키 주입 확인)까지. **`beta` 레인은 이 구성으로 아직 돌리지 않았다.**
+- **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면 캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다(실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이 공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
 - 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
 - **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).
 
@@ -899,6 +928,14 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 - 날짜 문자열 포맷은 `date_utils.formatDate(DateTime) → 'YYYY-MM-DD'` 공용 함수 사용
 - 확인 다이얼로그는 `ConfirmDialog.show()` 공통 위젯 사용 (신규 AlertDialog 직접 만들지 않기)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리
+- **`ListTile`(`ExpansionTile` 포함) 위에 색칠된 컨테이너를 끼우지 않는다.** ListTile은 배경과
+  잉크를 **가장 가까운 `Material`** 에 그리므로, 사이에 배경색 있는 `Container`/`DecoratedBox`가
+  있으면 **탭해도 잉크 스플래시가 보이지 않는다** — 에듀파인 가이드 카드가 그 상태였고 아무도
+  신고하지 않았다. 배경·테두리는 `Material(color:, shape: RoundedRectangleBorder(...))`가
+  직접 지게 한다(중첩 깊이가 같아 자식 블록은 손대지 않아도 된다).
+  Flutter 3.44부터 debug assert가 이 조합을 잡는다(`ListTile background color or ink splashes
+  may be invisible`) — 릴리스에서는 사라지는 assert라, **업그레이드 때 테스트를 돌리는 것이
+  이 결함을 만나는 유일한 창**이었다.
 - **플랫폼 분기는 `dart:io`의 `Platform.isAndroid`를 쓴다.** `defaultTargetPlatform`은
   `flutter test`에서 **항상 `android`로 강제된다**(`_platform_io.dart`의 assert 블록) —
   그걸로 분기하면 macOS 호스트에서 도는 위젯 테스트 전체에 Android 전용 UI가 나타난다.

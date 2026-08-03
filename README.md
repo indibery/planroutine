@@ -22,12 +22,12 @@
 
 ## 기술 스택
 
-- **Flutter 3.x** — iOS 배포 중, Android는 코드만 존재(미검증)
+- **Flutter 3.44.8** (Dart 3.12.2) — iOS 배포 중(App Store), Android는 Play 비공개 테스트 업로드(versionCode 54)
 - **Riverpod**(상태) · **GoRouter**(4탭 Shell + push) · **sqflite**(로컬 DB v8)
 - **Freezed + json_serializable**(불변 모델)
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
 - **google_sign_in + googleapis**(Google Calendar) · **flutter_local_notifications + timezone**
-- 테스트: flutter_test(유닛/위젯 480) · integration_test(iPhone E2E 19) · sqflite_common_ffi
+- 테스트: flutter_test(유닛/위젯 929) · integration_test(iPhone E2E 19) · sqflite_common_ffi
 
 ## 시작하기
 
