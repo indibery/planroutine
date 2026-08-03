@@ -210,11 +210,18 @@ def stage_changelog(version_code)
     return nil
   end
   UI.message("릴리즈 노트: #{File.basename(src)}")
-  dir = File.join(__dir__, "metadata/android/ko-KR/changelogs")
+  # ⚠️ **절대 경로로 돌려줘야 한다.** Fastfile은 instance_eval로 평가돼 `__dir__`가
+  # 파일 경로를 주지 않으므로 `File.join(__dir__, ...)`은 `./metadata/android`가 된다.
+  # 그런데 **헬퍼와 액션의 CWD가 다르다** — 이 함수가 도는 시점의 CWD는
+  # `android/fastlane`이라 mkdir은 제대로 되지만, fastlane이 액션 실행 전 CWD를
+  # `android/`로 바꿔서 supply가 같은 상대 경로를 못 찾는다
+  # (`Could not find folder ./metadata/android` — 첫 beta 실행에서 실측).
+  root = File.expand_path("metadata/android", __dir__)
+  dir = File.join(root, "ko-KR/changelogs")
   FileUtils.mkdir_p(dir)
   File.write(File.join(dir, "#{version_code}.txt"), File.read(src).strip)
-  UI.message("changelog 준비: ko-KR/#{version_code}.txt")
-  File.join(__dir__, "metadata/android")
+  UI.message("changelog 준비: #{dir}/#{version_code}.txt")
+  root
 end
 
 platform :android do
