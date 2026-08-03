@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 929 유닛/위젯 + 19 E2E |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | 926 유닛/위젯 + 19 E2E |
 
 ## 프로젝트 구조
 
@@ -162,7 +162,6 @@ planroutine/
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
 │           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle
-│           ├── keyboard_inset.dart     # 키보드 여백 — 포커스 전환 시 튐 방지
 │           └── confirm_dialog.dart     # 2-버튼 확인 다이얼로그 공통
 ├── ios/
 │   ├── Runner/
@@ -392,59 +391,44 @@ iOS는 정반대다 — EventKit은 iCloud/로컬이라 **구글로 가는 유�
   회수한 48+8px은 설명칸이 가져갔다.
 - 중요 표시는 **두 종류 모두에서** 유지한다 — 캘린더 ★ 강조는 학교 행사에도 의미가 있다.
 
-#### `KeyboardInset` — **제거 후보다** (원인이 SDK에서 사라졌다)
+#### 키보드 여백은 `math.max(0, viewInsets.bottom)` — 음수를 걸러낸다
 
-이 위젯은 **Flutter 3.41.x 엔진 회귀의 workaround**다. 그 회귀가 3.44.8에서 고쳐졌으므로
-지금은 흡수할 인셋 붕괴가 **없다**.
+두 편집 시트(`event_edit_dialog`·`schedule_edit_sheet`)는 아래 여백을 이렇게 준다.
 
-- 원인은 iOS 증상이 아니라 **회귀**였다: 포커스를 옮길 때 엔진이 입력 연결을 갈아 끼우며
-  키보드를 내렸다 올렸다 — flutter/flutter#184875 (Affected `3.41.0 → 3.41.6` /
-  Not affected `3.38.10`). 고친 것은 flutter/flutter#182661
-  `[ios][engine] Fix keyboard flicker when switching text fields`.
-- **3.44.8 실측**(2026-08-03, 기기 녹화 40ms 간격 248프레임): 전환 3회 동안 키보드 상단
-  경계가 `1442px`에 고정, 변화 **0px**. 같은 측정기가 대조군(시트 닫기)에서는
-  `1442 → 2069px`를 잡았다 — 측정기가 움직임을 볼 수 있음이 증명된 상태의 0px이다.
+```dart
+Padding(
+  padding: EdgeInsets.only(
+    bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+  ),
+  ...
+```
 
-**제거 전에 확인할 것 셋:**
-1. **음수 패딩 assert의 원인.** 3.41.6에서 1회 관측했다 —
-   `RenderPadding.padding` 의 `value.isNonNegative` 실패, 원인 위젯은
-   `keyboard_inset.dart:92`의 `Focus`. `_reserved`는 `viewInsets.bottom` 값만 받으므로
-   **그 순간 플랫폼이 음수 인셋을 보고했다**는 결론이 나온다. 3.44.8에서는 재현되지
-   않았지만(실기 확인 + 세션 중 예외 0건) **트리거를 밟았다는 증거가 없다.**
-2. **가드 테스트는 인셋 시퀀스를 직접 주입하므로 SDK와 무관하게 통과한다** — 위젯을 지우면
-   그 테스트 다섯도 함께 사라진다. "기존 테스트 삭제 금지"와 부딪히는 지점이니, 지울 때는
-   무엇을 잃는지 적어 둘 것.
-3. 3.41.x로 되돌아갈 환경(다른 개발 머신·CI)이 없는지.
+**`max(0, ...)`가 장식이 아니다.** 3.41.6에서 한 번, 플랫폼이 음수 인셋을 보고해
+`RenderPadding.padding`의 `value.isNonNegative` assert가 터지고 앱이 빨간 화면으로 갔다
+(그 뒤 `referenceBox.attached`·`Duplicate GlobalKey`·`_dependents.isEmpty`가 연달아 무너졌다).
+여백 값의 출처는 `viewInsetsOf(...).bottom` 하나뿐이므로 **그 순간 음수가 왔다**는 결론이 나온다.
 
---- 아래는 회귀가 살아 있던 동안의 기록이다. 위젯을 지울 때 함께 지운다. ---
+- **왜 음수가 오는지는 모른다.** 업스트림에 음수 사례는 문서화돼 있지 않고, 빠른 개폐 중
+  값이 틀리는 계열만 실재한다(flutter/flutter#163502). 그래서 원인이 아니라 **증상을 막는다.**
+- 가드는 `event_edit_dialog_negative_inset_test.dart`·
+  `schedule_edit_sheet_negative_inset_test.dart` 둘. 음수 인셋을 주입해
+  **예외가 없고 시트가 살아 있는지** 본다. `max(0, ...)`를 지우면 두 건이 곧바로 깨진다(확인함).
 
-`Padding(bottom: MediaQuery.viewInsets.bottom)`을 그대로 쓰면 **제목 ↔ 설명으로 포커스를
-옮길 때 시트가 키보드 높이만큼 떨어졌다 올라왔다**(실기 신고 2026-08-03).
-실측(iPhone 17 Pro 시뮬레이터) 인셋 `335 → 6 → 335`, 시트 진폭 **334.8**.
+##### 여기 있었던 `KeyboardInset`을 없앤 이유 (2026-08-03)
 
-- **스크롤은 무관하다.** `SingleChildScrollView`를 의심했지만 그때 `maxScrollExtent`는 0이었다.
-- **다행 입력칸과도 무관하다.** 순수 Flutter 위젯으로 격리하니 **단선 → 단선 전환에서도**
-  진폭 334.8이 났다. 그래서 입력칸 설정이 아니라 여백 쪽에서 막았다.
-- **안드로이드에는 이 증상이 없었다** — 전환 내내 인셋이 312로 일정했다(실측).
+포커스를 옮길 때 키보드가 내려갔다 올라오며 시트가 통째로 흔들렸다(실측 진폭 334.8,
+인셋 `335 → 6 → 335`). 원인은 iOS 고유 동작이 아니라 **Flutter 3.41.0에서 유입된 엔진
+회귀**였다(flutter/flutter#184875 — Affected `3.41.0 → 3.41.6` / Not affected `3.38.10`).
+`KeyboardInset`은 그 붕괴를 시트가 따라가지 않게 붙들던 100줄 workaround였다.
 
-`shared/widgets/keyboard_inset.dart`의 규칙: 인셋이 **늘어나면 즉시** 따라가고, **줄어들 때**
-포커스가 없으면 즉시 돌려주고, 포커스가 있으면 `KeyboardInset.grace`(200ms)만 기다린다.
+flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8 실측(기기 녹화
+40ms 간격 248프레임): 전환 3회 동안 키보드 상단 경계가 `1442px`에 고정, **변화 0px**
+(대조군인 시트 닫기에서는 같은 측정기가 `1442 → 2069px`를 잡아 감도를 증명했다).
+흡수할 붕괴가 없어졌으므로 위젯과 가드 셋(유예 200ms·포커스 해제·뒤로 키)을 함께 지웠다.
 
-- **유예가 급소다.** 포커스만 보고 붙들면 **안드로이드에서 뒤로 키로 키보드만 내렸을 때**
-  (포커스는 남는다) 버튼 아래 **292pt 빈 공간**이 남는다(실측 — 첫 수정이 만든 회귀).
-  두 경우를 가르는 신호는 시간뿐이다: 전환 붕괴는 100ms 안에 복구되고, 뒤로 키는 0에 머문다.
-- "인셋이 0이면 해제"로 가르지 않는다 — 전환 중 한 프레임이 우연히 0에 앉으면 무너진다.
-- 가드는 `event_edit_dialog_focus_jump_test.dart` 셋(전환 시 고정 / 포커스 없으면 해제 /
-  뒤로 키면 유예 뒤 해제). 되돌리면 첫 번째가 진폭 335로 깨진다(확인함).
-  `schedule_edit_sheet_focus_jump_test.dart`가 입력 탭 시트에 같은 규칙을 걸어 둔다.
-- **적용 대상은 "입력칸이 둘 이상인 시트"다.** `event_edit_dialog`(제목·설명)와
-  `schedule_edit_sheet`(제목·설명) 둘. `ai_photo_flow`의 미리보기 시트는
-  `viewInsets` 패딩을 쓰지만 **입력칸이 하나도 없어** 옮길 포커스가 없다 — 이 결함이
-  존재하지 않으므로 `KeyboardInset`(FocusNode + Timer)을 넣지 않는다.
-  ⚠️ 그 시트에 입력칸을 추가하면 그때 함께 감싼다.
-- 가드 테스트에서 유예를 넘길 때는 **먼저 `pump()` 한 번**으로 타이머를 걸고 그 다음
-  `pump(grace)`로 시간을 넘긴다. 대기 중인 `Timer`는 프레임을 예약하지 않아
-  `pumpAndSettle`만으로는 시간이 흐르지 않는다(이 함정으로 가드가 한 번 잘못 실패했다).
+**잃은 것을 적어 둔다** — 그 가드 다섯은 인셋 시퀀스를 직접 주입해 SDK와 무관하게
+통과했으므로, 3.41.x로 되돌아가면 시트 흔들림을 **아무것도 잡아주지 않는다.** 리포에
+버전 고정 장치가 없다는 점(기술 스택 표 참고)이 이 결정의 유일한 위험이다.
 
 ### 목록의 중요 표시는 세로를 쓰지 않는다
 - 중요 이벤트는 골드 신호가 네 겹이었다: 레일 · 카드 배경 14% · 테두리 50% · `★ 중요` 배지.
@@ -892,7 +876,9 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 
 ### 알려진 빌드 이슈
 - **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환). `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로 남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등). `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조, `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved` 두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라 Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager` 후 재빌드.
-  - 검증 범위: analyze · 유닛/위젯 929 · E2E 19 · 릴리스 IPA 빌드(28.0MB, TAGO 키 주입 확인)까지. **`beta` 레인은 이 구성으로 아직 돌리지 않았다.**
+  - 검증됨: analyze · 유닛/위젯 · E2E 19 · 릴리스 IPA(28.0MB) · **두 스토어 `beta` 레인**
+    (2026-08-03: iOS `TestFlight v143`, Android `versionCode 143 / track alpha`). TAGO 키는
+    IPA와 AAB 양쪽 스냅샷에서 문자열로 확인했다(양성 대조 포함).
 - **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면 캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다(실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이 공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
 - 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
 - **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../shared/widgets/keyboard_inset.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
 
@@ -90,9 +91,14 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 여백을 `viewInsets`에 직접 묶지 않는다 — 제목 ↔ 설명으로 포커스를 옮길 때
-    // iOS가 키보드를 내렸다 올려 시트가 통째로 떨어졌다 올라온다.
-    return KeyboardInset(
+    // 키보드가 가리는 만큼 아래 여백을 준다. **음수는 걸러낸다** — 플랫폼이
+    // 음수 인셋을 보고한 순간이 실제로 있었고(3.41.6, 1회), 그 값이 그대로
+    // 들어가면 `RenderPadding`의 `isNonNegative` assert로 앱이 죽는다.
+    // 가드: `schedule_edit_sheet_negative_inset_test.dart`.
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.spacing24),
         child: Column(
