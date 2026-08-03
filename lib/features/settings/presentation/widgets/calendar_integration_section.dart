@@ -21,6 +21,9 @@ class CalendarIntegrationSection extends ConsumerWidget {
       calendarTargetProvider
           .select((a) => a.valueOrNull ?? CalendarTarget.none),
     );
+    // 안드로이드에서는 Google 선택지를 감춘다 — 근거는
+    // `googleTargetSupportedProvider` 주석에 있다.
+    final showGoogle = ref.watch(googleTargetSupportedProvider);
 
     return SettingsSection(
       // 헤더 없음 — 행 제목이 `캘린더 연동`으로 그 말을 넘겨받았다.
@@ -39,9 +42,10 @@ class CalendarIntegrationSection extends ConsumerWidget {
                 const Icon(Icons.expand_more),
               ],
             ),
-            onTap: () => _showTargetSheet(context, ref, target),
+            onTap: () => _showTargetSheet(context, ref, target, showGoogle),
           ),
-          if (target == CalendarTarget.google) const _GoogleAccountRow(),
+          if (target == CalendarTarget.google && showGoogle)
+            const _GoogleAccountRow(),
           if (target == CalendarTarget.device) const _DevicePermissionRow(),
         ],
       ),
@@ -63,7 +67,12 @@ class CalendarIntegrationSection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     CalendarTarget current,
+    bool showGoogle,
   ) async {
+    final options = [
+      for (final t in CalendarTarget.values)
+        if (t != CalendarTarget.google || showGoogle) t,
+    ];
     final selected = await showModalBottomSheet<CalendarTarget>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -73,7 +82,7 @@ class CalendarIntegrationSection extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final t in CalendarTarget.values)
+              for (final t in options)
                 RadioListTile<CalendarTarget>(
                   title: Text(_targetLabel(t)),
                   value: t,
