@@ -123,7 +123,9 @@ void main() {
       expect(find.text(ScheduleStrings.title), findsWidgets);
 
       await _tapSettingsTab(tester);
-      expect(find.text(SettingsStrings.exportSection), findsWidgets);
+      // 섹션 헤더는 f268dd7에서 전부 걷어냈다 — 설정 탭에 도착했는지는 스크롤
+      // 없이 보이는 **행 문구**로 확인한다.
+      expect(find.text(SettingsStrings.exportTitle), findsWidgets);
 
       await _tapCalendarTab(tester);
       expect(find.text(CalendarStrings.title), findsWidgets);
@@ -178,12 +180,12 @@ void main() {
       expect(find.text(ImportStrings.screenTitle), findsNothing);
       expect(find.byIcon(Icons.upload_file), findsNothing);
 
-      // 데이터 관리 섹션 (fold 아래)
+      // 전체 삭제 행 (fold 아래). 섹션 헤더 `데이터 관리`는 f268dd7에서 없어졌으니
+      // 행 자체가 노출되는지만 본다 — 이 테스트의 주제도 그것이다.
       await _scrollToInSettings(
         tester,
         find.text(SettingsStrings.resetAll),
       );
-      expect(find.text(SettingsStrings.dataSection), findsOneWidget);
       expect(find.text(SettingsStrings.resetAll), findsOneWidget);
     });
 
@@ -528,8 +530,8 @@ void main() {
 
       await _tapSettingsTab(tester);
 
-      // 섹션 헤더 / 마스터 스위치는 상단이라 스크롤 전에 확인
-      expect(find.text(NotificationStrings.section), findsOneWidget);
+      // 마스터 스위치는 상단이라 스크롤 전에 확인. 섹션 헤더 `알림`은 f268dd7에서
+      // 없어졌고, 그 자리를 행 라벨 `알림 사용`이 잇는다.
       expect(find.text(NotificationStrings.master), findsOneWidget);
 
       // 이번 주/당일 아침/테스트는 '고급' ExpansionTile 안에 접혀 있으므로 먼저 펼친다.
