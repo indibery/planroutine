@@ -831,13 +831,11 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
 ### 명령
 ```
 ./ios/bin/fastlane.sh beta          # TestFlight (재빌드+업로드)
-./ios/bin/fastlane.sh release build:115   # 빌드 승격 + 릴리즈 노트 반영 (제출은 안 함)
-./ios/bin/fastlane.sh upload_screenshots  # 스토어 스크린샷 교체
-./ios/bin/fastlane.sh check_screenshots   # 올라간 스크린샷 슬롯별 확인
-./ios/bin/fastlane.sh dedupe_screenshots  # 중복 업로드 정리
+./ios/bin/fastlane.sh release build:115   # 빌드 승격 + 릴리즈 노트·설명·스크린샷 반영 (제출은 안 함)
 ./ios/bin/fastlane.sh withdraw_review     # 심사 철회 (편집 가능 상태로)
-./ios/bin/fastlane.sh asc_state           # 심사 단계 + 선택된 빌드 조회
+./ios/bin/fastlane.sh asc_state           # 심사 단계 + 선택된 빌드 + 스크린샷 장수 조회
 ./ios/bin/fastlane.sh check_builds  # 최근 빌드 processing_state 조회 (post-deploy)
+./ios/bin/fastlane.sh check_tago_key      # TAGO 키 확인 (빌드·업로드 없음)
 
 ./android/bin/fastlane.sh check_tago_key   # TAGO 키 파일 확인 (빌드·업로드 없음)
 ./android/bin/fastlane.sh check_play_key   # 서비스 계정 JSON + client_email 검증 + 트랙 4개 versionCode 조회
@@ -862,6 +860,26 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
 - **가드 4개**: A(버전>승인본) / B(빌드 VALID) / D(이미 심사 단계면 손대지 않음) / E(릴리즈 노트 존재). 버전 페이지는 없으면 자동 생성된다(minor·major에서는 항상 없다).
 - **릴리즈 노트는 `docs/release_notes/<버전>.ko.txt`** — release가 읽어 ASC에 넣는다. 버전을 올리면 이 파일을 먼저 만든다.
 - **beta 레인**은 시작 시 `reset_ios_caches`(flutter clean + Pods/build 제거)를 자동 실행 — 시뮬 슬라이스 함정(#6) 차단. clean 때문에 매 beta가 수 분 더 걸린다. release는 빌드가 없어 해당 없음.
+
+#### 스크린샷에는 독립 레인이 없다 — `release`가 유일한 경로다
+
+`ios/fastlane/screenshots/ko/`의 파일은 **`release`가 올린다**(`shots:false`로 건너뛸 수
+있다). `dedupe_screenshots!`·`each_screenshot_set`은 Fastfile의 **함수**이고 레인이 아니다 —
+`release`가 업로드 직후 부르고(`Fastfile:517`), `asc_state`가 장수를 셀 때 쓴다(`:652`).
+
+- ⚠️ **`upload_screenshots`·`check_screenshots`·`dedupe_screenshots`라는 레인은 없다.**
+  이 문서와 deploy 스킬 런북이 셋을 명령으로 적어두고 있었는데 실물에 없어, 스크린샷을
+  확인하려던 세션이 `Could not find lane`으로 헛돌았다(2026-08-06). **실제 iOS 레인은
+  일곱 개다**: `load_asc_api_key`·`check_tago_key`·`beta`·`release`·`withdraw_review`·
+  `asc_state`·`check_builds`.
+- **확인 수단은 `asc_state` 하나이고 장수만 알려준다**(`ko / APP_IPHONE_65 6장`).
+  파일명·순서를 봐야 하면 ASC 웹에서 직접 본다. 그래서 "어느 장이 빠졌는지"는
+  로컬에서 판정할 수 없다 — 아래 실측이 그 한계에 걸린 사례다.
+- ⚠️ **제출 후 장수가 줄었다**(실측 2026-08-06): release 직후 `65 6장 / 67 6장`이었는데
+  제출 뒤 조회에서 `65 5장 / 67 6장`이 됐다. 같은 실행의 dedupe가 `6.5_6_bus.png`를
+  중복으로 지운 기록이 단서지만, **어느 장이 남았는지는 확인하지 못했다**(위 한계).
+  스크린샷을 갈아치우려면 `withdraw_review`가 필요해 대기열 처음으로 돌아가므로,
+  장수가 슬롯마다 달라도 **다음 릴리스에서 맞추는 편이 값싸다**.
 
 ### Android 레인
 

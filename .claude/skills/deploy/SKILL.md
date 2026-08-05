@@ -83,14 +83,22 @@ ASC에서 직접 고친 내용은 덮어써진다. 그래야 "코드에서 기�
 (실측: 10장 올렸는데 20장). 그래서 release가 업로드 직후 `dedupe_screenshots!`로
 파일명 중복을 정리한다 — 이 단계가 빠지면 스토어에 같은 화면이 두 번 보인다.
 
+⚠️ **`dedupe_screenshots!`는 함수이고 레인이 아니다.** `release`가 부르는
+Fastfile 내부 함수다(`Fastfile:517`) — 명령줄에서 부를 수 없다. 스크린샷을 올리는
+**유일한 경로는 `release`**이고, 확인 수단은 `asc_state`뿐이며 **장수만** 알려준다.
+
 ```bash
 ./ios/bin/fastlane.sh beta                  # TestFlight 업로드 (재빌드 O)
-./ios/bin/fastlane.sh release build:115     # 승격 + 노트 반영 (제출은 안 함 ← 기본)
+./ios/bin/fastlane.sh release build:115     # 승격 + 노트·설명·스크린샷 반영 (제출은 안 함 ← 기본)
 ./ios/bin/fastlane.sh release submit:true   # 제출까지 자동 (명시해야만)
+./ios/bin/fastlane.sh release build:115 shots:false   # 스크린샷만 건너뛰고 승격
 ./ios/bin/fastlane.sh withdraw_review       # 심사 철회 (편집 가능 상태로)
-./ios/bin/fastlane.sh check_screenshots     # 올라간 스크린샷 슬롯별 확인
-./ios/bin/fastlane.sh dedupe_screenshots    # 중복 업로드 정리
 ```
+
+**iOS 레인은 일곱 개다** — `load_asc_api_key`·`check_tago_key`·`beta`·`release`·
+`withdraw_review`·`asc_state`·`check_builds`. 이 목록에 없는 이름을 부르면
+`Could not find lane`으로 끝난다(실측 2026-08-06: 이 문서가 적어둔
+`check_screenshots`를 불러 헛돌았다).
 
 - **release는 재빌드/재업로드가 없다** — `skip_binary_upload: true`로 승격만 한다.
   그래서 빠르고 업로드 중단 함정과 무관.
@@ -116,13 +124,19 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 ## 3) POST-DEPLOY
 
 ```bash
-./ios/bin/fastlane.sh upload_screenshots  # 스토어 스크린샷만 올리기 (제출 안 함)
-./ios/bin/fastlane.sh asc_state      # 심사 단계 + 선택된 빌드 조회 (진단 1순위)
+./ios/bin/fastlane.sh asc_state      # 심사 단계 + 선택된 빌드 + 스크린샷 장수 (진단 1순위)
                                      #   PREPARE_FOR_SUBMISSION → 제출 가능
                                      #   WAITING_FOR_REVIEW/IN_REVIEW → 손대지 말 것
 ./ios/bin/fastlane.sh check_builds   # 최근 5개 빌드 processing_state 조회
 ```
 - `processing_state`가 VALID면 정상. PROCESSING이면 잠시 후 재조회.
+- `asc_state`는 **설명·심사 메모가 리포와 일치하는지**까지 보여준다. 승격 직후
+  `빌드 연결: vNN`을 봤더라도 여기서 `선택된 빌드`를 교차 확인할 것.
+- **스크린샷은 장수만 나온다**(`ko / APP_IPHONE_65 6장`). 파일명·순서·어느 장이
+  빠졌는지는 **로컬에서 알 수 없다** — ASC 웹에서 직접 봐야 한다.
+  ⚠️ 실측(2026-08-06): release 직후 `65 6장 / 67 6장`이 제출 뒤 `65 5장 / 67 6장`이
+  됐다. 슬롯마다 장수가 달라도 Apple은 받으므로, 고치려고 `withdraw_review`를
+  돌려 대기열 처음으로 가는 대신 **다음 릴리스에서 맞추는 편이 값싸다.**
 - **TestFlight 앱에 새 빌드가 안 보이면** pull-to-refresh로는 갱신 안 된다.
   **앱 강제종료 후 재실행**하면 즉시 표시된다.
 
@@ -132,7 +146,7 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
   `app.ensure_version!`로 만든다. **minor/major를 올릴 때는 항상 없다**(patch는 기존
   페이지가 남아 통과). 자동화 전에는 여기서 fastlane 2.233.0이 `sync_app_previews`의
   `NoMethodError: get_app_store_version_localizations for nil`로 죽어 원인을 못 읽었다.
-- **스크린샷**: `ios/fastlane/screenshots/ko/`에 두면 `upload_screenshots`가 올린다.
+- **스크린샷**: `ios/fastlane/screenshots/ko/`에 두면 **`release`가** 올린다(전용 레인은 없다).
   deliver가 **이미지 크기로** 기기 슬롯을 판단하므로 파일명에 규격을 붙여 두 세트를
   함께 둔다(`6.5_*.png` = 1284x2778, `6.9_*.png` = 1320x2868). **파일명 순서 = 노출 순서.**
   원본은 `docs/screenshots/appstore/{6.5,6.9}/`, 촬영은 `screenshot_test.dart`.
