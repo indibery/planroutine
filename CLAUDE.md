@@ -872,6 +872,14 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
   확인하려던 세션이 `Could not find lane`으로 헛돌았다(2026-08-06). **실제 iOS 레인은
   일곱 개다**: `load_asc_api_key`·`check_tago_key`·`beta`·`release`·`withdraw_review`·
   `asc_state`·`check_builds`.
+  - **이 함정은 가드로 올라갔다** — `test/deploy/fastlane_lane_docs_test.dart`가
+    두 Fastfile의 `lane :`과 이 문서·런북의 `<platform>/bin/fastlane.sh <이름>`을
+    **양방향** 대조한다(`data_source_credit_test.dart`와 같은 형태). 없는 명령을
+    적으면 깨지고, 레인을 추가하고 문서에 안 적어도 깨진다(둘 다 회귀를 심어
+    확인함). 내부 헬퍼는 `_internalLanes`로 면제하되 **이유를 함께 적는다** —
+    면제 목록을 늘려 통과시키면 역방향 검사가 무력해진다.
+  - 검사 대상은 **운영 문서 둘**(CLAUDE.md·deploy SKILL.md)이다.
+    `docs/superpowers/specs/`는 특정 시점의 설계 기록이라 제외한다.
 - **확인 수단은 `asc_state` 하나이고 장수만 알려준다**(`ko / APP_IPHONE_65 6장`).
   파일명·순서를 봐야 하면 ASC 웹에서 직접 본다. 그래서 "어느 장이 빠졌는지"는
   로컬에서 판정할 수 없다 — 아래 실측이 그 한계에 걸린 사례다.
