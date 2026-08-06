@@ -76,6 +76,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 디버그 빌드는 **패키지명을 달리해** 스토어 빌드와 나란히 깔린다.
+            //
+            // 실기기 진단 때 스토어 빌드를 지우지 않기 위해서다 — 서명이 달라
+            // 덮어쓸 수 없으므로, 접미사가 없으면 uninstall이 강제되고 그 순간
+            // 기기에 쌓아둔 테스트 데이터(임포트한 일정·확정 이력)가 사라진다.
+            //
+            // ⚠️ 이 변종은 Google 로그인이 안 된다 — OAuth 클라이언트가
+            // `com.planroutine.app`에 묶여 있다. 캘린더·알림 등 나머지는 그대로다.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             // [C3] debug 키 고정 → release 키. 없으면 debug로 떨어지되 아래 가드가
             // release 태스크를 막는다(디버그 빌드는 계속 돌아간다).

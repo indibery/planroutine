@@ -254,7 +254,12 @@ class CalendarScreen extends ConsumerWidget {
             ? CalendarIntegrationStrings.alreadySaved
             : CalendarIntegrationStrings.savedDevice),
       ));
-    } on DeviceCalendarException catch (_) {
+    } on DeviceCalendarException catch (e) {
+      // **사유를 버리지 않는다.** 예전에는 `catch (_)`라 화면에도 로그에도
+      // `저장 실패` 넉 자만 남았고, 실기기에서 실패했을 때 (a) 쓸 수 있는 캘린더가
+      // 없는 것인지 (b) 플랫폼이 거부한 것인지 구분할 방법이 아무 데도 없었다
+      // (릴리스 빌드라 logcat에도 안 남는다 — 2026-08-06 실측).
+      debugPrint('[device-calendar] 저장 실패: ${e.message}');
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(CalendarIntegrationStrings.saveFailed),

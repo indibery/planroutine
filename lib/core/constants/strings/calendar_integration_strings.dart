@@ -26,5 +26,8 @@ class CalendarIntegrationStrings {
   static const setupNeeded = '캘린더 연동을 먼저 설정해주세요';
   static const savedDevice = '기기 캘린더에 저장했습니다';
   static const alreadySaved = '이미 저장된 일정입니다';
-  static const saveFailed = '저장 실패';
+  /// 기기 캘린더 저장이 실패했을 때. **원인은 여기 담지 않는다** —
+  /// 사용자가 손쓸 수 있는 것이 아니라서, 사유는 `debugPrint`로만 남긴다
+  /// (`calendar_screen.dart`의 `on DeviceCalendarException`).
+  static const saveFailed = '기기 캘린더에 저장하지 못했습니다';
 }

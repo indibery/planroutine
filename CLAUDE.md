@@ -174,7 +174,7 @@ planroutine/
 ├── android/
 │   ├── app/
 │   │   ├── build.gradle.kts            # release 서명·R8·desugaring
-│   │   ├── proguard-rules.pro          # Gson TypeToken 시그니처 보존 (알림 재예약 경로)
+│   │   ├── proguard-rules.pro          # Gson 리플렉션 보호 (알림 재예약 · 기기 캘린더)
 │   │   └── src/main/res/raw/keep.xml   # 리소스 축소로부터 ic_notification 보존
 │   ├── fastlane/
 │   │   ├── Appfile                     # package_name + json_key_file(~/.google_play/planroutine.json)
@@ -888,6 +888,52 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
   중복으로 지운 기록이 단서지만, **어느 장이 남았는지는 확인하지 못했다**(위 한계).
   스크린샷을 갈아치우려면 `withdraw_review`가 필요해 대기열 처음으로 돌아가므로,
   장수가 슬롯마다 달라도 **다음 릴리스에서 맞추는 편이 값싸다**.
+
+### R8은 Gson을 쓰는 플러그인을 조용히 망가뜨린다 — release에서만
+
+Gson은 **필드 이름을 리플렉션으로 읽어** JSON 키를 만들고 Dart는 그 이름으로 값을
+찾는다. R8이 이름을 줄이면 키가 `a`/`b`가 되어 **Dart가 받는 값이 전부 null**이 된다.
+컴파일도 통과하고 디버그도 멀쩡하다 — **release 빌드에서만** 깨진다.
+
+이 리포는 같은 함정을 **두 번** 밟았고, Gson을 쓰는 안드로이드 플러그인은 지금
+**둘뿐인데 둘 다 사고를 냈다**:
+
+| 플러그인 | 증상 | 규칙 |
+|---|---|---|
+| `flutter_local_notifications` | 부팅 후 알림 재예약이 죽는다 | `-keepattributes Signature` + TypeToken keep + `@SerializedName` 필드 keep |
+| `device_calendar` | 기기 캘린더 저장이 `저장 실패`로 끝난다 | `-keep class com.builttoroam.devicecalendar.models.** { *; }` |
+
+- **device_calendar 실측(Galaxy A34, 2026-08-06)**: R8 매핑에서 수정 전
+  `models.Event.eventTitle -> a`, `models.Calendar`는 **클래스 자체가 살아남지
+  못했다**. 그래서 Dart의 `Calendar.isReadOnly`가 null이 되고
+  `c.isReadOnly == false`가 거짓이라 **쓰기 가능한 캘린더가 0개**로 보였다 →
+  `_resolveDefaultCalendarId`가 null → `writable 캘린더가 없습니다`.
+  **삽입은 시도조차 되지 않았다**(이벤트 수 변화 0). 수정 후 전부 원래 이름 유지.
+- ⚠️ **범용 `@SerializedName` 규칙으로는 안 걸린다** — device_calendar의 모델에는
+  애노테이션이 없다. 플러그인이 `consumer-rules`를 제공하지 않으므로 **앱이 지킨다.**
+- **가드**: `test/deploy/android_gson_proguard_test.dart`가 `.dart_tool/package_config.json`으로
+  플러그인 안드로이드 소스를 훑어 Gson 사용을 찾고, 그 네임스페이스에 keep 규칙이
+  있는지 검사한다. 없으면 실패한다(회귀를 심어 확인함). 범용 규칙으로 덮이는
+  경우만 `_exempt`에 **이유와 함께** 등록한다.
+- **단위 테스트로는 재현할 수 없다** — R8은 release에서만 돈다. 그래서 가드는
+  재현이 아니라 **예방**(규칙 존재)을 검사한다. 실제 동작 확인은 아래 진단 빌드로 한다.
+
+#### 진단용 축소 빌드를 스토어 앱 옆에 깐다
+
+R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다. 그런데 로컬 release APK는
+서명이 Play와 달라 그냥 설치하면 **스토어 앱을 지워야 하고 테스트 데이터가 날아간다.**
+
+- **디버그**: `build.gradle.kts`의 debug 블록이 `applicationIdSuffix = ".debug"`를 준다 —
+  `flutter run`이 스토어 앱을 건드리지 않는다. ⚠️ 이 변종은 Google 로그인이 안 된다
+  (OAuth 클라이언트가 원래 패키지명에 묶여 있다). 안드로이드는 Google 연동을 감추므로
+  실질 영향은 없다.
+- **축소 확인용**: `applicationId`를 `com.planroutine.app.diag`로 **잠깐** 바꿔
+  `flutter build apk --release --dart-define-from-file=<tago>.json` 하고 **곧바로 되돌린다.**
+  커스텀 buildType이나 flavor를 만들지 않는다 — 전자는 Flutter가 `release`라는 이름에
+  맞춰 축소를 켜므로 **정작 R8이 안 도는** 빌드가 나올 수 있고, 후자는 태스크 이름이
+  바뀌어 fastlane 레인이 깨진다.
+- 검증은 **R8 매핑 전/후 비교**(`build/app/outputs/mapping/release/mapping.txt`)와
+  **실기기 동작** 둘 다 본다. 매핑만으로는 증상이 사라졌다는 증거가 안 된다.
 
 ### Android 레인
 
