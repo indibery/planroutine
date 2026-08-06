@@ -91,13 +91,23 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 키보드가 가리는 만큼 아래 여백을 준다. **음수는 걸러낸다** — 플랫폼이
-    // 음수 인셋을 보고한 순간이 실제로 있었고(3.41.6, 1회), 그 값이 그대로
-    // 들어가면 `RenderPadding`의 `isNonNegative` assert로 앱이 죽는다.
-    // 가드: `schedule_edit_sheet_negative_inset_test.dart`.
+    // 아래를 가리는 것 중 **큰 쪽**만큼 여백을 준다 — 키보드(viewInsets)와
+    // 시스템 내비게이션 바(viewPadding)는 서로 다른 값이다. 자세한 근거는
+    // `event_edit_dialog.dart`의 같은 자리에 적어 뒀다(두 시트가 같은 규칙).
+    //
+    // **음수는 걸러낸다** — 3.41.6에서 플랫폼이 음수를 보고한 적이 있다.
+    //
+    // 가드: `schedule_edit_sheet_negative_inset_test.dart`(음수) ·
+    //      `edit_sheet_system_inset_test.dart`(시스템 바).
     return Padding(
       padding: EdgeInsets.only(
-        bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+        bottom: math.max(
+          0,
+          math.max(
+            MediaQuery.viewInsetsOf(context).bottom,
+            MediaQuery.viewPaddingOf(context).bottom,
+          ),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.spacing24),

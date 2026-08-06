@@ -105,13 +105,29 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     final aiEnabled =
         ref.watch(aiTaskShareEnabledProvider).valueOrNull ?? false;
 
-    // 키보드가 가리는 만큼 아래 여백을 준다. **음수는 걸러낸다** — 플랫폼이
-    // 음수 인셋을 보고한 순간이 실제로 있었고(3.41.6, 1회), 그 값이 그대로
-    // 들어가면 `RenderPadding`의 `isNonNegative` assert로 앱이 죽는다.
-    // 가드: `event_edit_dialog_negative_inset_test.dart`.
+    // 아래를 가리는 것 중 **큰 쪽**만큼 여백을 준다 — 키보드(viewInsets)와
+    // 시스템 내비게이션 바(viewPadding)는 서로 다른 값이다. 키보드가 올라오면
+    // 그 인셋이 내비게이션 바 높이까지 포함하므로 더하지 않고 max로 고른다.
+    //
+    // **키보드만 보면 안 된다** — 키보드가 없을 때 `viewInsets.bottom`이 0이 되어
+    // 여백이 통째로 사라지고, `useSafeArea`가 기본 false라 시트가 시스템 바 아래로
+    // 뻗어 저장·취소 버튼이 깔린다(Android 실기기 신고, 24pt = 48dp 바의 절반).
+    //
+    // **음수는 걸러낸다** — 플랫폼이 음수 인셋을 보고한 순간이 실제로 있었고
+    // (3.41.6, 1회), 그 값이 그대로 들어가면 `RenderPadding`의 `isNonNegative`
+    // assert로 앱이 죽는다. 바깥 `max(0, ...)`이 두 값 모두를 막는다.
+    //
+    // 가드: `event_edit_dialog_negative_inset_test.dart`(음수) ·
+    //      `edit_sheet_system_inset_test.dart`(시스템 바).
     return Padding(
       padding: EdgeInsets.only(
-        bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+        bottom: math.max(
+          0,
+          math.max(
+            MediaQuery.viewInsetsOf(context).bottom,
+            MediaQuery.viewPaddingOf(context).bottom,
+          ),
+        ),
       ),
       child: SingleChildScrollView(
         child: Padding(
