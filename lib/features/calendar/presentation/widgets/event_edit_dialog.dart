@@ -12,7 +12,6 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/title_year_utils.dart';
 import '../../../../features/settings/presentation/providers/ai_task_share_provider.dart';
 import '../../../../shared/widgets/gold_gradient_button.dart';
-import '../../../../shared/widgets/segmented_setting_row.dart';
 import '../../../schedule/domain/entry_kind.dart';
 import '../../data/ai_task_exporter.dart';
 import '../../domain/calendar_event.dart';
@@ -356,24 +355,95 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppSizes.radius12),
       ),
-      child: Column(
+      child: widget.allowKindChange ? _buildKindAndImportantRow() : _buildImportantTile(),
+    );
+  }
+
+  /// 종류와 중요 표시를 **한 줄**에 넣는다(캘린더 경로).
+  ///
+  /// 나뉘어 있던 두 행을 합쳐 약 56dp를 회수한다 — 키보드가 올라오면 시트가 화면을
+  /// 다 쓰고 그 뒤로는 저장·취소가 스크롤 밖으로 밀리는데, 그 임계값을 올린다
+  /// (실측: 키보드 380dp에서 35dp 가렸다).
+  ///
+  /// ⚠️ **구조적 해결은 아니다.** 버튼이 여전히 `SingleChildScrollView` 안에 있어,
+  /// 더 큰 키보드·큰 글꼴·필드 추가로 같은 자리가 다시 깨질 수 있다. 그때는 버튼을
+  /// 스크롤 밖 고정 푸터로 빼는 것이 다음 수순이다.
+  ///
+  /// `종류` 글자를 뺐다 — 세그먼트가 `업무`/`행사`라 스스로 설명하고, 320pt 폭에서
+  /// 글자까지 넣으면 넘친다(가드가 320·390·430을 훑는다).
+  Widget _buildKindAndImportantRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing16,
+        vertical: AppSizes.spacing8,
+      ),
+      child: Row(
         children: [
-          if (widget.allowKindChange) ...[
-            SegmentedSettingRow<EntryKind>(
+          Icon(Icons.label_outline, color: AppColors.primary),
+          const SizedBox(width: AppSizes.spacing12),
+          Flexible(
+            child: SegmentedButton<EntryKind>(
               key: const Key('kind_selector'),
-              icon: Icons.label_outline,
-              label: CalendarStrings.kindLabel,
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: const WidgetStatePropertyAll(
+                  TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                // 채움은 goldFill + onGold — 라이트에서 gold(딥골드) 채움은 대비가 낮다.
+                foregroundColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.selected)
+                        ? AppColors.onGold
+                        : AppColors.sub),
+                backgroundColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.selected)
+                        ? AppColors.goldFill
+                        : Colors.transparent),
+                side: WidgetStatePropertyAll(
+                  BorderSide(color: AppColors.lineStrong, width: 0.5),
+                ),
+              ),
               segments: EntryKind.values
                   .map((k) => ButtonSegment<EntryKind>(
                         value: k,
                         label: Text(k.label),
                       ))
                   .toList(),
-              selected: _kind,
-              onChanged: (k) => setState(() => _kind = k),
+              selected: {_kind},
+              onSelectionChanged: (s) => setState(() => _kind = s.first),
             ),
-            Divider(height: 1, color: AppColors.border),
-          ],
+          ),
+          const SizedBox(width: AppSizes.spacing8),
+          // 글자 라벨이 사라지므로 스크린리더용 이름을 남긴다 — 목록의 중요 ★을
+          // `Semantics`로 감싼 것과 같은 이유다(CLAUDE.md '목록의 중요 표시').
+          Semantics(
+            label: CalendarStrings.importantLabel,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded, color: AppColors.gold),
+                Switch(
+                  key: const Key('important_toggle'),
+                  value: _isImportant,
+                  onChanged: (v) => setState(() => _isImportant = v),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 오늘 탭 경로 — 종류를 못 바꾸므로 중요 표시만 한 줄로 둔다(기존 그대로).
+  Widget _buildImportantTile() {
+    return Column(
+      children: [
           SwitchListTile(
             key: const Key('important_toggle'),
             value: _isImportant,
@@ -396,8 +466,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 

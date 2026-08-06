@@ -85,7 +85,9 @@ void main() {
         ),
       );
 
-      final sw = tester.widget<SwitchListTile>(find.byKey(importantToggle));
+      // 캘린더 경로의 토글은 `Switch`다 — 종류와 한 줄로 합치면서 `SwitchListTile`을
+      // 벗었다(오늘 탭 경로는 여전히 `SwitchListTile`). 검사하는 값은 그대로다.
+      final sw = tester.widget<Switch>(find.byKey(importantToggle));
       expect(sw.value, true);
     });
 
@@ -139,7 +141,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final finder = find.byKey(importantToggle);
-        final tile = tester.widget<SwitchListTile>(finder);
+        final tile = tester.widget<Switch>(finder);
         final theme = Theme.of(tester.element(finder));
         const selected = {WidgetState.selected};
 
