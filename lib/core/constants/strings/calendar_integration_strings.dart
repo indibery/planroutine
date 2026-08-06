@@ -24,6 +24,15 @@ class CalendarIntegrationStrings {
 
   // SnackBar
   static const setupNeeded = '캘린더 연동을 먼저 설정해주세요';
+  /// **어느 캘린더에 저장했는지 이름을 밝힌다.** 앱이 캘린더를 대신 고르므로,
+  /// 말해주지 않으면 "저장했다는데 구글 캘린더에 없다"가 된다 — 실기기에서
+  /// 실제로 그랬다(로컬 `My calendar`로 갔다, 2026-08-06).
+  ///
+  /// 이름이 비면(플러그인이 안 주는 경우) 옛 문구로 떨어진다.
+  static String savedDeviceTo(String calendarName) => calendarName.isEmpty
+      ? savedDevice
+      : "'$calendarName'에 저장했습니다";
+
   static const savedDevice = '기기 캘린더에 저장했습니다';
   static const alreadySaved = '이미 저장된 일정입니다';
   /// 기기 캘린더 저장이 실패했을 때. **원인은 여기 담지 않는다** —

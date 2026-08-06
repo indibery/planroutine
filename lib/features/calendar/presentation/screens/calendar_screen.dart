@@ -232,7 +232,7 @@ class CalendarScreen extends ConsumerWidget {
 
     final wasAlreadySaved = event.deviceEventId != null;
     try {
-      final id = await service.saveEvent(
+      final saved = await service.saveEvent(
         existingId: event.deviceEventId,
         title: event.title,
         description: event.description,
@@ -243,7 +243,7 @@ class CalendarScreen extends ConsumerWidget {
       final eventId = event.id;
       if (eventId != null) {
         final repository = ref.read(calendarRepositoryProvider);
-        await repository.updateDeviceEventId(eventId, id);
+        await repository.updateDeviceEventId(eventId, saved.eventId);
         ref.invalidate(monthEventsByYearMonthProvider);
         ref.invalidate(selectedMonthEventsProvider);
       }
@@ -252,7 +252,7 @@ class CalendarScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(wasAlreadySaved
             ? CalendarIntegrationStrings.alreadySaved
-            : CalendarIntegrationStrings.savedDevice),
+            : CalendarIntegrationStrings.savedDeviceTo(saved.calendarName)),
       ));
     } on DeviceCalendarException catch (e) {
       // **사유를 버리지 않는다.** 예전에는 `catch (_)`라 화면에도 로그에도
