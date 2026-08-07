@@ -14,14 +14,11 @@ class BusEmptyState extends StatelessWidget {
     super.key,
     required this.state,
     this.onRetry,
-    this.onRegister,
     this.retrying = false,
   });
 
   final BusCardState state;
   final VoidCallback? onRetry;
-  final VoidCallback? onRegister;
-
   /// `다시 시도`로 시작한 조회가 아직 비행 중인가.
   ///
   /// true면 그 자리에 진행 문구를 놓고 탭을 뗀다. 조회는 최대 10초 걸리는데 그동안
@@ -68,12 +65,11 @@ class BusEmptyState extends StatelessWidget {
           null,
           null,
         ),
-      BusCardState.noStop => (
-          BusStrings.emptyNoStop,
-          null,
-          BusStrings.emptyNoStopAction,
-          onRegister,
-        ),
+      // **등록 액션은 여기서 그리지 않는다** — 카드 하단 행이 골드 채움 알약으로
+      // 맡는다(`BusArrivalCard._registerControl`). 본문에 두던 시절에는 바로 아래
+      // `출근 보기` 링크와 세로로 23dp 떨어진 채 둘 다 맨 텍스트라, 하나를 누르려다
+      // 다른 것을 스쳤다(실기기 신고 2026-08-07).
+      BusCardState.noStop => (BusStrings.emptyNoStop, null, null, null),
     };
 
     return Column(

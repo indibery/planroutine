@@ -39,6 +39,9 @@ class BusArrivalCard extends StatelessWidget {
   /// 새로고침 버튼. 아이콘으로 찾으면 chevron·flip과 섞이므로 키로 찾는다.
   static const refreshKey = Key('bus_card_refresh');
 
+  /// 정류장 등록 알약. 하단 행 오른쪽에서 새로고침과 자리를 나눠 쓴다.
+  static const registerKey = Key('bus_card_register');
+
   final BusCardView view;
   final BusCardStyle style;
   final CommuteDirection direction;
@@ -257,7 +260,6 @@ class BusArrivalCard extends StatelessWidget {
       return BusEmptyState(
         state: view.state,
         onRetry: onRetry,
-        onRegister: onRegister,
         retrying: retrying,
       );
     }
@@ -280,23 +282,85 @@ class BusArrivalCard extends StatelessWidget {
   Widget _bottomRow() {
     return Row(
       children: [
-        GestureDetector(
-          key: flipKey,
-          behavior: HitTestBehavior.opaque,
-          onTap: onFlipDirection,
-          child: Text(
-            BusStrings.flip(direction.otherLabel),
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gold,
-            ),
+        _flipControl(),
+        const Spacer(),
+        // **등록과 새로고침은 함께 나오지 않는다.** 호스트가 정류장 미등록 카드에는
+        // `onRefresh`를, 그 밖에는 `onRegister`를 넘기지 않는다(조회할 정류장이
+        // 없으면 새로고침할 것도 없다). 그래도 둘을 같은 자리에 두므로 순서를
+        // 명시해 두 표적이 겹치는 구성을 만들 수 없게 한다 — 가드가 이 배타성을 잡는다.
+        if (onRegister != null)
+          _registerControl()
+        else if (onRefresh != null)
+          _refreshControl(),
+      ],
+    );
+  }
+
+  /// 하단 알약의 최소 높이. **패딩으로 높이를 만들지 않는다** — 글꼴 크기가
+  /// 다른 두 알약(12·13px)이 서로 다른 높이가 되고, 실제로 방향 전환이 39dp로
+  /// 1dp 모자랐다. 최소 높이를 못박으면 둘이 같아지고 Apple 권장 44pt를 만족한다.
+  static const _pillMinHeight = 44.0;
+
+  /// 방향 전환 — **보조 동작**이라 테두리만 두른 중립색 알약이다.
+  ///
+  /// 맨 텍스트였을 때는 히트 영역이 글자 높이(약 18dp)뿐이라 "눌렀는데 반응이
+  /// 없다"가 났다(실기기 신고 2026-08-07). 세로 패딩으로 40dp를 확보한다.
+  Widget _flipControl() {
+    return GestureDetector(
+      key: flipKey,
+      behavior: HitTestBehavior.opaque,
+      onTap: onFlipDirection,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: _pillMinHeight),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        ),
+        child: Text(
+          BusStrings.flip(direction.otherLabel),
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.sub,
           ),
         ),
-        const Spacer(),
-        if (onRefresh != null) _refreshControl(),
-      ],
+      ),
+    );
+  }
+
+  /// 정류장 등록 — **이 카드가 존재하는 이유**라 골드 채움 알약으로 무게를 준다.
+  ///
+  /// 방향 전환과 **모양·무게를 다르게** 둔다. 둘 다 같은 알약이면 보조 동작이 주
+  /// 동작만큼 중요해 보여, 처음 쓰는 사람이 무엇을 눌러야 할지 한 번 더 생각한다.
+  ///
+  /// 채움은 `goldFill` + `onGold`다 — 라이트에서 `gold`(딥골드) 채움 위 글자는
+  /// 대비가 낮다(세그먼트·배지와 같은 규칙).
+  Widget _registerControl() {
+    return GestureDetector(
+      key: registerKey,
+      behavior: HitTestBehavior.opaque,
+      onTap: onRegister,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: _pillMinHeight),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: AppColors.goldFill,
+          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        ),
+        child: Text(
+          BusStrings.emptyNoStopAction,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.onGold,
+          ),
+        ),
+      ),
     );
   }
 }
