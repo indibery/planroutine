@@ -18,6 +18,10 @@ void main() {
   /// 팔레트와 전역 `switchTheme`을 실제로 적용한 채 다이얼로그를 띄운다 — 색 검증 전용.
   ///
   /// 아래 `openAndReturn`은 기본 `ThemeData`라 앱이 정해둔 스위치 색이 걸리지 않는다.
+  ///
+  /// **오늘 탭 경로(`allowKindChange: false`)로 연다.** 캘린더 경로의 중요 표시는
+  /// 토글 칩이 되어 `Switch`가 없다 — 전역 `switchTheme`을 검사하려면 스위치가
+  /// 실제로 남아 있는 경로를 봐야 한다. 검사하려는 규칙 자체는 그대로다.
   Future<void> openThemed(WidgetTester tester, Brightness brightness) async {
     AppColors.applyBrightness(brightness);
     await tester.pumpWidget(
@@ -30,6 +34,7 @@ void main() {
                 onPressed: () => EventEditDialog.show(
                   context,
                   initialDate: DateTime(2026, 3, 2),
+                  allowKindChange: false,
                 ),
                 child: const Text('open'),
               ),
@@ -85,10 +90,16 @@ void main() {
         ),
       );
 
-      // 캘린더 경로의 토글은 `Switch`다 — 종류와 한 줄로 합치면서 `SwitchListTile`을
-      // 벗었다(오늘 탭 경로는 여전히 `SwitchListTile`). 검사하는 값은 그대로다.
-      final sw = tester.widget<Switch>(find.byKey(importantToggle));
-      expect(sw.value, true);
+      // 캘린더 경로의 토글은 **이름을 담은 칩**이다(`Switch`가 아니다).
+      // 상태는 사용자가 실제로 보는 신호 — 채운 별 — 로 확인한다.
+      expect(
+        find.descendant(
+          of: find.byKey(importantToggle),
+          matching: find.byIcon(Icons.star_rounded),
+        ),
+        findsOneWidget,
+        reason: 'isImportant=true면 채운 별이어야 한다(꺼짐은 빈 별)',
+      );
     });
 
     testWidgets('토글을 켜고 저장하면 isImportant=true인 이벤트 반환', (tester) async {
@@ -141,7 +152,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final finder = find.byKey(importantToggle);
-        final tile = tester.widget<Switch>(finder);
+        final tile = tester.widget<SwitchListTile>(finder);
         final theme = Theme.of(tester.element(finder));
         const selected = {WidgetState.selected};
 

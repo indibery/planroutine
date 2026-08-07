@@ -3,15 +3,19 @@
 // 키보드가 올라오면 시트가 화면을 다 쓰고, 그 뒤로는 저장·취소가
 // `SingleChildScrollView` 안에서 키보드 밑으로 밀린다(실기기 신고 2026-08-06,
 // 실측: 키보드 380dp에서 35dp 가림). 종류 세그먼트와 중요 스위치를 한 줄로 합쳐
-// 약 56dp를 회수해 그 임계값을 올렸다.
+// 약 49dp를 회수해 그 임계값을 올렸다(340 → 400dp).
 //
 // ⚠️ **구조적 해결이 아니다** — 더 큰 키보드·큰 글꼴·필드 추가로 다시 깨질 수 있다.
 // 그때의 다음 수순은 버튼을 스크롤 밖 고정 푸터로 빼는 것이다. 이 가드는 회수한
 // 높이가 **다시 늘어나는 것**을 막는다(행이 둘로 갈라지면 깨진다).
 //
-// 폭을 훑는 이유: 합친 줄에 아이콘·세그먼트 2개·별·스위치가 함께 들어가 가로가
+// 폭을 훑는 이유: 합친 줄에 아이콘·세그먼트 2개·중요 칩이 함께 들어가 가로가
 // 빠듯하다. 폭 하나로만 재면 다른 폭에서 조용히 넘친다
 // (`bus_slot_tile_long_name_test`와 같은 이유).
+//
+// **중요 표시는 이름을 담은 토글 칩이다**(2026-08-07). 별 + 스위치였을 때는
+// 무슨 기능인지 알 수 없었고, 별이 상태와 무관하게 늘 골드라 꺼져 있어도
+// 켜진 것처럼 보였다. 칩으로 바꾸니 이름이 들어가면서 폭은 84 → 72dp로 줄었다.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/event_edit_dialog.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 
@@ -88,17 +93,57 @@ void main() {
     });
   }
 
-  testWidgets('글자 라벨이 사라진 자리를 스크린리더 이름이 잇는다', (tester) async {
+  testWidgets('칩이 이름을 달고 있다 — 무슨 기능인지 보여야 한다', (tester) async {
     await _openSheet(tester, widthDp: 390);
 
-    // `중요 표시` 텍스트는 지웠지만 이름은 남아야 한다.
-    expect(find.text(CalendarStrings.importantLabel), findsNothing,
-        reason: '한 줄로 합치며 글자 라벨은 뺐다');
+    // 별 하나만 있던 시절에는 처음 보는 사람이 무슨 스위치인지 알 수 없었다
+    // (사용자 신고 2026-08-07). 이름이 컨트롤 안에 있어야 한다.
+    expect(find.text(CalendarStrings.importantBadge), findsOneWidget,
+        reason: '칩에 `중요` 글자가 보여야 한다');
     expect(
       find.bySemanticsLabel(CalendarStrings.importantLabel),
       findsOneWidget,
-      reason: '글자를 없앴으면 Semantics로 이름을 남겨야 한다',
+      reason: '스크린리더에는 더 설명적인 `중요 표시`를 읽힌다',
     );
+  });
+
+  testWidgets('상태를 채움과 별 모양 두 겹으로 말한다', (tester) async {
+    await _openSheet(tester, widthDp: 390);
+
+    const toggle = Key('important_toggle');
+    BoxDecoration decoOf() => tester
+        .widget<Container>(find.descendant(
+          of: find.byKey(toggle),
+          matching: find.byType(Container),
+        ))
+        .decoration as BoxDecoration;
+
+    // 꺼짐 — 빈 별, 채움 없음. 예전에는 꺼져 있어도 별이 늘 골드라
+    // **켜진 것처럼** 보였다.
+    expect(
+      find.descendant(
+        of: find.byKey(toggle),
+        matching: find.byIcon(Icons.star_border_rounded),
+      ),
+      findsOneWidget,
+      reason: '꺼짐은 빈 별이어야 한다',
+    );
+    expect(decoOf().color, Colors.transparent, reason: '꺼짐은 채우지 않는다');
+
+    await tester.tap(find.byKey(toggle));
+    await tester.pumpAndSettle();
+
+    // 켜짐 — 채운 별 + 골드 채움. 색만으로 두지 않는다.
+    expect(
+      find.descendant(
+        of: find.byKey(toggle),
+        matching: find.byIcon(Icons.star_rounded),
+      ),
+      findsOneWidget,
+      reason: '켜짐은 채운 별이어야 한다',
+    );
+    expect(decoOf().color, AppColors.goldFill,
+        reason: '채움은 옆 세그먼트와 같은 goldFill 규칙을 쓴다');
   });
 
   testWidgets('오늘 탭 경로(종류 잠금)는 중요 표시만 글자 라벨과 함께 남는다',

@@ -419,23 +419,70 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             ),
           ),
           const SizedBox(width: AppSizes.spacing8),
-          // 글자 라벨이 사라지므로 스크린리더용 이름을 남긴다 — 목록의 중요 ★을
-          // `Semantics`로 감싼 것과 같은 이유다(CLAUDE.md '목록의 중요 표시').
-          Semantics(
-            label: CalendarStrings.importantLabel,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star_rounded, color: AppColors.gold),
-                Switch(
-                  key: const Key('important_toggle'),
-                  value: _isImportant,
-                  onChanged: (v) => setState(() => _isImportant = v),
-                ),
-              ],
-            ),
-          ),
+          _buildImportantChip(),
         ],
+      ),
+    );
+  }
+
+  /// 중요 표시 — **이름을 컨트롤 안에 담은 토글 칩.**
+  ///
+  /// 종류와 한 줄로 합치던 시절에는 `★ + Switch`였는데, 글자 라벨이 없어 처음 보는
+  /// 사람이 무슨 스위치인지 알 수 없었다(사용자 신고 2026-08-07). 게다가 별이 상태와
+  /// 무관하게 늘 골드라 **꺼져 있어도 켜진 것처럼** 보였다.
+  ///
+  /// 스위치를 버리고 칩으로 바꾸면 이름이 들어가면서 오히려 **좁아진다**
+  /// (실측 84 → 72dp). 라벨을 뺐던 이유가 폭이었으므로 그 제약이 풀린다.
+  ///
+  /// 상태는 **채움과 별 모양 두 겹**으로 말한다 — 색만으로 두지 않는 것은 도장
+  /// 시트가 선택 표시에 체크 아이콘을 함께 넣은 것과 같은 이유다.
+  /// 채움은 `goldFill` + `onGold`로 바로 옆 세그먼트와 같은 규칙을 쓴다.
+  Widget _buildImportantChip() {
+    final on = _isImportant;
+    return Semantics(
+      label: CalendarStrings.importantLabel,
+      button: true,
+      toggled: on,
+      // **자식 시맨틱을 제외한다.** 칩 안의 `중요` 텍스트가 자기 노드를 만들어
+      // 부모 라벨을 덮으면, 스크린리더가 `중요 표시` 대신 `중요`만 읽는다
+      // (가드가 `bySemanticsLabel`로 0건을 잡았다).
+      excludeSemantics: true,
+      child: GestureDetector(
+        key: const Key('important_toggle'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _isImportant = !on),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12),
+          decoration: BoxDecoration(
+            color: on ? AppColors.goldFill : Colors.transparent,
+            border: Border.all(
+              color: on ? AppColors.goldFill : AppColors.lineStrong,
+              width: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                on ? Icons.star_rounded : Icons.star_border_rounded,
+                size: AppSizes.iconSmall,
+                color: on ? AppColors.onGold : AppColors.sub,
+              ),
+              const SizedBox(width: AppSizes.spacing4),
+              Text(
+                CalendarStrings.importantBadge,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: on ? AppColors.onGold : AppColors.sub,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
