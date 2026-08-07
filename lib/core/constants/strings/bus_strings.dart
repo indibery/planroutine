@@ -127,8 +127,16 @@ class BusStrings {
   static const emptyDownRetrying = '다시 확인하고 있어요';
   static const emptyKey = '버스 정보를 불러올 수 없어요';
   static const emptyKeyHint = '잠시 뒤 다시 열어주세요';
-  static const emptyNoStop = '정류장을 등록하면 도착시간이 보여요';
-  static const emptyNoStopAction = '정류장 등록';
+  static const emptyNoStop = '정류장을 선택하면 도착시간이 보여요';
+
+  /// 정류장을 고르러 가는 동작. **[slotEmpty]와 같은 말이어야 한다** — 오늘 탭과
+  /// 설정에서 같은 화면(`/bus/stops`)으로 가는데 이름이 `등록`/`선택`으로 갈려
+  /// 있었다(사용자 신고 2026-08-07).
+  ///
+  /// `선택`으로 맞춘 이유: 설정 슬롯은 비어 있을 때도 이미 들어있을 때도 눌러
+  /// 바꾸는 자리라 `등록`이 어색하고, 그 화면 제목이 `정류장 찾기`여서
+  /// 찾기 → 선택으로 흐름이 이어진다.
+  static const emptyNoStopAction = slotEmpty;
 
   // ── 검색 화면 ──────────────────────────────────────────────
   static const searchTitle = '정류장 찾기';

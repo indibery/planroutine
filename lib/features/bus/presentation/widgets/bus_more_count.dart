@@ -16,7 +16,7 @@ import '../../../../core/constants/app_strings.dart';
 /// 렌더뿐"이라고 정했다 — 감춘 개수는 본문 렌더가 아니라 그 공유 목록에 속한다.
 ///
 /// **골드를 쓰지 않는다.** 이 카드 안의 골드 텍스트는 전부 탭 대상이고
-/// (`다시 시도`·`정류장 등록`·`퇴근 보기`) 이 줄은 정보 라벨이다. 골드로 두면
+/// (`다시 시도`·`정류장 선택`·`퇴근 보기`) 이 줄은 정보 라벨이다. 골드로 두면
 /// 눌러도 아무 일이 없는 링크처럼 보인다.
 class BusMoreCount extends StatelessWidget {
   const BusMoreCount({super.key, required this.hiddenCount});

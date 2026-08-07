@@ -15,7 +15,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/bus/domain/bus_card_style.dart';
 import 'package:planroutine/features/bus/domain/bus_card_view.dart';
@@ -55,7 +54,7 @@ Future<void> _pumpNoStop(
 
 void main() {
   group('정류장 미등록 카드의 하단 두 표적', () {
-    testWidgets('한 행에서 좌: 방향 전환 · 우: 등록으로 갈라진다', (tester) async {
+    testWidgets('한 행에서 좌: 방향 전환 · 우: 선택으로 갈라진다', (tester) async {
       await _pumpNoStop(tester);
 
       final flip = tester.getRect(find.byKey(BusArrivalCard.flipKey));
@@ -72,7 +71,7 @@ void main() {
 
       for (final entry in {
         '방향 전환': BusArrivalCard.flipKey,
-        '정류장 등록': BusArrivalCard.registerKey,
+        '정류장 선택': BusArrivalCard.registerKey,
       }.entries) {
         final rect = tester.getRect(find.byKey(entry.value));
         expect(rect.height, greaterThanOrEqualTo(44),
@@ -81,24 +80,28 @@ void main() {
       }
     });
 
-    testWidgets('무게가 다르다 — 등록만 골드 채움', (tester) async {
+    // **보이는 것은 글씨, 누르는 것은 44dp.** 한때 알약(테두리·채움)으로 만들었다가
+    // 작은 카드에 버튼 둘이 앉아 너무 두껍게 읽혀 되돌렸다(사용자 확인 2026-08-07).
+    // 되돌릴 때 히트 영역까지 함께 잃기 쉬워서 — 그것이 원래 신고의 절반이었다 —
+    // 장식이 없다는 것을 못박아 둔다. 크기는 위 테스트가 따로 지킨다.
+    testWidgets('장식을 두르지 않는다 — 글씨 그대로여야 한다', (tester) async {
       await _pumpNoStop(tester);
 
-      Color? fillOf(Key key) {
+      for (final entry in {
+        '방향 전환': BusArrivalCard.flipKey,
+        '정류장 선택': BusArrivalCard.registerKey,
+      }.entries) {
         final box = tester.widget<Container>(find.descendant(
-          of: find.byKey(key),
+          of: find.byKey(entry.value),
           matching: find.byType(Container),
         ));
-        return (box.decoration as BoxDecoration?)?.color;
+        final deco = box.decoration as BoxDecoration?;
+        expect(deco?.color, isNull, reason: '${entry.key}에 채움이 생겼다');
+        expect(deco?.border, isNull, reason: '${entry.key}에 테두리가 생겼다');
       }
-
-      expect(fillOf(BusArrivalCard.registerKey), AppColors.goldFill,
-          reason: '등록은 이 카드가 존재하는 이유라 채움으로 무게를 준다');
-      expect(fillOf(BusArrivalCard.flipKey), isNull,
-          reason: '방향 전환은 보조라 테두리만 — 둘 다 채우면 위계가 사라진다');
     });
 
-    testWidgets('본문에는 등록 링크가 남아 있지 않다 — 표적이 둘이면 도로 헷갈린다',
+    testWidgets('본문에는 같은 링크가 남아 있지 않다 — 표적이 둘이면 도로 헷갈린다',
         (tester) async {
       await _pumpNoStop(tester);
 
@@ -117,7 +120,7 @@ void main() {
       expect(register.left, greaterThan(flip.right));
     });
 
-    testWidgets('등록 알약을 누르면 콜백이 온다', (tester) async {
+    testWidgets('선택을 누르면 콜백이 온다', (tester) async {
       var tapped = 0;
       await _pumpNoStop(tester, onRegister: () => tapped++);
 

@@ -114,7 +114,7 @@ void main() {
         now: inRange,
         settings: BusSettings.defaults.copyWith(enabled: true),
       );
-      expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
+      expect(find.text(BusStrings.emptyNoStop), findsOneWidget);
       expect(n, 0);
     });
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 import 'package:planroutine/features/bus/domain/bus_card_style.dart';
@@ -149,7 +150,7 @@ void main() {
       expect(find.byIcon(Icons.expand_more), findsNothing);
       expect(find.byKey(BusArrivalCard.headerKey), findsNothing);
       // 등록 유도와 방향 토글은 그대로 남는다 — 카드가 죽는 것이 아니다.
-      expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
+      expect(find.text(BusStrings.emptyNoStop), findsOneWidget);
       expect(find.textContaining('퇴근 보기'), findsOneWidget);
     });
 
@@ -223,7 +224,7 @@ void main() {
       expect(find.textContaining('기준'), findsNothing);
 
       await _pump(tester, view: _view(state: BusCardState.noStop, items: const []));
-      expect(find.text('정류장을 등록하면 도착시간이 보여요'), findsOneWidget);
+      expect(find.text(BusStrings.emptyNoStop), findsOneWidget);
       expect(find.textContaining('기준'), findsNothing);
     });
 

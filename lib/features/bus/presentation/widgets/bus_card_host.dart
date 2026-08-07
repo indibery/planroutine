@@ -381,7 +381,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         onFlipDirection: _flip,
         // **`?slot=`을 반드시 붙인다.** 검색 화면은 쿼리가 없으면 출근 슬롯으로
         // 조용히 떨어지므로, 퇴근 카드에서 등록하면 학교 앞 정류장이 출발지에
-        // 저장된다 — 화면은 여전히 `정류장을 등록하면…`이라 저장 실패로 읽히고,
+        // 저장된다 — 화면은 여전히 `정류장을 선택하면…`이라 저장 실패로 읽히고,
         // 다음 아침 출근 카드에 학교 앞 정류장이 뜬다. 원인이 쿼리 한 개라
         // 추적이 어렵다. 방향은 지금 손에 들고 있다(`display.direction`).
         onRegister: () =>

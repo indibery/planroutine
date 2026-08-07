@@ -39,7 +39,7 @@ class BusArrivalCard extends StatelessWidget {
   /// 새로고침 버튼. 아이콘으로 찾으면 chevron·flip과 섞이므로 키로 찾는다.
   static const refreshKey = Key('bus_card_refresh');
 
-  /// 정류장 등록 알약. 하단 행 오른쪽에서 새로고침과 자리를 나눠 쓴다.
+  /// 정류장 선택 표적. 하단 행 오른쪽에서 새로고침과 자리를 나눠 쓴다.
   static const registerKey = Key('bus_card_register');
 
   final BusCardView view;
@@ -104,7 +104,7 @@ class BusArrivalCard extends StatelessWidget {
             const SizedBox(height: AppSizes.spacing4),
             // **`view.hasRows` 게이트를 두지 않는다.** 사라지는 조건은 접힘 하나다
             // (스펙 §1). 목록이 비었을 때도 토글을 지우면, 출근 정류장만 등록한
-            // 사용자가 퇴근 시간대에 열었을 때 `정류장을 등록하면 도착시간이
+            // 사용자가 퇴근 시간대에 열었을 때 `정류장을 선택하면 도착시간이
             // 보여요`만 있고 이미 등록해 둔 반대 방향으로 갈 길이 없는 막힌 카드가
             // 된다. 막차 후(`오늘 운행이 끝났어요`)에 다음 방향을 볼 길도 막힌다.
             _bottomRow(),
@@ -190,7 +190,7 @@ class BusArrivalCard extends StatelessWidget {
         ),
         const SizedBox(width: AppSizes.spacing8),
         // 이름이 없으면 세그먼트를 통째로 생략한다 — `'· $stopName'`을 무조건 그리면
-        // 정류장을 등록하기 전 첫 카드의 제목줄이 `출근   · `로 끝나 잘린 것처럼 보인다.
+        // 정류장을 고르기 전 첫 카드의 제목줄이 `출근   · `로 끝나 잘린 것처럼 보인다.
         // 자리는 Spacer가 지켜 오른쪽 끝 요소가 움직이지 않는다.
         if (stopName.isEmpty)
           const Spacer()
@@ -296,68 +296,59 @@ class BusArrivalCard extends StatelessWidget {
     );
   }
 
-  /// 하단 알약의 최소 높이. **패딩으로 높이를 만들지 않는다** — 글꼴 크기가
-  /// 다른 두 알약(12·13px)이 서로 다른 높이가 되고, 실제로 방향 전환이 39dp로
-  /// 1dp 모자랐다. 최소 높이를 못박으면 둘이 같아지고 Apple 권장 44pt를 만족한다.
-  static const _pillMinHeight = 44.0;
-
-  /// 방향 전환 — **보조 동작**이라 테두리만 두른 중립색 알약이다.
+  /// 하단 두 표적의 최소 히트 높이. **보이는 크기가 아니라 누르는 크기다** —
+  /// 글씨는 예전 그대로 두고 투명한 영역만 넓힌다.
   ///
-  /// 맨 텍스트였을 때는 히트 영역이 글자 높이(약 18dp)뿐이라 "눌렀는데 반응이
-  /// 없다"가 났다(실기기 신고 2026-08-07). 세로 패딩으로 40dp를 확보한다.
+  /// 패딩으로 만들지 않는 이유: 글꼴이 다른 둘(12·13px)이 서로 다른 높이가 되고,
+  /// 실제로 방향 전환이 39dp로 1dp 모자랐다. 최소 높이를 못박으면 둘이 같아지고
+  /// Apple 권장 44pt를 만족한다.
+  static const _tapMinHeight = 44.0;
+
+  /// 방향 전환 — 글씨 그대로 두되 **누르는 면적만 넓힌다.**
+  ///
+  /// 테두리·채움을 두르면 작은 카드에 버튼 둘이 앉아 너무 두껍게 읽힌다
+  /// (실기기 확인 2026-08-07). 그래서 보이는 것은 예전과 같은 링크이고,
+  /// 투명한 패딩이 히트 영역만 [_tapMinHeight]로 키운다.
   Widget _flipControl() {
     return GestureDetector(
       key: flipKey,
       behavior: HitTestBehavior.opaque,
       onTap: onFlipDirection,
       child: Container(
-        constraints: const BoxConstraints(minHeight: _pillMinHeight),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-        ),
+        constraints: const BoxConstraints(minHeight: _tapMinHeight),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(right: AppSizes.spacing12),
         child: Text(
           BusStrings.flip(direction.otherLabel),
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.sub,
+            color: AppColors.gold,
           ),
         ),
       ),
     );
   }
 
-  /// 정류장 등록 — **이 카드가 존재하는 이유**라 골드 채움 알약으로 무게를 준다.
-  ///
-  /// 방향 전환과 **모양·무게를 다르게** 둔다. 둘 다 같은 알약이면 보조 동작이 주
-  /// 동작만큼 중요해 보여, 처음 쓰는 사람이 무엇을 눌러야 할지 한 번 더 생각한다.
-  ///
-  /// 채움은 `goldFill` + `onGold`다 — 라이트에서 `gold`(딥골드) 채움 위 글자는
-  /// 대비가 낮다(세그먼트·배지와 같은 규칙).
+  /// 정류장 선택 — 하단 행 **오른쪽 끝**. 방향 전환과 가로로 갈라 놓는 것이
+  /// 오탭을 막는 본체이고, 무게 차이는 굵기(13 w700 대 12 w600)로만 낸다.
   Widget _registerControl() {
     return GestureDetector(
       key: registerKey,
       behavior: HitTestBehavior.opaque,
       onTap: onRegister,
       child: Container(
-        constraints: const BoxConstraints(minHeight: _pillMinHeight),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: AppColors.goldFill,
-          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-        ),
+        constraints: const BoxConstraints(minHeight: _tapMinHeight),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(left: AppSizes.spacing12),
         child: Text(
           BusStrings.emptyNoStopAction,
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.onGold,
+            color: AppColors.gold,
           ),
         ),
       ),

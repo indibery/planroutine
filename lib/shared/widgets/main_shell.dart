@@ -48,7 +48,7 @@ class MainShell extends StatelessWidget {
   ///
   /// ⚠️ **한계: 진입점이 둘인 라우트는 한쪽이 틀린다.**
   /// - `/bus/stops`는 설정(`bus_settings_tiles`)과 **오늘 탭 카드**
-  ///   (`bus_card_host`의 정류장 등록)에서 열린다. 오늘 탭에서 들어가면 설정이 켜진다.
+  ///   (`bus_card_host`의 정류장 선택)에서 열린다. 오늘 탭에서 들어가면 설정이 켜진다.
   /// - `/import`는 입력 탭 히어로와 **외부 CSV 공유**(`app.dart`)에서 열린다.
   ///
   /// 진입점을 기억하는 안(직전 탭 유지)이 그 둘을 정확히 풀지만 `MainShell`을
