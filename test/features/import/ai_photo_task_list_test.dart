@@ -49,6 +49,32 @@ const _responses = <String, String>{
       '{“title”:“앱 개발 서적 한권 읽기”,“date”:“2026-08-09”}]',
 };
 
+
+/// 30일 창 검증용 — **경계를 넘나드는 다섯 줄**의 실측 응답.
+///
+///   회비 내기 (8월 5일)       3일 전   → 창 안, 그대로
+///   도서관 책 반납 (7월 20일)  19일 전  → 창 안, 그대로
+///   건강검진 예약 (6월 10일)   59일 전  → 창 밖, 내년으로
+///   학부모 상담 준비 (8월 20일)         → 앞날
+///   교재 주문                 날짜 없음 → 오늘
+///
+/// 오늘은 2026-08-08이었다. "며칠 전인지 세는 계산이 AI에게 어려울 것"이라고
+/// 걱정했는데 두 모델 다 정확히 갈랐다 — 걱정이 틀렸다는 것도 기록해 둔다.
+const _windowResponses = <String, String>{
+  'gemini': """[
+{ "title": "회비 내기", "date": "2026-08-05" },
+{ "title": "도서관 책 반납", "date": "2026-07-20" },
+{ "title": "건강검진 예약", "date": "2027-06-10" },
+{ "title": "학부모 상담 준비", "date": "2026-08-20" },
+{ "title": "교재 주문", "date": "2026-08-08" }
+]""",
+  'gpt': '[{“title”:“회비 내기”,“date”:“2026-08-05”},'
+      '{“title”:“도서관 책 반납”,“date”:“2026-07-20”},'
+      '{“title”:“건강검진 예약”,“date”:“2027-06-10”},'
+      '{“title”:“학부모 상담 준비”,“date”:“2026-08-20”},'
+      '{“title”:“교재 주문”,“date”:“2026-08-08”}]',
+};
+
 void main() {
   group('손글씨 할 일 목록 — 실측 응답', () {
     _responses.forEach((model, raw) {
@@ -79,6 +105,29 @@ void main() {
         // `오늘` 두 줄 + `8월 9일까지` 한 줄.
         expect(dates.where((d) => d == '2026-08-07').length, 2);
         expect(dates, contains('2026-08-09'));
+      });
+    });
+  });
+
+  group('30일 창 — 최근 지난 날짜는 밀지 않는다', () {
+    _windowResponses.forEach((model, raw) {
+      test('$model: 경계가 갈린다', () {
+        final parsed = parseAiScheduleJson(raw);
+        expect(parsed.items.length, 5);
+        expect(parsed.invalidCount, 0);
+
+        final byTitle = {for (final i in parsed.items) i.title: i.date};
+
+        // 창 안 — 지난 날 그대로. 1년 뒤로 밀면 오늘 탭의 `기한이 지난` 구역에
+        // 들어가지 못하고 내년 할 일이 된다.
+        expect(byTitle['회비 내기'], '2026-08-05', reason: '3일 전');
+        expect(byTitle['도서관 책 반납'], '2026-07-20', reason: '19일 전');
+
+        // 창 밖 — 내년으로. 이 한 줄이 창이 실제로 작동한다는 증거다.
+        expect(byTitle['건강검진 예약'], '2027-06-10', reason: '59일 전이라 내년');
+
+        expect(byTitle['학부모 상담 준비'], '2026-08-20', reason: '앞날은 그대로');
+        expect(byTitle['교재 주문'], '2026-08-08', reason: '날짜 없는 줄은 오늘');
       });
     });
   });
