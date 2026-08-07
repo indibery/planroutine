@@ -344,7 +344,13 @@ void main() {
       // 편집 진입 → 중요 토글 ON → 저장
       await tester.tap(find.text('중요 테스트 이벤트'));
       await tester.pumpAndSettle();
-      expect(find.text(CalendarStrings.importantLabel), findsOneWidget);
+      // 종류와 한 줄로 합치면서 **글자 라벨을 뺐다** — 이름은 `Semantics`가 잇는다
+      // (`event_edit_dialog_compact_test.dart`가 그 규칙을 지킨다). 텍스트로 찾던
+      // 이 단언이 그 변경을 잡아냈다.
+      expect(
+        find.bySemanticsLabel(CalendarStrings.importantLabel),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const Key('important_toggle')));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.save));
