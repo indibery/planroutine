@@ -50,10 +50,31 @@ class ImportStrings {
   static const aiSourceEvent = '행사 일정표';
   static const aiSourceTask = '내 할 일·기한';
 
-  static const aiParseEmpty = '붙여넣은 내용에서 행사를 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
+  /// 아무것도 못 뽑았을 때. **종류에 맞춰 말한다** — 업무 쪽지로 넣었는데
+  /// `행사를 찾지 못했어요`가 뜨면 잘못 넣은 줄 안다.
+  static String aiParseEmptyFor(EntryKind kind) =>
+      '붙여넣은 내용에서 ${kind.label}을(를) 찾지 못했어요. AI 응답(JSON)을 복사했는지 확인해 주세요';
+
+  /// JSON은 읽혔지만 **모든 항목이 형식 오류**일 때.
+  ///
+  /// [aiParseEmptyFor]와 구분한다 — 이쪽은 "AI가 답을 주긴 했는데 우리가 못
+  /// 받았다"이고, 사용자가 할 일이 다르다(다시 복사할 게 아니라 다시 뽑아야 한다).
+  static String aiParseAllInvalid(int n) =>
+      '$n건을 받았지만 날짜 형식이 맞지 않아 읽지 못했어요. AI에 다시 요청해 주세요';
+
   static const aiPreviewTitle = '붙여넣기 미리보기';
-  static String aiPreviewCount(int n) => '행사 $n건 인식';
+
+  /// **종류에 맞춰 말한다.** 예전에는 `행사 $n건 인식`으로 고정이라, 업무 쪽지로
+  /// 넣어도 행사라고 떴다.
+  static String aiPreviewCountFor(EntryKind kind, int n) =>
+      '${kind.label} $n건 인식';
   static String aiPreviewDup(int n) => '중복 $n건 제외';
+
+  /// 형식이 어긋나 버린 건수. **보여주지 않으면 조용히 사라진다** —
+  /// 파서는 세고 있었지만 아무도 읽지 않아, AI가 5줄을 줘도 3건만 보이고
+  /// 나머지가 어디 갔는지 알 길이 없었다. 손글씨 목록에서는 모든 줄이
+  /// 살아남아야 해서 더 문제다.
+  static String aiPreviewSkipped(int n) => '형식 오류 $n건 건너뜀';
   static String aiRegisterButton(int n) => '$n건 검토 목록에 등록';
   static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';
 

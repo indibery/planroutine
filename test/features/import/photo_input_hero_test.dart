@@ -148,7 +148,13 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    expect(find.text(ImportStrings.aiParseEmpty), findsOneWidget);
+    // 히어로 기본 종류는 행사다(`_source = EntryKind.event`). 문구가 종류를
+    // 따라가므로 그 값으로 찾는다 — 업무 쪽지로 넣었는데 `행사를 찾지 못했어요`가
+    // 뜨던 것을 고치면서 kind 인자가 붙었다.
+    expect(
+      find.text(ImportStrings.aiParseEmptyFor(EntryKind.event)),
+      findsOneWidget,
+    );
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved, isEmpty);
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진

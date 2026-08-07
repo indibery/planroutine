@@ -44,9 +44,16 @@ Future<void> pasteAiSchedulesAndPreview(
   final parsed = parseAiScheduleJson(data?.text ?? '');
   if (!context.mounted) return;
   if (parsed.items.isEmpty) {
+    // **못 뽑은 것과 못 읽은 것을 구분한다.** 형식 오류만 있었다면 AI는 답을
+    // 줬는데 우리가 못 받은 것이고, 사용자가 할 일이 다르다 — 다시 복사할
+    // 게 아니라 AI에 다시 요청해야 한다.
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text(ImportStrings.aiParseEmpty)));
+      ..showSnackBar(SnackBar(
+        content: Text(parsed.invalidCount > 0
+            ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
+            : ImportStrings.aiParseEmptyFor(kind)),
+      ));
     return;
   }
 
@@ -78,8 +85,10 @@ Future<void> pasteAiSchedulesAndPreview(
     ),
     builder: (sheetContext) => _AiPreviewSheet(
       items: parsed.items,
+      kind: kind,
       freshCount: fresh.length,
       dupCount: dupCount,
+      skippedCount: parsed.invalidCount,
       onRegister: () async {
         final result = await registerAiSchedules(
           ref.read(scheduleRepositoryProvider),
@@ -103,14 +112,20 @@ Future<void> pasteAiSchedulesAndPreview(
 class _AiPreviewSheet extends StatelessWidget {
   const _AiPreviewSheet({
     required this.items,
+    required this.kind,
     required this.freshCount,
     required this.dupCount,
+    required this.skippedCount,
     required this.onRegister,
   });
 
   final List<AiScheduleItem> items;
+  final EntryKind kind;
   final int freshCount;
   final int dupCount;
+
+  /// 형식이 어긋나 파서가 버린 건수. 0이면 줄에 넣지 않는다.
+  final int skippedCount;
   final Future<void> Function() onRegister;
 
   @override
@@ -139,10 +154,19 @@ class _AiPreviewSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.spacing4),
             Text(
-              dupCount > 0
-                  ? '${ImportStrings.aiPreviewCount(items.length)} · ${ImportStrings.aiPreviewDup(dupCount)}'
-                  : ImportStrings.aiPreviewCount(items.length),
-              style: TextStyle(fontSize: 12, color: AppColors.sub),
+              [
+                ImportStrings.aiPreviewCountFor(kind, items.length),
+                if (dupCount > 0) ImportStrings.aiPreviewDup(dupCount),
+                if (skippedCount > 0)
+                  ImportStrings.aiPreviewSkipped(skippedCount),
+              ].join(' · '),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                // 버린 것이 있으면 그 줄이 눈에 걸려야 한다 — 조용히 지나가면
+                // 보여주는 의미가 없다.
+                color: skippedCount > 0 ? AppColors.inkRed : AppColors.sub,
+              ),
             ),
             const SizedBox(height: AppSizes.spacing12),
             Flexible(
