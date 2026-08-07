@@ -216,7 +216,10 @@ String buildAiPhotoPrompt(DateTime now, {EntryKind kind = EntryKind.event}) {
 [{"title": "일정 이름", "date": "yyyy-MM-dd", "description": "비고(없으면 생략)"}]
 
 규칙:
-- 날짜에 연도가 없으면 3~12월은 $schoolYear년, 1~2월은 ${schoolYear + 1}년으로 합니다. (학년도 기준)
+- **일정표에 학년도나 연도가 적혀 있으면 그것을 따릅니다.** 표 제목·머리글을 먼저 보세요.
+  예: `${schoolYear + 1}학년도`라고 적혀 있으면 3~12월은 ${schoolYear + 1}년, 1~2월은 ${schoolYear + 2}년입니다.
+  `${schoolYear + 1}년 3월`처럼 연월이 적혀 있으면 그 연도를 그대로 씁니다.
+- 적혀 있지 않을 때만 3~12월은 $schoolYear년, 1~2월은 ${schoolYear + 1}년으로 합니다. (학년도 기준)
 - 기간 일정(예: 3.16~3.20)은 시작일 기준 1건으로 하고 기간을 description에 적습니다.
 - 읽을 수 없는 항목은 건너뜁니다.''';
 }

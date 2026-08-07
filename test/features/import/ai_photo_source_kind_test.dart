@@ -181,6 +181,47 @@ void main() {
       expect(p, contains('학년도 기준'));
     });
 
+    test('일정표에 적힌 학년도를 기본값보다 먼저 본다', () {
+      // **2월에 3월 일정표를 넣으면 1년 전으로 갔다.**
+      //
+      // 규칙은 "문서의 학년도 = 오늘의 학년도"를 가정하는데, 2월은 아직 지난
+      // 학년도라 `schoolYear`가 전년이 된다. 그 상태로 `3~12월은 전년`이 걸리면
+      // 새 학년도 3월 행사가 통째로 1년 전으로 들어간다 — 캘린더에도 오늘 탭에도
+      // 안 보인다. 3월은 입학식·시업식이 몰린 달이라 손실이 크다.
+      //
+      // 한 달 전에 다음 달 행사를 넣는 실사용 패턴을 12개월로 계산해 보면
+      // **2월 한 곳만** 어긋난다(사용자와 확인, 2026-08-08). 그런데 그 2월은
+      // 매년 반드시 온다.
+      //
+      // 오늘 날짜만으로는 못 고친다 — 2월에 2월 일정표를 넣는 사람과 3월
+      // 일정표를 넣는 사람이 같은 프롬프트를 받는데 정답이 다르다. 그래서
+      // **문서가 스스로 말하게** 한다.
+      final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.event);
+
+      expect(p, contains('학년도나 연도가 적혀 있으면 그것을 따릅니다'));
+      expect(p, contains('적혀 있지 않을 때만'),
+          reason: '기본값은 폴백이라는 것이 문장에 드러나야 한다');
+
+      // 예시는 **계산해서** 넣는다 — 고정 연도를 박으면 규칙과 모순된다
+      // (업무 프롬프트에서 정확히 그 사고가 있었다).
+      expect(p, contains('2027학년도'),
+          reason: '2027-02 기준 다음 학년도가 2027이므로 그 값이 예시가 된다');
+      expect(p, contains('3~12월은 2027년'));
+    });
+
+    test('행사 프롬프트의 학년도 예시도 주입값이다', () {
+      // 고정 문자열이면 해가 바뀌는 순간 규칙과 어긋난다.
+      for (final today in [DateTime(2029, 5, 1), DateTime(2030, 1, 15)]) {
+        final p = buildAiPhotoPrompt(today, kind: EntryKind.event);
+        final school = today.month >= 3 ? today.year : today.year - 1;
+
+        expect(p, contains('${school + 1}학년도'),
+            reason: '$today 기준 예시 학년도가 주입값을 따라가지 않는다');
+        expect(p, isNot(contains('2026')),
+            reason: '$today 기준 프롬프트에 옛 연도가 남아 있다');
+      }
+    });
+
     test('1~2월에 찍으면 행사의 학년도는 전년이다', () {
       final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.event);
 
