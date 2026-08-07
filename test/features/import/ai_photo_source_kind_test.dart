@@ -49,6 +49,53 @@ void main() {
       final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
 
       expect(p, contains('한 건으로 묶고'));
+      // ⚠️ **`같은 항목이`로 조건을 좁혀 둔다.** `같은 날짜의 여러 항목`이라고만
+      // 쓰면 서로 다른 할 일까지 삼킨다 — 손글씨 목록 세 줄 중 `오늘`짜리 둘이
+      // 그렇게 사라졌다(실측 2026-08-07, 세 모델 모두 1건만 반환).
+      expect(p, contains('**같은 항목이** 같은 날짜로'));
+    });
+
+    test('목록 사진은 빠짐없이 한 줄에 한 건으로 뽑으라고 말한다', () {
+      // 이 프롬프트는 원래 **문서에서 마감일 찾기**용이었다. 손글씨 할 일 목록을
+      // 넣었더니 필터가 그대로 걸려 세 줄 중 하나만 남았다(실측 2026-08-07).
+      // 목록과 문서는 요구가 정반대다 — 문서는 대부분 버려야 하고 목록은 전부
+      // 남겨야 한다. 그래서 가지를 갈랐다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, contains('하나도 빠짐없이, 한 줄에 한 건씩'));
+      expect(p, contains('서로 다른 할 일은 날짜가 같아도 따로 둡니다'));
+      // 목록에서만 오늘로 떨어진다 — 문서에서 없는 날짜를 지어내면 안 된다.
+      expect(p, contains('날짜가 안 적힌 줄은 오늘 날짜로'));
+      expect(p, contains('날짜를 알 수 없어도 건너뜁니다'));
+    });
+
+    test('상대 날짜를 실제 날짜로 바꾸라고 말한다', () {
+      // `오늘`·`내일`은 문서 어휘가 아니라 메모 어휘다. 규칙에 없던 시절
+      // `(오늘)`이 적힌 두 줄이 통째로 빠졌다.
+      final p = buildAiPhotoPrompt(DateTime(2026, 8, 7), kind: EntryKind.task);
+
+      expect(p, contains('`오늘`은 2026-08-07, `내일`은 2026-08-08'),
+          reason: '내일 날짜도 실제 값이어야 한다 — 주입값을 따라간다');
+    });
+
+    test('날짜 말을 title에서 빼라고 말한다', () {
+      // `콩나물 무침 만들기 (오늘)`이 제목으로 들어오면 **내일 보면 틀린 말**이
+      // 된다(실측: Grok이 그렇게 냈다). 제목 속 연도를 미는 기능을 따로 둔 것과
+      // 같은 계열의 함정이다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, contains('날짜를 가리키는 말은 title에서 뺍니다'));
+      // 그렇다고 제목을 요약하라는 뜻은 아니다 — 줄여 쓰면 `앱 개발 서적 한권
+      // 읽기`가 `앱 개발 서적 읽기`가 된다(실측).
+      expect(p, contains('그대로** 씁니다'));
+    });
+
+    test('date를 반드시 채우라고 말한다 — 파서가 빈 date를 버린다', () {
+      // `parseAiScheduleJson`은 `date`가 문자열이 아니면 invalid로 센다. 그리고
+      // 그 건수는 **아무도 읽지 않아** 화면에 안 나온다 — 항목이 소리 없이 사라진다.
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(p, contains('date는 반드시 채웁니다'));
     });
 
     test('두 프롬프트가 기간 규칙을 서로 반대로 말한다', () {
