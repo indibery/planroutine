@@ -168,6 +168,11 @@ String buildAiPhotoPrompt(DateTime now, {EntryKind kind = EntryKind.event}) {
   // 맞춰 고치면 추출 품질이 흔들린다(CLAUDE.md의 용어 예외).
   if (kind == EntryKind.task) {
     final tomorrow = du.formatDate(now.add(const Duration(days: 1)));
+    // 최근 지난 날짜 예시 — **계산해서 넣는다.** 고정 문자열로 두면 오늘이
+    // 언제냐에 따라 규칙과 모순된다(아래 연도 규칙 주석 참고).
+    final recent = now.subtract(const Duration(days: 3));
+    final recentDate = du.formatDate(recent);
+    final recentMd = '${recent.month}월 ${recent.day}일';
     return '''
 첨부한 사진에서 **내가 해야 할 일**과 **기억해야 할 날**을 찾아 아래 JSON 배열로만 출력하세요. 설명·인사말 없이 JSON만 출력합니다.
 
@@ -190,13 +195,15 @@ String buildAiPhotoPrompt(DateTime now, {EntryKind kind = EntryKind.event}) {
 - 오늘은 $today입니다.
 - `오늘`은 $today, `내일`은 $tomorrow처럼 상대 표현도 실제 날짜로 바꿉니다.
 - 연도가 적혀 있지 않으면 **오늘 이후 가장 가까운** 그 날짜로 합니다.
-  (`08.12`는 올해 8월 12일, `1월 20일`은 내년 1월 20일입니다.)
+  월·일만 적힌 날짜(`08.12`, `1월 20일`)는 오늘부터 세어 **아직 오지 않은 첫 번째** 그 날짜입니다 — 올해 안에 아직 온다면 올해, 이미 지났다면 내년입니다.
+- 다만 **최근 30일 안에 지난 날짜는 이미 지난 날 그대로** 둡니다. 1년 뒤로 밀지 않습니다.
+  (오늘이 $today이면 `$recentMd`은 $recentDate입니다 — 사흘 전입니다.)
 - `~까지`, `마감`, `기한`이면 그 **마지막 날**을 date로 합니다.
 - 기간이 적혀 있으면(예: 10.13~10.17 신청) **마지막 날**을 date로 합니다 — 놓치면 안 되는 날이 끝나는 날입니다.
 - date는 반드시 채웁니다. 빈 문자열이나 생략은 안 됩니다.
 - title은 사진에 적힌 할 일 문구를 **그대로** 씁니다. 줄이거나 바꿔 쓰지 않습니다.
 - 다만 **날짜를 가리키는 말은 title에서 뺍니다.** `(오늘)`, `(8월 9일까지)` 같은 표현은 date로 옮겨갔으므로 제목에 남기지 않습니다.
-  예: `콩나물 무침 만들기 (오늘)` → title `콩나물 무침 만들기`
+  `장보기 (오늘)` → `장보기` / `보고서 제출 (8월 9일까지)` → `보고서 제출`
 - description에는 **자세한 내용**을 적습니다 — 묶은 항목의 이름(책 제목 등), 금액, 장소, 근거가 된 문구.
   날짜만 되풀이하지 않습니다.
 - 뽑을 것이 하나도 없으면 빈 배열 `[]`을 출력합니다.

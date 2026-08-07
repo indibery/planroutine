@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/utils/date_utils.dart' as du;
 import 'package:planroutine/features/import/data/ai_schedule_parser.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 
@@ -67,6 +68,60 @@ void main() {
       // 목록에서만 오늘로 떨어진다 — 문서에서 없는 날짜를 지어내면 안 된다.
       expect(p, contains('날짜가 안 적힌 줄은 오늘 날짜로'));
       expect(p, contains('날짜를 알 수 없어도 건너뜁니다'));
+    });
+
+    test('프롬프트 안의 모든 날짜는 주입값이다 — 고정 예시를 박지 않는다', () {
+      // **이 가드가 없어서 놓친 버그가 있다.** 예전 프롬프트는 규칙은 상대적인데
+      // (`오늘 이후 가장 가까운`) 예시는 고정이었다:
+      //
+      //   오늘은 2027-01-15입니다.
+      //   ... `1월 20일`은 내년 1월 20일입니다.   ← 2028-01-20으로 읽힌다
+      //
+      // 맞는 답은 닷새 뒤인 2027-01-20이다. 기존 테스트는 `오늘은 …입니다`가
+      // 들어가는지와 `2026`이 없는지만 봤을 뿐, **예시가 규칙과 모순되는지는
+      // 아무도 보지 않았다**(사용자 지적 2026-08-07).
+      //
+      // 그래서 형태로 막는다: 프롬프트에 나오는 `yyyy-MM-dd`는 전부 주입된
+      // 값(오늘·내일·사흘 전)이어야 한다. 손으로 박은 날짜가 생기면 걸린다.
+      for (final today in [
+        DateTime(2027, 1, 15), // 연초 — 옛 예시가 틀리던 지점
+        DateTime(2026, 8, 7),
+        DateTime(2026, 12, 28), // 연말 — 사흘 전 예시가 해를 넘는다
+      ]) {
+        final p = buildAiPhotoPrompt(today, kind: EntryKind.task);
+        final allowed = {
+          du.formatDate(today),
+          du.formatDate(today.add(const Duration(days: 1))),
+          du.formatDate(today.subtract(const Duration(days: 3))),
+        };
+        final found = RegExp(r'\d{4}-\d{2}-\d{2}')
+            .allMatches(p)
+            .map((m) => m.group(0)!)
+            .toSet();
+
+        expect(found.difference(allowed), isEmpty,
+            reason: '$today 기준 프롬프트에 주입값이 아닌 날짜가 있다: '
+                '${found.difference(allowed)}');
+        // 연도만 따로 박는 것도 막는다(`2027년 1월` 같은 형태).
+        final bareYears = RegExp(r'(?<!\d)(20\d\d)(?!-)')
+            .allMatches(p)
+            .map((m) => m.group(1)!)
+            .toSet();
+        expect(bareYears, isEmpty,
+            reason: '$today 기준 프롬프트에 맨 연도가 박혀 있다: $bareYears');
+      }
+    });
+
+    test('최근 지난 날짜는 1년 뒤로 밀지 않는다', () {
+      // 오늘이 8월 7일인데 메모에 `8월 5일`이라 적으면 `오늘 이후 가장 가까운`
+      // 규칙만으로는 **2027년 8월 5일**(1년 뒤)이 된다. 이틀 전 못 한 일인데.
+      // 이 앱은 오늘 탭에 `기한이 지난` 구역을 따로 두므로 지난 날짜는 그리로 간다.
+      final p = buildAiPhotoPrompt(DateTime(2026, 8, 7), kind: EntryKind.task);
+
+      expect(p, contains('최근 30일 안에 지난 날짜'));
+      expect(p, contains('1년 뒤로 밀지 않습니다'));
+      // 예시도 주입값이다 — 사흘 전.
+      expect(p, contains('2026-08-04'));
     });
 
     test('상대 날짜를 실제 날짜로 바꾸라고 말한다', () {
