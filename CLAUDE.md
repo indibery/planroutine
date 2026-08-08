@@ -31,7 +31,7 @@
 
 | 레이어 | 기술 | 비고 |
 |--------|------|------|
-| 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 M1 셸 배포 완료 — Play 비공개 테스트 트랙 업로드·심사 대기(알림 100%·CSV 공유 목록 노출은 M2에서). ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
+| 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 Play 비공개 테스트 진행 중 — **알림은 M2-①로 배선 완료**(2026-08-08, 에뮬레이터 실측). CSV 공유 목록 노출은 아직 M2. ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
 | 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import, /bus/settings, /bus/stops). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
@@ -962,6 +962,50 @@ R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다.
   바뀌어 fastlane 레인이 깨진다.
 - 검증은 **R8 매핑 전/후 비교**(`build/app/outputs/mapping/release/mapping.txt`)와
   **실기기 동작** 둘 다 본다. 매핑만으로는 증상이 사라졌다는 증거가 안 된다.
+
+### Android 알림은 M1까지 **구조적으로 죽어 있었다**
+
+실기기 신고(Galaxy A34, 2026-08-08): 알림 스위치를 켜도 즉시 OFF로 되돌아간다.
+버그가 아니라 **Android 경로를 아예 안 만든 상태**였다(`notification_service.dart`의
+주석이 `구현은 iOS 한정으로 필요한 부분만`이라고 적고 있었다).
+
+사망 지점이 **둘**이고, 둘 다 화면상 증상이 없어 오래 숨었다.
+
+1. `InitializationSettings`에 `android:`가 없으면 플러그인이 **첫 줄에서
+   `ArgumentError`를 던진다.** `main.dart`의 `try { … } catch (_) {}`가 먹어
+   크래시하지 않고, `_initialized`가 안 켜지고 이어지는 `sync()`도 같은 catch에
+   먹힌다 — **화면상 증상 0.**
+2. `requestPermission()`이 iOS 플러그인만 resolve해 Android에선 늘 `false`.
+   `setMaster(true)`가 그 false를 받고 마스터를 도로 끈다 → **스위치를 켤 수 없다.**
+
+- **채널 id는 `*Strings`에 두지 않는다**(`notification_details.dart`의
+  `kAndroidChannelId`). 한 번 만들면 importance·소리를 코드로 못 바꾸고, 바꾸려면
+  id를 bump 해야 하는데 그러면 **채널이 갈라져 사용자 알림 설정이 초기화된다.**
+  이름·설명은 `설정 › 앱 › 알림`에 노출되는 UI 문자열이라 `NotificationStrings`에 둔다.
+- **채널을 `init()`에서 미리 만든다.** 안 만들어도 첫 발화 때 자동 생성되지만 그
+  시점은 "예약할 때"가 아니라 "발화할 때"라, 그때까지 설정 화면에 채널이 없다.
+- **`BigTextStyleInformation`이 필수다.** 본문이 두 줄인데(`오늘 …\n이번 주 …`)
+  Android는 접힌 알림에서 한 줄만 보여준다 — 없으면 `이번 주`가 통째로 안 보인다.
+  iOS는 여러 줄을 그대로 보여줘 이 차이가 안 드러났다.
+- **스케줄 모드는 `inexactAllowWhileIdle`이고, 값 하나에 Play 심사가 달려 있다.**
+  `exact*`는 `SCHEDULE_EXACT_ALARM` 고위험 권한 선언 양식 대상이다. 대가인 Doze
+  9분 규칙은 이 앱에 무해하다 — `computeNotifications`가 발송 시각으로 병합해
+  **하루 1건**만 만들기 때문이다(개별 이벤트마다 알림을 만드는 앱이었으면 이 결정이
+  성립하지 않는다). ⚠️ 9분 규칙을 안 넘는 것이 **정시 발화를 뜻하지 않는다** —
+  inexact alarm이라 지연 상한이 문서에 없다.
+- ⚠️ **리시버가 둘이다.** `ScheduledNotificationBootReceiver`(부팅 재예약)만 넣으면
+  안 된다 — **`ScheduledNotificationReceiver`가 없으면 재부팅과 무관하게 예약 알림이
+  한 건도 발화하지 않는다.** 이름이 부팅용으로 읽혀 빠뜨리기 쉽다. 플러그인은 v16부터
+  receiver를 하나도 선언하지 않는다(`POST_NOTIFICATIONS`·`VIBRATE`만 병합) —
+  **`POST_NOTIFICATIONS`는 앱이 적을 필요가 없고, `RECEIVE_BOOT_COMPLETED`는 적어야 한다.**
+- **아이콘은 `res/drawable/`이고 mipmap이 아니다.** 네이티브가
+  `getIdentifier(name, "drawable", pkg)`로 찾고 defType이 고정이다. 테두리를 한
+  path로 그리면 nonZero fillType 때문에 **상태바에 흰 사각형**이 뜬다 — 막대로 나눠 그린다.
+  release는 리소스 축소가 기본 ON이라 `keep.xml`이 이 drawable을 지킨다.
+- 가드는 `test/features/notifications/android_wiring_test.dart` 15건. 서비스가
+  플러그인 인스턴스를 들고 있어 단위 테스트로 못 밟으므로 **값과 소스를 검사한다** —
+  실제 동작은 에뮬레이터에서 확인했다(채널 생성 · 권한 다이얼로그 · 스위치 유지 ·
+  `dumpsys notification`에 `channel=schedule_reminder` + `BigTextStyle` 발화).
 
 ### Android 레인
 

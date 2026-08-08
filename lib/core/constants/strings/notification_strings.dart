@@ -10,6 +10,16 @@ class NotificationStrings {
   static const dayOf = '당일 아침 알림';
   static const time = '알림 시각';
 
+  /// Android 알림 채널의 이름·설명. **`설정 › 앱 › 공직플랜 › 알림`에 그대로
+  /// 노출되는 UI 문자열**이라 하드코딩 금지 규칙이 그대로 걸린다
+  /// (채널 **id**는 예외 — `notification_details.dart`의 `kAndroidChannelId`).
+  ///
+  /// ⚠️ [digestTitle]과 값이 같아 보이지만 **공유하지 않는다.** 하나는 알림 제목이고
+  /// 하나는 채널 이름이라 청중이 다르다. 공유하면 알림 제목만 고치려던 변경이
+  /// 사용자에게는 **채널 이름이 바뀐 것**으로 보인다.
+  static const channelName = '일정 알림';
+  static const channelDescription = '오늘·이번 주 일정을 아침에 알려줍니다';
+
   // 통합 알림 본문 — 같은 시각 발송분을 한 알림으로 합칠 때 사용 (이모지 스캔형).
   static const digestTitle = '일정 알림';
   static const digestToday = '오늘';
