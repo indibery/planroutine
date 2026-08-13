@@ -1,22 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/settings/presentation/widgets/data_source_list_tile.dart';
 
-/// 호출하는 기관 ↔ 출처 문구에 있어야 할 낱말.
-///
-/// 키는 `bus_api_client.dart`에 실제로 박혀 있는 문자열이다(공공데이터포털 기관코드,
-/// 또는 호스트). 그 문자열이 있으면 그 기관을 호출한다는 뜻이다.
-const _agencies = {
-  '1613000': '국토교통부', // TAGO
-  '6410000': '경기도', // GBIS
-  'ws.bus.go.kr': '서울', // 서울특별시 — 아직 미사용
-};
+import '../../helpers/data_source_agencies.dart';
 
-String _clientSource() =>
-    File('lib/features/bus/data/bus_api_client.dart').readAsStringSync();
+/// 기관 표는 `test/helpers/data_source_agencies.dart`가 든다 — 스토어 등록정보를 보는
+/// `test/deploy/store_listing_credit_test.dart`와 **같은 표**를 써야 한다.
+const _agencies = kDataSourceAgencies;
+
+String _clientSource() => busApiClientSource();
 
 void main() {
   group('데이터 출처 표시 — 라이선스 의무', () {

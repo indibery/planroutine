@@ -27,7 +27,11 @@ description: 문서·설정·소스가 어긋나는 함정을 양방향 가드 �
 | `test/deploy/fastlane_lane_docs_test.dart` | Fastfile의 `lane :` ↔ CLAUDE.md·deploy SKILL.md의 `bin/fastlane.sh <이름>` |
 | `test/features/settings/data_source_credit_test.dart` | `bus_api_client.dart`의 기관코드·호스트 ↔ 앱 내 출처 문구 |
 | `test/deploy/android_gson_proguard_test.dart` | Gson을 쓰는 플러그인 소스 ↔ `proguard-rules.pro` keep 규칙 |
+| `test/deploy/store_listing_credit_test.dart` | 실제 호출 기관 ↔ **두 스토어 설명**의 출처 절(문서끼리도 대조) |
 | `.claude/hooks/test_hooks.sh` | 훅 스크립트 ↔ 실제 명령 문자열(오차단 케이스가 자산) |
+
+공유 표는 따로 둔다 — `test/helpers/data_source_agencies.dart`를 위 두 가드가 함께 읽는다.
+같은 낱말을 두 테스트에 각각 박으면 **세 번째 원본**이 생긴다.
 
 ## 규칙 넷
 
@@ -67,19 +71,21 @@ CLAUDE.md에 "회귀를 심어 확인함"이라고 적는다. 이 확인을 건�
 | **실기기·플랫폼 분기**(`Platform.isAndroid`) | 주입점(provider, `showXxx: bool?`)을 두고 그 값을 검사 |
 | **스토어 등록정보** | 로컬 파일이면 가드가 된다(아래 미결 후보) |
 
-## 미결 후보 — CLAUDE.md가 스스로 적어둔 것
+## 승격 사례 — 스토어 등록정보 (2026-08-13)
 
-> "스토어 설명은 어떤 테스트도 검사하지 않으며, 이 검사는 로컬에서 불가능한 것이 아니다
-> — 재발하면 가드로 올릴 후보다."
+CLAUDE.md가 *"재발하면 가드로 올릴 후보다"* 라고 적어둔 항목을 올린 기록이다.
+`versionCode 143`이 **정부 정보 출처 링크 누락**으로 거부됐는데, 지적된 영역은
+`자세한 설명 (ko-KR)` 한 곳이었고 **어떤 테스트도 그 파일을 보지 않았다.**
 
-`versionCode 143`이 **정부 정보 출처 링크 누락**으로 거부된 건이다. 로컬에서 검사 가능한 몫:
+`test/deploy/store_listing_credit_test.dart` 6건이 검사한다 — 면책 주장 셋 ·
+데이터셋 URL 넷 + 포털 + 법령 · **두 문서의 URL 집합 일치** · 기관 표 ↔ 실제 호출 양방향 ·
+검사 생존.
 
-- `docs/play_store_description.md`에 면책조항 섹션이 있는가
-- `bus_api_client.dart`가 부르는 데이터셋마다 URL이 적혀 있는가(**양방향**)
-- `docs/app_store_description.md`에도 같은 면책조항이 있는가
-  (CLAUDE.md가 "iOS 설명에는 없다 — 다음 제출 때 넣을 것"이라고 적어둔 상태)
+**가드를 쓰는 동안 드러난 것**: CLAUDE.md는 "iOS 설명에는 면책조항이 없다"고 적고 있었는데
+**이미 들어가 있었다.** 부채를 갚고 문서를 안 고친 것이다. 가드는 재발을 막는 것만이
+아니라 **문서가 낡았다는 사실을 드러낸다** — 승격 작업의 절반은 대개 문서 정정이다.
 
-URL이 **지금도 200인지**는 가드가 못 한다 — 그건 스킬 쪽이다.
+URL이 **지금도 200인지**는 여전히 가드가 못 한다(네트워크) — 그건 스킬 쪽 몫이다.
 
 ## 절차
 
