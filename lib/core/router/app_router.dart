@@ -27,13 +27,27 @@ class AppRoutes {
   static const busSettings = '/bus/settings';
 }
 
+/// 외부 앱이 CSV로 앱을 열었을 때 Flutter가 초기 라우트로 넘기는 URL인지.
+///
+/// 그 URL에 맞는 라우트는 없으므로 가로채지 않으면 **Page Not Found**가 뜬다.
+/// 실제 파일 경로는 별도 채널(`planroutine/shared_file`)로 오고 `app.dart`가 처리한다 —
+/// 이 함수는 화면이 깨지지 않게 `/import`로 보내는 몫만 한다.
+///
+/// **플랫폼마다 모양이 다르다**:
+/// - iOS `file:///private/var/…/작년업무.csv` — scheme과 확장자 둘 다 있다
+/// - Android `content://media/external/file/1000000018` — **둘 다 없다.**
+///   확장자로도 파일명으로도 걸러지지 않아 `content` scheme을 따로 봐야 한다.
+///   에뮬레이터에서 `GoException: no routes for location: content://…`로 실측했다
+///   (2026-08-14). 가드·빌드·네이티브 복사가 전부 통과한 뒤에도 화면은 Page Not Found였고,
+///   **에뮬레이터를 띄우기 전까지 아무 신호가 없었다.**
+bool isExternalFileIntent(Uri uri) =>
+    uri.scheme == 'file' ||
+    uri.scheme == 'content' ||
+    uri.path.toLowerCase().endsWith('.csv');
+
 /// GoRouter 팩토리 — 부팅 시 onboarding 완료 여부에 따라 initial 라우트 결정.
 ///
-/// 외부 앱(카카오톡/메일/파일 앱)이 CSV 파일로 앱을 열면 iOS가 file:// URL을
-/// Flutter 초기 라우트로 넘긴다. GoRouter는 해당 URL과 매칭되는 라우트가
-/// 없으므로 Page Not Found를 띄운다. redirect로 이를 가로채 /import로 보내면,
-/// `receive_sharing_intent` 리스너가 별도 스트림으로 전달하는 실제 파일 경로는
-/// app.dart의 _handleSharedFiles가 처리한다.
+/// 외부 파일 인텐트는 [isExternalFileIntent]가 판정해 `/import`로 보낸다.
 GoRouter createRouter({
   required bool onboardingDone,
   String? initialLocation,
@@ -42,10 +56,7 @@ GoRouter createRouter({
       initialLocation ??
       (onboardingDone ? AppRoutes.today : AppRoutes.onboarding),
   redirect: (context, state) {
-    final uri = state.uri;
-    final isExternalFileIntent =
-        uri.scheme == 'file' || uri.path.toLowerCase().endsWith('.csv');
-    if (isExternalFileIntent) {
+    if (isExternalFileIntent(state.uri)) {
       return AppRoutes.import;
     }
     return null;

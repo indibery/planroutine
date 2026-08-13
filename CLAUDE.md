@@ -544,6 +544,44 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
 - `GoRouter.redirect`에서 `scheme=file`/`.csv` 접미사 URL을 가로채 `/import`로 전환 → "Page Not Found" 방지.
 - `SceneDelegate.swift`에서 scene URL 이벤트를 `AppDelegate.application(_:open:options:)`로 포워딩 (iOS 13+ scene lifecycle 대응).
 
+### Android 공유·열기 (M2, 2026-08-14) — **같은 채널, 다른 URI**
+
+`MainActivity.kt`가 iOS `AppDelegate`와 **같은 계약**을 쓴다(`planroutine/shared_file` ·
+`getPending` · `onFileShared`). 한 줄짜리 `FlutterActivity()`였던 파일에 인텐트 수신·
+채널·cold-start 버퍼가 들어갔다.
+
+- **필터는 비대칭이다**: 열기(`ACTION_VIEW`)는 넓게(`text/plain`·`application/octet-stream`·
+  와일드카드 포함), 공유(`ACTION_SEND`)는 CSV mime 셋만. 사용자가 파일을 **명시적으로 고른**
+  경로는 넓게 받고, 공유 목록은 깨끗하게 유지한다. 대가는 양쪽에 있다 — 열기 목록에는 CSV가
+  아닌 파일로도 뜨고(Dart가 조용히 버린다), CSV를 `text/plain`으로 보내는 앱의 '공유'에서는
+  안 뜬다. 실측 확인: `pm query-activities`로 SEND `text/csv` ○ / VIEW `text/plain` ○ /
+  SEND `text/plain` **0건**, `dumpsys`로 등록된 필터 두 개 육안 대조.
+- ⚠️ **Android는 경로가 아니라 `content://` URI를 준다.** 확장자가 없는데 Dart의
+  `_handleSharedFile`은 `.csv`로 끝나지 않는 경로를 **조용히 버린다**. 그래서
+  `copyToCache`가 스트림을 캐시로 복사하며 **확장자를 강제**하고 `DISPLAY_NAME`으로
+  파일명을 살린다(실측: `작년업무.csv` 4472바이트가 그대로 들어왔다).
+- ⚠️ **`isExternalFileIntent`에 `content` scheme이 필요하다.** Flutter 임베딩이 인텐트 URI를
+  **초기 라우트로도** 넘기는데 `content://media/external/file/1000000018`은 scheme도 확장자도
+  기존 조건에 안 걸려 **`GoException: no routes for location`**으로 Page Not Found가 떴다.
+  판정을 순수 함수로 빼고 `test/core/router/external_file_intent_test.dart`가 고정한다.
+- **가드**: `test/features/import/android_share_wiring_test.dart` 7건(매니페스트 필터 폭 ·
+  채널 이름·메서드 양방향 · 확장자 강제 · `DISPLAY_NAME` · `onNewIntent` · 버퍼).
+
+#### 이 기능이 남긴 교훈 — 가드가 통과해도 화면은 깨질 수 있다
+
+가드 7건 · APK 빌드 · 네이티브 캐시 복사가 **전부 통과한 뒤에도** 화면은 Page Not Found였다.
+라우터 조건은 Dart라 가드로 잡을 수 있었는데 **그 가드를 안 만들었기 때문**이고, 신호는
+에뮬레이터를 띄우기 전까지 하나도 없었다. 네이티브 배선을 추가할 때는:
+
+1. **컴파일해 볼 것.** 소스 텍스트 가드는 문법을 보지 않는다. 실제로 두 개가 나왔다 —
+   KDoc 안에 와일드카드 mime을 적었더니 **별표+슬래시가 블록 주석을 닫아** 파일 전체가
+   syntax error가 됐고, expression body 안에 `return`을 써서 또 하나가 걸렸다.
+2. **에뮬레이터에서 끝까지 태워 볼 것.** cold-start(앱 꺼진 상태)와 running 둘 다 —
+   전자는 `getPending`, 후자는 `onNewIntent`가 서로 다른 코드 경로다.
+3. `file://`로 테스트하지 말 것 — Android 14에서 앱은 `/sdcard`의 `file://`를 권한 없이
+   못 읽어 **코드가 아니라 테스트 벡터가 실패한다**(실측). `content://` + `am start
+   --grant-read-uri-permission`이 실제 공유와 같은 조건이다.
+
 ### 문자열 구조
 - 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings).
 - 공통 문자열(appName·tab*·cancel·save·retry·loading·error·compareYearFormat·categoryDailyOps)만 `AppStrings`에 잔류.
@@ -902,6 +940,7 @@ transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 �
 | 훅의 위험 패턴 검사 | 커밋 메시지가 `--no-verify`를 설명 | 커밋이 차단됐다 |
 | 스토어 가드의 절 추출 | 변경 이력 표가 절 제목을 재언급 | 절 대신 표를 검사(URL 0개) |
 | 스킬 로더의 동적 주입 | 스킬 본문이 주입 문법을 예시로 적음 | **그 예시가 실행됐다** (`command not found: cmd`) |
+| Kotlin 블록 주석 | KDoc이 와일드카드 mime을 그대로 적음 | 별표+슬래시가 **주석을 닫아** 파일 전체가 syntax error |
 
 셋 다 "문자열이 있으면 그것을 하려는 것"이라고 가정했다. **마크다운 코드스팬은 보호가
 아니다** — 로더도 grep도 원문을 본다. 새 스캐너를 붙일 때는 **자기 자신을 설명하는

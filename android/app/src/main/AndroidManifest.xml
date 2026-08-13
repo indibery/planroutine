@@ -41,6 +41,35 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- CSV 열기 — 사용자가 파일을 **명시적으로 골라** 보내는 경로라 넓게 받는다.
+                 `content://` URI에는 확장자가 없어 경로 패턴으로는 못 걸러지고 mimeType만
+                 남는데, 파일앱·다운로드·메일 첨부가 CSV를 `text/plain`이나
+                 `application/octet-stream`으로 주는 경우가 흔하다.
+                 ⚠️ 대가: CSV가 아닌 파일로도 열기 목록에 뜬다. 그때는 Dart가 조용히 버린다. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/csv"/>
+                <data android:mimeType="text/comma-separated-values"/>
+                <data android:mimeType="application/csv"/>
+                <data android:mimeType="text/plain"/>
+                <data android:mimeType="application/octet-stream"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+
+            <!-- CSV 공유 — 공유 목록은 **좁게** 유지한다. 여기 `*/*`나 `text/plain`을
+                 넣으면 메모·사진을 공유할 때도 공직플랜이 뜨고, CSV가 아니면 Dart가
+                 버리므로 사용자에겐 "눌렀는데 아무 일도 없네"가 된다.
+                 대가: CSV를 `text/plain`으로 보내는 앱의 '공유'에서는 안 뜬다
+                 (그 경우 사용자는 '열기'로 돌아가면 된다). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/csv"/>
+                <data android:mimeType="text/comma-separated-values"/>
+                <data android:mimeType="application/csv"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
