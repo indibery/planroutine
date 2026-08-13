@@ -8,8 +8,10 @@ description: 공직플랜 배포 — iOS는 게이트 검사(analyze/test) 후 f
 fastlane 3개 레인(`ios beta`/`ios release`/`ios check_builds`)을
 **게이트 → 실행 → post-deploy** 순서로 돌린다. 기본 레인은 `ios beta`.
 
-실행은 항상 wrapper로 한다 — `./ios/bin/fastlane.sh`가 Homebrew Ruby를 PATH 앞에
-주입하고 최초 1회 `bundle install`을 끼운다. 맨 `fastlane`을 직접 부르지 않는다.
+실행은 항상 wrapper로 한다 — `./ios/bin/fastlane.sh`가 Homebrew Ruby
+(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입하고 최초 1회 `bundle install`을 끼운다.
+맨 `fastlane`을 직접 부르지 않는다. `ios/Gemfile`에 fastlane + cocoapods를 고정해 둬서
+두 도구가 같은 Ruby 환경을 쓴다(사용자 shell 설정은 건드리지 않는다).
 
 **워크플로우**: `게이트 → beta(업로드·실기기 검증, 반복) → release(promote·자동 제출, 한 번)`.
 release는 **바이너리를 새로 빌드/업로드하지 않고**, beta로 올려 검증한 **최신 TestFlight
@@ -54,10 +56,35 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
   올려 재실행. 버전 자동 증가는 하지 않는다 — 증가폭(patch/minor/major)은 사람 판단이라
   pubspec을 직접 수정한다(레인에 bump 옵션 없음).
 
+**`pubspec.yaml`의 `+N`은 안드로이드 전용 하한이다 — 한 필드를 두 플랫폼이 다르게 읽는다.**
+
+`next_version_code = max(하한, Play 트랙 최대 + 1)`. iOS는 이 값을 아예 읽지 않는다
+(`pubspec_version_name`이 `X.Y.Z`만 파싱하고 계산값을 `--build-number=`로 넘긴다).
+
+- 그래서 **iOS에서 무해하니 손으로 올려도 된다**고 생각하면 다음 안드로이드 업로드가 그 값으로
+  튀고 **versionCode는 감소할 수 없다**(실제로 `+143`이 그렇게 들어왔다: Play가 54인데 다음
+  업로드가 143이 될 상태였다).
+- **두 스토어 번호를 맞추려면** 하한을 `TestFlight 최신 + 1`로 둔다. iOS는 스스로 그 값에
+  도달하고 안드로이드는 하한이 `Play최대+1`을 이겨 같은 번호가 된다 — **레인을 고칠 필요가
+  없다**(2026-08-03 실측: ASC `v142` · Play `54` → 양쪽 `143`).
+- **잊어도 깨지지 않는다** — 안드로이드는 자기 `Play최대+1`로 굴러가고 그때만 한 칸 어긋난다.
+  정렬은 릴리스 빈도 차이만큼 서서히 마모된다(iOS 142회 대 Android 54회가 그 누적이다).
+- ⚠️ 트랙 조회가 **전부** 실패하면 하한이 단독으로 결정한다(`Fastfile:178`). 이미 올린 번호가
+  하한이면 중복으로 거부되므로 그때 하한을 올린다.
+- ⚠️ **처리에서 거부된 빌드도 번호를 소비한다.** `latest_testflight_build_number`는
+  `Build.all`에 나타나지 않는 거부된 빌드까지 본다(실측: `v143` 거부 뒤 다음 `beta`가
+  `143 → 144`를 집었다). 그래서 **업로드 실패는 두 스토어 번호 정렬을 한 칸 깨뜨린다** —
+  정렬을 유지하려면 실패한 쪽에 맞춰 다음 릴리스에서 하한을 다시 올려야 한다.
+
 ## 2) 실행 (승인 정책)
 
 **beta는 게이트 GO이면 사용자 승인 없이 바로 실행**하고 push까지 진행. 배포 실패 시에만
 멈춰서 리포트한다.
+
+⚠️ **예외 — Android 첫 `beta`는 콘솔 육안 확인을 끼운다.** 자동으로 push까지 진행하지 않고,
+Play 콘솔에서 트랙이 실제로 `비공개 테스트`(`Alpha`)에 올라갔는지 확인한 뒤에만 완료로
+보고한다 — 트랙을 `internal`로 착각하면 14일 비공개 테스트 요건이 하루도 안 세는,
+되돌릴 수 없는 손실이기 때문이다.
 
 **release는 제출하지 않는다** — 승격·릴리즈 노트·스크린샷까지 준비하고 멈춘다.
 최종 '심사를 위해 제출'은 사용자가 ASC에서 누른다. `submit:true`를 사용자가 명시적으로
@@ -93,6 +120,7 @@ Fastfile 내부 함수다(`Fastfile:517`) — 명령줄에서 부를 수 없다.
 ./ios/bin/fastlane.sh release submit:true   # 제출까지 자동 (명시해야만)
 ./ios/bin/fastlane.sh release build:115 shots:false   # 스크린샷만 건너뛰고 승격
 ./ios/bin/fastlane.sh withdraw_review       # 심사 철회 (편집 가능 상태로)
+./ios/bin/fastlane.sh check_tago_key        # TAGO 키만 확인 (빌드·업로드 없음)
 ```
 
 **iOS 레인은 일곱 개다** — `load_asc_api_key`·`check_tago_key`·`beta`·`release`·
@@ -175,8 +203,11 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
 - **CocoaPods broken / Generated.xcconfig 없음** (clean 후): `flutter pub get`
   → `cd ios && pod install` 순서로 복구 후 재빌드.
 - **App Store Connect API key 인증 실패**: key_id/issuer_id는 Fastfile
-  `load_asc_api_key` 레인에 정의. 개인키는 `~/.appstoreconnect/private_keys/`에
-  있어야 한다(리포 밖).
+  `load_asc_api_key` 레인에 정의(식별자를 문서에 평문으로 적지 않는다). 개인키는
+  `~/.appstoreconnect/private_keys/`에 있어야 한다(리포 밖). Bundle ID는
+  `com.planroutine.app`.
+  - 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa
+    --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
 
 ## 배포 검증 함정 (실측으로 데인 것 — 반드시 지킬 것)
 
@@ -257,7 +288,7 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 
 **서비스 계정 JSON은 `~/.google_play/planroutine.json` 하나로 일원화한다.** 같은
 디렉터리의 `service_account.json`은 **바로팀이 이미 쓰고 있는 자리**라 잘못 집으면
-엉뚱한 앱 자격증명으로 배포한다 — `assert_play_key`가 `client_email`에
+엉뚱한 앱 자격증명으로 배포한다(실측 사고, 2026-08-02) — `assert_play_key`가 `client_email`에
 `planroutine`이 있는지까지 확인해 막는다.
 
 **게이트는 iOS와 동일**(`flutter analyze` + `flutter test`) **+ release AAB
@@ -272,3 +303,89 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 **되돌릴 수 없는 것**: 패키지명 · keystore · 최종 심사 제출. `beta`는
 `release_status: "completed"`라 업로드 즉시 Play 심사로 들어간다 — 실기기(또는
 최소 release AAB 스모크) 검증 후에만 실행한다.
+
+### R8은 Gson을 쓰는 플러그인을 조용히 망가뜨린다 — release에서만
+
+Gson은 **필드 이름을 리플렉션으로 읽어** JSON 키를 만들고 Dart는 그 이름으로 값을
+찾는다. R8이 이름을 줄이면 키가 `a`/`b`가 되어 **Dart가 받는 값이 전부 null**이 된다.
+컴파일도 통과하고 디버그도 멀쩡하다 — **release 빌드에서만** 깨진다.
+
+이 리포는 같은 함정을 **두 번** 밟았고, Gson을 쓰는 안드로이드 플러그인은 지금
+**둘뿐인데 둘 다 사고를 냈다**:
+
+| 플러그인 | 증상 | 규칙 |
+|---|---|---|
+| `flutter_local_notifications` | 부팅 후 알림 재예약이 죽는다 | `-keepattributes Signature` + TypeToken keep + `@SerializedName` 필드 keep |
+| `device_calendar` | 기기 캘린더 저장이 `저장 실패`로 끝난다 | `-keep class com.builttoroam.devicecalendar.models.** { *; }` |
+
+- **device_calendar 실측(Galaxy A34, 2026-08-06)**: R8 매핑에서 수정 전
+  `models.Event.eventTitle -> a`, `models.Calendar`는 **클래스 자체가 살아남지
+  못했다**. 그래서 Dart의 `Calendar.isReadOnly`가 null이 되고
+  `c.isReadOnly == false`가 거짓이라 **쓰기 가능한 캘린더가 0개**로 보였다 →
+  `_resolveDefaultCalendarId`가 null → `writable 캘린더가 없습니다`.
+  **삽입은 시도조차 되지 않았다**(이벤트 수 변화 0). 수정 후 전부 원래 이름 유지.
+- ⚠️ **범용 `@SerializedName` 규칙으로는 안 걸린다** — device_calendar의 모델에는
+  애노테이션이 없다. 플러그인이 `consumer-rules`를 제공하지 않으므로 **앱이 지킨다.**
+- **가드**: `test/deploy/android_gson_proguard_test.dart`가 `.dart_tool/package_config.json`으로
+  플러그인 안드로이드 소스를 훑어 Gson 사용을 찾고, 그 네임스페이스에 keep 규칙이
+  있는지 검사한다. 없으면 실패한다(회귀를 심어 확인함). 범용 규칙으로 덮이는
+  경우만 `_exempt`에 **이유와 함께** 등록한다.
+- **단위 테스트로는 재현할 수 없다** — R8은 release에서만 돈다. 그래서 가드는
+  재현이 아니라 **예방**(규칙 존재)을 검사한다. 실제 동작 확인은 아래 진단 빌드로 한다.
+
+#### 진단용 축소 빌드를 스토어 앱 옆에 깐다
+
+R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다. 그런데 로컬 release APK는
+서명이 Play와 달라 그냥 설치하면 **스토어 앱을 지워야 하고 테스트 데이터가 날아간다.**
+
+- **디버그**: `build.gradle.kts`의 debug 블록이 `applicationIdSuffix = ".debug"`를 준다 —
+  `flutter run`이 스토어 앱을 건드리지 않는다. ⚠️ 이 변종은 Google 로그인이 안 된다
+  (OAuth 클라이언트가 원래 패키지명에 묶여 있다). 안드로이드는 Google 연동을 감추므로
+  실질 영향은 없다.
+- **축소 확인용**: `applicationId`를 `com.planroutine.app.diag`로 **잠깐** 바꿔
+  `flutter build apk --release --dart-define-from-file=<tago>.json` 하고 **곧바로 되돌린다.**
+  커스텀 buildType이나 flavor를 만들지 않는다 — 전자는 Flutter가 `release`라는 이름에
+  맞춰 축소를 켜므로 **정작 R8이 안 도는** 빌드가 나올 수 있고, 후자는 태스크 이름이
+  바뀌어 fastlane 레인이 깨진다.
+- 검증은 **R8 매핑 전/후 비교**(`build/app/outputs/mapping/release/mapping.txt`)와
+  **실기기 동작** 둘 다 본다. 매핑만으로는 증상이 사라졌다는 증거가 안 된다.
+
+## 알려진 빌드 이슈
+
+- **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환).
+  `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로
+  남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등).
+  `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조,
+  `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved`
+  두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라
+  Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면
+  `flutter config --no-enable-swift-package-manager` 후 재빌드.
+  - 검증됨: analyze · 유닛/위젯 · E2E 19 · **두 스토어 `beta` 레인**
+    (Android `versionCode 143 / alpha` 2026-08-03 · iOS `TestFlight v144 VALID` 2026-08-04).
+    TAGO 키는 IPA와 AAB 양쪽 스냅샷에서 문자열로 확인했다(양성 대조 포함).
+    ⚠️ iOS는 **CocoaPods 구성**으로 통과했다 — SPM 빌드(`v143`)는 거부됐다(아래).
+  - ⚠️ **SPM은 되돌렸다**(2026-08-04). SPM으로 만든 첫 IPA(`v143`)가 Apple 처리에서
+    거부됐다 — `90683 Missing purpose string in Info.plist` (`NSCameraUsageDescription`).
+    기제는 링크 구조 변경이다: `file_picker`의 카메라 참조 코드가 CocoaPods에서는
+    별개 프레임워크 번들에 있었는데 SPM에서는 **`Runner.app` 본체에 정적 링크**되고,
+    Apple의 purpose string 검사는 **번들 단위**다(오류 문구도 "the Info.plist file for
+    the **Runner.app** bundle"). 같은 `Info.plist`로 CocoaPods 빌드인 `v142`는 통과했다.
+    - **SPM을 다시 도입할 때는** `NSCameraUsageDescription`을 넣고, 경고로만 나온
+      `NSLocationWhenInUseUsageDescription`처럼 **플러그인이 자기 번들에 갖고 있던
+      purpose string 전수를 옮겨야 한다** — 이번 오류가 마지막이라는 보장이 없다.
+      릴리스 중간에 섞지 말 것.
+    - 이 실패는 **로컬에서 잡을 수 없다.** `flutter build ipa`는 성공하고 IPA에 키까지
+      들어 있었다 — purpose string 검사는 Apple 서버에서만 돈다.
+- **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면
+  캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다
+  (실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이
+  공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
+- 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아**
+  altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는
+  빌드 없이 promote만 하므로 무관).
+- **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고
+  (`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로**
+  빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데,
+  release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아
+  **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만
+  떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).

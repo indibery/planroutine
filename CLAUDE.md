@@ -49,156 +49,38 @@
 
 ## 프로젝트 구조
 
+Feature-first. **파일별 한 줄 설명이 붙은 상세 트리는 `docs/notes/project-structure.md`** —
+가장 빨리 낡는 문서라 본문에서 뺐다(옮기면서 실제로 두 군데가 낡아 있었다).
+
 ```
-planroutine/
-├── CLAUDE.md
-├── lib/
-│   ├── main.dart                       # 시작 시 휴지통 purge + 알림 init/sync + onboarding 체크
-│   ├── app.dart                        # GoRouter 보관 + planroutine/shared_file 채널 listener
-│   ├── core/
-│   │   ├── constants/
-│   │   │   ├── app_strings.dart        # 공통 상수 + barrel export
-│   │   │   ├── app_colors.dart
-│   │   │   ├── app_sizes.dart
-│   │   │   └── strings/                # 도메인별 Strings 클래스
-│   │   │       ├── calendar_strings.dart
-│   │   │       ├── google_strings.dart
-│   │   │       ├── import_strings.dart
-│   │   │       ├── notification_strings.dart
-│   │   │       ├── schedule_strings.dart
-│   │   │       ├── settings_strings.dart
-│   │   │       ├── today_strings.dart
-│   │   │       └── trash_strings.dart
-│   │   ├── theme/                      # app_theme, app_gradients, app_text_styles
-│   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
-│   │   ├── database/                   # DatabaseHelper (v8, forTesting 생성자)
-│   │   └── utils/                      # date_utils (formatDate)
-│   ├── features/
-│   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
-│   │   │   ├── data/                   # csv_parser, import_repository, ai_schedule_parser/register
-│   │   │   ├── domain/                 # imported_schedule
-│   │   │   └── presentation/
-│   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기+미리보기 (히어로·가져오기 화면 공유)
-│   │   │       ├── screens/import_screen.dart  # 작년 업무 CSV 전용 풀스크린 + sticky 스테퍼
-│   │   │       ├── widgets/
-│   │   │       │   ├── photo_input_hero.dart   # 입력 탭 히어로 (왕복 3단 + CSV 보조 카드)
-│   │   │       │   ├── import_summary_card.dart
-│   │   │       │   └── edufine_guide_section.dart  # 2단 접힘 안내 + 팁 박스
-│   │   │       └── providers/                   # importStateProvider (importFromPath API)
-│   │   ├── schedule/                   # 입력 탭 (넣기 + 검토/확정)
-│   │   │   ├── data/                   # schedule_repository (soft-delete + purge, kind 필터)
-│   │   │   ├── domain/                 # schedule, entry_kind(task/event), filter_summary(순수 함수)
-│   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, FilterBar(상태/종류/카테고리)
-│   │   ├── calendar/                   # 자체 캘린더
-│   │   │   ├── data/                   # calendar_repository
-│   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt/kind)
-│   │   │   └── presentation/           # CalendarScreen, EventEditDialog, ListSection
-│   │   ├── trash/                      # 휴지통
-│   │   │   └── presentation/           # TrashScreen + snapshot
-│   │   ├── settings/                   # 설정 탭 (섹션별 위젯 분리)
-│   │   │   ├── data/                   # app_reset_repository, schedule_csv_exporter
-│   │   │   └── presentation/
-│   │   │       ├── screens/
-│   │   │       │   ├── settings_screen.dart        # 얇은 조합
-│   │   │       │   └── bus_settings_screen.dart    # /bus/settings — BusSettingsTiles를 감싼다
-│   │   │       ├── widgets/
-│   │   │       │   ├── settings_section.dart       # 헤더+본문+Divider wrapper
-│   │   │       │   ├── export_list_tile.dart
-│   │   │       │   ├── google_account_list_tile.dart
-│   │   │       │   ├── notification_settings_tiles.dart
-│   │   │       │   ├── stamp_settings_tiles.dart   # 도장 모양 한 줄 + 흐리게
-│   │   │       │   ├── stamp_style_sheet.dart      # 도장 모양 2열 그리드 시트
-│   │   │       │   ├── bus_settings_tiles.dart     # 버스 설정 본문 (화면이 감싼다)
-│   │   │       │   ├── bus_summary_list_tile.dart  # 설정 탭 버스 요약 한 줄
-│   │   │       │   ├── trash_list_tile.dart
-│   │   │       │   ├── reset_list_tile.dart
-│   │   │       │   └── app_info_list_tile.dart
-│   │   │       └── providers/
-│   │   ├── google/                     # Google Calendar 연동
-│   │   │   ├── data/                   # google_calendar_service
-│   │   │   └── presentation/           # google_providers
-│   │   ├── notifications/              # 로컬 알림
-│   │   │   ├── data/                   # notification_service, notification_rules
-│   │   │   ├── domain/                 # notification_settings, pending_notification
-│   │   │   └── presentation/           # syncer + 설정 providers
-│   │   ├── today/                      # 오늘 탭 (첫 화면)
-│   │   │   ├── domain/                 # today_view(순수 함수), stamp_settings(도장 설정)
-│   │   │   └── presentation/
-│   │   │       ├── screens/today_screen.dart    # provider 배선만
-│   │   │       ├── providers/today_providers.dart
-│   │   │       └── widgets/
-│   │   │           ├── midnight_watcher.dart    # 자정 넘김 시 기준일 갱신 (app.dart가 감쌈)
-│   │   │           ├── today_body.dart          # 순수 위젯 (위젯 테스트 대상)
-│   │   │           ├── today_event_row.dart     # 체크 원 + 제목 + 도장 슬롯
-│   │   │           ├── today_progress_ring.dart # 결산 링 (CustomPainter)
-│   │   │           ├── completion_seal.dart     # 완료 도장 (4종, SealMark 분기)
-│   │   │           ├── seal_panda_mark.dart    # 판다 (CustomPainter)
-│   │   │           └── seal_gecko_mark.dart    # 도마뱀 (PNG 알파 마스크 + srcIn)
-│   │   ├── bus/                        # 출퇴근 버스 도착 카드
-│   │   │   ├── data/
-│   │   │   │   ├── bus_api_client.dart          # 소스 라우팅(지역별) + 30초 메모리 캐시
-│   │   │   │   ├── tago_response_parser.dart    # 국토교통부 TAGO
-│   │   │   │   └── gbis_response_parser.dart    # 경기도 GBIS + 지역별 nodeId 접두
-│   │   │   ├── domain/
-│   │   │   │   ├── bus_card_view.dart           # buildBusCardView(순수 함수) + 5상태
-│   │   │   │   ├── bus_route.dart               # 경유노선 + buildRouteChoices(순수 함수)
-│   │   │   │   ├── bus_arrival.dart · bus_stop.dart · bus_settings.dart
-│   │   │   │   ├── commute_direction.dart · time_range.dart · bus_card_style.dart
-│   │   │   │   └── bus_display.dart
-│   │   │   └── presentation/
-│   │   │       ├── screens/bus_stop_search_screen.dart  # 이름 검색(주) + 지역 모드(보조)
-│   │   │       └── widgets/
-│   │   │           ├── bus_card_host.dart              # 폴링·수명·시간대 판정
-│   │   │           ├── bus_arrival_card.dart           # 제목줄 + 접힘 토글
-│   │   │           ├── bus_body_text.dart · bus_body_axis.dart  # 모양 2종
-│   │   │           ├── bus_stop_confirm_sheet.dart     # 등록 직전 방향 확인
-│   │   │           └── bus_empty_state.dart · bus_more_count.dart
-│   │   └── onboarding/                 # 최초 진입 플로우
-│   └── shared/
-│       └── widgets/
-│           ├── main_shell.dart         # 하단 탭 Shell
-│           ├── floating_tab_bar.dart   # 이름은 legacy, 현재 화면 폭 불투명 탭바
-│           ├── gold_fab.dart           # 골드 원형 FAB (캘린더·오늘 탭 공유)
-│           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
-│           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
-│           ├── section_header.dart     # title + optional subtitle
-│           └── confirm_dialog.dart     # 2-버튼 확인 다이얼로그 공통
-├── ios/
-│   ├── Runner/
-│   │   ├── Info.plist                  # GIDClientID, REVERSED_CLIENT_ID, CFBundleDocumentTypes(CSV)
-│   │   ├── AppDelegate.swift           # application(_:open:options:) → planroutine/shared_file 채널
-│   │   └── SceneDelegate.swift         # scene URL → AppDelegate 포워딩
-│   ├── fastlane/Fastfile               # beta/release 레인 (IPA glob: Dir.entries)
-│   ├── Gemfile (+ Gemfile.lock)        # fastlane + cocoapods 동일 Ruby 환경
-│   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper
-├── android/
-│   ├── app/
-│   │   ├── build.gradle.kts            # release 서명·R8·desugaring
-│   │   ├── proguard-rules.pro          # Gson 리플렉션 보호 (알림 재예약 · 기기 캘린더)
-│   │   └── src/main/res/raw/keep.xml   # 리소스 축소로부터 ic_notification 보존
-│   ├── fastlane/
-│   │   ├── Appfile                     # package_name + json_key_file(~/.google_play/planroutine.json)
-│   │   └── Fastfile                    # check_tago_key/check_play_key/build_aab/bootstrap/beta 5개 레인
-│   ├── Gemfile (+ Gemfile.lock)        # fastlane 고정 (iOS와 같은 Ruby 환경 규칙)
-│   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper (iOS와 동일 패턴)
-├── assets/
-│   ├── icon/app_icon.png               # 1024x1024 원본 (test/tools/gen_app_icon.dart로 재생성)
-│   ├── images/edufine_csv_guide.png    # Import 가이드 annotation 스크린샷
-│   └── fonts/                          # Pretendard Variable
-├── data/sample/                        # 테스트용 CSV
-├── docs/                               # requirements, data-schema
-├── test/
-│   ├── features/                       # 단위/위젯 테스트
-│   │   ├── calendar/data/
-│   │   ├── schedule/data/
-│   │   ├── notifications/              # computeNotifications
-│   │   ├── import/                     # parser + domain
-│   │   └── schedule/domain/
-│   ├── helpers/test_database.dart      # FFI in-memory DB 팩토리
-│   └── tools/gen_app_icon.dart         # 1024×1024 PNG 렌더 (자동 스캔 제외)
-└── integration_test/
-    └── app_test.dart                   # UX E2E 20 시나리오
+lib/
+├── main.dart · app.dart   # 시작 시 purge·알림 sync·onboarding / GoRouter + 공유파일 채널
+├── core/                  # constants(strings·colors·sizes) · theme · router · database · utils
+├── features/              # 아래 표
+└── shared/widgets/        # main_shell · floating_tab_bar · gold_fab · brand_logo ·
+                           #   gold_gradient_button · section_header · confirm_dialog
 ```
+
+| feature | 무엇 |
+|---|---|
+| `import/` | 넣기 — 사진 AI(`ai_photo_flow`) + 작년 CSV(`/import`) |
+| `schedule/` | 입력 탭 — 검토·확정, `EntryKind`, 접히는 필터 |
+| `calendar/` | 자체 캘린더 — 월 그리드, 편집 시트 |
+| `today/` | 오늘 탭 — 업무만, 완료 도장·결산 링 |
+| `bus/` | 출퇴근 버스 도착 카드 — TAGO/GBIS 소스 라우팅 |
+| `notifications/` | 로컬 알림 — `computeNotifications`(순수) + syncer |
+| `settings/` | 설정 탭 — 섹션별 위젯 분리 |
+| `google/` · `trash/` · `onboarding/` | Google Calendar 단방향 · 휴지통 · 최초 진입 |
+
+각 feature는 `data/` · `domain/` · `presentation/`으로 나뉘고 **빈 레이어는 만들지 않는다**
+(`trash/`는 `presentation/`만 있다).
+
+- `ios/` — `Runner/`(Info.plist·AppDelegate·SceneDelegate) · `fastlane/` · `bin/fastlane.sh`
+- `android/` — `app/`(build.gradle.kts·proguard-rules.pro·`res/raw/keep.xml`) · `fastlane/` · `bin/fastlane.sh`
+- `assets/` — `icon/` · `images/` · `fonts/`(Pretendard) · `data/sample/`(합성 CSV, 실데이터 금지)
+- `docs/` — `notes/` · `release_notes/` · 스토어 문안 · `superpowers/specs/`
+- `test/` — `deploy/`(문서↔코드 가드) · `features/` · `helpers/` · `tools/`(자동 스캔 제외)
+- `integration_test/` — `app_test.dart`(UX E2E 19) · `screenshot_test.dart`(스토어 촬영)
 
 ## 데이터베이스 스키마 (v8)
 
@@ -263,6 +145,50 @@ planroutine/
 - 기본 08:00 발송 (교사 수업 시작 전 여유 확보).
 - `InterruptionLevel.timeSensitive` 플래그 지정. 실제 집중 모드 돌파 원하면 Apple Developer Portal에서 capability 활성화 + entitlements 추가 필요.
 - 설정 화면에서는 마스터 스위치 하나만 노출 + 현재 설정 요약(`08:00 · 이번 주·당일`) subtitle. 이번 주/당일 아침/알림 시각/테스트/예약된 알림 보기는 `고급` ExpansionTile 안에 접힘.
+
+### Android 알림은 M1까지 **구조적으로 죽어 있었다**
+
+실기기 신고(Galaxy A34, 2026-08-08): 알림 스위치를 켜도 즉시 OFF로 되돌아간다.
+버그가 아니라 **Android 경로를 아예 안 만든 상태**였다(`notification_service.dart`의
+주석이 `구현은 iOS 한정으로 필요한 부분만`이라고 적고 있었다).
+
+사망 지점이 **둘**이고, 둘 다 화면상 증상이 없어 오래 숨었다.
+
+1. `InitializationSettings`에 `android:`가 없으면 플러그인이 **첫 줄에서
+   `ArgumentError`를 던진다.** `main.dart`의 `try { … } catch (_) {}`가 먹어
+   크래시하지 않고, `_initialized`가 안 켜지고 이어지는 `sync()`도 같은 catch에
+   먹힌다 — **화면상 증상 0.**
+2. `requestPermission()`이 iOS 플러그인만 resolve해 Android에선 늘 `false`.
+   `setMaster(true)`가 그 false를 받고 마스터를 도로 끈다 → **스위치를 켤 수 없다.**
+
+- **채널 id는 `*Strings`에 두지 않는다**(`notification_details.dart`의
+  `kAndroidChannelId`). 한 번 만들면 importance·소리를 코드로 못 바꾸고, 바꾸려면
+  id를 bump 해야 하는데 그러면 **채널이 갈라져 사용자 알림 설정이 초기화된다.**
+  이름·설명은 `설정 › 앱 › 알림`에 노출되는 UI 문자열이라 `NotificationStrings`에 둔다.
+- **채널을 `init()`에서 미리 만든다.** 안 만들어도 첫 발화 때 자동 생성되지만 그
+  시점은 "예약할 때"가 아니라 "발화할 때"라, 그때까지 설정 화면에 채널이 없다.
+- **`BigTextStyleInformation`이 필수다.** 본문이 두 줄인데(`오늘 …\n이번 주 …`)
+  Android는 접힌 알림에서 한 줄만 보여준다 — 없으면 `이번 주`가 통째로 안 보인다.
+  iOS는 여러 줄을 그대로 보여줘 이 차이가 안 드러났다.
+- **스케줄 모드는 `inexactAllowWhileIdle`이고, 값 하나에 Play 심사가 달려 있다.**
+  `exact*`는 `SCHEDULE_EXACT_ALARM` 고위험 권한 선언 양식 대상이다. 대가인 Doze
+  9분 규칙은 이 앱에 무해하다 — `computeNotifications`가 발송 시각으로 병합해
+  **하루 1건**만 만들기 때문이다(개별 이벤트마다 알림을 만드는 앱이었으면 이 결정이
+  성립하지 않는다). ⚠️ 9분 규칙을 안 넘는 것이 **정시 발화를 뜻하지 않는다** —
+  inexact alarm이라 지연 상한이 문서에 없다.
+- ⚠️ **리시버가 둘이다.** `ScheduledNotificationBootReceiver`(부팅 재예약)만 넣으면
+  안 된다 — **`ScheduledNotificationReceiver`가 없으면 재부팅과 무관하게 예약 알림이
+  한 건도 발화하지 않는다.** 이름이 부팅용으로 읽혀 빠뜨리기 쉽다. 플러그인은 v16부터
+  receiver를 하나도 선언하지 않는다(`POST_NOTIFICATIONS`·`VIBRATE`만 병합) —
+  **`POST_NOTIFICATIONS`는 앱이 적을 필요가 없고, `RECEIVE_BOOT_COMPLETED`는 적어야 한다.**
+- **아이콘은 `res/drawable/`이고 mipmap이 아니다.** 네이티브가
+  `getIdentifier(name, "drawable", pkg)`로 찾고 defType이 고정이다. 테두리를 한
+  path로 그리면 nonZero fillType 때문에 **상태바에 흰 사각형**이 뜬다 — 막대로 나눠 그린다.
+  release는 리소스 축소가 기본 ON이라 `keep.xml`이 이 drawable을 지킨다.
+- 가드는 `test/features/notifications/android_wiring_test.dart` 15건. 서비스가
+  플러그인 인스턴스를 들고 있어 단위 테스트로 못 밟으므로 **값과 소스를 검사한다** —
+  실제 동작은 에뮬레이터에서 확인했다(채널 생성 · 권한 다이얼로그 · 스위치 유지 ·
+  `dumpsys notification`에 `channel=schedule_reminder` + `BigTextStyle` 발화).
 
 ### 오늘 탭 (결재 도장 + 결산 링)
 - **DB 변경 없음.** `calendar_events.completed_at`과 기존 `getEventsByDateRange`를 재사용한다.
@@ -868,233 +794,45 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
 - **골드 의미 토큰**: `gold`(배경 위 텍스트/아이콘/보더 — 라이트에선 대비용 딥골드) / `goldFill`(배지·pill·버튼·오늘 셀 채움 — 밝은 골드) / `onGold`(goldFill 채움 위 네이비 글씨). "골드 채움은 goldFill + onGold" 규칙으로 다크/라이트 대비를 함께 맞춘다.
 - **테마 변경 = 전체 재생성**: `app.dart`가 effective brightness로 `AppColors.applyBrightness` + `AppTheme.of(brightness)` 동기화 후, MaterialApp `builder`에서 brightness를 `KeyedSubtree` key로 주어 라우트 하위 전체를 재생성한다(라우터 상태는 상위라 현재 탭 유지). 전역 팔레트가 개별 위젯 리빌드 순서에 의존하지 않게 하는 핵심.
 
-## 배포
+## 배포 · 빌드 도구
 
-### 명령
-```
-./ios/bin/fastlane.sh beta          # TestFlight (재빌드+업로드)
-./ios/bin/fastlane.sh release build:115   # 빌드 승격 + 릴리즈 노트·설명·스크린샷 반영 (제출은 안 함)
-./ios/bin/fastlane.sh withdraw_review     # 심사 철회 (편집 가능 상태로)
-./ios/bin/fastlane.sh asc_state           # 심사 단계 + 선택된 빌드 + 스크린샷 장수 조회
-./ios/bin/fastlane.sh check_builds  # 최근 빌드 processing_state 조회 (post-deploy)
-./ios/bin/fastlane.sh check_tago_key      # TAGO 키 확인 (빌드·업로드 없음)
+명령·레인·게이트·트러블슈팅·검증 함정은 **`.claude/skills/deploy/SKILL.md`** 런북에 있다
+(`/deploy`로 부른다). 여기 남기는 것은 **배포 밖에서도 밟는** 급소 셋과, 배포가 아닌 도구 하나다.
 
-./android/bin/fastlane.sh check_tago_key   # TAGO 키 파일 확인 (빌드·업로드 없음)
-./android/bin/fastlane.sh check_play_key   # 서비스 계정 JSON + client_email 검증 + 트랙 4개 versionCode 조회
-./android/bin/fastlane.sh build_aab        # 가드 → clean → release AAB만 생성 (업로드하지 않는다)
-./android/bin/fastlane.sh bootstrap        # build_aab + internal 트랙 draft 업로드 (패키지명 확정용, 최초 1회만)
-./android/bin/fastlane.sh beta             # 가드 → versionCode → build_aab → 비공개 테스트(Alpha) 업로드
-```
-- Wrapper가 Homebrew Ruby(`/opt/homebrew/opt/ruby/bin`)를 PATH 앞에 주입해 `bundle exec fastlane`을 돌린다. 사용자 shell 설정은 건드리지 않는다.
-- `ios/Gemfile`에 fastlane + cocoapods 고정. 최초 실행 시 wrapper가 자동으로 `bundle install`.
-- beta의 build_number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산. **iOS는 `pubspec.yaml`의 `+N`을 읽지 않는다** — `pubspec_version_name`이 `X.Y.Z`만 파싱하고 계산값을 `--build-number=`로 넘긴다.
-- **`pubspec.yaml`의 `+N`은 안드로이드 전용 하한이다** (`next_version_code` = `max(하한, Play 트랙 최대 + 1)`). 한 필드가 두 플랫폼에서 **다른 뜻**을 갖는 것이 함정의 뿌리다 — iOS에서 무해하니 손으로 올려도 된다고 생각하면, **다음 안드로이드 업로드가 그 값으로 튀고 versionCode는 감소할 수 없다**(실제로 `+143`이 그렇게 들어왔다: Play가 54인데 다음 업로드가 143이 될 상태였다).
-  - **두 스토어 번호를 맞추려면** 하한을 `TestFlight 최신 + 1`로 둔다. iOS는 스스로 그 값에 도달하고 안드로이드는 하한이 `Play최대+1`을 이겨 같은 번호가 된다 — **레인을 고칠 필요가 없다**(2026-08-03 실측: ASC `v142` · Play `54` → 양쪽 `143`).
-  - **잊어도 깨지지 않는다** — 안드로이드는 자기 `Play최대+1`로 굴러가고 그때만 한 칸 어긋난다. 정렬은 릴리스 빈도 차이만큼 서서히 마모된다(iOS 142회 대 Android 54회가 그 누적이다).
-  - ⚠️ 트랙 조회가 **전부** 실패하면 하한이 단독으로 결정한다(`Fastfile:178`). 이미 올린 번호가 하한이면 중복으로 거부되므로 그때 하한을 올린다.
-- **release는 promote 전용 + 제출하지 않는다**: 재빌드/재업로드 없이 TestFlight 빌드를 `skip_binary_upload`로 승격하고, 버전 페이지 생성·릴리즈 노트 주입까지 한다. **최종 '심사를 위해 제출' 버튼은 사람이 ASC에서 누른다** (`submit:true`를 명시하면 자동 제출하지만 기본은 아님). 되돌리기 어려운 외부 작업이라 제출 직전에 눈으로 확인할 여지를 남긴다.
-- ⚠️ **처리에서 거부된 빌드도 번호를 소비한다.** `latest_testflight_build_number`는
-  `Build.all`에 나타나지 않는 거부된 빌드까지 본다(실측: `v143` 거부 뒤 다음 `beta`가
-  `143 → 144`를 집었다). 그래서 **업로드 실패는 두 스토어 번호 정렬을 한 칸 깨뜨린다** —
-  정렬을 유지하려면 실패한 쪽에 맞춰 다음 릴리스에서 하한을 다시 올려야 한다.
-- **승격 대상은 `build:<N>`으로 못박을 것.** 미지정 시 최신을 집는데, 실기기 검증 후 `beta`를 한 번 더 돌렸다면 검증하지 않은 빌드가 올라간다.
-- **빌드 연결은 레인이 `select_build`로 직접 한다** — deliver는 `submit_for_review: false`면 `build_number`를 받고도 빌드 선택을 건너뛴다(실측 v124: deliver 성공인데 선택 빌드는 v115 유지). 성공 신호는 로그의 `빌드 연결: vNN`이고, `asc_state`의 `선택된 빌드`로 교차 확인한다.
-- **가드 4개**: A(버전>승인본) / B(빌드 VALID) / D(이미 심사 단계면 손대지 않음) / E(릴리즈 노트 존재). 버전 페이지는 없으면 자동 생성된다(minor·major에서는 항상 없다).
-- **릴리즈 노트는 `docs/release_notes/<버전>.ko.txt`** — release가 읽어 ASC에 넣는다. 버전을 올리면 이 파일을 먼저 만든다.
-- **beta 레인**은 시작 시 `reset_ios_caches`(flutter clean + Pods/build 제거)를 자동 실행 — 시뮬 슬라이스 함정(#6) 차단. clean 때문에 매 beta가 수 분 더 걸린다. release는 빌드가 없어 해당 없음.
+- **`pubspec.yaml`의 `+N`은 안드로이드 전용 하한이다.** iOS는 이 값을 읽지 않는다.
+  한 필드가 두 플랫폼에서 **다른 뜻**을 갖는 것이 함정의 뿌리다 — iOS에서 무해하니 손으로
+  올려도 된다고 생각하면 **다음 안드로이드 업로드가 그 값으로 튀고 versionCode는 감소할 수
+  없다**(실측: Play가 54인데 하한이 143이었다). 두 스토어 번호를 맞추려면 하한을
+  `TestFlight 최신 + 1`로 둔다. 계산식·정렬 마모·거부된 빌드가 번호를 먹는 함정은 런북.
+- **Android `beta`는 업로드 즉시 Play 심사로 들어간다**(`release_status: "completed"`).
+  트랙 `internal`은 비공개 테스트 14일 요건을 **하루도 세지 않는다** — 착각하면 되돌릴 수 없다.
+- **수동 `flutter build ipa`로는 배포하지 않는다.** `--dart-define-from-file`이 없어 **TAGO 키가
+  빠진 IPA**가 나오는데, release 레인의 가드 넷 어디도 키를 보지 않아 **버스 기능이 조용히 죽은
+  빌드가 심사에 오른다**. 캐시만 비우고 **다시 `beta` 레인으로** 빌드한다.
 
-#### 스크린샷에는 독립 레인이 없다 — `release`가 유일한 경로다
+### 배포 문서는 가드가 지킨다
 
-`ios/fastlane/screenshots/ko/`의 파일은 **`release`가 올린다**(`shots:false`로 건너뛸 수
-있다). `dedupe_screenshots!`·`each_screenshot_set`은 Fastfile의 **함수**이고 레인이 아니다 —
-`release`가 업로드 직후 부르고(`Fastfile:517`), `asc_state`가 장수를 셀 때 쓴다(`:652`).
+`test/deploy/fastlane_lane_docs_test.dart`가 두 Fastfile의 `lane :`과 **CLAUDE.md +
+`.claude/skills/*/SKILL.md` 전부**의 `<platform>/bin/fastlane.sh <이름>`을 **양방향** 대조한다.
+없는 명령을 적으면 깨지고, 레인을 추가하고 문서에 안 적어도 깨진다. 면제(`_internalLanes`)에는
+이유를 함께 적는다 — 목록을 늘려 통과시키면 역방향 검사가 무력해진다. 승격 경위와 일반 규칙은
+`/guard` 스킬에 있다.
 
 - ⚠️ **`upload_screenshots`·`check_screenshots`·`dedupe_screenshots`라는 레인은 없다.**
-  이 문서와 deploy 스킬 런북이 셋을 명령으로 적어두고 있었는데 실물에 없어, 스크린샷을
-  확인하려던 세션이 `Could not find lane`으로 헛돌았다(2026-08-06). **실제 iOS 레인은
-  일곱 개다**: `load_asc_api_key`·`check_tago_key`·`beta`·`release`·`withdraw_review`·
-  `asc_state`·`check_builds`.
-  - **이 함정은 가드로 올라갔다** — `test/deploy/fastlane_lane_docs_test.dart`가
-    두 Fastfile의 `lane :`과 이 문서·런북의 `<platform>/bin/fastlane.sh <이름>`을
-    **양방향** 대조한다(`data_source_credit_test.dart`와 같은 형태). 없는 명령을
-    적으면 깨지고, 레인을 추가하고 문서에 안 적어도 깨진다(둘 다 회귀를 심어
-    확인함). 내부 헬퍼는 `_internalLanes`로 면제하되 **이유를 함께 적는다** —
-    면제 목록을 늘려 통과시키면 역방향 검사가 무력해진다.
-  - 검사 대상은 **CLAUDE.md + `.claude/skills/*/SKILL.md` 전부**다(목록을 손으로
-    적지 않고 훑는다). `docs/superpowers/specs/`는 특정 시점의 설계 기록이라 제외한다.
-    - 처음에는 `deploy` 스킬 하나를 박아 뒀는데, `store-listing` 스킬을 추가하면서
-      그 파일이 **가드 밖**이라는 사실이 드러났다. 스킬은 사람과 Claude가 그대로
-      복사해 실행하는 런북이라 같은 의무를 진다 — 목록을 손으로 관리하면 새 스킬마다
-      이 사실을 다시 발견해야 한다(회귀를 심어 확인함: 새 스킬에 없는 레인을 적으니
-      `check_screenshots`를 잡아냈다).
-    - 훑기가 죽으면 검사 대상이 CLAUDE.md 하나로 **조용히 줄어든다**. 그래서
-      "deploy SKILL.md를 훑었다"를 생존 테스트가 함께 본다.
-- **확인 수단은 `asc_state` 하나이고 장수만 알려준다**(`ko / APP_IPHONE_65 6장`).
-  파일명·순서를 봐야 하면 ASC 웹에서 직접 본다. 그래서 "어느 장이 빠졌는지"는
-  로컬에서 판정할 수 없다 — 아래 실측이 그 한계에 걸린 사례다.
-- ⚠️ **제출 후 장수가 줄었다**(실측 2026-08-06): release 직후 `65 6장 / 67 6장`이었는데
-  제출 뒤 조회에서 `65 5장 / 67 6장`이 됐다. 같은 실행의 dedupe가 `6.5_6_bus.png`를
-  중복으로 지운 기록이 단서지만, **어느 장이 남았는지는 확인하지 못했다**(위 한계).
-  스크린샷을 갈아치우려면 `withdraw_review`가 필요해 대기열 처음으로 돌아가므로,
-  장수가 슬롯마다 달라도 **다음 릴리스에서 맞추는 편이 값싸다**.
-
-### R8은 Gson을 쓰는 플러그인을 조용히 망가뜨린다 — release에서만
-
-Gson은 **필드 이름을 리플렉션으로 읽어** JSON 키를 만들고 Dart는 그 이름으로 값을
-찾는다. R8이 이름을 줄이면 키가 `a`/`b`가 되어 **Dart가 받는 값이 전부 null**이 된다.
-컴파일도 통과하고 디버그도 멀쩡하다 — **release 빌드에서만** 깨진다.
-
-이 리포는 같은 함정을 **두 번** 밟았고, Gson을 쓰는 안드로이드 플러그인은 지금
-**둘뿐인데 둘 다 사고를 냈다**:
-
-| 플러그인 | 증상 | 규칙 |
-|---|---|---|
-| `flutter_local_notifications` | 부팅 후 알림 재예약이 죽는다 | `-keepattributes Signature` + TypeToken keep + `@SerializedName` 필드 keep |
-| `device_calendar` | 기기 캘린더 저장이 `저장 실패`로 끝난다 | `-keep class com.builttoroam.devicecalendar.models.** { *; }` |
-
-- **device_calendar 실측(Galaxy A34, 2026-08-06)**: R8 매핑에서 수정 전
-  `models.Event.eventTitle -> a`, `models.Calendar`는 **클래스 자체가 살아남지
-  못했다**. 그래서 Dart의 `Calendar.isReadOnly`가 null이 되고
-  `c.isReadOnly == false`가 거짓이라 **쓰기 가능한 캘린더가 0개**로 보였다 →
-  `_resolveDefaultCalendarId`가 null → `writable 캘린더가 없습니다`.
-  **삽입은 시도조차 되지 않았다**(이벤트 수 변화 0). 수정 후 전부 원래 이름 유지.
-- ⚠️ **범용 `@SerializedName` 규칙으로는 안 걸린다** — device_calendar의 모델에는
-  애노테이션이 없다. 플러그인이 `consumer-rules`를 제공하지 않으므로 **앱이 지킨다.**
-- **가드**: `test/deploy/android_gson_proguard_test.dart`가 `.dart_tool/package_config.json`으로
-  플러그인 안드로이드 소스를 훑어 Gson 사용을 찾고, 그 네임스페이스에 keep 규칙이
-  있는지 검사한다. 없으면 실패한다(회귀를 심어 확인함). 범용 규칙으로 덮이는
-  경우만 `_exempt`에 **이유와 함께** 등록한다.
-- **단위 테스트로는 재현할 수 없다** — R8은 release에서만 돈다. 그래서 가드는
-  재현이 아니라 **예방**(규칙 존재)을 검사한다. 실제 동작 확인은 아래 진단 빌드로 한다.
-
-#### 진단용 축소 빌드를 스토어 앱 옆에 깐다
-
-R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다. 그런데 로컬 release APK는
-서명이 Play와 달라 그냥 설치하면 **스토어 앱을 지워야 하고 테스트 데이터가 날아간다.**
-
-- **디버그**: `build.gradle.kts`의 debug 블록이 `applicationIdSuffix = ".debug"`를 준다 —
-  `flutter run`이 스토어 앱을 건드리지 않는다. ⚠️ 이 변종은 Google 로그인이 안 된다
-  (OAuth 클라이언트가 원래 패키지명에 묶여 있다). 안드로이드는 Google 연동을 감추므로
-  실질 영향은 없다.
-- **축소 확인용**: `applicationId`를 `com.planroutine.app.diag`로 **잠깐** 바꿔
-  `flutter build apk --release --dart-define-from-file=<tago>.json` 하고 **곧바로 되돌린다.**
-  커스텀 buildType이나 flavor를 만들지 않는다 — 전자는 Flutter가 `release`라는 이름에
-  맞춰 축소를 켜므로 **정작 R8이 안 도는** 빌드가 나올 수 있고, 후자는 태스크 이름이
-  바뀌어 fastlane 레인이 깨진다.
-- 검증은 **R8 매핑 전/후 비교**(`build/app/outputs/mapping/release/mapping.txt`)와
-  **실기기 동작** 둘 다 본다. 매핑만으로는 증상이 사라졌다는 증거가 안 된다.
-
-### Android 알림은 M1까지 **구조적으로 죽어 있었다**
-
-실기기 신고(Galaxy A34, 2026-08-08): 알림 스위치를 켜도 즉시 OFF로 되돌아간다.
-버그가 아니라 **Android 경로를 아예 안 만든 상태**였다(`notification_service.dart`의
-주석이 `구현은 iOS 한정으로 필요한 부분만`이라고 적고 있었다).
-
-사망 지점이 **둘**이고, 둘 다 화면상 증상이 없어 오래 숨었다.
-
-1. `InitializationSettings`에 `android:`가 없으면 플러그인이 **첫 줄에서
-   `ArgumentError`를 던진다.** `main.dart`의 `try { … } catch (_) {}`가 먹어
-   크래시하지 않고, `_initialized`가 안 켜지고 이어지는 `sync()`도 같은 catch에
-   먹힌다 — **화면상 증상 0.**
-2. `requestPermission()`이 iOS 플러그인만 resolve해 Android에선 늘 `false`.
-   `setMaster(true)`가 그 false를 받고 마스터를 도로 끈다 → **스위치를 켤 수 없다.**
-
-- **채널 id는 `*Strings`에 두지 않는다**(`notification_details.dart`의
-  `kAndroidChannelId`). 한 번 만들면 importance·소리를 코드로 못 바꾸고, 바꾸려면
-  id를 bump 해야 하는데 그러면 **채널이 갈라져 사용자 알림 설정이 초기화된다.**
-  이름·설명은 `설정 › 앱 › 알림`에 노출되는 UI 문자열이라 `NotificationStrings`에 둔다.
-- **채널을 `init()`에서 미리 만든다.** 안 만들어도 첫 발화 때 자동 생성되지만 그
-  시점은 "예약할 때"가 아니라 "발화할 때"라, 그때까지 설정 화면에 채널이 없다.
-- **`BigTextStyleInformation`이 필수다.** 본문이 두 줄인데(`오늘 …\n이번 주 …`)
-  Android는 접힌 알림에서 한 줄만 보여준다 — 없으면 `이번 주`가 통째로 안 보인다.
-  iOS는 여러 줄을 그대로 보여줘 이 차이가 안 드러났다.
-- **스케줄 모드는 `inexactAllowWhileIdle`이고, 값 하나에 Play 심사가 달려 있다.**
-  `exact*`는 `SCHEDULE_EXACT_ALARM` 고위험 권한 선언 양식 대상이다. 대가인 Doze
-  9분 규칙은 이 앱에 무해하다 — `computeNotifications`가 발송 시각으로 병합해
-  **하루 1건**만 만들기 때문이다(개별 이벤트마다 알림을 만드는 앱이었으면 이 결정이
-  성립하지 않는다). ⚠️ 9분 규칙을 안 넘는 것이 **정시 발화를 뜻하지 않는다** —
-  inexact alarm이라 지연 상한이 문서에 없다.
-- ⚠️ **리시버가 둘이다.** `ScheduledNotificationBootReceiver`(부팅 재예약)만 넣으면
-  안 된다 — **`ScheduledNotificationReceiver`가 없으면 재부팅과 무관하게 예약 알림이
-  한 건도 발화하지 않는다.** 이름이 부팅용으로 읽혀 빠뜨리기 쉽다. 플러그인은 v16부터
-  receiver를 하나도 선언하지 않는다(`POST_NOTIFICATIONS`·`VIBRATE`만 병합) —
-  **`POST_NOTIFICATIONS`는 앱이 적을 필요가 없고, `RECEIVE_BOOT_COMPLETED`는 적어야 한다.**
-- **아이콘은 `res/drawable/`이고 mipmap이 아니다.** 네이티브가
-  `getIdentifier(name, "drawable", pkg)`로 찾고 defType이 고정이다. 테두리를 한
-  path로 그리면 nonZero fillType 때문에 **상태바에 흰 사각형**이 뜬다 — 막대로 나눠 그린다.
-  release는 리소스 축소가 기본 ON이라 `keep.xml`이 이 drawable을 지킨다.
-- 가드는 `test/features/notifications/android_wiring_test.dart` 15건. 서비스가
-  플러그인 인스턴스를 들고 있어 단위 테스트로 못 밟으므로 **값과 소스를 검사한다** —
-  실제 동작은 에뮬레이터에서 확인했다(채널 생성 · 권한 다이얼로그 · 스위치 유지 ·
-  `dumpsys notification`에 `channel=schedule_reminder` + `BigTextStyle` 발화).
-
-### Android 레인
-
-- **트랙은 값과 함께 기억할 것**: `beta` = 비공개 테스트(Play 콘솔 API identifier `alpha`,
-  콘솔 화면 이름은 **`Alpha`/"비공개 테스트"**) / `bootstrap` = `internal`(draft, 패키지명
-  확정용 1회성). ⚠️ **`internal`은 비공개 테스트 14일 요건을 하루도 세지 않는다** — 트랙을
-  착각해 `internal`에 올리면 14일이 0일이 된다. 첫 `beta` 실행 후에는 **콘솔에서 트랙 이름을
-  육안 확인**한다(`테스트 및 출시 › 비공개 테스트`, "내부 테스트"가 아니다).
-- **`reset_android_caches`가 매 빌드 필수다**(`build_aab`가 자동 실행) — 실측 둘이 근거:
-  debug가 소스 위치에 심는 `GeneratedPluginRegistrant.java`가 `integration_test`(dev
-  dependency)를 참조해 release javac가 실패하고, `sqflite_common_ffi`가 스테이징한
-  `libsqlite3.so`가 release APK에 섞여 들어간다(실측 70.4MB → 65.3MB로 축소 확인).
-- **서비스 계정 JSON은 `~/.google_play/planroutine.json` 하나로 일원화**한다 — 같은
-  디렉터리의 `service_account.json`은 **바로팀이 이미 쓰는 자리**라, 그 파일명을 쓰면
-  엉뚱한 앱 자격증명으로 배포한다(실측 사고, 2026-08-02). `assert_play_key`가
-  `client_email`에 `planroutine`이 있는지까지 확인해 막는다.
-- **게이트는 iOS와 동일**(`flutter analyze` + `flutter test`) **+ release AAB 스모크** —
-  bundletool로 AAB를 에뮬레이터에 설치해 버스 카드가 실제 도착 정보를 그리는지 확인한다
-  (TAGO 키가 release 빌드에 실제로 주입됐다는 유일한 증거).
-- **첫 업로드는 레인으로 할 수 없다** — Play API는 패키지가 앱에 바인딩되기 전엔
-  `insert_edit`에서 404를 던진다. 이 앱은 콘솔 수동 업로드로 이미 지났지만, **다음 앱을
-  낼 때 같은 벽을 다시 만난다.**
-- **되돌릴 수 없는 것**: 패키지명 확정(`bootstrap`의 첫 업로드) · keystore(업로드 키 —
-  분실·교체 시 같은 앱으로 업데이트를 낼 방법이 없다, 리포 밖 보관 필수) · 최종 심사
-  제출(`beta`는 `release_status: "completed"`라 업로드 즉시 Play 심사로 들어간다).
-
-### 배포 플로우 정책 (메모리에 기록됨)
-`flutter analyze` + `flutter test` 통과 시 사용자 승인 없이 바로 `./ios/bin/fastlane.sh beta` 실행 후 push까지 진행. 배포 실패 시에만 멈춰서 보고.
-
-**예외 — Android 첫 `beta`는 콘솔 육안 확인을 끼운다.** 자동으로 push까지 진행하지 않고,
-Play 콘솔에서 트랙이 실제로 `비공개 테스트`(`Alpha`)에 올라갔는지 확인한 뒤에만 완료로
-보고한다 — 트랙을 `internal`로 착각하면 14일 비공개 테스트 요건이 하루도 안 세는,
-되돌릴 수 없는 손실이기 때문이다.
+  문서가 셋을 명령으로 적어둬서 스크린샷을 확인하려던 세션이 `Could not find lane`으로
+  헛돌았다(2026-08-06). **iOS 레인은 일곱 개**이고 목록은 런북에 있다.
+- ⚠️ 스킬을 새로 만들면 **그 파일도 이 가드의 대상**이다(손으로 목록에 적지 않고 훑는다).
+  훑기가 죽으면 검사 대상이 CLAUDE.md 하나로 조용히 줄어들어, 생존 테스트가 그것도 본다.
 
 ### 앱 아이콘 재생성
+
 ```
 flutter test test/tools/gen_app_icon.dart   # 1024x1024 원본 갱신
 dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 ```
-- `test/tools/gen_app_icon.dart`는 파일명에 `_test`가 없어 `flutter test` 자동 스캔에서 제외됨. 명시 지정 시에만 실행.
 
-### App Store Connect API key
-- key_id / issuer_id / `.p8` 경로는 `ios/fastlane/Fastfile`의 `load_asc_api_key` 레인에 정의 (식별자 문서 평문 노출 금지).
-- 개인키(`.p8`)는 리포 밖 `~/.appstoreconnect/private_keys/`에 보관.
-- Bundle ID: `com.planroutine.app`
-- 수동 폴백: `xcrun altool --upload-app --type ios --file build/ios/ipa/공직플랜.ipa --apiKey <key_id> --apiIssuer <issuer_id>` (값은 Fastfile 참조).
-
-### 알려진 빌드 이슈
-- **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환). `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로 남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등). `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조, `Runner.xcscheme`에 `xcode_backend.sh prepare` PreAction이 붙는다. **`Package.resolved` 두 개**(`Runner.xcworkspace`·`Runner.xcodeproj/project.xcworkspace`)가 SPM의 lockfile이라 Podfile.lock과 같은 이유로 **커밋 대상**이다. CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager` 후 재빌드.
-  - 검증됨: analyze · 유닛/위젯 · E2E 19 · **두 스토어 `beta` 레인**
-    (Android `versionCode 143 / alpha` 2026-08-03 · iOS `TestFlight v144 VALID` 2026-08-04).
-    TAGO 키는 IPA와 AAB 양쪽 스냅샷에서 문자열로 확인했다(양성 대조 포함).
-    ⚠️ iOS는 **CocoaPods 구성**으로 통과했다 — SPM 빌드(`v143`)는 거부됐다(아래 참고).
-  - ⚠️ **SPM은 되돌렸다**(2026-08-04). SPM으로 만든 첫 IPA(`v143`)가 Apple 처리에서
-    거부됐다 — `90683 Missing purpose string in Info.plist` (`NSCameraUsageDescription`).
-    기제는 링크 구조 변경이다: `file_picker`의 카메라 참조 코드가 CocoaPods에서는
-    별개 프레임워크 번들에 있었는데 SPM에서는 **`Runner.app` 본체에 정적 링크**되고,
-    Apple의 purpose string 검사는 **번들 단위**다(오류 문구도 "the Info.plist file for
-    the **Runner.app** bundle"). 같은 `Info.plist`로 CocoaPods 빌드인 `v142`는 통과했다.
-    - **SPM을 다시 도입할 때는** `NSCameraUsageDescription`을 넣고, 경고로만 나온
-      `NSLocationWhenInUseUsageDescription`처럼 **플러그인이 자기 번들에 갖고 있던
-      purpose string 전수를 옮겨야 한다** — 이번 오류가 마지막이라는 보장이 없다.
-      릴리스 중간에 섞지 말 것.
-    - 이 실패는 **로컬에서 잡을 수 없다.** `flutter build ipa`는 성공하고 IPA에 키까지
-      들어 있었다 — purpose string 검사는 Apple 서버에서만 돈다.
-- **SDK를 올린 뒤에는 `flutter clean`이 필요하다.** 엔진이 기대하는 셰이더 포맷이 바뀌면 캐시에 남은 옛 번들이 `Asset 'shaders/ink_sparkle.frag' … Expected 2, got 1`로 터진다(실측 — 바로팀 테스트 6건이 이것으로 실패했고 clean 후 278/278 통과). 같은 SDK를 두 앱이 공유하므로 **한쪽을 올리면 다른 쪽도 clean**해야 한다.
-- 통합 테스트(simulator 빌드) 직후 바로 빌드하면 **simulator slice가 framework에 남아** altool 업로드 거부(91169). → **beta 레인**의 `reset_ios_caches`가 자동 차단(release는 빌드 없이 promote만 하므로 무관).
-- **수동 `flutter build ipa`로는 배포하지 않는다.** 캐시만 비우고(`flutter clean && rm -rf ios/Pods ios/Podfile.lock ios/build`) **다시 `beta` 레인으로** 빌드한다. 수동 명령에는 `--dart-define-from-file`이 없어 **TAGO 키가 빠진 IPA**가 나오는데, release 레인의 가드 넷(A 버전·B VALID·D 심사단계·E 릴리즈노트) 어디도 키를 보지 않아 **버스 기능이 조용히 죽은 빌드가 심사에 오른다**. 화면에는 `버스 정보를 불러올 수 없어요`만 떠서 사후 진단도 어렵다(설계상 사용자에게 키 이야기를 하지 않는다).
+- `test/tools/gen_app_icon.dart`는 파일명에 `_test`가 없어 `flutter test` 자동 스캔에서
+  제외된다. 명시 지정할 때만 실행된다.
 
 ## 샘플 데이터
 - `data/sample/2025_생산문서등록대장.csv` — **합성** 생산문서등록대장 20건 (가상 학교·가명, 실제 PII 없음)
@@ -1206,6 +944,8 @@ Edit는 `old_string` 대 `new_string`). 새 파일은 검사 대상이 아니다
   **앱 동작에는 영향이 없다**. 프리캐시는 테스트 캡처용이지 제품 수정이 아니다.)
 - 날짜 문자열 포맷은 `date_utils.formatDate(DateTime) → 'YYYY-MM-DD'` 공용 함수 사용
 - 확인 다이얼로그는 `ConfirmDialog.show()` 공통 위젯 사용 (신규 AlertDialog 직접 만들지 않기)
+- **`GoldGradientButton`은 좌우 padding 24를 스스로 갖는다** — 가운데 정렬하려면 `Center`로
+  감싼다. (구조 트리를 `docs/notes/`로 옮길 때 트리 주석에만 있던 제약이라 여기로 올렸다.)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리
 - **`ListTile`(`ExpansionTile` 포함) 위에 색칠된 컨테이너를 끼우지 않는다.** ListTile은 배경과
   잉크를 **가장 가까운 `Material`** 에 그리므로, 사이에 배경색 있는 `Container`/`DecoratedBox`가
