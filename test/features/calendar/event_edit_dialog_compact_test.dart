@@ -38,9 +38,7 @@ Future<void> _openSheet(
   tester.view.physicalSize = Size(widthDp * dpr, 891 * dpr);
   tester.view.viewInsets = FakeViewPadding(bottom: keyboardDp * dpr);
   tester.view.viewPadding = const FakeViewPadding(bottom: 24 * dpr);
-  tester.view.padding = FakeViewPadding(
-    bottom: keyboardDp > 0 ? 0 : 24 * dpr,
-  );
+  tester.view.padding = FakeViewPadding(bottom: keyboardDp > 0 ? 0 : 24 * dpr);
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
@@ -69,12 +67,14 @@ void main() {
   setUpAll(() async => initializeDateFormatting('ko_KR', null));
 
   for (final width in [320.0, 390.0, 430.0]) {
-    testWidgets('${width.toInt()}pt — 종류와 중요가 한 줄이고 넘치지 않는다',
-        (tester) async {
+    testWidgets('${width.toInt()}pt — 종류와 중요가 한 줄이고 넘치지 않는다', (tester) async {
       await _openSheet(tester, widthDp: width);
 
-      expect(tester.takeException(), isNull,
-          reason: '$width pt에서 성격 카드 행이 가로로 넘쳤다');
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: '$width pt에서 성격 카드 행이 가로로 넘쳤다',
+      );
 
       final kind = find.byKey(const Key('kind_selector'));
       final important = find.byKey(const Key('important_toggle'));
@@ -87,7 +87,8 @@ void main() {
       expect(
         (kindRect.center.dy - importantRect.center.dy).abs(),
         lessThan(8),
-        reason: '종류(${kindRect.center.dy})와 중요(${importantRect.center.dy})가 '
+        reason:
+            '종류(${kindRect.center.dy})와 중요(${importantRect.center.dy})가 '
             '다른 줄에 있다 — 합쳐서 회수한 높이가 도로 늘어났다',
       );
     });
@@ -98,8 +99,11 @@ void main() {
 
     // 별 하나만 있던 시절에는 처음 보는 사람이 무슨 스위치인지 알 수 없었다
     // (사용자 신고 2026-08-07). 이름이 컨트롤 안에 있어야 한다.
-    expect(find.text(CalendarStrings.importantBadge), findsOneWidget,
-        reason: '칩에 `중요` 글자가 보여야 한다');
+    expect(
+      find.text(CalendarStrings.importantBadge),
+      findsOneWidget,
+      reason: '칩에 `중요` 글자가 보여야 한다',
+    );
     expect(
       find.bySemanticsLabel(CalendarStrings.importantLabel),
       findsOneWidget,
@@ -111,12 +115,16 @@ void main() {
     await _openSheet(tester, widthDp: 390);
 
     const toggle = Key('important_toggle');
-    BoxDecoration decoOf() => tester
-        .widget<Container>(find.descendant(
-          of: find.byKey(toggle),
-          matching: find.byType(Container),
-        ))
-        .decoration as BoxDecoration;
+    BoxDecoration decoOf() =>
+        tester
+                .widget<Container>(
+                  find.descendant(
+                    of: find.byKey(toggle),
+                    matching: find.byType(Container),
+                  ),
+                )
+                .decoration
+            as BoxDecoration;
 
     // 꺼짐 — 빈 별, 채움 없음. 예전에는 꺼져 있어도 별이 늘 골드라
     // **켜진 것처럼** 보였다.
@@ -142,30 +150,38 @@ void main() {
       findsOneWidget,
       reason: '켜짐은 채운 별이어야 한다',
     );
-    expect(decoOf().color, AppColors.goldFill,
-        reason: '채움은 옆 세그먼트와 같은 goldFill 규칙을 쓴다');
+    expect(
+      decoOf().color,
+      AppColors.goldFill,
+      reason: '채움은 옆 세그먼트와 같은 goldFill 규칙을 쓴다',
+    );
   });
 
-  testWidgets('오늘 탭 경로(종류 잠금)는 중요 표시만 글자 라벨과 함께 남는다',
-      (tester) async {
+  testWidgets('오늘 탭 경로(종류 잠금)는 중요 표시만 글자 라벨과 함께 남는다', (tester) async {
     await _openSheet(tester, widthDp: 390, allowKindChange: false);
 
-    expect(find.byKey(const Key('kind_selector')), findsNothing,
-        reason: '오늘 탭에서는 종류를 바꿀 수 없다');
+    expect(
+      find.byKey(const Key('kind_selector')),
+      findsNothing,
+      reason: '오늘 탭에서는 종류를 바꿀 수 없다',
+    );
     expect(find.byKey(const Key('important_toggle')), findsOneWidget);
-    expect(find.text(CalendarStrings.importantLabel), findsOneWidget,
-        reason: '이 경로는 한 줄뿐이라 글자 라벨을 유지한다');
+    expect(
+      find.text(CalendarStrings.importantLabel),
+      findsOneWidget,
+      reason: '이 경로는 한 줄뿐이라 글자 라벨을 유지한다',
+    );
   });
 
-  testWidgets('종류를 바꾸면 선택이 반영된다 (합치면서 동작을 잃지 않았다)',
-      (tester) async {
+  testWidgets('종류를 바꾸면 선택이 반영된다 (합치면서 동작을 잃지 않았다)', (tester) async {
     await _openSheet(tester, widthDp: 390);
 
     await tester.tap(find.text(EntryKind.event.label));
     await tester.pumpAndSettle();
 
-    final segmented =
-        tester.widget<SegmentedButton<EntryKind>>(find.byKey(const Key('kind_selector')));
+    final segmented = tester.widget<SegmentedButton<EntryKind>>(
+      find.byKey(const Key('kind_selector')),
+    );
     expect(segmented.selected, {EntryKind.event});
   });
 }

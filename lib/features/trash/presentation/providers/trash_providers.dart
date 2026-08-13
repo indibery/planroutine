@@ -7,10 +7,7 @@ import '../../../schedule/presentation/providers/schedule_providers.dart';
 
 /// 휴지통 항목 묶음 (일정 + 캘린더 이벤트).
 class TrashSnapshot {
-  const TrashSnapshot({
-    required this.schedules,
-    required this.events,
-  });
+  const TrashSnapshot({required this.schedules, required this.events});
 
   final List<Schedule> schedules;
   final List<CalendarEvent> events;

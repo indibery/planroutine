@@ -109,9 +109,7 @@ void main() {
     // DB 초기화 후 seed 주입
     await DatabaseHelper.instance.resetAllData();
     final container = ProviderContainer(
-      overrides: [
-        busApiClientProvider.overrideWithValue(_ScreenshotBusApi()),
-      ],
+      overrides: [busApiClientProvider.overrideWithValue(_ScreenshotBusApi())],
     );
     await seedScreenshotData(container);
 
@@ -133,10 +131,12 @@ void main() {
     await binding.takeScreenshot('1_today');
 
     // 2. 캘린더 탭
-    await tester.tap(find.descendant(
-      of: find.byType(FloatingTabBar),
-      matching: find.byIcon(Icons.calendar_month_outlined),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(FloatingTabBar),
+        matching: find.byIcon(Icons.calendar_month_outlined),
+      ),
+    );
     await tester.pumpAndSettle();
     await binding.convertFlutterSurfaceToImage();
     await tester.pumpAndSettle();
@@ -186,10 +186,12 @@ void main() {
     // 이동 틱(`Timer.periodic`)으로 setState를 반복하므로, 그 뒤로는
     // `pumpAndSettle`이 "예약된 프레임 없음"에 도달하지 못해 타임아웃까지 매달린다.
     // 앞의 5장을 먼저 찍어두면 그 함정과 무관해진다.
-    await tester.tap(find.descendant(
-      of: find.byType(FloatingTabBar),
-      matching: find.byIcon(Icons.check_circle_outline),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(FloatingTabBar),
+        matching: find.byIcon(Icons.check_circle_outline),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await container.read(busSettingsProvider.future);
@@ -197,9 +199,15 @@ void main() {
     // **퇴근 시간대를 먼저 옮긴다** — 출근 시간대를 하루 전체로 넓히려면 기본
     // 퇴근 시간대(16:00–18:00)와 겹치는데, `setRange`는 겹치는 값을 저장하지 않고
     // false를 돌려준다. 순서를 뒤집으면 조용히 거부돼 카드가 접힌 채 찍힌다.
-    await bus.setRange(CommuteDirection.toHome, const TimeRange.hm(23, 10, 23, 50));
+    await bus.setRange(
+      CommuteDirection.toHome,
+      const TimeRange.hm(23, 10, 23, 50),
+    );
     // 촬영 시각과 무관하게 펼쳐지도록 출근 시간대가 하루를 덮게 한다.
-    await bus.setRange(CommuteDirection.toWork, const TimeRange.hm(0, 0, 23, 0));
+    await bus.setRange(
+      CommuteDirection.toWork,
+      const TimeRange.hm(0, 0, 23, 0),
+    );
     await bus.setStop(CommuteDirection.toWork, _screenshotStop);
     // 시간 축 — 배차 간격이 공간으로 보여 스토어에서 기능이 한눈에 읽힌다.
     await bus.setStyle(BusCardStyle.axis);

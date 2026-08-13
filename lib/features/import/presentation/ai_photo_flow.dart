@@ -31,7 +31,9 @@ Future<void> copyAiPhotoPrompt(
   if (!context.mounted) return;
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
-    ..showSnackBar(SnackBar(content: Text(ImportStrings.aiPromptCopiedFor(kind))));
+    ..showSnackBar(
+      SnackBar(content: Text(ImportStrings.aiPromptCopiedFor(kind))),
+    );
 }
 
 /// ② 클립보드의 AI 응답을 파싱해 미리보기 시트를 띄우고, 승인 시 검토 대기로 등록한다.
@@ -49,18 +51,23 @@ Future<void> pasteAiSchedulesAndPreview(
     // 게 아니라 AI에 다시 요청해야 한다.
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: Text(parsed.invalidCount > 0
-            ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
-            : ImportStrings.aiParseEmptyFor(kind)),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            parsed.invalidCount > 0
+                ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
+                : ImportStrings.aiParseEmptyFor(kind),
+          ),
+        ),
+      );
     return;
   }
 
   // 기존 활성 일정(title+date)과 대조해 미리보기에서 중복을 표시.
   final existing = await ref.read(scheduleRepositoryProvider).getSchedules();
-  final existingKeys =
-      existing.map((s) => '${s.title}|${s.scheduledDate}').toSet();
+  final existingKeys = existing
+      .map((s) => '${s.title}|${s.scheduledDate}')
+      .toSet();
   final seen = <String>{};
   final fresh = <AiScheduleItem>[];
   var dupCount = 0;
@@ -80,8 +87,9 @@ Future<void> pasteAiSchedulesAndPreview(
     useRootNavigator: true,
     backgroundColor: AppColors.navyMid,
     shape: const RoundedRectangleBorder(
-      borderRadius:
-          BorderRadius.vertical(top: Radius.circular(AppSizes.radius16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppSizes.radius16),
+      ),
     ),
     builder: (sheetContext) => _AiPreviewSheet(
       items: parsed.items,
@@ -101,8 +109,9 @@ Future<void> pasteAiSchedulesAndPreview(
         Navigator.of(sheetContext).pop();
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-              content: Text(ImportStrings.aiRegistered(result.created))));
+          ..showSnackBar(
+            SnackBar(content: Text(ImportStrings.aiRegistered(result.created))),
+          );
       },
     ),
   );
@@ -184,8 +193,9 @@ class _AiPreviewSheet extends StatelessWidget {
                           height: 30,
                           decoration: BoxDecoration(
                             color: AppColors.goldMuted,
-                            borderRadius:
-                                BorderRadius.circular(AppSizes.radius4),
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radius4,
+                            ),
                           ),
                         ),
                         const SizedBox(width: AppSizes.spacing8),
@@ -206,7 +216,9 @@ class _AiPreviewSheet extends StatelessWidget {
                               Text(
                                 du.formatDate(DateTime.parse(item.date)),
                                 style: TextStyle(
-                                    fontSize: 11, color: AppColors.faint),
+                                  fontSize: 11,
+                                  color: AppColors.faint,
+                                ),
                               ),
                             ],
                           ),

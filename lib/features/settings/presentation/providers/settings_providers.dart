@@ -57,8 +57,9 @@ class AppResetNotifier extends StateNotifier<ResetState> {
   }
 }
 
-final appResetProvider =
-    StateNotifierProvider<AppResetNotifier, ResetState>((ref) {
+final appResetProvider = StateNotifierProvider<AppResetNotifier, ResetState>((
+  ref,
+) {
   return AppResetNotifier(ref);
 });
 

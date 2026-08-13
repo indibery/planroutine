@@ -12,36 +12,45 @@ BusArrival _a(String routeId, String routeNo, int arrMin) =>
     BusArrival.fromMinutes(routeId: routeId, routeNo: routeNo, arrMin: arrMin);
 
 BusCardView _view(List<BusArrival> items, {int hidden = 0}) => BusCardView(
-      state: BusCardState.ok,
-      visible: items,
-      hiddenCount: hidden,
-      fetchedAt: DateTime(2026, 7, 28, 7, 32),
-    );
+  state: BusCardState.ok,
+  visible: items,
+  hiddenCount: hidden,
+  fetchedAt: DateTime(2026, 7, 28, 7, 32),
+);
 
 /// 본문에 주는 폭. 축의 좌표 단정이 이 값에서 나오므로 상수로 둔다.
 const _axisWidth = 340.0;
 
 Future<void> _pump(WidgetTester tester, Widget child) {
-  return tester.pumpWidget(MaterialApp(
-    home: Scaffold(body: SizedBox(width: _axisWidth, child: child)),
-  ));
+  return tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(width: _axisWidth, child: child),
+      ),
+    ),
+  );
 }
 
 /// 축의 점 — 원형 `Container`. 레일은 사각(`borderRadius`)이라 걸리지 않는다.
 Finder _dot(int index) => find
     .descendant(
       of: find.byType(BusBodyAxis),
-      matching: find.byWidgetPredicate((w) =>
-          w is Container &&
-          w.decoration is BoxDecoration &&
-          (w.decoration! as BoxDecoration).shape == BoxShape.circle),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Container &&
+            w.decoration is BoxDecoration &&
+            (w.decoration! as BoxDecoration).shape == BoxShape.circle,
+      ),
     )
     .at(index);
 
 void main() {
   group('BusBodyText — 색을 쓰지 않고 굵기·크기로만 위계를 만든다', () {
     testWidgets('노선번호와 분이 모두 보인다', (tester) async {
-      await _pump(tester, BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])));
+      await _pump(
+        tester,
+        BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])),
+      );
       expect(find.text('720번'), findsOneWidget);
       expect(find.text('2분'), findsOneWidget);
       expect(find.text('150번'), findsOneWidget);
@@ -54,7 +63,10 @@ void main() {
     });
 
     testWidgets('임박한 행만 w800 18px ink, 나머지는 w600 14px sub', (tester) async {
-      await _pump(tester, BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])));
+      await _pump(
+        tester,
+        BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])),
+      );
 
       final urgent = tester.widget<Text>(find.text('2분'));
       final normal = tester.widget<Text>(find.text('5분'));
@@ -67,7 +79,10 @@ void main() {
     });
 
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
-      await _pump(tester, BusBodyText(view: _view([_a('A', '1', 2)], hidden: 2)));
+      await _pump(
+        tester,
+        BusBodyText(view: _view([_a('A', '1', 2)], hidden: 2)),
+      );
       expect(find.text('2개 더'), findsOneWidget);
     });
 
@@ -130,10 +145,16 @@ void main() {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
 
       final expected = BusBodyAxis.dotPosition(2 * 60) * _axisWidth;
-      expect(tester.getCenter(_dot(0)).dx, closeTo(expected, 0.5),
-          reason: '점 중심이 분에 비례한 x다 — size/2 보정이 그 일을 한다');
-      expect(tester.getCenter(find.text('720')).dx, closeTo(expected, 0.5),
-          reason: '라벨 중심이 점과 같은 x다 — 폭 28의 -14 보정이 그 일을 한다');
+      expect(
+        tester.getCenter(_dot(0)).dx,
+        closeTo(expected, 0.5),
+        reason: '점 중심이 분에 비례한 x다 — size/2 보정이 그 일을 한다',
+      );
+      expect(
+        tester.getCenter(find.text('720')).dx,
+        closeTo(expected, 0.5),
+        reason: '라벨 중심이 점과 같은 x다 — 폭 28의 -14 보정이 그 일을 한다',
+      );
     });
 
     testWidgets('15분을 넘긴 항목들은 점이 오른쪽 끝에 모인다', (tester) async {
@@ -180,7 +201,10 @@ void main() {
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
       // 축은 `hiddenCount`를 아예 참조하지 않아 5노선 중 2개를 조용히 버렸다.
       // 화면에는 점 3개뿐이라 사용자는 이 정류장에 버스가 3대만 온다고 읽는다.
-      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)], hidden: 2)));
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('A', '720', 2)], hidden: 2)),
+      );
       expect(find.text('2개 더'), findsOneWidget);
     });
 
@@ -201,8 +225,11 @@ void main() {
       );
       final more = tester.getRect(find.text('2개 더'));
       final farLabel = tester.getRect(find.text('61'));
-      expect(more.top, greaterThanOrEqualTo(farLabel.bottom),
-          reason: '감춘 개수는 라벨 행 아래에 있어야 겹치지 않는다');
+      expect(
+        more.top,
+        greaterThanOrEqualTo(farLabel.bottom),
+        reason: '감춘 개수는 라벨 행 아래에 있어야 겹치지 않는다',
+      );
     });
   });
 
@@ -212,7 +239,10 @@ void main() {
     final source = File(
       'lib/features/bus/presentation/widgets/bus_body_text.dart',
     ).readAsStringSync();
-    expect(source.contains('busSignal'), isFalse,
-        reason: '간단히 모양은 신호색을 쓰지 않는다 — 팔레트 충돌을 기본값에서 없앤다');
+    expect(
+      source.contains('busSignal'),
+      isFalse,
+      reason: '간단히 모양은 신호색을 쓰지 않는다 — 팔레트 충돌을 기본값에서 없앤다',
+    );
   });
 }

@@ -46,10 +46,10 @@ const _savedHwaseong = BusStop(
 /// 헤더가 없으면 latin1로 떨어져 픽스처의 한글에서 터진다(구현이 아니라 픽스처의
 /// 함정이다). `bus_api_client_test.dart`의 `_json`과 같은 이유·같은 모양이다.
 http.Response _json(String body, [int status = 200]) => http.Response(
-      body,
-      status,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  body,
+  status,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 /// GBIS 실측 응답 파일. **손으로 적지 않는다** — 이 작업에서 손으로 쓴 픽스처가
 /// 현실과 달라 여러 번 어긋났다(`gbis_response_parser_test.dart`와 같은 이유).
@@ -58,15 +58,15 @@ String _gbisFixture(String name) =>
 
 /// 실측 껍데기. 데이터가 없을 때 `items`는 **빈 문자열**로 온다.
 String _body(Object? inner) => jsonEncode({
-      'response': {
-        'header': {'resultCode': '00', 'resultMsg': 'NORMAL SERVICE.'},
-        'body': {
-          'items': inner == '' ? '' : {'item': inner},
-          'numOfRows': 50,
-          'pageNo': 1,
-        },
-      },
-    });
+  'response': {
+    'header': {'resultCode': '00', 'resultMsg': 'NORMAL SERVICE.'},
+    'body': {
+      'items': inner == '' ? '' : {'item': inner},
+      'numOfRows': 50,
+      'pageNo': 1,
+    },
+  },
+});
 
 /// TAGO 세 엔드포인트를 URL로 갈라 응답한다 — 화면이 도시 목록·정류장 검색·도착
 /// 조회를 **각각** 언제 부르는지 세려면 한 핸들러가 셋을 구별해야 한다.
@@ -126,29 +126,33 @@ class _Tago {
           .toList();
       if (hits.isEmpty) {
         // 실측: 수도권 밖은 `msgBody` 키 자체가 없고 resultCode 4다.
-        return _json(jsonEncode({
-          'response': {
-            'msgHeader': {'resultCode': 4, 'resultMessage': '결과가 존재하지 않습니다.'},
-          },
-        }));
+        return _json(
+          jsonEncode({
+            'response': {
+              'msgHeader': {'resultCode': 4, 'resultMessage': '결과가 존재하지 않습니다.'},
+            },
+          }),
+        );
       }
-      return _json(jsonEncode({
-        'response': {
-          'msgHeader': {'resultCode': 0, 'resultMessage': '정상'},
-          'msgBody': {
-            'busStationList': [
-              for (final (i, e) in hits.indexed)
-                {
-                  'stationId': 201000156 + i,
-                  'stationName': e.key,
-                  // 실측대로 앞에 공백을 붙여 준다 — trim이 빠지면 0이 된다.
-                  'mobileNo': ' ${2251 + i}',
-                  'regionName': e.value,
-                },
-            ],
+      return _json(
+        jsonEncode({
+          'response': {
+            'msgHeader': {'resultCode': 0, 'resultMessage': '정상'},
+            'msgBody': {
+              'busStationList': [
+                for (final (i, e) in hits.indexed)
+                  {
+                    'stationId': 201000156 + i,
+                    'stationName': e.key,
+                    // 실측대로 앞에 공백을 붙여 준다 — trim이 빠지면 0이 된다.
+                    'mobileNo': ' ${2251 + i}',
+                    'regionName': e.value,
+                  },
+              ],
+            },
           },
-        },
-      }));
+        }),
+      );
     }
 
     if (url.path.endsWith('getBusArrivalListv2')) {
@@ -159,9 +163,13 @@ class _Tago {
     if (url.path.endsWith('getCtyCodeList')) {
       cityCalls++;
       if (cityFails) return _json('boom', 500);
-      return _json(_body(cities.entries
-          .map((e) => {'citycode': e.key, 'cityname': e.value})
-          .toList()));
+      return _json(
+        _body(
+          cities.entries
+              .map((e) => {'citycode': e.key, 'cityname': e.value})
+              .toList(),
+        ),
+      );
     }
 
     if (url.path.endsWith('getSttnNoList')) {
@@ -169,30 +177,33 @@ class _Tago {
       if (stopFails) return _json('boom', 500);
       final code = int.tryParse(url.queryParameters['cityCode'] ?? '') ?? 0;
       final name = url.queryParameters['nodeNm'] ?? '';
-      final rows = (stops[code] ?? const {})
-          .entries
+      final rows = (stops[code] ?? const {}).entries
           .where((e) => e.key.contains(name))
-          .map((e) => {
-                'nodeid': '$idPrefix${e.value}',
-                'nodenm': e.key,
-                'nodeno': e.value,
-              })
+          .map(
+            (e) => {
+              'nodeid': '$idPrefix${e.value}',
+              'nodenm': e.key,
+              'nodeno': e.value,
+            },
+          )
           .toList();
       return _json(_body(rows.isEmpty ? '' : rows));
     }
 
     arrivalCalls++;
-    return _json(_body([
-      {
-        'arrprevstationcnt': 3,
-        'arrtime': 480,
-        'nodeid': 'N',
-        'nodenm': '정류장',
-        'routeid': 'R1',
-        'routeno': 720,
-        'vehicletp': '일반버스',
-      }
-    ]));
+    return _json(
+      _body([
+        {
+          'arrprevstationcnt': 3,
+          'arrtime': 480,
+          'nodeid': 'N',
+          'nodenm': '정류장',
+          'routeid': 'R1',
+          'routeno': 720,
+          'vehicletp': '일반버스',
+        },
+      ]),
+    );
   }
 }
 
@@ -200,12 +211,13 @@ ProviderContainer _container(_Tago tago, BusSettings settings) {
   SharedPreferences.setMockInitialValues({
     'bus_settings_v1': jsonEncode(settings.toJson()),
   });
-  final container = ProviderContainer(overrides: [
-    busApiClientProvider.overrideWithValue(BusApiClient(
-      client: MockClient(tago.handle),
-      serviceKey: 'TESTKEY',
-    )),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      busApiClientProvider.overrideWithValue(
+        BusApiClient(client: MockClient(tago.handle), serviceKey: 'TESTKEY'),
+      ),
+    ],
+  );
   addTearDown(container.dispose);
   return container;
 }
@@ -221,10 +233,12 @@ Future<ProviderContainer> _pumpScreen(
 }) async {
   final container = _container(tago, settings);
   await container.read(busSettingsProvider.future);
-  await tester.pumpWidget(UncontrolledProviderScope(
-    container: container,
-    child: MaterialApp(home: BusStopSearchScreen(slot: slot)),
-  ));
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(home: BusStopSearchScreen(slot: slot)),
+    ),
+  );
   await tester.pumpAndSettle();
   return container;
 }
@@ -242,11 +256,15 @@ Future<ProviderContainer> _pumpRouted(
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const Scaffold(body: Text('오늘'))),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const Scaffold(body: Text('오늘')),
+      ),
       GoRoute(
         path: '/bus/stops',
         builder: (_, state) => BusStopSearchScreen(
-          slot: state.uri.queryParameters['slot'] == CommuteDirection.toHome.name
+          slot:
+              state.uri.queryParameters['slot'] == CommuteDirection.toHome.name
               ? CommuteDirection.toHome
               : CommuteDirection.toWork,
         ),
@@ -254,10 +272,12 @@ Future<ProviderContainer> _pumpRouted(
     ],
   );
   addTearDown(router.dispose);
-  await tester.pumpWidget(UncontrolledProviderScope(
-    container: container,
-    child: MaterialApp.router(routerConfig: router),
-  ));
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(routerConfig: router),
+    ),
+  );
   await tester.pumpAndSettle();
   router.push('/bus/stops?slot=${slot.name}');
   await tester.pumpAndSettle();
@@ -293,8 +313,9 @@ Future<void> _openRegionMode(WidgetTester tester) async {
 
 /// 지금 선택된 도시 칩. 없으면 null.
 PillChip? _selectedChip(WidgetTester tester) {
-  final chips =
-      tester.widgetList<PillChip>(find.byType(PillChip)).where((c) => c.selected);
+  final chips = tester
+      .widgetList<PillChip>(find.byType(PillChip))
+      .where((c) => c.selected);
   return chips.isEmpty ? null : chips.first;
 }
 
@@ -334,12 +355,17 @@ void main() {
       final tago = _Tago();
       await _pumpScreen(tester, tago);
 
-      final button = tester.widget<IconButton>(find.ancestor(
-        of: find.byIcon(Icons.search),
-        matching: find.byType(IconButton),
-      ));
-      expect(button.onPressed, isNotNull,
-          reason: '수도권 검색은 도시가 필요 없다 — 비활성이면 첫 검색이 막힌다');
+      final button = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.search),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(
+        button.onPressed,
+        isNotNull,
+        reason: '수도권 검색은 도시가 필요 없다 — 비활성이면 첫 검색이 막힌다',
+      );
     });
 
     testWidgets('결과 행을 탭하면 확인 시트가 뜬다 — 주 경로', (tester) async {
@@ -378,8 +404,11 @@ void main() {
       await _tapSearch(tester);
 
       expect(tago.stopCalls, 1);
-      expect(tago.gbisSearchCalls, 0,
-          reason: '지역을 명시했으면 그 지역으로만 찾는다 — 수도권 결과가 섞이면 고를 수 없다');
+      expect(
+        tago.gbisSearchCalls,
+        0,
+        reason: '지역을 명시했으면 그 지역으로만 찾는다 — 수도권 결과가 섞이면 고를 수 없다',
+      );
       expect(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'), findsOneWidget);
     });
 
@@ -421,9 +450,7 @@ void main() {
       // 구조적으로 밖으로 밀린다 — 복원해 놓고도 칩이 화면에 없으면 사용자는
       // "안 골라졌다"고 읽고 엉뚱한 칩으로 갈아치운다.
       final tago = _Tago()
-        ..cities = {
-          for (var i = 1; i <= 25; i++) 31000 + i: '가$i시',
-        };
+        ..cities = {for (var i = 1; i <= 25; i++) 31000 + i: '가$i시'};
       await _pumpScreen(
         tester,
         tago,
@@ -453,8 +480,11 @@ void main() {
       await _openRegionMode(tester);
 
       expect(find.text(BusStrings.cityFirst), findsOneWidget);
-      expect(find.text(BusStrings.searchPrompt), findsNothing,
-          reason: '이름이 아니라 도시가 빠졌는데 이름을 넣으라고 하면 사용자는 이미 넣은 것을 다시 넣는다');
+      expect(
+        find.text(BusStrings.searchPrompt),
+        findsNothing,
+        reason: '이름이 아니라 도시가 빠졌는데 이름을 넣으라고 하면 사용자는 이미 넣은 것을 다시 넣는다',
+      );
     });
 
     testWidgets('돋보기가 비활성이고 눌러도 요청이 나가지 않는다', (tester) async {
@@ -473,8 +503,11 @@ void main() {
 
       await _tapSearch(tester);
       expect(tago.stopCalls, 0);
-      expect(find.text(BusStrings.cityFirst), findsOneWidget,
-          reason: '눌렀는데도 화면이 이름을 넣으라고 하면 몇 번을 더 누른다');
+      expect(
+        find.text(BusStrings.cityFirst),
+        findsOneWidget,
+        reason: '눌렀는데도 화면이 이름을 넣으라고 하면 몇 번을 더 누른다',
+      );
       expect(find.text(BusStrings.searchPrompt), findsNothing);
       expect(find.text(BusStrings.searchEmpty), findsNothing);
     });
@@ -489,8 +522,11 @@ void main() {
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
       expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
       expect(find.text(BusStrings.searchEmpty), findsNothing);
-      expect(find.text(BusStrings.cityFirst), findsNothing,
-          reason: '고를 도시가 없는 것은 안 고른 것이 아니다');
+      expect(
+        find.text(BusStrings.cityFirst),
+        findsNothing,
+        reason: '고를 도시가 없는 것은 안 고른 것이 아니다',
+      );
     });
 
     testWidgets('다시 시도를 누르면 도시를 다시 불러온다', (tester) async {
@@ -519,8 +555,11 @@ void main() {
 
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
       expect(find.text(BusStrings.emptyDownAction), findsOneWidget);
-      expect(find.text(BusStrings.searchEmpty), findsNothing,
-          reason: '못 물어본 것을 없다고 말하면 사용자가 이름을 고치며 헛수고한다');
+      expect(
+        find.text(BusStrings.searchEmpty),
+        findsNothing,
+        reason: '못 물어본 것을 없다고 말하면 사용자가 이름을 고치며 헛수고한다',
+      );
     });
 
     testWidgets('정말 없으면 검색 결과가 없어요다 — 실패로 말하지 않는다', (tester) async {
@@ -531,8 +570,11 @@ void main() {
       await _tapSearch(tester);
 
       expect(find.text(BusStrings.searchEmpty), findsOneWidget);
-      expect(find.text(BusStrings.emptyDown), findsNothing,
-          reason: 'empty를 실패로 말하면 이름을 고치는 대신 무한히 재시도한다');
+      expect(
+        find.text(BusStrings.emptyDown),
+        findsNothing,
+        reason: 'empty를 실패로 말하면 이름을 고치는 대신 무한히 재시도한다',
+      );
     });
   });
 
@@ -550,8 +592,11 @@ void main() {
 
     testWidgets('쿼리가 없는 폴백에서도 슬롯을 말한다', (tester) async {
       await _pumpScreen(tester, _Tago());
-      expect(find.text('출발지 정류장 찾기'), findsOneWidget,
-          reason: '라우트를 손으로 열었을 때의 결과도 화면에 보여야 한다');
+      expect(
+        find.text('출발지 정류장 찾기'),
+        findsOneWidget,
+        reason: '라우트를 손으로 열었을 때의 결과도 화면에 보여야 한다',
+      );
     });
 
     testWidgets('확인 시트도 저장 대상을 말한다', (tester) async {
@@ -564,8 +609,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.confirmTitle), findsOneWidget);
-      expect(find.text('도착지에 저장합니다'), findsOneWidget,
-          reason: '맞아요를 누르는 순간이 되돌리기 가장 어려운 지점이다');
+      expect(
+        find.text('도착지에 저장합니다'),
+        findsOneWidget,
+        reason: '맞아요를 누르는 순간이 되돌리기 가장 어려운 지점이다',
+      );
     });
 
     testWidgets('저장은 화면이 말한 슬롯으로 간다', (tester) async {
@@ -587,8 +635,7 @@ void main() {
 
       final saved = container.read(busSettingsProvider).valueOrNull;
       expect(saved?.arrival?.nodeNm, 'B정류장(길 양쪽)');
-      expect(saved?.departure, isNull,
-          reason: '제목이 도착지라고 말했으면 출발지는 건드리지 않는다');
+      expect(saved?.departure, isNull, reason: '제목이 도착지라고 말했으면 출발지는 건드리지 않는다');
     });
 
     testWidgets('경기 정류장은 경유노선을 함께 조회해 시트에 넘긴다', (tester) async {
@@ -611,12 +658,17 @@ void main() {
       // **행 개수는 델리게이트에서 읽는다.** `find.byType(CheckboxListTile)`은
       // 뷰포트 밖 자식이 마운트되지 않아 테스트 창(600px) 기준 6개만 센다 — 목록이
       // 몇 건인지와 무관한 수라 단정에 쓰면 화면 크기를 검사하는 테스트가 된다.
-      final list = tester.widget<ListView>(find.descendant(
-        of: find.byType(BusStopConfirmSheet),
-        matching: find.byType(ListView),
-      ));
-      expect(list.childrenDelegate.estimatedChildCount, 10,
-          reason: '도착정보 8건이 아니라 경유노선 10건이 목록이다');
+      final list = tester.widget<ListView>(
+        find.descendant(
+          of: find.byType(BusStopConfirmSheet),
+          matching: find.byType(ListView),
+        ),
+      );
+      expect(
+        list.childrenDelegate.estimatedChildCount,
+        10,
+        reason: '도착정보 8건이 아니라 경유노선 10건이 목록이다',
+      );
 
       // `9`는 이 픽스처의 도착정보에서 `정보없음`으로 빠지는 노선이다 — 목록에
       // 있다는 것이 곧 목록의 출처가 경유노선이라는 증거다. 번호순 첫 행이라
@@ -625,10 +677,12 @@ void main() {
 
       // 행선지는 경유노선 응답에만 있다. **그 행의 부제를 직접 읽는다** —
       // 문구로 찾으면 마을 `6`·`9`가 둘 다 금정역행이라(실측) 2건이 잡힌다.
-      final tile = tester.widget<CheckboxListTile>(find.ancestor(
-        of: find.text('9번'),
-        matching: find.byType(CheckboxListTile),
-      ));
+      final tile = tester.widget<CheckboxListTile>(
+        find.ancestor(
+          of: find.text('9번'),
+          matching: find.byType(CheckboxListTile),
+        ),
+      );
       expect((tile.subtitle as Text).data, '금정역 방면');
     });
 
@@ -645,8 +699,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tago.viaRouteCalls, 0);
-      expect(find.text(BusStrings.confirmTitle), findsOneWidget,
-          reason: '경유노선이 없어도 시트는 도착정보로 열린다');
+      expect(
+        find.text(BusStrings.confirmTitle),
+        findsOneWidget,
+        reason: '경유노선이 없어도 시트는 도착정보로 열린다',
+      );
     });
   });
 
@@ -664,8 +721,11 @@ void main() {
       await _typeStop(tester, '');
       await _tapCity(tester, '성남시');
 
-      expect(find.text('B정류장(길 양쪽)'), findsNothing,
-          reason: '성남시가 강조된 칩 아래 수원시 목록이 깔려서는 안 된다');
+      expect(
+        find.text('B정류장(길 양쪽)'),
+        findsNothing,
+        reason: '성남시가 강조된 칩 아래 수원시 목록이 깔려서는 안 된다',
+      );
       expect(find.text(BusStrings.searchPrompt), findsOneWidget);
     });
 
@@ -683,8 +743,11 @@ void main() {
 
       expect(tago.stopCalls, 2);
       expect(find.text('B정류장(다른 시)'), findsOneWidget);
-      expect(find.text('B정류장(길 양쪽)'), findsNothing,
-          reason: '이름을 넣어둔 채 칩만 바꿨는데 옛 목록이 남으면 그 행을 탭한다');
+      expect(
+        find.text('B정류장(길 양쪽)'),
+        findsNothing,
+        reason: '이름을 넣어둔 채 칩만 바꿨는데 옛 목록이 남으면 그 행을 탭한다',
+      );
     });
   });
 
@@ -693,8 +756,11 @@ void main() {
       await _pumpScreen(tester, _Tago());
       await _openRegionMode(tester);
 
-      expect(find.byType(ChoiceChip), findsNothing,
-          reason: 'chipTheme.labelStyle이 선택/비선택 구분 없는 sub라 골드 채움 위에서 사라진다');
+      expect(
+        find.byType(ChoiceChip),
+        findsNothing,
+        reason: 'chipTheme.labelStyle이 선택/비선택 구분 없는 sub라 골드 채움 위에서 사라진다',
+      );
       expect(find.byType(PillChip), findsNWidgets(3));
     });
 
@@ -710,8 +776,11 @@ void main() {
           matching: find.byType(Text),
         ),
       );
-      expect(label.style?.color, AppColors.gold,
-          reason: '다크에서 크림 글씨가 골드 채움에 얹히면 대비 1.10:1로 사라진다');
+      expect(
+        label.style?.color,
+        AppColors.gold,
+        reason: '다크에서 크림 글씨가 골드 채움에 얹히면 대비 1.10:1로 사라진다',
+      );
     });
   });
 
@@ -728,8 +797,11 @@ void main() {
       );
       await _openRegionMode(tester);
 
-      expect(_selectedChip(tester)?.label, '화성시',
-          reason: '출발지의 도시를 복원하면 잘못된 cityCode가 빈 응답으로 와 헛치게 된다');
+      expect(
+        _selectedChip(tester)?.label,
+        '화성시',
+        reason: '출발지의 도시를 복원하면 잘못된 cityCode가 빈 응답으로 와 헛치게 된다',
+      );
     });
 
     testWidgets('편집 중인 슬롯이 비어 있으면 반대 슬롯의 도시를 쓴다', (tester) async {
@@ -741,8 +813,11 @@ void main() {
       );
       await _openRegionMode(tester);
 
-      expect(_selectedChip(tester)?.label, '수원시',
-          reason: '첫 등록의 두 번째 슬롯에서 도시를 다시 고르게 하지 않는다');
+      expect(
+        _selectedChip(tester)?.label,
+        '수원시',
+        reason: '첫 등록의 두 번째 슬롯에서 도시를 다시 고르게 하지 않는다',
+      );
     });
   });
 
@@ -765,10 +840,14 @@ void main() {
       await tester.tap(find.widgetWithText(ListTile, 'B정류장(길 양쪽)'));
       await tester.pumpAndSettle();
 
-      final style =
-          tester.widget<Text>(find.text(BusStrings.confirmRoutesTitle)).style;
-      expect(style, AppTextStyles.bodyL,
-          reason: '시트 안 유일한 지시문이 장식 라벨보다 약하게 읽히면 방향 확인이 무너진다');
+      final style = tester
+          .widget<Text>(find.text(BusStrings.confirmRoutesTitle))
+          .style;
+      expect(
+        style,
+        AppTextStyles.bodyL,
+        reason: '시트 안 유일한 지시문이 장식 라벨보다 약하게 읽히면 방향 확인이 무너진다',
+      );
     });
   });
 }

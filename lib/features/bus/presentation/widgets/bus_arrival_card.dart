@@ -120,8 +120,10 @@ class BusArrivalCard extends StatelessWidget {
   /// 있을 때는 chevron과 붙어 있어 이만큼 못 줬다(`_bottomRow` 문서 참고).
   /// Apple 권장 44pt에는 조금 못 미치지만, 세로로 분리돼 있어 오탭의 대가가
   /// "아무 일도 안 일어남"이지 "카드가 접힘"이 아니다.
-  static const _refreshHitPadding =
-      EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+  static const _refreshHitPadding = EdgeInsets.symmetric(
+    horizontal: 12,
+    vertical: 8,
+  );
 
   /// 새로고침 아이콘, 조회 중이면 진행 표시.
   ///
@@ -173,14 +175,16 @@ class BusArrivalCard extends StatelessWidget {
         // 이모지만 글자보다 크게 그린다 — 한 `Text`에 담으면 이모지가 13px에 묶여
         // 작게 보이고, 집·학교를 한눈에 구별하는 것이 이 라벨의 일이다.
         Text.rich(
-          TextSpan(children: [
-            TextSpan(
-              text: direction.emoji,
-              style: const TextStyle(fontSize: BusStrings.headerEmojiSize),
-            ),
-            const TextSpan(text: ' '),
-            TextSpan(text: direction.title),
-          ]),
+          TextSpan(
+            children: [
+              TextSpan(
+                text: direction.emoji,
+                style: const TextStyle(fontSize: BusStrings.headerEmojiSize),
+              ),
+              const TextSpan(text: ' '),
+              TextSpan(text: direction.title),
+            ],
+          ),
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,

@@ -143,7 +143,10 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
 
   /// 설정이 도착하거나 바뀔 때의 촉발 — 로딩 완료·스위치 ON·슬롯 교체·시간대
   /// 변경이 모두 여기로 들어온다. `initState`의 `listenManual`이 부른다.
-  void _onSettings(AsyncValue<BusSettings>? prev, AsyncValue<BusSettings> next) {
+  void _onSettings(
+    AsyncValue<BusSettings>? prev,
+    AsyncValue<BusSettings> next,
+  ) {
     final before = prev?.valueOrNull;
     final after = next.valueOrNull;
     if (after == null) return;
@@ -306,12 +309,12 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
   /// 화면이 그리는 것과 **같은** view. `build`와 `_tick`이 각자 조립하면 간격이
   /// 사용자가 보는 목록과 어긋난다(상한 `1차+30초`가 성립하는 전제가 깨진다).
   BusCardView _viewOf(BusFetch fetch, BusStop stop) => buildBusCardView(
-        state: fetch.state,
-        arrivals: fetch.arrivals,
-        fetchedAt: fetch.fetchedAt,
-        now: _now(),
-        routeIds: stop.routeIds,
-      );
+    state: fetch.state,
+    arrivals: fetch.arrivals,
+    fetchedAt: fetch.fetchedAt,
+    now: _now(),
+    routeIds: stop.routeIds,
+  );
 
   /// 시간대 판정 + 화면 수명 방향 토글.
   BusDisplay _display(BusSettings settings) {
@@ -384,8 +387,9 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
         // 저장된다 — 화면은 여전히 `정류장을 선택하면…`이라 저장 실패로 읽히고,
         // 다음 아침 출근 카드에 학교 앞 정류장이 뜬다. 원인이 쿼리 한 개라
         // 추적이 어렵다. 방향은 지금 손에 들고 있다(`display.direction`).
-        onRegister: () =>
-            context.push('${AppRoutes.busStops}?slot=${display.direction.name}'),
+        onRegister: () => context.push(
+          '${AppRoutes.busStops}?slot=${display.direction.name}',
+        ),
       );
     }
 

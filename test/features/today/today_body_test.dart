@@ -33,10 +33,7 @@ void main() {
     await initializeDateFormatting('ko_KR', null);
   });
 
-  Future<CalendarEvent?> pumpBody(
-    WidgetTester tester,
-    TodayView view,
-  ) async {
+  Future<CalendarEvent?> pumpBody(WidgetTester tester, TodayView view) async {
     CalendarEvent? toggled;
     await tester.pumpWidget(
       MaterialApp(
@@ -240,11 +237,7 @@ void main() {
     testWidgets('남은 건수가 문안으로 표시된다', (tester) async {
       await pumpBody(
         tester,
-        viewOf([
-          _event(id: 1, completed: true),
-          _event(id: 2),
-          _event(id: 3),
-        ]),
+        viewOf([_event(id: 1, completed: true), _event(id: 2), _event(id: 3)]),
       );
 
       expect(find.text(TodayStrings.remaining(2)), findsOneWidget);
@@ -281,13 +274,13 @@ void main() {
 
   group('오늘 탭 — 기한이 지난 섹션', () {
     TodayView overdueView() => viewOf([
-          _event(
-            id: 1,
-            date: _today.subtract(const Duration(days: 3)),
-            title: '교육과정 운영위원회 회의록 작성',
-          ),
-          _event(id: 2, title: '오늘 업무'),
-        ]);
+      _event(
+        id: 1,
+        date: _today.subtract(const Duration(days: 3)),
+        title: '교육과정 운영위원회 회의록 작성',
+      ),
+      _event(id: 2, title: '오늘 업무'),
+    ]);
 
     testWidgets('기본으로 접혀 있어 지난 항목 제목이 보이지 않는다', (tester) async {
       await pumpBody(tester, overdueView());

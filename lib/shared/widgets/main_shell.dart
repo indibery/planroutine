@@ -91,11 +91,13 @@ class MainShell extends StatelessWidget {
         currentIndex: currentIndex,
         onTap: (index) => context.go(_tabs[index].route),
         tabs: _tabs
-            .map((tab) => FloatingTabItem(
-                  icon: tab.icon,
-                  activeIcon: tab.activeIcon,
-                  label: tab.label,
-                ))
+            .map(
+              (tab) => FloatingTabItem(
+                icon: tab.icon,
+                activeIcon: tab.activeIcon,
+                label: tab.label,
+              ),
+            )
             .toList(),
       ),
     );

@@ -60,11 +60,8 @@ TagoResult<BusArrival> parseArrivals(Map<String, dynamic> json) {
     final list = byRoute.values.map((rows) {
       rows.sort((a, b) => a.arrSec.compareTo(b.arrSec));
       final first = rows.first;
-      return rows.length < 2
-          ? first
-          : first.copyWith(arrSec2: rows[1].arrSec);
-    }).toList()
-      ..sort((a, b) => a.arrSec.compareTo(b.arrSec));
+      return rows.length < 2 ? first : first.copyWith(arrSec2: rows[1].arrSec);
+    }).toList()..sort((a, b) => a.arrSec.compareTo(b.arrSec));
     return list;
   });
 }
@@ -78,12 +75,14 @@ TagoResult<BusStop> parseStops(
 }) {
   return _parse(json, (rows) {
     return rows
-        .map((row) => BusStop(
-              nodeId: row['nodeid']?.toString() ?? '',
-              nodeNm: row['nodenm']?.toString() ?? '',
-              nodeNo: _int(row['nodeno']),
-              cityCode: cityCode,
-            ))
+        .map(
+          (row) => BusStop(
+            nodeId: row['nodeid']?.toString() ?? '',
+            nodeNm: row['nodenm']?.toString() ?? '',
+            nodeNo: _int(row['nodeno']),
+            cityCode: cityCode,
+          ),
+        )
         .where((s) => s.nodeId.isNotEmpty)
         .toList();
   });
@@ -93,10 +92,12 @@ TagoResult<BusStop> parseStops(
 TagoResult<CityCode> parseCities(Map<String, dynamic> json) {
   return _parse(json, (rows) {
     return rows
-        .map((row) => CityCode(
-              code: _int(row['citycode']),
-              name: row['cityname']?.toString() ?? '',
-            ))
+        .map(
+          (row) => CityCode(
+            code: _int(row['citycode']),
+            name: row['cityname']?.toString() ?? '',
+          ),
+        )
         .where((c) => c.code > 0)
         .toList();
   });

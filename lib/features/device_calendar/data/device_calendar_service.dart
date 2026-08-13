@@ -84,8 +84,7 @@ class DeviceCalendarService {
       // 캐시된 캘린더가 stale일 수 있으므로 무효화 → 다음 호출에서 재조회
       _cachedCalendar = null;
       throw DeviceCalendarException(
-        result?.errors.map((e) => e.errorMessage).join(', ') ??
-            '이벤트 저장 실패',
+        result?.errors.map((e) => e.errorMessage).join(', ') ?? '이벤트 저장 실패',
       );
     }
     return (

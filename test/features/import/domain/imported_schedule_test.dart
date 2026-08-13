@@ -31,10 +31,7 @@ void main() {
       });
 
       test('누락/null 필드도 정상 처리', () {
-        final row = <String, dynamic>{
-          '제목': '간단한 업무',
-          '등록일자': '2025-06-01',
-        };
+        final row = <String, dynamic>{'제목': '간단한 업무', '등록일자': '2025-06-01'};
 
         final schedule = ImportedSchedule.fromCsvRow(row);
 
@@ -50,20 +47,14 @@ void main() {
       });
 
       test('등록일자에서 sourceYear 추출', () {
-        final row = {
-          '제목': '연도 추출 테스트',
-          '등록일자': '2024-12-25',
-        };
+        final row = {'제목': '연도 추출 테스트', '등록일자': '2024-12-25'};
 
         final schedule = ImportedSchedule.fromCsvRow(row);
         expect(schedule.sourceYear, 2024);
       });
 
       test('등록일자가 빈 문자열이면 sourceYear가 null', () {
-        final row = {
-          '제목': '빈 날짜 테스트',
-          '등록일자': '',
-        };
+        final row = {'제목': '빈 날짜 테스트', '등록일자': ''};
 
         final schedule = ImportedSchedule.fromCsvRow(row);
         expect(schedule.sourceYear, isNull);
@@ -71,10 +62,7 @@ void main() {
       });
 
       test('등록일자가 4자 미만이면 sourceYear가 null', () {
-        final row = {
-          '제목': '짧은 날짜',
-          '등록일자': '20',
-        };
+        final row = {'제목': '짧은 날짜', '등록일자': '20'};
 
         final schedule = ImportedSchedule.fromCsvRow(row);
         expect(schedule.sourceYear, isNull);

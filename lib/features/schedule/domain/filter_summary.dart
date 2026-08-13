@@ -58,6 +58,6 @@ const _separator = ' · ';
 /// 켜진 좁힘 필터를 표시 순서대로. 위 셋이 "무엇이 걸려 있나"를 각자 유도하면
 /// 필터가 하나 늘 때 세 곳을 고쳐야 하고, 그중 하나를 빠뜨려도 아무도 안 알려준다.
 List<String> _narrowingParts(EntryKind? kind, String? categoryLabel) => [
-      if (kind != null) kind.label,
-      if (categoryLabel != null && categoryLabel.isNotEmpty) categoryLabel,
-    ];
+  if (kind != null) kind.label,
+  if (categoryLabel != null && categoryLabel.isNotEmpty) categoryLabel,
+];

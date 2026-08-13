@@ -42,8 +42,12 @@ void main() {
         return null;
       },
     );
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
 
     await tester.pumpWidget(
       ProviderScope(
@@ -107,9 +111,11 @@ void main() {
     // 시트가 열릴 때까지 조건 대기(첫 DB 오픈은 수백 ms 걸릴 수 있음).
     await tester.runAsync(() async {
       await tester.tap(find.text(ImportStrings.heroStepPaste));
-      for (var i = 0;
-          i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
-          i++) {
+      for (
+        var i = 0;
+        i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
+        i++
+      ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         await tester.pump();
       }
@@ -121,10 +127,12 @@ void main() {
 
     await tester.runAsync(() async {
       await tester.tap(find.textContaining('검토 목록에 등록'));
-      for (var i = 0;
-          i < 100 &&
-              find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
-          i++) {
+      for (
+        var i = 0;
+        i < 100 &&
+            find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+        i++
+      ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         await tester.pump();
       }
@@ -133,8 +141,11 @@ void main() {
 
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved!.length, 2);
-    expect(saved.every((s) => s.kind == EntryKind.event), isTrue,
-        reason: '기본 선택(행사 일정표)이면 행사로 저장된다');
+    expect(
+      saved.every((s) => s.kind == EntryKind.event),
+      isTrue,
+      reason: '기본 선택(행사 일정표)이면 행사로 저장된다',
+    );
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
   });
 
@@ -200,9 +211,11 @@ void main() {
 
     await tester.runAsync(() async {
       await tester.tap(find.text(ImportStrings.heroStepPaste));
-      for (var i = 0;
-          i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
-          i++) {
+      for (
+        var i = 0;
+        i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
+        i++
+      ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         await tester.pump();
       }
@@ -211,10 +224,12 @@ void main() {
 
     await tester.runAsync(() async {
       await tester.tap(find.textContaining('검토 목록에 등록'));
-      for (var i = 0;
-          i < 100 &&
-              find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
-          i++) {
+      for (
+        var i = 0;
+        i < 100 &&
+            find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+        i++
+      ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         await tester.pump();
       }
@@ -223,8 +238,11 @@ void main() {
 
     final saved = await tester.runAsync(() => repo.getSchedules());
     expect(saved!.single.title, '방과후 신청서 제출');
-    expect(saved.single.kind, EntryKind.task,
-        reason: '업무로 저장돼야 오늘 탭에 뜨고 체크로 완료할 수 있다');
+    expect(
+      saved.single.kind,
+      EntryKind.task,
+      reason: '업무로 저장돼야 오늘 탭에 뜨고 체크로 완료할 수 있다',
+    );
     await tester.pump(const Duration(seconds: 4));
   });
 }

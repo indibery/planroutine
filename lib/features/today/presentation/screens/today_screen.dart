@@ -24,8 +24,8 @@ class TodayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(todayViewProvider);
     final today = ref.watch(todayReferenceProvider);
-    final stampSettings = ref.watch(stampSettingsProvider).valueOrNull ??
-        StampSettings.defaults;
+    final stampSettings =
+        ref.watch(stampSettingsProvider).valueOrNull ?? StampSettings.defaults;
 
     return Scaffold(
       appBar: AppBar(

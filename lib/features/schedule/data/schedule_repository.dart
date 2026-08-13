@@ -10,7 +10,7 @@ class ScheduleRepository {
   final DatabaseHelper _dbHelper;
 
   ScheduleRepository({DatabaseHelper? dbHelper})
-      : _dbHelper = dbHelper ?? DatabaseHelper.instance;
+    : _dbHelper = dbHelper ?? DatabaseHelper.instance;
 
   /// 가져온 일정에서 새 일정 생성 (중복 source_id 스킵, -1 반환)
   Future<int> createFromImported(
@@ -115,10 +115,7 @@ class ScheduleRepository {
           updatedAt: now,
         );
 
-        await txn.insert(
-          DatabaseHelper.tableSchedules,
-          schedule.toMap(),
-        );
+        await txn.insert(DatabaseHelper.tableSchedules, schedule.toMap());
         created++;
       }
     });
@@ -177,10 +174,7 @@ class ScheduleRepository {
     final db = await _dbHelper.database;
     return db.update(
       DatabaseHelper.tableSchedules,
-      {
-        'status': status.value,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
+      {'status': status.value, 'updated_at': DateTime.now().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -274,12 +268,10 @@ class ScheduleRepository {
   /// 월별 일정 조회 (삭제되지 않은 것만)
   Future<List<Schedule>> getSchedulesByMonth(int year, int month) async {
     final db = await _dbHelper.database;
-    final startDate =
-        '$year-${month.toString().padLeft(2, '0')}-01';
+    final startDate = '$year-${month.toString().padLeft(2, '0')}-01';
     final endMonth = month == 12 ? 1 : month + 1;
     final endYear = month == 12 ? year + 1 : year;
-    final endDate =
-        '$endYear-${endMonth.toString().padLeft(2, '0')}-01';
+    final endDate = '$endYear-${endMonth.toString().padLeft(2, '0')}-01';
 
     final result = await db.query(
       DatabaseHelper.tableSchedules,
@@ -335,10 +327,7 @@ class ScheduleRepository {
     EntryKind? kind,
   }) async {
     final db = await _dbHelper.database;
-    final where = <String>[
-      'status = ?',
-      'deleted_at IS NULL',
-    ];
+    final where = <String>['status = ?', 'deleted_at IS NULL'];
     final whereArgs = <dynamic>[ScheduleStatus.pending.value];
     if (category != null) {
       where.add('category = ?');

@@ -17,8 +17,9 @@ final deviceCalendarServiceProvider = Provider<DeviceCalendarService>((ref) {
 ///
 /// - service.hasPermissions == true → granted 반환
 /// - service.hasPermissions == false → permission_handler로 세부(denied/permanentlyDenied)
-final calendarPermissionStatusProvider =
-    FutureProvider<PermissionStatus>((ref) async {
+final calendarPermissionStatusProvider = FutureProvider<PermissionStatus>((
+  ref,
+) async {
   final service = ref.watch(deviceCalendarServiceProvider);
   if (await service.hasPermissions()) {
     return PermissionStatus.granted;

@@ -59,15 +59,17 @@ void main() {
       expect(find.text(SealStyle.panda.label), findsNothing);
     });
 
-    testWidgets('글자 도장의 문구는 테두리 안에 들어간다 (넘치면 글자가 깨진다)',
-        (tester) async {
-      for (final style in SealStyle.values.where((s) => s.mark == SealMark.text)) {
+    testWidgets('글자 도장의 문구는 테두리 안에 들어간다 (넘치면 글자가 깨진다)', (tester) async {
+      for (final style in SealStyle.values.where(
+        (s) => s.mark == SealMark.text,
+      )) {
         await pumpSeal(tester, style: style);
         final textWidth = tester.getSize(find.text(style.label)).width;
         expect(
           textWidth,
           lessThanOrEqualTo(CompletionSeal.innerWidth),
-          reason: '"${style.label}" 도장 문구가 '
+          reason:
+              '"${style.label}" 도장 문구가 '
               '${textWidth.toStringAsFixed(1)}로 내부 폭을 넘는다',
         );
       }

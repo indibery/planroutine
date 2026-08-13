@@ -70,8 +70,11 @@ TodayView buildTodayView({
 }) {
   final todayStr = formatDate(today);
   final cutoffStr = formatDate(
-    DateTime(today.year, today.month, today.day)
-        .subtract(Duration(days: lookbackDays)),
+    DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).subtract(Duration(days: lookbackDays)),
   );
 
   // 오늘 탭은 **업무**만 다룬다 — 행사(운동회 등)에는 완료 개념이 없어
@@ -79,14 +82,17 @@ TodayView buildTodayView({
   final tasks = events.where((e) => e.kind.showsInToday);
 
   // 'YYYY-MM-DD'는 사전순 비교가 곧 날짜순 비교다.
-  final overdue = tasks
-      .where((e) =>
-          e.deletedAt == null &&
-          !e.isCompleted &&
-          e.eventDate.compareTo(todayStr) < 0 &&
-          e.eventDate.compareTo(cutoffStr) >= 0)
-      .toList()
-    ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
+  final overdue =
+      tasks
+          .where(
+            (e) =>
+                e.deletedAt == null &&
+                !e.isCompleted &&
+                e.eventDate.compareTo(todayStr) < 0 &&
+                e.eventDate.compareTo(cutoffStr) >= 0,
+          )
+          .toList()
+        ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
   final todayEvents = tasks
       .where((e) => e.deletedAt == null && e.eventDate == todayStr)

@@ -7,8 +7,8 @@ const _prefsKey = 'ai_task_share_enabled';
 /// ON일 때만 캘린더 이벤트 편집에 'AI로 보내기' 액션이 노출된다.
 final aiTaskShareEnabledProvider =
     AsyncNotifierProvider<AiTaskShareEnabledNotifier, bool>(
-  AiTaskShareEnabledNotifier.new,
-);
+      AiTaskShareEnabledNotifier.new,
+    );
 
 class AiTaskShareEnabledNotifier extends AsyncNotifier<bool> {
   @override

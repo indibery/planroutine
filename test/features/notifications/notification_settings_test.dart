@@ -36,9 +36,7 @@ void main() {
     });
 
     test('새 키 dayOfEnabled를 그대로 읽는다', () {
-      final restored = NotificationSettings.fromJson({
-        'dayOfEnabled': false,
-      });
+      final restored = NotificationSettings.fromJson({'dayOfEnabled': false});
       expect(restored.dayOfEnabled, isFalse);
     });
 
@@ -59,9 +57,7 @@ void main() {
     });
 
     test('새 키 weeklyEnabled를 그대로 읽는다', () {
-      final restored = NotificationSettings.fromJson({
-        'weeklyEnabled': false,
-      });
+      final restored = NotificationSettings.fromJson({'weeklyEnabled': false});
       expect(restored.weeklyEnabled, isFalse);
     });
 

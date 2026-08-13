@@ -60,7 +60,11 @@ BusDisplay resolveBusDisplay({
     byRange = false;
   }
 
-  final override = _overrideValue(now: now, settings: settings, byRange: byRange);
+  final override = _overrideValue(
+    now: now,
+    settings: settings,
+    byRange: byRange,
+  );
   return BusDisplay(direction: direction, expanded: override ?? byRange);
 }
 
@@ -89,9 +93,7 @@ bool? _overrideValue({
 
   if (settings.overrideExpanded) {
     // 펼치기 — 30분.
-    return now.difference(at) < expandOverrideLifetime
-        ? true
-        : null;
+    return now.difference(at) < expandOverrideLifetime ? true : null;
   }
 
   // 접기 — 누른 그 시간대가 끝날 때까지. 같은 날이면서, 누른 시각과 지금이

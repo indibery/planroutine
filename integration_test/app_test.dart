@@ -50,22 +50,16 @@ Future<void> _tapTab(
 }
 
 Future<void> _tapCalendarTab(WidgetTester tester) => _tapTab(
-      tester,
-      icon: Icons.calendar_month_outlined,
-      activeIcon: Icons.calendar_month,
-    );
+  tester,
+  icon: Icons.calendar_month_outlined,
+  activeIcon: Icons.calendar_month,
+);
 
-Future<void> _tapScheduleTab(WidgetTester tester) => _tapTab(
-      tester,
-      icon: Icons.note_add_outlined,
-      activeIcon: Icons.note_add,
-    );
+Future<void> _tapScheduleTab(WidgetTester tester) =>
+    _tapTab(tester, icon: Icons.note_add_outlined, activeIcon: Icons.note_add);
 
-Future<void> _tapSettingsTab(WidgetTester tester) => _tapTab(
-      tester,
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-    );
+Future<void> _tapSettingsTab(WidgetTester tester) =>
+    _tapTab(tester, icon: Icons.settings_outlined, activeIcon: Icons.settings);
 
 /// 캘린더 화면의 gold FAB(Container + InkWell) 탭. Icons.add 한 개만 존재한다고 가정.
 Future<void> _tapAddFab(WidgetTester tester) async {
@@ -182,33 +176,23 @@ void main() {
 
       // 전체 삭제 행 (fold 아래). 섹션 헤더 `데이터 관리`는 f268dd7에서 없어졌으니
       // 행 자체가 노출되는지만 본다 — 이 테스트의 주제도 그것이다.
-      await _scrollToInSettings(
-        tester,
-        find.text(SettingsStrings.resetAll),
-      );
+      await _scrollToInSettings(tester, find.text(SettingsStrings.resetAll));
       expect(find.text(SettingsStrings.resetAll), findsOneWidget);
     });
 
-    testWidgets('전체 초기화 플로우: 이벤트 추가 → 초기화 → 사라짐 확인',
-        (tester) async {
+    testWidgets('전체 초기화 플로우: 이벤트 추가 → 초기화 → 사라짐 확인', (tester) async {
       await _startFresh(tester);
 
       // 1) 캘린더에 이벤트 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        '콜드로드 테스트 이벤트',
-      );
+      await tester.enterText(find.byType(TextFormField).first, '콜드로드 테스트 이벤트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
       expect(find.text('콜드로드 테스트 이벤트'), findsWidgets);
 
       // 2) 설정 탭 → 전체 초기화
       await _tapSettingsTab(tester);
-      await _scrollToInSettings(
-        tester,
-        find.text(SettingsStrings.resetAll),
-      );
+      await _scrollToInSettings(tester, find.text(SettingsStrings.resetAll));
       await tester.tap(find.text(SettingsStrings.resetAll));
       await tester.pumpAndSettle();
 
@@ -231,19 +215,13 @@ void main() {
 
       // 이벤트 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        '취소 테스트 이벤트',
-      );
+      await tester.enterText(find.byType(TextFormField).first, '취소 테스트 이벤트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
       // 설정 탭 → 초기화 → 취소
       await _tapSettingsTab(tester);
-      await _scrollToInSettings(
-        tester,
-        find.text(SettingsStrings.resetAll),
-      );
+      await _scrollToInSettings(tester, find.text(SettingsStrings.resetAll));
       await tester.tap(find.text(SettingsStrings.resetAll));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.cancel));
@@ -254,17 +232,14 @@ void main() {
       expect(find.text('취소 테스트 이벤트'), findsWidgets);
     });
 
-    testWidgets(
-        '휴지통 플로우: 이벤트 추가 → 편집시트 휴지통으로 삭제 → 휴지통 확인 → 복구',
-        (tester) async {
+    testWidgets('휴지통 플로우: 이벤트 추가 → 편집시트 휴지통으로 삭제 → 휴지통 확인 → 복구', (
+      tester,
+    ) async {
       await _startFresh(tester);
 
       // 1) 이벤트 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        '휴지통 테스트 이벤트',
-      );
+      await tester.enterText(find.byType(TextFormField).first, '휴지통 테스트 이벤트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
       expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
@@ -299,24 +274,20 @@ void main() {
       expect(find.text('휴지통 테스트 이벤트'), findsOneWidget);
     });
 
-    testWidgets('완료 토글: 왼쪽 스와이프 → 체크 아이콘 표시 → 다시 스와이프 시 원상복구',
-        (tester) async {
+    testWidgets('완료 토글: 왼쪽 스와이프 → 체크 아이콘 표시 → 다시 스와이프 시 원상복구', (tester) async {
       await _startFresh(tester);
 
       // 이벤트 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        '완료 테스트 이벤트',
-      );
+      await tester.enterText(find.byType(TextFormField).first, '완료 테스트 이벤트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
       // 완료 표시는 이벤트 카드 안 trailing 아이콘(check_circle, size 18)뿐.
       // 힌트바/스와이프 배경의 check_circle과 섞이지 않도록 size로 정밀 판정.
       Finder doneMark() => find.byWidgetPredicate(
-            (w) => w is Icon && w.icon == Icons.check_circle && w.size == 18,
-          );
+        (w) => w is Icon && w.icon == Icons.check_circle && w.size == 18,
+      );
       expect(doneMark(), findsNothing);
 
       // 왼쪽 스와이프 → 완료 토글
@@ -334,10 +305,7 @@ void main() {
 
       // 이벤트 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        '중요 테스트 이벤트',
-      );
+      await tester.enterText(find.byType(TextFormField).first, '중요 테스트 이벤트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
@@ -367,8 +335,7 @@ void main() {
       );
     });
 
-    testWidgets('날짜 점프: 이번 달 말일 근처 셀을 탭하면 그 이벤트가 목록에 보인다',
-        (tester) async {
+    testWidgets('날짜 점프: 이번 달 말일 근처 셀을 탭하면 그 이벤트가 목록에 보인다', (tester) async {
       // 실기기 재현: 캘린더가 위를 차지해 목록 뷰포트가 좁을 때, 뒤쪽 날짜(말일)를
       // 탭해도 목록이 그 날짜로 스크롤되는지 검증.
       await DatabaseHelper.instance.resetAllData();
@@ -377,10 +344,9 @@ void main() {
       // 이번 달 1일부터 28일까지 여러 날짜에 이벤트를 심어 목록을 길게 만든다.
       for (final day in [1, 4, 8, 12, 16, 20, 24, 28]) {
         final date = DateTime(now.year, now.month, day);
-        await repo.createEvent(CalendarEvent(
-          title: '점프테스트 $day일',
-          eventDate: formatDate(date),
-        ));
+        await repo.createEvent(
+          CalendarEvent(title: '점프테스트 $day일', eventDate: formatDate(date)),
+        );
       }
 
       await tester.pumpWidget(const ProviderScope(child: PlanRoutineApp()));
@@ -392,10 +358,12 @@ void main() {
       // 그리드엔 이전 달 흐린 28(첫 줄)과 이번 달 28이 함께 있다. 아래쪽(y 큰)이
       // 이번 달 28이므로 그것을 탭한다.
       final cells = find.text('28').evaluate().toList()
-        ..sort((a, b) => tester
-            .getCenter(find.byWidget(a.widget))
-            .dy
-            .compareTo(tester.getCenter(find.byWidget(b.widget)).dy));
+        ..sort(
+          (a, b) => tester
+              .getCenter(find.byWidget(a.widget))
+              .dy
+              .compareTo(tester.getCenter(find.byWidget(b.widget)).dy),
+        );
       await tester.tap(find.byWidget(cells.last.widget));
       await tester.pumpAndSettle();
 
@@ -406,8 +374,11 @@ void main() {
           tester.view.physicalSize.height / tester.view.devicePixelRatio;
       final top = tester.getTopLeft(finder).dy;
       expect(top, greaterThanOrEqualTo(0));
-      expect(top, lessThan(screenH),
-          reason: '28일 이벤트가 화면 밖(아래)에 있음 → 스크롤 안 됨. top=$top, screenH=$screenH');
+      expect(
+        top,
+        lessThan(screenH),
+        reason: '28일 이벤트가 화면 밖(아래)에 있음 → 스크롤 안 됨. top=$top, screenH=$screenH',
+      );
     });
 
     testWidgets('화면 테마: 밝게 선택 시 앱이 크림 배경으로 전환', (tester) async {
@@ -428,20 +399,25 @@ void main() {
       // AppBar 제목 '설정' 텍스트가 라이트 본문색(ink #17253D)로 갱신돼야 한다.
       // (탭 라벨에도 '설정'이 있으므로 AppBar 안의 것으로 특정)
       final titleColor = tester
-          .widget<Text>(find.descendant(
-            of: find.byType(AppBar),
-            matching: find.text(SettingsStrings.title),
-          ))
+          .widget<Text>(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.text(SettingsStrings.title),
+            ),
+          )
           .style
           ?.color;
-      expect(titleColor, const Color(0xFF17253D),
-          reason: '다크→라이트 후 제목이 라이트 ink로 갱신');
+      expect(
+        titleColor,
+        const Color(0xFF17253D),
+        reason: '다크→라이트 후 제목이 라이트 ink로 갱신',
+      );
 
       // Scaffold 배경이 라이트 팔레트로 바뀌어야 한다.
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
       final ctx = tester.element(find.byType(Scaffold).first);
-      final bg = scaffold.backgroundColor ??
-          Theme.of(ctx).scaffoldBackgroundColor;
+      final bg =
+          scaffold.backgroundColor ?? Theme.of(ctx).scaffoldBackgroundColor;
       expect(bg, const Color(0xFFF6F8FB), reason: '라이트 쿨 미스트 배경');
 
       // 하단 탭바도 함께 라이트(surface=흰색)로 바뀌어야 한다.
@@ -458,21 +434,29 @@ void main() {
         return (container.decoration as BoxDecoration).color!;
       }
 
-      expect(tabBarColor(), const Color(0xFFFFFFFF),
-          reason: '라이트 탭바 배경(surface=흰색)');
+      expect(
+        tabBarColor(),
+        const Color(0xFFFFFFFF),
+        reason: '라이트 탭바 배경(surface=흰색)',
+      );
 
       // 다시 어둡게 → 네이비 복귀 (배경 + 탭바 둘 다)
       await tester.tap(find.text(SettingsStrings.themeDark));
       await tester.pumpAndSettle();
       final ctx2 = tester.element(find.byType(Scaffold).first);
-      expect(Theme.of(ctx2).scaffoldBackgroundColor, const Color(0xFF0A1628),
-          reason: '다크 네이비 배경');
-      expect(tabBarColor(), const Color(0xFF142847),
-          reason: '다크 탭바 배경(navyMid)');
+      expect(
+        Theme.of(ctx2).scaffoldBackgroundColor,
+        const Color(0xFF0A1628),
+        reason: '다크 네이비 배경',
+      );
+      expect(
+        tabBarColor(),
+        const Color(0xFF142847),
+        reason: '다크 탭바 배경(navyMid)',
+      );
     });
 
-    testWidgets('화면 테마: 어둡게 → 입력탭 → 설정복귀 → 밝게에도 텍스트 갱신',
-        (tester) async {
+    testWidgets('화면 테마: 어둡게 → 입력탭 → 설정복귀 → 밝게에도 텍스트 갱신', (tester) async {
       // 실기기 재현: 탭을 오간 뒤 테마를 바꾸면 이전(다크) 텍스트 색이 남던 버그.
       SharedPreferences.setMockInitialValues({});
       await _startFresh(tester);
@@ -489,14 +473,19 @@ void main() {
       await tester.pumpAndSettle();
 
       final titleColor = tester
-          .widget<Text>(find.descendant(
-            of: find.byType(AppBar),
-            matching: find.text(SettingsStrings.title),
-          ))
+          .widget<Text>(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.text(SettingsStrings.title),
+            ),
+          )
           .style
           ?.color;
-      expect(titleColor, const Color(0xFF17253D),
-          reason: '탭 이동 후 다크→라이트에도 제목이 라이트 ink로 갱신');
+      expect(
+        titleColor,
+        const Color(0xFF17253D),
+        reason: '탭 이동 후 다크→라이트에도 제목이 라이트 ink로 갱신',
+      );
 
       // 실기기 실제 증상: AppBar 제목이 아니라 '섹션 설명(subtitle)' 텍스트가
       // 이전(다크) sub 색으로 남아 흐리게 보였다. subtitle 색도 라이트 sub로
@@ -505,8 +494,11 @@ void main() {
           .widget<Text>(find.text(SettingsStrings.exportDescription))
           .style
           ?.color;
-      expect(subtitleColor, const Color(0xFF48566E),
-          reason: '섹션 설명이 라이트 sub(#48566E)로 갱신돼야 함');
+      expect(
+        subtitleColor,
+        const Color(0xFF48566E),
+        reason: '섹션 설명이 라이트 sub(#48566E)로 갱신돼야 함',
+      );
     });
 
     testWidgets('화면 테마: 시스템 모드에서 OS 밝기 변경에 따라간다', (tester) async {
@@ -521,14 +513,20 @@ void main() {
         return Theme.of(ctx).scaffoldBackgroundColor;
       }
 
-      expect(scaffoldBg(), const Color(0xFFF6F8FB),
-          reason: '시스템=라이트 OS → 라이트 배경');
+      expect(
+        scaffoldBg(),
+        const Color(0xFFF6F8FB),
+        reason: '시스템=라이트 OS → 라이트 배경',
+      );
 
       // OS 밝기를 다크로 변경 → 앱도 다크로 따라가야 한다(라우터 재생성 경유).
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       await tester.pumpAndSettle();
-      expect(scaffoldBg(), const Color(0xFF0A1628),
-          reason: '시스템=다크 OS → 다크 배경');
+      expect(
+        scaffoldBg(),
+        const Color(0xFF0A1628),
+        reason: '시스템=다크 OS → 다크 배경',
+      );
     });
 
     testWidgets('설정 탭: 알림 섹션 UI 노출 확인', (tester) async {
@@ -549,20 +547,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // 펼친 뒤 세부 항목/테스트 버튼까지 스크롤
-      await _scrollToInSettings(
-        tester,
-        find.text(NotificationStrings.test),
-      );
+      await _scrollToInSettings(tester, find.text(NotificationStrings.test));
 
-      expect(find.text(NotificationStrings.weekly),
-          findsOneWidget);
-      expect(find.text(NotificationStrings.dayOf),
-          findsOneWidget);
+      expect(find.text(NotificationStrings.weekly), findsOneWidget);
+      expect(find.text(NotificationStrings.dayOf), findsOneWidget);
       expect(find.text(NotificationStrings.test), findsOneWidget);
     });
 
-    testWidgets('AI로 보내기: 실제 share 호출이 예외 없이 네이티브 시트를 띄운다',
-        (tester) async {
+    testWidgets('AI로 보내기: 실제 share 호출이 예외 없이 네이티브 시트를 띄운다', (tester) async {
       // 고급 토글 ON (실제 SharedPreferences)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('ai_task_share_enabled', true);
@@ -570,8 +562,7 @@ void main() {
 
       // 이벤트 하나 추가
       await _tapAddFab(tester);
-      await tester.enterText(
-          find.byType(TextFormField).first, 'AI 공유 테스트');
+      await tester.enterText(find.byType(TextFormField).first, 'AI 공유 테스트');
       await tester.tap(find.text(AppStrings.save));
       await tester.pumpAndSettle();
 
@@ -600,8 +591,7 @@ void main() {
       expect(find.byType(PhotoInputHero), findsNothing);
     });
 
-    testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 행사로 대기',
-        (tester) async {
+    testWidgets('AI 사진 가져오기: 입력 탭 히어로에서 붙여넣기 → 등록 → 행사로 대기', (tester) async {
       await _startFresh(tester);
 
       // 입력 탭 히어로가 주 경로 — 별도 화면으로 들어가지 않는다.
@@ -612,12 +602,15 @@ void main() {
 
       // AI 응답을 클립보드에 준비 (실기기/시뮬 실제 클립보드).
       // 실기기 검증에서 GPT 출력이 스마트 따옴표로 복사돼 실패했던 형태 그대로 사용.
-      await Clipboard.setData(const ClipboardData(
-        text: '결과입니다.\n```json\n'
-            '[{“title”:“입학식”,“date”:“2026-03-02”},'
-            '{“title”:“봄 현장체험학습”,“date”:“2026-04-24”,“description”:“4-6학년”}]'
-            '\n```',
-      ));
+      await Clipboard.setData(
+        const ClipboardData(
+          text:
+              '결과입니다.\n```json\n'
+              '[{“title”:“입학식”,“date”:“2026-03-02”},'
+              '{“title”:“봄 현장체험학습”,“date”:“2026-04-24”,“description”:“4-6학년”}]'
+              '\n```',
+        ),
+      );
 
       // 붙여넣기 → 미리보기 시트
       await tester.tap(aiPaste);
@@ -632,8 +625,11 @@ void main() {
       // 같은 화면 아래 검토 목록에 행사로 올라온다.
       expect(find.text('입학식'), findsOneWidget);
       expect(find.text('봄 현장체험학습'), findsOneWidget);
-      expect(find.text(EntryKind.event.label), findsWidgets,
-          reason: '사진 경로로 들어온 것은 행사 배지를 단다');
+      expect(
+        find.text(EntryKind.event.label),
+        findsWidgets,
+        reason: '사진 경로로 들어온 것은 행사 배지를 단다',
+      );
       expect(
         find.text(ScheduleStrings.bulkRegister(EntryKind.event.label, 2)),
         findsOneWidget,

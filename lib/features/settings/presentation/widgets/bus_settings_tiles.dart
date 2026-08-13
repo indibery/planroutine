@@ -102,17 +102,14 @@ class BusSettingsTiles extends ConsumerWidget {
   }
 
   TextStyle get _titleStyle => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.ink,
+  );
 
-  TextStyle get _subStyle => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 13,
-        color: AppColors.sub,
-      );
+  TextStyle get _subStyle =>
+      TextStyle(fontFamily: 'Pretendard', fontSize: 13, color: AppColors.sub);
 
   Widget _slotTile(
     BuildContext context, {

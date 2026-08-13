@@ -8,76 +8,76 @@ class AppTextStyles {
   AppTextStyles._();
 
   static TextStyle get titleL => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 28,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -1.6,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.6,
+    color: AppColors.ink,
+  );
   static TextStyle get titleM => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.3,
+    color: AppColors.ink,
+  );
   static TextStyle get heading => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: AppColors.ink,
+  );
   static TextStyle get bodyL => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.ink,
+  );
   static TextStyle get bodyM => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.ink,
+  );
   static TextStyle get bodyS => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: AppColors.ink,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
   static TextStyle get label => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: AppColors.sub,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    color: AppColors.sub,
+  );
+
   /// 제목 위에 얹는 영문 소제목(REVIEW·TODAY 등). AppBar·섹션 헤더가 공유한다.
   static TextStyle get eyebrow => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 2.5,
-        color: AppColors.gold,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 2.5,
+    color: AppColors.gold,
+  );
 
   static TextStyle get caption => TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 10,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 2.5,
-        color: AppColors.sub,
-      );
+    fontFamily: 'Pretendard',
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 2.5,
+    color: AppColors.sub,
+  );
 
   static TextStyle numeric({
     double fontSize = 22,
     FontWeight fontWeight = FontWeight.w600,
     Color? color,
     double letterSpacing = -1.0,
-  }) =>
-      GoogleFonts.spaceGrotesk(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color ?? AppColors.ink,
-        letterSpacing: letterSpacing,
-      );
+  }) => GoogleFonts.spaceGrotesk(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color ?? AppColors.ink,
+    letterSpacing: letterSpacing,
+  );
 }

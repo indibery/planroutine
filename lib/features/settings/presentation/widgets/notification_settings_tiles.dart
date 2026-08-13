@@ -32,10 +32,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
               ? null
               : Text(
                   summary,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.sub,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.sub),
                 ),
           value: settings.masterEnabled,
           onChanged: (v) => notifier.setMaster(v),
@@ -77,9 +74,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: subEnabled
-                        ? AppColors.primary
-                        : AppColors.textHint,
+                    color: subEnabled ? AppColors.primary : AppColors.textHint,
                   ),
                 ),
                 enabled: subEnabled,
@@ -93,8 +88,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                   NotificationStrings.debug,
                   style: TextStyle(fontSize: 14),
                 ),
-                trailing:
-                    Icon(Icons.list_alt, color: AppColors.primary),
+                trailing: Icon(Icons.list_alt, color: AppColors.primary),
                 onTap: () => _showPendingDialog(context, ref),
               ),
               ListTile(
@@ -103,8 +97,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
                   NotificationStrings.test,
                   style: TextStyle(fontSize: 14),
                 ),
-                trailing:
-                    Icon(Icons.alarm_on, color: AppColors.primary),
+                trailing: Icon(Icons.alarm_on, color: AppColors.primary),
                 onTap: () => _sendTestNotification(context, ref),
               ),
             ],
@@ -146,10 +139,9 @@ class NotificationSettingsTiles extends ConsumerWidget {
     if (picked.hour == settings.hour && picked.minute == settings.minute) {
       return;
     }
-    await ref.read(notificationSettingsProvider.notifier).setTime(
-          hour: picked.hour,
-          minute: picked.minute,
-        );
+    await ref
+        .read(notificationSettingsProvider.notifier)
+        .setTime(hour: picked.hour, minute: picked.minute);
   }
 
   Future<void> _sendTestNotification(
@@ -166,17 +158,12 @@ class NotificationSettingsTiles extends ConsumerWidget {
     );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(NotificationStrings.testScheduled),
-        ),
+        const SnackBar(content: Text(NotificationStrings.testScheduled)),
       );
     }
   }
 
-  Future<void> _showPendingDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _showPendingDialog(BuildContext context, WidgetRef ref) async {
     final service = ref.read(notificationServiceProvider);
     final list = await service.listPending();
     if (!context.mounted) return;

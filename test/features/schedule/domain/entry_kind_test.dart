@@ -36,8 +36,11 @@ void main() {
     test('두 종류 모두 화면에 쓸 짧은 라벨이 있다', () {
       for (final kind in EntryKind.values) {
         expect(kind.label, isNotEmpty);
-        expect(kind.label.length, lessThanOrEqualTo(4),
-            reason: '배지·필터 칩·요약 줄이 모두 이 하나를 쓰므로 짧아야 한다');
+        expect(
+          kind.label.length,
+          lessThanOrEqualTo(4),
+          reason: '배지·필터 칩·요약 줄이 모두 이 하나를 쓰므로 짧아야 한다',
+        );
       }
     });
 

@@ -11,6 +11,7 @@ import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../schedule/data/schedule_repository.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
+
 /// ImportRepository 프로바이더
 final importRepositoryProvider = Provider<ImportRepository>((ref) {
   return ImportRepository();
@@ -155,8 +156,9 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
           description: description,
           scheduledDate: row.registrationDate,
           category: row.category,
-          status:
-              isConfirmed ? ScheduleStatus.confirmed : ScheduleStatus.pending,
+          status: isConfirmed
+              ? ScheduleStatus.confirmed
+              : ScheduleStatus.pending,
           createdAt: now,
           updatedAt: now,
         ),
@@ -231,9 +233,8 @@ class ImportStateNotifier extends StateNotifier<ImportState> {
 /// ImportState 프로바이더
 final importStateProvider =
     StateNotifierProvider<ImportStateNotifier, ImportState>((ref) {
-  final importRepo = ref.watch(importRepositoryProvider);
-  final scheduleRepo = ref.watch(scheduleRepositoryProvider);
-  final calendarRepo = ref.watch(calendarRepositoryProvider);
-  return ImportStateNotifier(ref, importRepo, scheduleRepo, calendarRepo);
-});
-
+      final importRepo = ref.watch(importRepositoryProvider);
+      final scheduleRepo = ref.watch(scheduleRepositoryProvider);
+      final calendarRepo = ref.watch(calendarRepositoryProvider);
+      return ImportStateNotifier(ref, importRepo, scheduleRepo, calendarRepo);
+    });

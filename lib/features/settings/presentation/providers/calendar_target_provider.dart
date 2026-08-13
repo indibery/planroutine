@@ -47,8 +47,8 @@ final googleTargetSupportedProvider = Provider<bool>(
 /// 현재 선택된 캘린더 연동 대상. SharedPreferences에 영속.
 final calendarTargetProvider =
     AsyncNotifierProvider<CalendarTargetNotifier, CalendarTarget>(
-  CalendarTargetNotifier.new,
-);
+      CalendarTargetNotifier.new,
+    );
 
 class CalendarTargetNotifier extends AsyncNotifier<CalendarTarget> {
   @override

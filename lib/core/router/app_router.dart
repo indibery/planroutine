@@ -37,82 +37,75 @@ class AppRoutes {
 GoRouter createRouter({
   required bool onboardingDone,
   String? initialLocation,
-}) =>
-    GoRouter(
-      initialLocation: initialLocation ??
-          (onboardingDone ? AppRoutes.today : AppRoutes.onboarding),
-      redirect: (context, state) {
-        final uri = state.uri;
-        final isExternalFileIntent = uri.scheme == 'file' ||
-            uri.path.toLowerCase().endsWith('.csv');
-        if (isExternalFileIntent) {
-          return AppRoutes.import;
-        }
-        return null;
-      },
+}) => GoRouter(
+  initialLocation:
+      initialLocation ??
+      (onboardingDone ? AppRoutes.today : AppRoutes.onboarding),
+  redirect: (context, state) {
+    final uri = state.uri;
+    final isExternalFileIntent =
+        uri.scheme == 'file' || uri.path.toLowerCase().endsWith('.csv');
+    if (isExternalFileIntent) {
+      return AppRoutes.import;
+    }
+    return null;
+  },
+  routes: [
+    GoRoute(
+      path: AppRoutes.onboarding,
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+    ShellRoute(
+      builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(
-          path: AppRoutes.onboarding,
-          builder: (context, state) => const OnboardingScreen(),
+          path: AppRoutes.today,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: TodayScreen()),
         ),
-        ShellRoute(
-          builder: (context, state, child) => MainShell(child: child),
-          routes: [
-            GoRoute(
-              path: AppRoutes.today,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: TodayScreen(),
+        GoRoute(
+          path: AppRoutes.calendar,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: CalendarScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.schedule,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ScheduleScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.settings,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SettingsScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.trash,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: TrashScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.import,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ImportScreen()),
+        ),
+        // 설정 탭에서 push. `/bus/stops`와 같은 Shell에 둬야
+        // `설정 › 버스 도착 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.
+        GoRoute(
+          path: AppRoutes.busSettings,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: BusSettingsScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.busStops,
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: BusStopSearchScreen(
+              slot: CommuteDirection.fromName(
+                state.uri.queryParameters['slot'],
               ),
             ),
-            GoRoute(
-              path: AppRoutes.calendar,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: CalendarScreen(),
-              ),
-            ),
-            GoRoute(
-              path: AppRoutes.schedule,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: ScheduleScreen(),
-              ),
-            ),
-            GoRoute(
-              path: AppRoutes.settings,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: SettingsScreen(),
-              ),
-            ),
-            GoRoute(
-              path: AppRoutes.trash,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: TrashScreen(),
-              ),
-            ),
-            GoRoute(
-              path: AppRoutes.import,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: ImportScreen(),
-              ),
-            ),
-            // 설정 탭에서 push. `/bus/stops`와 같은 Shell에 둬야
-            // `설정 › 버스 도착 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.
-            GoRoute(
-              path: AppRoutes.busSettings,
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: BusSettingsScreen(),
-              ),
-            ),
-            GoRoute(
-              path: AppRoutes.busStops,
-              pageBuilder: (context, state) => NoTransitionPage(
-                child: BusStopSearchScreen(
-                  slot: CommuteDirection.fromName(
-                    state.uri.queryParameters['slot'],
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
-    );
+    ),
+  ],
+);

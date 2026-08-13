@@ -53,7 +53,12 @@ class _PandaPainter extends CustomPainter {
     // 눈동자를 **파내야** 하므로 레이어가 필요하다 — `BlendMode.clear`는 레이어 안에서만
     // 아래 칠을 지운다. 레이어 없이 쓰면 도장 테두리까지 지워진다.
     canvas.saveLayer(
-      const Rect.fromLTWH(-2, -2, SealPandaMark.size + 4, SealPandaMark.size + 4),
+      const Rect.fromLTWH(
+        -2,
+        -2,
+        SealPandaMark.size + 4,
+        SealPandaMark.size + 4,
+      ),
       Paint(),
     );
 
@@ -79,8 +84,15 @@ class _PandaPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _oval(Canvas c, Paint p, double cx, double cy, double rx, double ry,
-      [double deg = 0]) {
+  void _oval(
+    Canvas c,
+    Paint p,
+    double cx,
+    double cy,
+    double rx,
+    double ry, [
+    double deg = 0,
+  ]) {
     if (deg == 0) {
       c.drawOval(
         Rect.fromCenter(center: Offset(cx, cy), width: rx * 2, height: ry * 2),

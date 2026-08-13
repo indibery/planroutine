@@ -62,8 +62,11 @@ class _PhotoInputHeroState extends ConsumerState<PhotoInputHero> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.photo_camera_outlined,
-                        size: 18, color: AppColors.gold),
+                    Icon(
+                      Icons.photo_camera_outlined,
+                      size: 18,
+                      color: AppColors.gold,
+                    ),
                     const SizedBox(width: AppSizes.spacing8),
                     Expanded(
                       child: Column(
@@ -134,8 +137,11 @@ class _PhotoInputHeroState extends ConsumerState<PhotoInputHero> {
                         label: ImportStrings.heroStepPaste,
                         icon: Icons.auto_awesome,
                         primary: true,
-                        onTap: () =>
-                            pasteAiSchedulesAndPreview(context, ref, kind: _source),
+                        onTap: () => pasteAiSchedulesAndPreview(
+                          context,
+                          ref,
+                          kind: _source,
+                        ),
                       ),
                     ),
                   ],
@@ -167,8 +173,11 @@ class _PhotoInputHeroState extends ConsumerState<PhotoInputHero> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.file_download_outlined,
-                      size: 17, color: AppColors.gold),
+                  Icon(
+                    Icons.file_download_outlined,
+                    size: 17,
+                    color: AppColors.gold,
+                  ),
                   const SizedBox(width: AppSizes.spacing8),
                   Expanded(
                     child: Text(

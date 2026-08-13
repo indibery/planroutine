@@ -15,11 +15,11 @@ void main() {
     haptics = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'HapticFeedback.vibrate') {
-        haptics.add('${call.arguments}');
-      }
-      return null;
-    });
+          if (call.method == 'HapticFeedback.vibrate') {
+            haptics.add('${call.arguments}');
+          }
+          return null;
+        });
   });
 
   tearDown(() {
@@ -31,17 +31,21 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Center(child: TodayProgressRing(done: done, total: total)),
+          body: Center(
+            child: TodayProgressRing(done: done, total: total),
+          ),
         ),
       ),
     );
   }
 
   String ringText(WidgetTester tester) => tester
-      .widgetList<Text>(find.descendant(
-        of: find.byType(TodayProgressRing),
-        matching: find.byType(Text),
-      ))
+      .widgetList<Text>(
+        find.descendant(
+          of: find.byType(TodayProgressRing),
+          matching: find.byType(Text),
+        ),
+      )
       .first
       .data!;
 

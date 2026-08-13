@@ -11,7 +11,7 @@ class CalendarRepository {
   final DatabaseHelper _dbHelper;
 
   CalendarRepository({DatabaseHelper? dbHelper})
-      : _dbHelper = dbHelper ?? DatabaseHelper.instance;
+    : _dbHelper = dbHelper ?? DatabaseHelper.instance;
 
   /// 이벤트 생성
   Future<int> createEvent(CalendarEvent event) async {
@@ -204,5 +204,4 @@ class CalendarRepository {
       whereArgs: [cutoff.toIso8601String()],
     );
   }
-
 }

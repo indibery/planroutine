@@ -47,9 +47,10 @@ class CompletionSeal extends StatelessWidget {
 
   static final Animatable<double> _scale = TweenSequence<double>([
     TweenSequenceItem(
-      tween: Tween(begin: 2.4, end: 0.92).chain(
-        CurveTween(curve: Curves.easeIn),
-      ),
+      tween: Tween(
+        begin: 2.4,
+        end: 0.92,
+      ).chain(CurveTween(curve: Curves.easeIn)),
       weight: 55,
     ),
     TweenSequenceItem(tween: Tween(begin: 0.92, end: 1.05), weight: 20),
@@ -74,7 +75,8 @@ class CompletionSeal extends StatelessWidget {
   /// 안착 후 유지되는 불투명도(흐리게 설정 반영).
   double get _restingOpacity => dimmed ? _dimmedOpacity : _restOpacity;
 
-  static Animatable<double> _opacityTo(double resting) => TweenSequence<double>([
+  static Animatable<double> _opacityTo(double resting) =>
+      TweenSequence<double>([
         TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 30),
         TweenSequenceItem(tween: Tween(begin: 1.0, end: resting), weight: 70),
       ]);
@@ -144,15 +146,15 @@ class CompletionSeal extends StatelessWidget {
       SealMark.panda => SealPandaMark(color: AppColors.gold),
       SealMark.gecko => SealGeckoMark(color: AppColors.gold),
       SealMark.text => Text(
-          style.label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-            color: AppColors.gold,
-          ),
+        style.label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+          color: AppColors.gold,
         ),
+      ),
     };
   }
 }

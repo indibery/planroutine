@@ -65,14 +65,14 @@ class BusStop {
   }
 
   Map<String, dynamic> toJson() => {
-        'nodeId': nodeId,
-        'nodeNm': nodeNm,
-        'nodeNo': nodeNo,
-        'cityCode': cityCode,
-        // 없으면 키를 넣지 않는다 — TAGO 경로 정류장의 저장 모양을 바꾸지 않는다.
-        if (regionName != null) 'regionName': regionName,
-        'routeIds': routeIds.toList(),
-      };
+    'nodeId': nodeId,
+    'nodeNm': nodeNm,
+    'nodeNo': nodeNo,
+    'cityCode': cityCode,
+    // 없으면 키를 넣지 않는다 — TAGO 경로 정류장의 저장 모양을 바꾸지 않는다.
+    if (regionName != null) 'regionName': regionName,
+    'routeIds': routeIds.toList(),
+  };
 
   factory BusStop.fromJson(Map<String, dynamic> json) {
     final raw = json['routeIds'];

@@ -103,7 +103,6 @@ class BusStrings {
   /// 값처럼 읽혀 2차 예측의 오차가 그대로 드러난다. 절대 시각은 "대략"으로 읽힌다.
   static String nextBus(int minutes) => '다음 $minutes분';
 
-
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
   static const axisNow = '지금';
 
@@ -142,6 +141,7 @@ class BusStrings {
   static const searchTitle = '정류장 찾기';
   static const cityLabel = '도시';
   static const citySearchHint = '시·군 이름 (예: 수원)';
+
   /// **번호를 먼저 말한다.** 이름만으로는 결과가 감당이 안 된다(실측 `시청` 160곳,
   /// `아파트` 4,366곳). 정류소번호는 정류장 표지판과 지도 앱에 적혀 있어 한두 곳으로
   /// 좁혀진다(실측 `02004` → 2곳: 서울역버스환승센터 · 수원 와이씨티6단지).

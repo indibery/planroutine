@@ -22,7 +22,9 @@ void main() {
     test('호출하는 기관이 전부 출처에 적혀 있다', () {
       final src = _clientSource();
 
-      for (final (marker, name) in _agencies.entries.map((e) => (e.key, e.value))) {
+      for (final (marker, name) in _agencies.entries.map(
+        (e) => (e.key, e.value),
+      )) {
         if (!src.contains(marker)) continue;
         expect(
           SettingsStrings.dataSourceBody,
@@ -37,7 +39,9 @@ void main() {
       // 서울 API는 신청·승인됐지만 키가 등록되지 않아 아직 호출하지 않는다.
       final src = _clientSource();
 
-      for (final (marker, name) in _agencies.entries.map((e) => (e.key, e.value))) {
+      for (final (marker, name) in _agencies.entries.map(
+        (e) => (e.key, e.value),
+      )) {
         if (src.contains(marker)) continue;
         expect(
           SettingsStrings.dataSourceBody,
@@ -48,18 +52,18 @@ void main() {
     });
 
     testWidgets('설정 타일이 제목과 출처를 함께 보여준다', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: DataSourceListTile()),
-      ));
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: DataSourceListTile())),
+      );
 
       expect(find.text(SettingsStrings.dataSourceTitle), findsOneWidget);
       expect(find.text(SettingsStrings.dataSourceBody), findsOneWidget);
     });
 
     testWidgets('탭이 없다 — 정보성 타일이다', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: DataSourceListTile()),
-      ));
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: DataSourceListTile())),
+      );
 
       final tile = tester.widget<ListTile>(find.byType(ListTile));
       expect(tile.onTap, isNull);

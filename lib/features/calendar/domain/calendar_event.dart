@@ -28,10 +28,12 @@ abstract class CalendarEvent with _$CalendarEvent {
     @JsonKey(name: 'device_event_id') String? deviceEventId,
     @JsonKey(name: 'is_important') @Default(false) bool isImportant,
     @Default(EntryKind.task) EntryKind kind,
+
     /// 사용자가 편집 시트에서 저장해 이 항목을 검토·정리한 시각. NULL이면 아직 손대지 않음.
     /// 무엇을 정리했는지(연도를 밀었는지, 보고 그냥 뒀는지)는 구분하지 않는다 —
     /// 저장했다는 것 자체가 검토의 증거다. `작년` 배지와 연도 칩이 이 값으로 함께 꺼진다.
     @JsonKey(name: 'reviewed_at') String? reviewedAt,
+
     /// 에듀파인 CSV로 가져온 자료인지. **조회 시점 조인으로 채우는 파생 값**이라
     /// DB 컬럼이 아니다 — [toMap]에 넣으면 insert가 깨진다.
     @JsonKey(includeToJson: false) @Default(false) bool fromImport,

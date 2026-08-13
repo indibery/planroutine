@@ -7,8 +7,8 @@ class TimeRange {
 
   /// 시·분으로 쓰는 편의 생성자.
   const TimeRange.hm(int startHour, int startMinute, int endHour, int endMinute)
-      : startMinutes = startHour * 60 + startMinute,
-        endMinutes = endHour * 60 + endMinute;
+    : startMinutes = startHour * 60 + startMinute,
+      endMinutes = endHour * 60 + endMinute;
 
   /// 자정부터 몇 분째에 시작하는지.
   final int startMinutes;
@@ -42,9 +42,9 @@ class TimeRange {
   }
 
   Map<String, dynamic> toJson() => {
-        'startMinutes': startMinutes,
-        'endMinutes': endMinutes,
-      };
+    'startMinutes': startMinutes,
+    'endMinutes': endMinutes,
+  };
 
   factory TimeRange.fromJson(Map<String, dynamic> json) {
     return TimeRange(

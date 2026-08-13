@@ -94,9 +94,7 @@ void main() {
 
   group('시간대가 무효면 판정을 시도하지 않는다', () {
     test('두 시간대가 겹치면 접힘으로 둔다', () {
-      final s = BusSettings.defaults.copyWith(
-        toHomeRange: _s.toWorkRange,
-      );
+      final s = BusSettings.defaults.copyWith(toHomeRange: _s.toWorkRange);
       expect(_resolve(_at(7, 30), settings: s).expanded, isFalse);
     });
   });

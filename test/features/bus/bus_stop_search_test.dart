@@ -34,23 +34,25 @@ Future<void> _showSheet(
   CommuteDirection slot = CommuteDirection.toWork,
   BusStop stop = _stop,
 }) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () => BusStopConfirmSheet.show(
-            context,
-            stop: stop,
-            routes: routes,
-            arrivals: arrivals ?? _arrivals,
-            state: state,
-            slot: slot,
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => BusStopConfirmSheet.show(
+              context,
+              stop: stop,
+              routes: routes,
+              arrivals: arrivals ?? _arrivals,
+              state: state,
+              slot: slot,
+            ),
+            child: const Text('열기'),
           ),
-          child: const Text('열기'),
         ),
       ),
     ),
-  ));
+  );
   await tester.tap(find.text('열기'));
   await tester.pumpAndSettle();
 }
@@ -77,8 +79,7 @@ void main() {
 
     testWidgets('전부 체크한 채 맞아요를 누르면 routeIds가 빈 집합이다', (tester) async {
       final saved = await _tapAccept(tester);
-      expect(saved?.routeIds, isEmpty,
-          reason: '전부를 열거해 저장하면 신설 노선이 영구히 안 보인다');
+      expect(saved?.routeIds, isEmpty, reason: '전부를 열거해 저장하면 신설 노선이 영구히 안 보인다');
     });
 
     testWidgets('일부만 체크하면 그것만 저장된다', (tester) async {
@@ -105,8 +106,11 @@ void main() {
 
     testWidgets('오는 버스가 없어도 노선 없이 저장된다', (tester) async {
       final saved = await _tapAccept(tester, arrivals: const []);
-      expect(saved?.routeIds, isEmpty,
-          reason: '막차 후·주말이라 정말 안 오는 것은 등록을 막을 이유가 아니다');
+      expect(
+        saved?.routeIds,
+        isEmpty,
+        reason: '막차 후·주말이라 정말 안 오는 것은 등록을 막을 이유가 아니다',
+      );
     });
 
     testWidgets('막차 후(closed)는 안 오는 것이므로 저장을 막지 않는다', (tester) async {
@@ -115,12 +119,19 @@ void main() {
         arrivals: const [],
         state: BusCardState.closed,
       );
-      expect(saved?.routeIds, isEmpty,
-          reason: 'closed를 실패로 취급하면 막차 후 등록이 영구 불가가 된다');
+      expect(
+        saved?.routeIds,
+        isEmpty,
+        reason: 'closed를 실패로 취급하면 막차 후 등록이 영구 불가가 된다',
+      );
     });
 
     testWidgets('키 문제는 키 문구를 쓴다 — 장애 문구와 섞지 않는다', (tester) async {
-      await _showSheet(tester, arrivals: const [], state: BusCardState.keyError);
+      await _showSheet(
+        tester,
+        arrivals: const [],
+        state: BusCardState.keyError,
+      );
       expect(find.text('버스 정보를 불러올 수 없어요'), findsOneWidget);
       expect(find.text('지금 정보를 못 받았어요'), findsNothing);
     });
@@ -129,14 +140,20 @@ void main() {
       await _showSheet(tester, arrivals: const [], state: BusCardState.down);
 
       expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
-      expect(find.text('지금 이 정류장에 오는 버스가 없어요'), findsNothing,
-          reason: '못 물어본 것을 안 온다고 말하면 시트가 통과 도장이 된다');
+      expect(
+        find.text('지금 이 정류장에 오는 버스가 없어요'),
+        findsNothing,
+        reason: '못 물어본 것을 안 온다고 말하면 시트가 통과 도장이 된다',
+      );
 
       final accept = tester.widget<ElevatedButton>(
         find.byKey(BusStopConfirmSheet.acceptKey),
       );
-      expect(accept.onPressed, isNull,
-          reason: '방향을 확인할 재료가 0인데 저장을 허용하면 반대편 정류장이 저장된다');
+      expect(
+        accept.onPressed,
+        isNull,
+        reason: '방향을 확인할 재료가 0인데 저장을 허용하면 반대편 정류장이 저장된다',
+      );
     });
   });
 
@@ -177,8 +194,9 @@ void main() {
         uncheck: ['3030번', '6501번'],
       );
 
-      expect(saved?.routeIds, {'GGB241382001'},
-          reason: '그 순간 안 오는 버스가 내가 타는 버스일 수 있다');
+      expect(saved?.routeIds, {
+        'GGB241382001',
+      }, reason: '그 순간 안 오는 버스가 내가 타는 버스일 수 있다');
     });
 
     testWidgets('전부 체크한 채 저장하면 빈 집합이다 — 기준이 경유노선 전체다', (tester) async {
@@ -282,11 +300,7 @@ const _seoulStop = BusStop(
 /// routeId는 실측 GBIS 값에 `GGB` 접두를 붙인 형태다(파서가 그렇게 준다).
 const _routes = [
   BusRoute(routeId: 'GGB208000027', routeNo: '3030', destName: '신사역(중)'),
-  BusRoute(
-    routeId: 'GGB234001163',
-    routeNo: '6501',
-    destName: '부곡공영차고지(미정차)',
-  ),
+  BusRoute(routeId: 'GGB234001163', routeNo: '6501', destName: '부곡공영차고지(미정차)'),
   BusRoute(routeId: 'GGB241382001', routeNo: '9', destName: '금정역'),
 ];
 
@@ -300,34 +314,18 @@ final _someArrivals = [
 const _manyRoutes = [
   BusRoute(routeId: 'GGB241382003', routeNo: '6', destName: '금정역'),
   BusRoute(routeId: 'GGB241382001', routeNo: '9', destName: '금정역'),
-  BusRoute(
-    routeId: 'GGB208000005',
-    routeNo: '11-5',
-    destName: '정금마을.방배경찰서(중)',
-  ),
+  BusRoute(routeId: 'GGB208000005', routeNo: '11-5', destName: '정금마을.방배경찰서(중)'),
   BusRoute(routeId: 'GGB208000001', routeNo: '15', destName: '창박골'),
   BusRoute(routeId: 'GGB208000032', routeNo: '87', destName: '산본1동'),
-  BusRoute(
-    routeId: 'GGB100100574',
-    routeNo: '541',
-    destName: '신분당선강남역(중)',
-  ),
-  BusRoute(
-    routeId: 'GGB208000026',
-    routeNo: '917',
-    destName: '신사역8번출구.가로수길',
-  ),
+  BusRoute(routeId: 'GGB100100574', routeNo: '541', destName: '신분당선강남역(중)'),
+  BusRoute(routeId: 'GGB208000026', routeNo: '917', destName: '신사역8번출구.가로수길'),
   BusRoute(routeId: 'GGB208000027', routeNo: '3030', destName: '신사역(중)'),
   BusRoute(
     routeId: 'GGB100100279',
     routeNo: '5623',
     destName: '여의도환승센터(1번승강장)',
   ),
-  BusRoute(
-    routeId: 'GGB234001163',
-    routeNo: '6501',
-    destName: '부곡공영차고지(미정차)',
-  ),
+  BusRoute(routeId: 'GGB234001163', routeNo: '6501', destName: '부곡공영차고지(미정차)'),
 ];
 
 /// 시트를 띄우고 필요한 체크를 해제한 뒤 `맞아요`를 누른다.
@@ -340,25 +338,27 @@ Future<BusStop?> _tapAccept(
   CommuteDirection slot = CommuteDirection.toWork,
 }) async {
   BusStop? result;
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: Builder(
-        builder: (context) => ElevatedButton(
-          onPressed: () async {
-            result = await BusStopConfirmSheet.show(
-              context,
-              stop: _stop,
-              routes: routes,
-              arrivals: arrivals ?? _arrivals,
-              state: state,
-              slot: slot,
-            );
-          },
-          child: const Text('열기'),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              result = await BusStopConfirmSheet.show(
+                context,
+                stop: _stop,
+                routes: routes,
+                arrivals: arrivals ?? _arrivals,
+                state: state,
+                slot: slot,
+              );
+            },
+            child: const Text('열기'),
+          ),
         ),
       ),
     ),
-  ));
+  );
   await tester.tap(find.text('열기'));
   await tester.pumpAndSettle();
 

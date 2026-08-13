@@ -8,8 +8,9 @@ const _prefsKey = 'theme_mode';
 ///
 /// 앱 루트(app.dart)가 이 값 + 기기 밝기로 effective brightness를 계산해
 /// [AppColors.applyBrightness]와 ThemeData를 동기화한다.
-final themeModeProvider =
-    AsyncNotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+final themeModeProvider = AsyncNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);
 
 class ThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   @override

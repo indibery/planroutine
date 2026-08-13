@@ -22,7 +22,9 @@ BusCardView _view({
 }) {
   return BusCardView(
     state: state,
-    visible: items ?? [BusArrival.fromMinutes(routeId: 'A', routeNo: '720', arrMin: 2)],
+    visible:
+        items ??
+        [BusArrival.fromMinutes(routeId: 'A', routeNo: '720', arrMin: 2)],
     hiddenCount: hidden,
     fetchedAt: fetchedAt,
   );
@@ -39,19 +41,21 @@ Future<void> _pump(
   // false면 `onToggleExpanded`로 null을 넘긴다 = 접을 수 없는 카드(정류장 미등록).
   bool collapsible = true,
 }) {
-  return tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: BusArrivalCard(
-        view: view,
-        style: style,
-        direction: CommuteDirection.toWork,
-        stopName: stopName,
-        expanded: expanded,
-        onToggleExpanded: collapsible ? (onToggle ?? () {}) : null,
-        onFlipDirection: onFlip ?? () {},
+  return tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: BusArrivalCard(
+          view: view,
+          style: style,
+          direction: CommuteDirection.toWork,
+          stopName: stopName,
+          expanded: expanded,
+          onToggleExpanded: collapsible ? (onToggle ?? () {}) : null,
+          onFlipDirection: onFlip ?? () {},
+        ),
       ),
     ),
-  ));
+  );
 }
 
 void main() {
@@ -101,17 +105,26 @@ void main() {
 
     testWidgets('접힘에서도 같은 키를 누른다 — 표적이 움직이지 않는다', (tester) async {
       var tapped = 0;
-      await _pump(tester, view: _view(), expanded: false, onToggle: () => tapped++);
+      await _pump(
+        tester,
+        view: _view(),
+        expanded: false,
+        onToggle: () => tapped++,
+      );
       await tester.tap(find.byKey(BusArrivalCard.headerKey));
       expect(tapped, 1);
     });
 
     testWidgets('접힘과 펼침에서 제목줄의 y좌표가 같다', (tester) async {
       await _pump(tester, view: _view());
-      final expandedY = tester.getTopLeft(find.byKey(BusArrivalCard.headerKey)).dy;
+      final expandedY = tester
+          .getTopLeft(find.byKey(BusArrivalCard.headerKey))
+          .dy;
 
       await _pump(tester, view: _view(), expanded: false);
-      final collapsedY = tester.getTopLeft(find.byKey(BusArrivalCard.headerKey)).dy;
+      final collapsedY = tester
+          .getTopLeft(find.byKey(BusArrivalCard.headerKey))
+          .dy;
 
       expect(collapsedY, expandedY);
     });
@@ -132,8 +145,11 @@ void main() {
         stopName: '',
         collapsible: false,
       );
-      expect(find.text('· '), findsNothing,
-          reason: '제목줄이 `출근   · `로 끝나면 잘린 것처럼 보인다');
+      expect(
+        find.text('· '),
+        findsNothing,
+        reason: '제목줄이 `출근   · `로 끝나면 잘린 것처럼 보인다',
+      );
       expect(find.textContaining('·'), findsNothing);
       expect(find.text('🏠→🏫 출근'), findsOneWidget);
     });
@@ -145,8 +161,11 @@ void main() {
         stopName: '',
         collapsible: false,
       );
-      expect(find.byIcon(Icons.expand_less), findsNothing,
-          reason: '눌러도 아무 일이 없는데 스크린리더가 `접기`라고 읽는다');
+      expect(
+        find.byIcon(Icons.expand_less),
+        findsNothing,
+        reason: '눌러도 아무 일이 없는데 스크린리더가 `접기`라고 읽는다',
+      );
       expect(find.byIcon(Icons.expand_more), findsNothing);
       expect(find.byKey(BusArrivalCard.headerKey), findsNothing);
       // 등록 유도와 방향 토글은 그대로 남는다 — 카드가 죽는 것이 아니다.
@@ -173,22 +192,41 @@ void main() {
     // I5의 원인이므로, 새 모양을 더할 때 자동으로 같은 계약이 걸리게 둔다.
     for (final style in BusCardStyle.values) {
       testWidgets('${style.label} — 감춘 개수를 말한다', (tester) async {
-        await _pump(tester, style: style, view: _view(items: visible, hidden: 2));
-        expect(find.text('2개 더'), findsOneWidget,
-            reason: '한 모양에만 없으면 그 모양을 고른 사용자는 이 정류장에 '
-                '버스가 3대만 온다고 읽는다 — 자기 노선이 4·5번째면 포기한다');
+        await _pump(
+          tester,
+          style: style,
+          view: _view(items: visible, hidden: 2),
+        );
+        expect(
+          find.text('2개 더'),
+          findsOneWidget,
+          reason:
+              '한 모양에만 없으면 그 모양을 고른 사용자는 이 정류장에 '
+              '버스가 3대만 온다고 읽는다 — 자기 노선이 4·5번째면 포기한다',
+        );
       });
 
       testWidgets('${style.label} — 보이는 노선번호가 모두 있다', (tester) async {
-        await _pump(tester, style: style, view: _view(items: visible, hidden: 2));
+        await _pump(
+          tester,
+          style: style,
+          view: _view(items: visible, hidden: 2),
+        );
         for (final a in visible) {
-          expect(find.textContaining(a.routeNo), findsWidgets,
-              reason: '${a.routeNo}번이 ${style.label}에서 사라졌다');
+          expect(
+            find.textContaining(a.routeNo),
+            findsWidgets,
+            reason: '${a.routeNo}번이 ${style.label}에서 사라졌다',
+          );
         }
       });
 
       testWidgets('${style.label} — 감춘 개수가 0이면 그 줄이 없다', (tester) async {
-        await _pump(tester, style: style, view: _view(items: visible));
+        await _pump(
+          tester,
+          style: style,
+          view: _view(items: visible),
+        );
         expect(find.textContaining('개 더'), findsNothing);
       });
     }
@@ -206,7 +244,10 @@ void main() {
 
   group('실패 계약 — 다섯 상태가 서로 다르게 읽힌다', () {
     testWidgets('closed / down / keyError / noStop 문구가 각각 다르다', (tester) async {
-      await _pump(tester, view: _view(state: BusCardState.closed, items: const []));
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.closed, items: const []),
+      );
       expect(find.text('오늘 운행이 끝났어요'), findsOneWidget);
 
       // down·keyError·noStop 세 상태는 앱이 항상 fetchedAt: null로 만든다 — 제목줄에
@@ -214,48 +255,69 @@ void main() {
       // 각 상태의 트리가 살아 있는 동안(다음 _pump로 교체되기 전에) 바로 확인한다 —
       // 마지막에 한 번만 확인하면 그 시점에 남아 있는 트리(noStop)만 검증된다.
       // closed는 막차 후 조회 성공이라 기준시각이 붙는 것이 정상이라 제외한다.
-      await _pump(tester, view: _view(state: BusCardState.down, items: const []));
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.down, items: const []),
+      );
       expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
       expect(find.text('다시 시도'), findsOneWidget);
       expect(find.textContaining('기준'), findsNothing);
 
-      await _pump(tester, view: _view(state: BusCardState.keyError, items: const []));
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.keyError, items: const []),
+      );
       expect(find.text('버스 정보를 불러올 수 없어요'), findsOneWidget);
       expect(find.textContaining('기준'), findsNothing);
 
-      await _pump(tester, view: _view(state: BusCardState.noStop, items: const []));
+      await _pump(
+        tester,
+        view: _view(state: BusCardState.noStop, items: const []),
+      );
       expect(find.text(BusStrings.emptyNoStop), findsOneWidget);
       expect(find.textContaining('기준'), findsNothing);
     });
 
     testWidgets('고른 노선만 안 오면 막차 문구가 아니라 별 문구다', (tester) async {
-      await _pump(tester, view: _view(
-        state: BusCardState.filteredOut,
-        items: const [],
-        fetchedAt: DateTime(2026, 7, 28, 7, 30),
-      ));
+      await _pump(
+        tester,
+        view: _view(
+          state: BusCardState.filteredOut,
+          items: const [],
+          fetchedAt: DateTime(2026, 7, 28, 7, 30),
+        ),
+      );
       expect(find.text('고른 노선은 지금 오지 않아요'), findsOneWidget);
-      expect(find.text('오늘 운행이 끝났어요'), findsNothing,
-          reason: '정류장에는 다른 버스가 오고 있다 — 정반대의 행동을 부르는 정보다');
+      expect(
+        find.text('오늘 운행이 끝났어요'),
+        findsNothing,
+        reason: '정류장에는 다른 버스가 오고 있다 — 정반대의 행동을 부르는 정보다',
+      );
       expect(find.textContaining('설정에서 고를 수 있어요'), findsOneWidget);
     });
 
     testWidgets('stale + 필터로 목록이 비면 막차 문구가 아니라 못 받았어요다', (tester) async {
       // 와일드카드 분기가 있으면 여기서 '오늘 운행이 끝났어요'가 나온다.
-      await _pump(tester, view: _view(
-        state: BusCardState.stale,
-        items: const [],
-        fetchedAt: DateTime(2026, 7, 28, 7, 30),
-      ));
+      await _pump(
+        tester,
+        view: _view(
+          state: BusCardState.stale,
+          items: const [],
+          fetchedAt: DateTime(2026, 7, 28, 7, 30),
+        ),
+      );
       expect(find.text('지금 정보를 못 받았어요'), findsOneWidget);
       expect(find.text('오늘 운행이 끝났어요'), findsNothing);
     });
 
     testWidgets('stale은 목록을 유지하고 갱신 실패를 고백한다', (tester) async {
-      await _pump(tester, view: _view(
-        state: BusCardState.stale,
-        fetchedAt: DateTime(2026, 7, 28, 7, 32),
-      ));
+      await _pump(
+        tester,
+        view: _view(
+          state: BusCardState.stale,
+          fetchedAt: DateTime(2026, 7, 28, 7, 32),
+        ),
+      );
       expect(find.byType(BusBodyText), findsOneWidget);
       expect(find.text('07:32 기준 · 갱신 실패'), findsOneWidget);
     });

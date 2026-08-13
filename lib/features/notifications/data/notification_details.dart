@@ -49,7 +49,8 @@ const kAndroidScheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
 ///
 /// `const`를 포기하고 본문마다 만든다 — `BigTextStyleInformation('')`을 const로 두면
 /// 펼쳤을 때 본문이 빈다.
-NotificationDetails buildNotificationDetails(String body) => NotificationDetails(
+NotificationDetails buildNotificationDetails(String body) =>
+    NotificationDetails(
       android: AndroidNotificationDetails(
         kAndroidChannelId,
         NotificationStrings.channelName,

@@ -39,7 +39,7 @@ class GoldGradientButton extends StatelessWidget {
                       color: AppColors.gold.withValues(alpha: 0.35),
                       blurRadius: 24,
                       offset: const Offset(0, 10),
-                    )
+                    ),
                   ]
                 : null,
           ),

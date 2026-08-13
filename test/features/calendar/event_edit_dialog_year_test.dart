@@ -65,7 +65,10 @@ void main() {
 
     testWidgets('연도가 둘이면 개별 값 대신 "연도 모두" 문구를 쓴다', (tester) async {
       await pumpDialog(tester);
-      await tester.enterText(titleField(), '$oldYear학년도 안건[$currentYear학년도 개정]');
+      await tester.enterText(
+        titleField(),
+        '$oldYear학년도 안건[$currentYear학년도 개정]',
+      );
       await tester.pump();
 
       expect(find.text('연도 모두 +1년'), findsOneWidget);
@@ -74,7 +77,10 @@ void main() {
 
     testWidgets('칩을 탭하면 제목의 모든 연도가 한 해씩 밀린다', (tester) async {
       await pumpDialog(tester);
-      await tester.enterText(titleField(), '$oldYear학년도 안건[$currentYear학년도 개정]');
+      await tester.enterText(
+        titleField(),
+        '$oldYear학년도 안건[$currentYear학년도 개정]',
+      );
       await tester.pump();
 
       await tester.tap(find.byKey(const Key('year_shift_chip')));

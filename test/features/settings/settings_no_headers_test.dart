@@ -11,9 +11,13 @@ import 'package:planroutine/features/settings/presentation/widgets/trash_list_ti
 import 'package:planroutine/shared/widgets/section_header.dart';
 
 Future<void> _pump(WidgetTester tester, Widget child) async {
-  await tester.pumpWidget(ProviderScope(
-    child: MaterialApp(home: Scaffold(body: ListView(children: [child]))),
-  ));
+  await tester.pumpWidget(
+    ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(body: ListView(children: [child])),
+      ),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 

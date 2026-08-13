@@ -118,7 +118,8 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
 
   /// **도착정보**를 못 물어봤는가. 경유노선과 별개 호출이라 이것만 실패할 수 있다.
   bool get _arrivalsFailed =>
-      widget.state == BusCardState.down || widget.state == BusCardState.keyError;
+      widget.state == BusCardState.down ||
+      widget.state == BusCardState.keyError;
 
   /// 확인할 재료가 하나도 없는가 — **이때만 저장을 막는다.**
   ///
@@ -147,8 +148,7 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
 
     // 전부 체크된 상태는 **빈 집합**으로 저장한다. 열거해 저장하면 "전부"가
     // "이 열 개"로 굳어 노선이 신설됐을 때 영구히 안 보인다.
-    final selected =
-        _checked.length == _choices.length ? <String>{} : _checked;
+    final selected = _checked.length == _choices.length ? <String>{} : _checked;
 
     Navigator.of(context).pop(widget.stop.copyWith(routeIds: selected));
   }
@@ -190,11 +190,13 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
               // 목록이 없는 이유를 갈라 말한다. 못 물어본 경우에는 카드의 실패
               // 문구를 그대로 쓴다 — 시트용 문구를 따로 만들면 사용자가 읽는
               // 사실이 같은데 둘 중 하나만 손보게 된다.
-              _note(_arrivalsFailed
-                  ? (widget.state == BusCardState.keyError
-                      ? BusStrings.emptyKey
-                      : BusStrings.emptyDown)
-                  : BusStrings.confirmNoRoutes)
+              _note(
+                _arrivalsFailed
+                    ? (widget.state == BusCardState.keyError
+                          ? BusStrings.emptyKey
+                          : BusStrings.emptyDown)
+                    : BusStrings.confirmNoRoutes,
+              )
             else ...[
               // 시트 안에서 사용자가 할 일을 말하는 **유일한 지시문**이다.
               // eyebrow(10px·자간 2.5·골드)로 그리면 본문보다 작아 장식 라벨로

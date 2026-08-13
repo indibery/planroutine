@@ -108,9 +108,9 @@ class BusApiClient {
     http.Client? client,
     String? serviceKey,
     DateTime Function()? clock,
-  })  : _client = client ?? http.Client(),
-        _serviceKey = serviceKey ?? _envKey,
-        _now = clock ?? DateTime.now;
+  }) : _client = client ?? http.Client(),
+       _serviceKey = serviceKey ?? _envKey,
+       _now = clock ?? DateTime.now;
 
   final http.Client _client;
   final String _serviceKey;
@@ -265,11 +265,15 @@ class BusApiClient {
   /// GBIS 엔드포인트 하나를 부른다 — 공통 쿼리(`serviceKey`·`format`)를 여기 한 곳에서
   /// 붙인다. TAGO의 `_type`·`pageNo`는 없다.
   Future<Map<String, dynamic>> _gbis(String url, Map<String, String> query) {
-    return _send(Uri.parse(url).replace(queryParameters: {
-      'serviceKey': _serviceKey,
-      'format': 'json',
-      ...query,
-    }));
+    return _send(
+      Uri.parse(url).replace(
+        queryParameters: {
+          'serviceKey': _serviceKey,
+          'format': 'json',
+          ...query,
+        },
+      ),
+    );
   }
 
   /// `nodeId` → GBIS `stationId`. **접두를 떼는 규칙은 여기 한 곳에만 둔다** — 흩어져
@@ -283,10 +287,11 @@ class BusApiClient {
   }) async {
     if (!hasKey) return const TagoResult(TagoOutcome.keyError);
     try {
-      final json = await _get(
-        'BusSttnInfoInqireService/getSttnNoList',
-        {'cityCode': '$cityCode', 'nodeNm': name, 'numOfRows': '50'},
-      );
+      final json = await _get('BusSttnInfoInqireService/getSttnNoList', {
+        'cityCode': '$cityCode',
+        'nodeNm': name,
+        'numOfRows': '50',
+      });
       return parseStops(json, cityCode: cityCode);
     } on _KeyRejected {
       return const TagoResult(TagoOutcome.keyError);
@@ -298,10 +303,9 @@ class BusApiClient {
   Future<TagoResult<CityCode>> fetchCities() async {
     if (!hasKey) return const TagoResult(TagoOutcome.keyError);
     try {
-      final json = await _get(
-        'ArvlInfoInqireService/getCtyCodeList',
-        {'numOfRows': '300'},
-      );
+      final json = await _get('ArvlInfoInqireService/getCtyCodeList', {
+        'numOfRows': '300',
+      });
       return parseCities(json);
     } on _KeyRejected {
       return const TagoResult(TagoOutcome.keyError);
@@ -334,16 +338,17 @@ class BusApiClient {
 
   /// TAGO 엔드포인트 하나를 부른다. 공통 쿼리(`serviceKey`·`_type`·`pageNo`)를 여기
   /// 한 곳에서 붙인다 — GBIS는 쿼리 규약이 달라 [_gbis]가 따로 있다.
-  Future<Map<String, dynamic>> _get(
-    String path,
-    Map<String, String> query,
-  ) {
-    return _send(Uri.parse('$tagoBaseUrl/$path').replace(queryParameters: {
-      'serviceKey': _serviceKey,
-      '_type': 'json',
-      'pageNo': '1',
-      ...query,
-    }));
+  Future<Map<String, dynamic>> _get(String path, Map<String, String> query) {
+    return _send(
+      Uri.parse('$tagoBaseUrl/$path').replace(
+        queryParameters: {
+          'serviceKey': _serviceKey,
+          '_type': 'json',
+          'pageNo': '1',
+          ...query,
+        },
+      ),
+    );
   }
 
   /// HTTP 한 번 + 실패 판정. **두 소스가 같은 계약을 쓴다** — 401/403은 키 거부,
@@ -351,7 +356,9 @@ class BusApiClient {
   /// 401/403으로 온다.
   Future<Map<String, dynamic>> _send(Uri uri) async {
     _requestCount++;
-    final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+    final response = await _client
+        .get(uri)
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 401 || response.statusCode == 403) {
       throw const _KeyRejected();

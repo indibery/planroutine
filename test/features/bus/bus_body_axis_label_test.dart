@@ -26,18 +26,14 @@ double _labelWidth(String routeNo) {
 /// `layoutAxisLabels`가 안쪽으로 밀어 넣는다 — 그러면 라벨과 점이 어긋나는 것이
 /// 정상 동작이라 정렬 검사가 성립하지 않는다. 가운데에서 잰다.
 BusCardView _view(List<String> routeNos) => BusCardView(
-      state: BusCardState.ok,
-      visible: [
-        for (final (i, no) in routeNos.indexed)
-          BusArrival.fromMinutes(
-            routeId: 'R$i',
-            routeNo: no,
-            arrMin: 5 + i * 5,
-          ),
-      ],
-      hiddenCount: 0,
-      fetchedAt: DateTime(2026, 7, 29, 19, 51),
-    );
+  state: BusCardState.ok,
+  visible: [
+    for (final (i, no) in routeNos.indexed)
+      BusArrival.fromMinutes(routeId: 'R$i', routeNo: no, arrMin: 5 + i * 5),
+  ],
+  hiddenCount: 0,
+  fetchedAt: DateTime(2026, 7, 29, 19, 51),
+);
 
 void main() {
   // **실측 Pretendard를 올린다.** `flutter test`의 기본 폴백 폰트는 모든 글자가 1em
@@ -62,10 +58,9 @@ void main() {
         final w = _labelWidth(no);
         expect(
           w,
-          lessThanOrEqualTo(
-            BusBodyAxis.labelWidth - BusBodyAxis.labelHeadroom,
-          ),
-          reason: '$no 라벨 ${w.toStringAsFixed(1)}pt — 박스 '
+          lessThanOrEqualTo(BusBodyAxis.labelWidth - BusBodyAxis.labelHeadroom),
+          reason:
+              '$no 라벨 ${w.toStringAsFixed(1)}pt — 박스 '
               '${BusBodyAxis.labelWidth}pt에 여유 '
               '${BusBodyAxis.labelHeadroom}pt를 남기지 못한다',
         );
@@ -74,22 +69,26 @@ void main() {
 
     test('짧은 번호는 당연히 들어간다 — 회귀 대조군', () {
       for (final no in ['9', '15', '87', '541', '11-5']) {
-        expect(_labelWidth(no),
-            lessThanOrEqualTo(BusBodyAxis.labelWidth - BusBodyAxis.labelHeadroom));
+        expect(
+          _labelWidth(no),
+          lessThanOrEqualTo(BusBodyAxis.labelWidth - BusBodyAxis.labelHeadroom),
+        );
       }
     });
 
     testWidgets('라벨 박스 폭과 중앙 정렬 오프셋이 짝이다', (tester) async {
       // `width: 28`과 `left: - 14`가 따로 박혀 있던 시절에는 한쪽만 고치면 라벨이
       // 점에서 조용히 밀렸다. 상수 하나에서 파생되는지 화면으로 확인한다.
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            child: BusBodyAxis(view: _view(const ['5623'])),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              child: BusBodyAxis(view: _view(const ['5623'])),
+            ),
           ),
         ),
-      ));
+      );
 
       // **위치 기반 finder를 쓰지 않는다.** 예전에는 `find.byType(Container).at(1)`로
       // 점을 집었는데, 1분 보조 눈금이 들어오면서 그 인덱스가 밀렸다(레일·눈금·점이
@@ -97,26 +96,33 @@ void main() {
       final label = tester.getRect(find.text('5623'));
       final dot = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R0')));
 
-      expect((label.center.dx - dot.center.dx).abs(), lessThan(1.0),
-          reason: '라벨 중앙과 점 중앙이 어긋나면 어느 버스의 번호인지 알 수 없다');
+      expect(
+        (label.center.dx - dot.center.dx).abs(),
+        lessThan(1.0),
+        reason: '라벨 중앙과 점 중앙이 어긋나면 어느 버스의 번호인지 알 수 없다',
+      );
     });
 
     testWidgets('긴 번호도 잘리지 않는다 — 축소해서 담는다', (tester) async {
       // 실측 `1006-1` 36.8pt는 34pt 박스를 넘는다. `FittedBox(scaleDown)`이 줄여
       // 담으므로 글자가 사라지지 않는다.
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            child: BusBodyAxis(view: _view(const ['1006-1'])),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              child: BusBodyAxis(view: _view(const ['1006-1'])),
+            ),
           ),
         ),
-      ));
+      );
 
       expect(find.text('1006-1'), findsOneWidget);
-      expect(tester.getRect(find.text('1006-1')).width,
-          lessThanOrEqualTo(BusBodyAxis.labelWidth + 0.5),
-          reason: '박스를 넘겨 그리면 옆 라벨과 겹치거나 잘린다');
+      expect(
+        tester.getRect(find.text('1006-1')).width,
+        lessThanOrEqualTo(BusBodyAxis.labelWidth + 0.5),
+        reason: '박스를 넘겨 그리면 옆 라벨과 겹치거나 잘린다',
+      );
     });
   });
 }

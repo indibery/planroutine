@@ -13,7 +13,8 @@ const busUnfilteredLimit = 3;
 
 bool isUrgent(int arrMin) => arrMin < busUrgentMinutes;
 
-bool isSoon(int arrMin) => arrMin >= busUrgentMinutes && arrMin <= busSoonMinutes;
+bool isSoon(int arrMin) =>
+    arrMin >= busUrgentMinutes && arrMin <= busSoonMinutes;
 
 /// 카드가 그릴 상태 — 스펙 §3의 실패 계약 5상태 + 슬롯 미설정.
 enum BusCardState {

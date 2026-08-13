@@ -36,13 +36,15 @@ void main() {
 
   Future<void> seed(String title, String date, EntryKind kind) async {
     final now = DateTime.now().toIso8601String();
-    await repo.insertConfirmedOrPending(Schedule(
-      title: title,
-      scheduledDate: date,
-      kind: kind,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await repo.insertConfirmedOrPending(
+      Schedule(
+        title: title,
+        scheduledDate: date,
+        kind: kind,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   Future<void> pumpScreen(WidgetTester tester) async {
@@ -57,7 +59,8 @@ void main() {
     );
     bool chipHasCount() => find
         .byWidgetPredicate(
-            (w) => w is Text && (w.data?.startsWith('검토 대기 ') ?? false))
+          (w) => w is Text && (w.data?.startsWith('검토 대기 ') ?? false),
+        )
         .evaluate()
         .isNotEmpty;
     await tester.runAsync(() async {
@@ -154,9 +157,11 @@ void main() {
         find.widgetWithText(TextButton, ScheduleStrings.confirm),
       );
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 && find.text('학급편성 결과 제출').evaluate().isNotEmpty;
-            i++) {
+        for (
+          var i = 0;
+          i < 100 && find.text('학급편성 결과 제출').evaluate().isNotEmpty;
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }
@@ -166,8 +171,7 @@ void main() {
       final pending = await tester.runAsync(
         () => repo.getSchedules(status: ScheduleStatus.pending),
       );
-      expect(pending!.single.kind, EntryKind.event,
-          reason: '행사는 대기로 남아야 한다');
+      expect(pending!.single.kind, EntryKind.event, reason: '행사는 대기로 남아야 한다');
     });
   });
 
@@ -187,14 +191,13 @@ void main() {
       // 필터 변경 → 실제 DB 재조회. 로딩 스피너가 남은 채 pumpAndSettle하면
       // fake-async가 DB future를 못 끝내 영원히 안 멎는다 → runAsync에서 대기.
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 &&
-                (find.text('과학의 달 행사').evaluate().isEmpty ||
-                    find
-                        .byType(CircularProgressIndicator)
-                        .evaluate()
-                        .isNotEmpty);
-            i++) {
+        for (
+          var i = 0;
+          i < 100 &&
+              (find.text('과학의 달 행사').evaluate().isEmpty ||
+                  find.byType(CircularProgressIndicator).evaluate().isNotEmpty);
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }

@@ -65,6 +65,7 @@ class _Palette {
   final Color eventAccent;
   final Color calendarToday;
   final Color calendarSelected;
+
   /// 토요일 날짜·요일 글자 — **중립 파랑**. 골드는 오늘/선택/중요 강조 전용이라
   /// 토요일까지 골드로 쓰면 골드가 네 가지 의미를 동시에 져서 강조가 무너진다.
   final Color calendarSaturday;

@@ -99,7 +99,9 @@ void main() {
       expect(view.today, isEmpty);
 
       // 캘린더 탭이 쓰는 경로로 추가 (EventEditDialog 저장과 동일)
-      await container.read(selectedMonthEventsProvider.notifier).addEvent(
+      await container
+          .read(selectedMonthEventsProvider.notifier)
+          .addEvent(
             CalendarEvent(title: '새 학년 준비 회의', eventDate: formatDate(_today)),
           );
 
@@ -112,7 +114,9 @@ void main() {
       final view = await openTodayTab();
       expect(view.today, hasLength(1));
 
-      await container.read(selectedMonthEventsProvider.notifier).deleteEvent(id);
+      await container
+          .read(selectedMonthEventsProvider.notifier)
+          .deleteEvent(id);
 
       final next = await container.read(todayViewProvider.future);
       expect(next.today, isEmpty);
@@ -129,8 +133,7 @@ void main() {
         ],
       );
       addTearDown(gated.dispose);
-      final syncer =
-          gated.read(notificationSyncerProvider) as _GatedSyncer;
+      final syncer = gated.read(notificationSyncerProvider) as _GatedSyncer;
 
       await insert('첫째 업무', _today);
       await insert('둘째 업무', _today);

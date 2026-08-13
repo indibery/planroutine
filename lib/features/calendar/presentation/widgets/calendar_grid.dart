@@ -143,7 +143,8 @@ class CalendarGrid extends StatelessWidget {
 
   List<Widget> _buildCalendarCells() {
     final daysInMonth = DateTime(year, month + 1, 0).day;
-    final firstWeekday = DateTime(year, month, 1).weekday % 7; // 일=0, 월=1, ..., 토=6
+    final firstWeekday =
+        DateTime(year, month, 1).weekday % 7; // 일=0, 월=1, ..., 토=6
     final today = DateTime.now();
     final cells = <Widget>[];
 
@@ -156,17 +157,19 @@ class CalendarGrid extends StatelessWidget {
       final day = daysInPrevMonth - firstWeekday + 1 + i;
       final date = DateTime(prevYear, prevMonth, day);
       final dateStr = formatDate(date);
-      cells.add(CalendarDayCell(
-        day: day,
-        isToday: false,
-        isSelected: false,
-        isWeekend: i == 0,
-        isSaturday: i == 6,
-        isHoliday: isKoreanHoliday(date),
-        isCurrentMonth: false,
-        events: eventsMap[dateStr] ?? [],
-        onTap: () => onDateSelected(date),
-      ));
+      cells.add(
+        CalendarDayCell(
+          day: day,
+          isToday: false,
+          isSelected: false,
+          isWeekend: i == 0,
+          isSaturday: i == 6,
+          isHoliday: isKoreanHoliday(date),
+          isCurrentMonth: false,
+          events: eventsMap[dateStr] ?? [],
+          onTap: () => onDateSelected(date),
+        ),
+      );
     }
 
     // 이번 달 셀
@@ -175,21 +178,25 @@ class CalendarGrid extends StatelessWidget {
       final dateStr = formatDate(date);
       final weekday = (firstWeekday + day - 1) % 7;
 
-      cells.add(CalendarDayCell(
-        day: day,
-        isToday: date.year == today.year &&
-            date.month == today.month &&
-            date.day == today.day,
-        isSelected: date.year == selectedDate.year &&
-            date.month == selectedDate.month &&
-            date.day == selectedDate.day,
-        isWeekend: weekday == 0,
-        isSaturday: weekday == 6,
-        isHoliday: isKoreanHoliday(date),
-        isCurrentMonth: true,
-        events: eventsMap[dateStr] ?? [],
-        onTap: () => onDateSelected(date),
-      ));
+      cells.add(
+        CalendarDayCell(
+          day: day,
+          isToday:
+              date.year == today.year &&
+              date.month == today.month &&
+              date.day == today.day,
+          isSelected:
+              date.year == selectedDate.year &&
+              date.month == selectedDate.month &&
+              date.day == selectedDate.day,
+          isWeekend: weekday == 0,
+          isSaturday: weekday == 6,
+          isHoliday: isKoreanHoliday(date),
+          isCurrentMonth: true,
+          events: eventsMap[dateStr] ?? [],
+          onTap: () => onDateSelected(date),
+        ),
+      );
     }
 
     // 다음 달 빈 셀 (6줄 채우기)
@@ -204,20 +211,21 @@ class CalendarGrid extends StatelessWidget {
       final dateStr = formatDate(date);
       final weekday = (totalCells + i) % 7;
 
-      cells.add(CalendarDayCell(
-        day: day,
-        isToday: false,
-        isSelected: false,
-        isWeekend: weekday == 0,
-        isSaturday: weekday == 6,
-        isHoliday: isKoreanHoliday(date),
-        isCurrentMonth: false,
-        events: eventsMap[dateStr] ?? [],
-        onTap: () => onDateSelected(date),
-      ));
+      cells.add(
+        CalendarDayCell(
+          day: day,
+          isToday: false,
+          isSelected: false,
+          isWeekend: weekday == 0,
+          isSaturday: weekday == 6,
+          isHoliday: isKoreanHoliday(date),
+          isCurrentMonth: false,
+          events: eventsMap[dateStr] ?? [],
+          onTap: () => onDateSelected(date),
+        ),
+      );
     }
 
     return cells;
   }
-
 }

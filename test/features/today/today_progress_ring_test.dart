@@ -8,7 +8,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Center(child: TodayProgressRing(done: done, total: total)),
+          body: Center(
+            child: TodayProgressRing(done: done, total: total),
+          ),
         ),
       ),
     );

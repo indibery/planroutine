@@ -87,9 +87,11 @@ void main() {
       });
       await tester.pumpAndSettle();
 
-      final boundary =
-          tester.renderObject<RenderRepaintBoundary>(find.byType(RepaintBoundary).first);
-      final dir = Directory('docs/seal_candidates')..createSync(recursive: true);
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byType(RepaintBoundary).first,
+      );
+      final dir = Directory('docs/seal_candidates')
+        ..createSync(recursive: true);
       for (final scale in [1.0, 3.0]) {
         await tester.runAsync(() async {
           final image = await boundary.toImage(pixelRatio: scale);

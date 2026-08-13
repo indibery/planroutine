@@ -42,19 +42,19 @@ const _stop = BusStop(
 ///
 /// 6노선이 오고 가장 빠른 것이 `92-1`(160초 → 3분)이다. 표시 상한(`busUnfilteredLimit`)이
 /// 3이라 카드에는 `92-1`·`82-1`·`61` 세 줄만 보인다.
-String _body() =>
-    File('test/fixtures/gbis/arrivals_suwoncityhall_6routes.json')
-        .readAsStringSync();
+String _body() => File(
+  'test/fixtures/gbis/arrivals_suwoncityhall_6routes.json',
+).readAsStringSync();
 
 /// TAGO는 UTF-8 JSON을 준다. **content-type을 빼면 안 된다** — package:http가
 /// `_encodingForHeaders`로 인코딩을 유도하고 헤더가 없으면 latin1로 떨어져,
 /// 픽스처의 한글(`B정류장`)에서 `MockClient` 핸들러 안에서 터진다(구현이 아니라
 /// 픽스처의 함정 — 실제로 한 번 발생했다). 구현은 utf8.decode(bodyBytes)로 맞다.
 http.Response _json(String body, [int status = 200]) => http.Response(
-      body,
-      status,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  body,
+  status,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 /// 지정한 시각으로 고정한 채 카드를 띄우고, 나간 요청 수를 돌려준다.
 Future<int> _pumpHost(
@@ -76,12 +76,14 @@ Future<int> _pumpHost(
     clock: () => now,
   );
 
-  await tester.pumpWidget(ProviderScope(
-    overrides: [busApiClientProvider.overrideWithValue(client)],
-    child: MaterialApp(
-      home: Scaffold(body: BusCardHost(clock: () => now)),
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [busApiClientProvider.overrideWithValue(client)],
+      child: MaterialApp(
+        home: Scaffold(body: BusCardHost(clock: () => now)),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
   return count;
 }
@@ -177,12 +179,14 @@ void main() {
       // = 설정 탭에서 스위치를 켠 시점. 이 뒤로 provider는 AsyncData다.
       await container.read(busSettingsProvider.future);
 
-      await tester.pumpWidget(UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          home: Scaffold(body: BusCardHost(clock: () => inRange)),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(count, 1, reason: '이미 data인 설정 위에서 마운트해도 첫 조회는 나간다');
@@ -228,10 +232,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
@@ -260,12 +268,14 @@ void main() {
         clock: () => outOfRange,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(
-          home: Scaffold(body: BusCardHost(clock: () => outOfRange)),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => outOfRange)),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(count, 0);
 
@@ -292,10 +302,14 @@ void main() {
         clock: () => inRange,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('버스 정보를 불러올 수 없어요'), findsOneWidget);
@@ -318,26 +332,30 @@ void main() {
         clock: () => outOfRange, // 시간대 밖 → 접힘
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(
-          home: Scaffold(body: BusCardHost(clock: () => outOfRange)),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => outOfRange)),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(count, 0);
 
       // 백그라운드 → 복귀
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
 
-      expect(count, 0,
-          reason: '접힘에서는 복귀해도 조회하지 않는다 — 화면이 안 바뀌므로 '
-              '화면 검증으로는 잡히지 않는 누수다');
+      expect(
+        count,
+        0,
+        reason:
+            '접힘에서는 복귀해도 조회하지 않는다 — 화면이 안 바뀌므로 '
+            '화면 검증으로는 잡히지 않는 누수다',
+      );
     });
 
     testWidgets('펼친 채 복귀하면 캐시가 살아 있어 1회를 넘지 않는다', (tester) async {
@@ -354,20 +372,20 @@ void main() {
         clock: () => inRange, // 시간대 안 → 펼침
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(
-          home: Scaffold(body: BusCardHost(clock: () => inRange)),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
 
       expect(count, 1, reason: '30초 캐시가 복귀 조회를 흡수한다');
@@ -391,23 +409,24 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
       now = now.add(const Duration(seconds: 31));
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
 
-      expect(count, 2,
-          reason: '복귀가 조회를 촉발한다 — 이 단정이 그 분기의 유일한 가드다');
+      expect(count, 2, reason: '복귀가 조회를 촉발한다 — 이 단정이 그 분기의 유일한 가드다');
     });
   });
 
@@ -434,10 +453,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
@@ -448,9 +471,13 @@ void main() {
       await tester.pump(_pollAfterFixture); // 취소되지 않았다면 여기서 발화한다
       await tester.pumpAndSettle();
 
-      expect(count, 1,
-          reason: '백그라운드에서는 폴링이 멈춘다 — 화면에 안 보이는 호출이라 '
-              '화면 검증으로는 잡히지 않는다');
+      expect(
+        count,
+        1,
+        reason:
+            '백그라운드에서는 폴링이 멈춘다 — 화면에 안 보이는 호출이라 '
+            '화면 검증으로는 잡히지 않는다',
+      );
     });
 
     testWidgets('비행 중에 내려가면 응답이 돌아와도 타이머를 새로 걸지 않는다', (tester) async {
@@ -470,10 +497,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1, reason: '첫 조회가 비행 중이다');
 
@@ -488,9 +519,13 @@ void main() {
       await tester.pump(_pollAfterFixture);
       await tester.pumpAndSettle();
 
-      expect(count, 1,
-          reason: '비행 중 내려간 앱에 폴링 타이머가 걸리면 백그라운드에서 '
-              '30초마다 호출이 나간다');
+      expect(
+        count,
+        1,
+        reason:
+            '비행 중 내려간 앱에 폴링 타이머가 걸리면 백그라운드에서 '
+            '30초마다 호출이 나간다',
+      );
     });
   });
 
@@ -515,10 +550,14 @@ void main() {
         clock: () => inRange,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
@@ -537,9 +576,13 @@ void main() {
       await tester.tap(find.text(BusStrings.emptyDownAction));
       await tester.tap(find.text(BusStrings.emptyDownAction));
 
-      expect(count(), 2,
-          reason: '비행 중 두 번째 탭은 요청을 만들지 않는다 — 실패는 캐시되지 '
-              '않으므로 가드가 없으면 탭 N번 = 동시 요청 N건이다');
+      expect(
+        count(),
+        2,
+        reason:
+            '비행 중 두 번째 탭은 요청을 만들지 않는다 — 실패는 캐시되지 '
+            '않으므로 가드가 없으면 탭 N번 = 동시 요청 N건이다',
+      );
 
       hold.complete();
       await tester.pumpAndSettle();
@@ -552,16 +595,23 @@ void main() {
       await tester.tap(find.text(BusStrings.emptyDownAction));
       await tester.pump();
 
-      expect(find.text(BusStrings.emptyDownRetrying), findsOneWidget,
-          reason: '조회는 최대 10초 걸린다 — 화면이 안 바뀌면 사용자는 '
-              '버튼이 안 먹은 줄 알고 다시 누른다');
+      expect(
+        find.text(BusStrings.emptyDownRetrying),
+        findsOneWidget,
+        reason:
+            '조회는 최대 10초 걸린다 — 화면이 안 바뀌면 사용자는 '
+            '버튼이 안 먹은 줄 알고 다시 누른다',
+      );
       expect(find.text(BusStrings.emptyDownAction), findsNothing);
 
       hold.complete();
       await tester.pumpAndSettle();
 
-      expect(find.text(BusStrings.emptyDownAction), findsOneWidget,
-          reason: '끝나면 다시 누를 수 있어야 한다 — 영구 비활성이 아니다');
+      expect(
+        find.text(BusStrings.emptyDownAction),
+        findsOneWidget,
+        reason: '끝나면 다시 누를 수 있어야 한다 — 영구 비활성이 아니다',
+      );
       expect(find.text(BusStrings.emptyDownRetrying), findsNothing);
     });
 
@@ -583,10 +633,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
@@ -627,10 +681,14 @@ void main() {
         clock: () => inRange,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.emptyLoading), findsOneWidget);
@@ -653,10 +711,14 @@ void main() {
         clock: () => inRange,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => inRange))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => inRange)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(BusStrings.emptyDown), findsOneWidget);
@@ -682,10 +744,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(count, 1);
 
@@ -718,10 +784,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('92-1번'), findsOneWidget);
 
@@ -730,8 +800,11 @@ void main() {
       await tester.pump(); // 드롭이 있었다면 이 프레임에서 보인다
 
       expect(count, 2);
-      expect(find.text('92-1번'), findsOneWidget,
-          reason: '갱신 중에도 직전 목록을 유지한다 — 3분을 넘긴 값만 내린다');
+      expect(
+        find.text('92-1번'),
+        findsOneWidget,
+        reason: '갱신 중에도 직전 목록을 유지한다 — 3분을 넘긴 값만 내린다',
+      );
       expect(find.text(BusStrings.emptyLoading), findsNothing);
 
       hold.complete();
@@ -757,10 +830,14 @@ void main() {
         clock: () => now,
       );
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [busApiClientProvider.overrideWithValue(client)],
-        child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-      ));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [busApiClientProvider.overrideWithValue(client)],
+          child: MaterialApp(
+            home: Scaffold(body: BusCardHost(clock: () => now)),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('92-1번'), findsOneWidget);
       expect(count, 1);
@@ -769,11 +846,17 @@ void main() {
       await tester.pump(_pollAfterFixture);
       await tester.pumpAndSettle();
 
-      expect(find.text('92-1번'), findsNothing,
-          reason: '시간대가 끝나면 카드가 접히고 옛 도착 분이 남지 않는다');
+      expect(
+        find.text('92-1번'),
+        findsNothing,
+        reason: '시간대가 끝나면 카드가 접히고 옛 도착 분이 남지 않는다',
+      );
       expect(find.textContaining('기준'), findsNothing);
-      expect(find.textContaining('B정류장'), findsOneWidget,
-          reason: '접힌 줄은 남는다 — 카드가 사라지는 것이 아니다');
+      expect(
+        find.textContaining('B정류장'),
+        findsOneWidget,
+        reason: '접힌 줄은 남는다 — 카드가 사라지는 것이 아니다',
+      );
       expect(count, 1, reason: '접힌 뒤에는 요청이 늘지 않는다');
     });
   });
@@ -794,8 +877,11 @@ void main() {
       final refresh = tester.getRect(find.byKey(BusArrivalCard.refreshKey));
       final header = tester.getRect(find.byKey(BusArrivalCard.headerKey));
 
-      expect(refresh.top, greaterThan(header.bottom),
-          reason: '두 표적이 세로로 떨어져 있어야 손가락이 동시에 덮지 못한다');
+      expect(
+        refresh.top,
+        greaterThan(header.bottom),
+        reason: '두 표적이 세로로 떨어져 있어야 손가락이 동시에 덮지 못한다',
+      );
     });
 
     testWidgets('방향 전환과 같은 행에 있고 서로 겹치지 않는다', (tester) async {
@@ -804,8 +890,11 @@ void main() {
       final refresh = tester.getRect(find.byKey(BusArrivalCard.refreshKey));
       final flip = tester.getRect(find.byKey(BusArrivalCard.flipKey));
 
-      expect(refresh.left, greaterThan(flip.right),
-          reason: '좌: 방향 전환 · 우: 새로고침 — 겹치면 둘 다 오탭한다');
+      expect(
+        refresh.left,
+        greaterThan(flip.right),
+        reason: '좌: 방향 전환 · 우: 새로고침 — 겹치면 둘 다 오탭한다',
+      );
     });
 
     testWidgets('히트 영역이 아이콘보다 넓다 — 손가락이 굵어도 눌린다', (tester) async {
@@ -836,8 +925,7 @@ void main() {
       await tester.tap(find.byKey(BusArrivalCard.refreshKey));
       await tester.pumpAndSettle();
 
-      expect(h.count(), 1,
-          reason: '30초 캐시가 답한다 — 별도 스로틀 코드가 없는 이유다');
+      expect(h.count(), 1, reason: '30초 캐시가 답한다 — 별도 스로틀 코드가 없는 이유다');
     });
 
     testWidgets('한 번 누르면 30초간 다시 누를 수 없다', (tester) async {
@@ -854,10 +942,12 @@ void main() {
       final card = tester.widget<BusArrivalCard>(find.byType(BusArrivalCard));
       expect(card.refreshEnabled, isFalse, reason: '누른 직후에는 쿨다운이다');
 
-      final icon = tester.widget<Icon>(find.descendant(
-        of: find.byKey(BusArrivalCard.refreshKey),
-        matching: find.byType(Icon),
-      ));
+      final icon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(BusArrivalCard.refreshKey),
+          matching: find.byType(Icon),
+        ),
+      );
       expect(icon.color, AppColors.faint, reason: '흐린 색이 이유를 말한다');
 
       // 연속 탭이 요청을 늘리지 않는다.
@@ -877,7 +967,9 @@ void main() {
       await tester.tap(find.byKey(BusArrivalCard.refreshKey));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<BusArrivalCard>(find.byType(BusArrivalCard)).refreshEnabled,
+        tester
+            .widget<BusArrivalCard>(find.byType(BusArrivalCard))
+            .refreshEnabled,
         isFalse,
       );
 
@@ -887,7 +979,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<BusArrivalCard>(find.byType(BusArrivalCard)).refreshEnabled,
+        tester
+            .widget<BusArrivalCard>(find.byType(BusArrivalCard))
+            .refreshEnabled,
         isTrue,
         reason: '없으면 다음 폴링까지 흐린 채로 남는다',
       );
@@ -917,8 +1011,11 @@ void main() {
       await tester.tap(find.byKey(BusArrivalCard.refreshKey));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.expand_less), findsOneWidget,
-          reason: '펼친 상태가 유지돼야 한다');
+      expect(
+        find.byIcon(Icons.expand_less),
+        findsOneWidget,
+        reason: '펼친 상태가 유지돼야 한다',
+      );
       expect(find.byKey(BusArrivalCard.refreshKey), findsOneWidget);
     });
   });
@@ -929,7 +1026,7 @@ void main() {
 /// `_pumpHost`는 요청 수를 **그 시점 값으로** 돌려주고 시계가 고정이라, 탭 이후를
 /// 볼 수 없고 30초 캐시도 절대 만료되지 않는다. 새로고침은 그 둘이 다 필요하다.
 Future<({int Function() count, void Function(Duration) advance})>
-    _pumpRefreshHost(
+_pumpRefreshHost(
   WidgetTester tester, {
   required DateTime start,
   required BusSettings settings,
@@ -949,12 +1046,14 @@ Future<({int Function() count, void Function(Duration) advance})>
     clock: () => now,
   );
 
-  await tester.pumpWidget(ProviderScope(
-    overrides: [busApiClientProvider.overrideWithValue(client)],
-    child: MaterialApp(
-      home: Scaffold(body: BusCardHost(clock: () => now)),
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [busApiClientProvider.overrideWithValue(client)],
+      child: MaterialApp(
+        home: Scaffold(body: BusCardHost(clock: () => now)),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
   return (count: () => count, advance: (Duration d) => now = now.add(d));
 }

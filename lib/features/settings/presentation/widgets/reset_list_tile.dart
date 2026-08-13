@@ -20,10 +20,7 @@ class ResetListTile extends ConsumerWidget {
       leading: Icon(Icons.delete_forever, color: AppColors.error),
       title: Text(
         SettingsStrings.resetAll,
-        style: TextStyle(
-          color: AppColors.error,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
       ),
       trailing: isResetting
           ? const SizedBox(

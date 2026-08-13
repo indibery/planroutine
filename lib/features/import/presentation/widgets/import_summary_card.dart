@@ -60,7 +60,8 @@ class ImportSummaryCard extends StatelessWidget {
                     children: [
                       Text(
                         ImportStrings.success,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -69,17 +70,15 @@ class ImportSummaryCard extends StatelessWidget {
                       Text(
                         '$sourceYear년 일정 $totalCount건',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       if (nonProductionSkipped > 0) ...[
                         const SizedBox(height: AppSizes.spacing4),
                         Text(
                           '접수 등 비생산 문서 $nonProductionSkipped건은 자동 제외',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textHint,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.textHint),
                         ),
                       ],
                     ],
@@ -92,9 +91,9 @@ class ImportSummaryCard extends StatelessWidget {
             const SizedBox(height: AppSizes.spacing12),
             Text(
               '카테고리별 분류',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: AppSizes.spacing8),
             ...categorySummary.entries.map(
@@ -115,16 +114,16 @@ class ImportSummaryCard extends StatelessWidget {
                       child: Text(
                         entry.key,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                     Text(
                       '${entry.value}건',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

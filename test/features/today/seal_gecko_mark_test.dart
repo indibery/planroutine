@@ -15,7 +15,8 @@ void main() {
       expect(
         SealGeckoMark.size,
         lessThanOrEqualTo(CompletionSeal.innerWidth),
-        reason: '마크 ${SealGeckoMark.size}가 내부 폭 '
+        reason:
+            '마크 ${SealGeckoMark.size}가 내부 폭 '
             '${CompletionSeal.innerWidth.toStringAsFixed(1)}를 넘는다',
       );
     });
@@ -39,16 +40,18 @@ void main() {
     });
 
     testWidgets('도마뱀을 고르면 글자를 그리지 않는다', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: CompletionSeal(
-              animation: const AlwaysStoppedAnimation(1),
-              style: SealStyle.gecko,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CompletionSeal(
+                animation: const AlwaysStoppedAnimation(1),
+                style: SealStyle.gecko,
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       expect(find.byType(SealGeckoMark), findsOneWidget);
       // 라벨(`도마뱀`)은 설정 화면 표시용이고 도장에는 찍히지 않는다.
@@ -57,41 +60,50 @@ void main() {
 
     testWidgets('다른 모양에서는 도마뱀을 그리지 않는다', (tester) async {
       for (final style in SealStyle.values.where((s) => s != SealStyle.gecko)) {
-        await tester.pumpWidget(MaterialApp(
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CompletionSeal(
+                  animation: const AlwaysStoppedAnimation(1),
+                  style: style,
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(
+          find.byType(SealGeckoMark),
+          findsNothing,
+          reason: '${style.name}에 도마뱀이 그려진다',
+        );
+      }
+    });
+
+    testWidgets('도장 색을 그대로 받아 srcIn으로 입힌다 — 테마 전환에 따라간다', (tester) async {
+      // 색을 에셋에 박으면 라이트 팔레트에서 대비가 무너진다. 마스크는 모양만 담고
+      // 색은 `AppColors.gold`가 정한다.
+      await tester.pumpWidget(
+        MaterialApp(
           home: Scaffold(
             body: Center(
               child: CompletionSeal(
                 animation: const AlwaysStoppedAnimation(1),
-                style: style,
+                style: SealStyle.gecko,
               ),
             ),
           ),
-        ));
-        expect(find.byType(SealGeckoMark), findsNothing,
-            reason: '${style.name}에 도마뱀이 그려진다');
-      }
-    });
-
-    testWidgets('도장 색을 그대로 받아 srcIn으로 입힌다 — 테마 전환에 따라간다',
-        (tester) async {
-      // 색을 에셋에 박으면 라이트 팔레트에서 대비가 무너진다. 마스크는 모양만 담고
-      // 색은 `AppColors.gold`가 정한다.
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: CompletionSeal(
-              animation: const AlwaysStoppedAnimation(1),
-              style: SealStyle.gecko,
-            ),
-          ),
         ),
-      ));
+      );
 
       final mark = tester.widget<SealGeckoMark>(find.byType(SealGeckoMark));
       expect(mark.color, AppColors.gold);
 
       final image = tester.widget<Image>(
-        find.descendant(of: find.byType(SealGeckoMark), matching: find.byType(Image)),
+        find.descendant(
+          of: find.byType(SealGeckoMark),
+          matching: find.byType(Image),
+        ),
       );
       expect(image.color, AppColors.gold);
       expect(

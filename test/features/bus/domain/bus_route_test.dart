@@ -92,28 +92,40 @@ void main() {
     });
 
     test('둘 다 비면 빈 목록이다', () {
-      expect(
-        buildRouteChoices(routes: const [], arrivals: const []),
-        isEmpty,
-      );
+      expect(buildRouteChoices(routes: const [], arrivals: const []), isEmpty);
     });
   });
 
   group('compareRouteNo — 자기 번호를 훑어 찾을 수 있어야 한다', () {
     test('A정류장 실측 10노선이 번호순으로 선다', () {
       final routes = [
-        _r('a', '3030'), _r('b', '6501'), _r('c', '11-5'), _r('d', '15'),
-        _r('e', '541'), _r('f', '5623'), _r('g', '87'), _r('h', '917'),
-        _r('i', '6'), _r('j', '9'),
+        _r('a', '3030'),
+        _r('b', '6501'),
+        _r('c', '11-5'),
+        _r('d', '15'),
+        _r('e', '541'),
+        _r('f', '5623'),
+        _r('g', '87'),
+        _r('h', '917'),
+        _r('i', '6'),
+        _r('j', '9'),
       ];
 
       final choices = buildRouteChoices(routes: routes, arrivals: const []);
 
       // 사전순으로 두면 `11-5`가 `6`보다 앞에 오고 `3030`이 맨 위에 온다.
-      expect(
-        choices.map((c) => c.route.routeNo),
-        ['6', '9', '11-5', '15', '87', '541', '917', '3030', '5623', '6501'],
-      );
+      expect(choices.map((c) => c.route.routeNo), [
+        '6',
+        '9',
+        '11-5',
+        '15',
+        '87',
+        '541',
+        '917',
+        '3030',
+        '5623',
+        '6501',
+      ]);
     });
 
     test('같은 수로 시작하면 짧은 쪽이 먼저다', () {

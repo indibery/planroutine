@@ -50,7 +50,10 @@ Future<void> _writeIcon(
     canvas.restore();
   }
 
-  final image = await recorder.endRecording().toImage(size.toInt(), size.toInt());
+  final image = await recorder.endRecording().toImage(
+    size.toInt(),
+    size.toInt(),
+  );
   final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
   expect(byteData, isNotNull);
   final bytes = byteData!.buffer.asUint8List();
@@ -116,14 +119,20 @@ void main() {
     // 공통으로 안전할 여유를 남긴다. iOS의 0.9와 값을 맞추고 싶어질 수 있는데,
     // iOS는 90% 배치를 자체 squircle 마스크(안전 영역 100%에 가까움) 기준으로
     // 잡은 값이라 여기 그대로 옮기면 다시 잘린다.
-    await _writeIcon('assets/icon/app_icon_foreground.png',
-        drawBackground: false, markScale: 0.85);
+    await _writeIcon(
+      'assets/icon/app_icon_foreground.png',
+      drawBackground: false,
+      markScale: 0.85,
+    );
   });
 
   test('generate adaptive background PNG', () async {
     // navy 단색 한 장. 색의 출처를 AppColors 하나로 남기기 위한 것이다 —
     // pubspec에 hex를 박으면 팔레트를 손볼 때 아이콘 배경만 옛 색으로 남는다.
-    await _writeIcon('assets/icon/app_icon_background.png',
-        drawBackground: true, markScale: 0);
+    await _writeIcon(
+      'assets/icon/app_icon_background.png',
+      drawBackground: true,
+      markScale: 0,
+    );
   });
 }

@@ -9,11 +9,7 @@ import '../../../../core/constants/app_colors.dart';
 ///
 /// 지난 항목은 세지 않는다(오늘 항목만) — 섞이면 1.0에 도달할 수 없다.
 class TodayProgressRing extends StatefulWidget {
-  const TodayProgressRing({
-    super.key,
-    required this.done,
-    required this.total,
-  });
+  const TodayProgressRing({super.key, required this.done, required this.total});
 
   final int done;
   final int total;

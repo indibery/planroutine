@@ -34,7 +34,10 @@ String confirmAllPillLabel(String? category, int pendingCount) {
   if (category == null || category.isEmpty) {
     return ScheduleStrings.confirmPending(pendingCount);
   }
-  return ScheduleStrings.confirmPendingIn(shortenCategory(category), pendingCount);
+  return ScheduleStrings.confirmPendingIn(
+    shortenCategory(category),
+    pendingCount,
+  );
 }
 
 /// 카테고리 원본 → pill/뱃지 색상.

@@ -1,4 +1,5 @@
 import '../../../features/schedule/domain/entry_kind.dart';
+
 /// 작년 일정 가져오기(CSV) UI 문자열.
 class ImportStrings {
   ImportStrings._();
@@ -89,8 +90,7 @@ class ImportStrings {
   static const heroCsvLink = '작년 업무 가져오기 (에듀파인 CSV)';
 
   // 에듀파인에서 CSV 받고 가져오는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)
-  static const edufineGuideTitle =
-      '에듀파인에서 CSV로 일정 받고 공직플랜에 적용하는 방법';
+  static const edufineGuideTitle = '에듀파인에서 CSV로 일정 받고 공직플랜에 적용하는 방법';
 
   // ── 1단: CSV 다운받기 ─────────────────────────────────
   static const edufineGuideSection1Title = '① CSV 다운받기';

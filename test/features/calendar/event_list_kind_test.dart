@@ -41,11 +41,7 @@ void main() {
   group('목록 — 업무 / 행사 구분', () {
     testWidgets('업무 행과 행사 행에 각각 배지가 붙는다', (tester) async {
       await pump(tester, const [
-        CalendarEvent(
-          id: 1,
-          title: '교육계획 수립',
-          eventDate: '2026-03-02',
-        ),
+        CalendarEvent(id: 1, title: '교육계획 수립', eventDate: '2026-03-02'),
         CalendarEvent(
           id: 2,
           title: '가을 운동회',
@@ -59,8 +55,7 @@ void main() {
       expect(find.text('행사'), findsOneWidget);
     });
 
-    testWidgets('중요 행에도 종류 배지가 함께 보이고 제목이 넘치지 않는다',
-        (tester) async {
+    testWidgets('중요 행에도 종류 배지가 함께 보이고 제목이 넘치지 않는다', (tester) async {
       await pump(tester, const [
         CalendarEvent(
           id: 3,

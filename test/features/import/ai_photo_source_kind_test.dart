@@ -94,21 +94,26 @@ void main() {
           du.formatDate(today.add(const Duration(days: 1))),
           du.formatDate(today.subtract(const Duration(days: 3))),
         };
-        final found = RegExp(r'\d{4}-\d{2}-\d{2}')
-            .allMatches(p)
-            .map((m) => m.group(0)!)
-            .toSet();
+        final found = RegExp(
+          r'\d{4}-\d{2}-\d{2}',
+        ).allMatches(p).map((m) => m.group(0)!).toSet();
 
-        expect(found.difference(allowed), isEmpty,
-            reason: '$today 기준 프롬프트에 주입값이 아닌 날짜가 있다: '
-                '${found.difference(allowed)}');
+        expect(
+          found.difference(allowed),
+          isEmpty,
+          reason:
+              '$today 기준 프롬프트에 주입값이 아닌 날짜가 있다: '
+              '${found.difference(allowed)}',
+        );
         // 연도만 따로 박는 것도 막는다(`2027년 1월` 같은 형태).
-        final bareYears = RegExp(r'(?<!\d)(20\d\d)(?!-)')
-            .allMatches(p)
-            .map((m) => m.group(1)!)
-            .toSet();
-        expect(bareYears, isEmpty,
-            reason: '$today 기준 프롬프트에 맨 연도가 박혀 있다: $bareYears');
+        final bareYears = RegExp(
+          r'(?<!\d)(20\d\d)(?!-)',
+        ).allMatches(p).map((m) => m.group(1)!).toSet();
+        expect(
+          bareYears,
+          isEmpty,
+          reason: '$today 기준 프롬프트에 맨 연도가 박혀 있다: $bareYears',
+        );
       }
     });
 
@@ -129,8 +134,11 @@ void main() {
       // `(오늘)`이 적힌 두 줄이 통째로 빠졌다.
       final p = buildAiPhotoPrompt(DateTime(2026, 8, 7), kind: EntryKind.task);
 
-      expect(p, contains('`오늘`은 2026-08-07, `내일`은 2026-08-08'),
-          reason: '내일 날짜도 실제 값이어야 한다 — 주입값을 따라간다');
+      expect(
+        p,
+        contains('`오늘`은 2026-08-07, `내일`은 2026-08-08'),
+        reason: '내일 날짜도 실제 값이어야 한다 — 주입값을 따라간다',
+      );
     });
 
     test('날짜 말을 title에서 빼라고 말한다', () {
@@ -196,16 +204,21 @@ void main() {
       // 오늘 날짜만으로는 못 고친다 — 2월에 2월 일정표를 넣는 사람과 3월
       // 일정표를 넣는 사람이 같은 프롬프트를 받는데 정답이 다르다. 그래서
       // **문서가 스스로 말하게** 한다.
-      final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.event);
+      final p = buildAiPhotoPrompt(
+        DateTime(2027, 2, 10),
+        kind: EntryKind.event,
+      );
 
       expect(p, contains('학년도나 연도가 적혀 있으면 그것을 따릅니다'));
-      expect(p, contains('적혀 있지 않을 때만'),
-          reason: '기본값은 폴백이라는 것이 문장에 드러나야 한다');
+      expect(p, contains('적혀 있지 않을 때만'), reason: '기본값은 폴백이라는 것이 문장에 드러나야 한다');
 
       // 예시는 **계산해서** 넣는다 — 고정 연도를 박으면 규칙과 모순된다
       // (업무 프롬프트에서 정확히 그 사고가 있었다).
-      expect(p, contains('2027학년도'),
-          reason: '2027-02 기준 다음 학년도가 2027이므로 그 값이 예시가 된다');
+      expect(
+        p,
+        contains('2027학년도'),
+        reason: '2027-02 기준 다음 학년도가 2027이므로 그 값이 예시가 된다',
+      );
       expect(p, contains('3~12월은 2027년'));
     });
 
@@ -215,15 +228,24 @@ void main() {
         final p = buildAiPhotoPrompt(today, kind: EntryKind.event);
         final school = today.month >= 3 ? today.year : today.year - 1;
 
-        expect(p, contains('${school + 1}학년도'),
-            reason: '$today 기준 예시 학년도가 주입값을 따라가지 않는다');
-        expect(p, isNot(contains('2026')),
-            reason: '$today 기준 프롬프트에 옛 연도가 남아 있다');
+        expect(
+          p,
+          contains('${school + 1}학년도'),
+          reason: '$today 기준 예시 학년도가 주입값을 따라가지 않는다',
+        );
+        expect(
+          p,
+          isNot(contains('2026')),
+          reason: '$today 기준 프롬프트에 옛 연도가 남아 있다',
+        );
       }
     });
 
     test('1~2월에 찍으면 행사의 학년도는 전년이다', () {
-      final p = buildAiPhotoPrompt(DateTime(2027, 2, 10), kind: EntryKind.event);
+      final p = buildAiPhotoPrompt(
+        DateTime(2027, 2, 10),
+        kind: EntryKind.event,
+      );
 
       expect(p, contains('3~12월은 2026년'));
       expect(p, contains('1~2월은 2027년'));

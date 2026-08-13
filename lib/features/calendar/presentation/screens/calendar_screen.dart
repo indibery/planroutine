@@ -39,10 +39,7 @@ class CalendarScreen extends ConsumerWidget {
           padding: EdgeInsets.only(left: AppSizes.spacing12),
           child: Center(child: BrandLogo(size: 28)),
         ),
-        title: Text(
-          CalendarStrings.title,
-          style: AppTextStyles.heading,
-        ),
+        title: Text(CalendarStrings.title, style: AppTextStyles.heading),
       ),
       body: Column(
         children: [
@@ -102,7 +99,11 @@ class CalendarScreen extends ConsumerWidget {
           IconButton(
             icon: Icon(Icons.chevron_left, color: AppColors.sub),
             onPressed: () {
-              final prev = DateTime(selectedDate.year, selectedDate.month - 1, 1);
+              final prev = DateTime(
+                selectedDate.year,
+                selectedDate.month - 1,
+                1,
+              );
               ref.read(selectedDateProvider.notifier).state = prev;
             },
           ),
@@ -125,7 +126,11 @@ class CalendarScreen extends ConsumerWidget {
           IconButton(
             icon: Icon(Icons.chevron_right, color: AppColors.sub),
             onPressed: () {
-              final next = DateTime(selectedDate.year, selectedDate.month + 1, 1);
+              final next = DateTime(
+                selectedDate.year,
+                selectedDate.month + 1,
+                1,
+              );
               ref.read(selectedDateProvider.notifier).state = next;
             },
           ),
@@ -139,10 +144,7 @@ class CalendarScreen extends ConsumerWidget {
     WidgetRef ref,
     DateTime date,
   ) async {
-    final result = await EventEditDialog.show(
-      context,
-      initialDate: date,
-    );
+    final result = await EventEditDialog.show(context, initialDate: date);
     if (result != null) {
       await ref.read(selectedMonthEventsProvider.notifier).addEvent(result);
     }
@@ -173,8 +175,9 @@ class CalendarScreen extends ConsumerWidget {
   ) {
     if (!AppFeatures.googleCalendarEnabled) return null;
     final target = ref.watch(
-      calendarTargetProvider
-          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+      calendarTargetProvider.select(
+        (a) => a.valueOrNull ?? CalendarTarget.none,
+      ),
     );
     if (target == CalendarTarget.none) return null;
     return (event) => _onSaveToCalendar(context, ref, event);
@@ -190,9 +193,9 @@ class CalendarScreen extends ConsumerWidget {
         ref.read(calendarTargetProvider).valueOrNull ?? CalendarTarget.none;
     switch (target) {
       case CalendarTarget.none:
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(CalendarIntegrationStrings.setupNeeded),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(CalendarIntegrationStrings.setupNeeded)),
+        );
       case CalendarTarget.google:
         await _onSaveToGoogle(context, ref, event);
       case CalendarTarget.device:
@@ -217,16 +220,18 @@ class CalendarScreen extends ConsumerWidget {
     }
     if (!granted) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text(CalendarIntegrationStrings.permissionDenied),
-        action: SnackBarAction(
-          label: CalendarIntegrationStrings.openSettings,
-          onPressed: () async {
-            await openAppSettings();
-            ref.invalidate(calendarPermissionStatusProvider);
-          },
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(CalendarIntegrationStrings.permissionDenied),
+          action: SnackBarAction(
+            label: CalendarIntegrationStrings.openSettings,
+            onPressed: () async {
+              await openAppSettings();
+              ref.invalidate(calendarPermissionStatusProvider);
+            },
+          ),
         ),
-      ));
+      );
       return;
     }
 
@@ -249,11 +254,15 @@ class CalendarScreen extends ConsumerWidget {
       }
 
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(wasAlreadySaved
-            ? CalendarIntegrationStrings.alreadySaved
-            : CalendarIntegrationStrings.savedDeviceTo(saved.calendarName)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasAlreadySaved
+                ? CalendarIntegrationStrings.alreadySaved
+                : CalendarIntegrationStrings.savedDeviceTo(saved.calendarName),
+          ),
+        ),
+      );
     } on DeviceCalendarException catch (e) {
       // **사유를 버리지 않는다.** 예전에는 `catch (_)`라 화면에도 로그에도
       // `저장 실패` 넉 자만 남았고, 실기기에서 실패했을 때 (a) 쓸 수 있는 캘린더가
@@ -261,9 +270,9 @@ class CalendarScreen extends ConsumerWidget {
       // (릴리스 빌드라 logcat에도 안 남는다 — 2026-08-06 실측).
       debugPrint('[device-calendar] 저장 실패: ${e.message}');
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(CalendarIntegrationStrings.saveFailed),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(CalendarIntegrationStrings.saveFailed)),
+      );
     }
   }
 
@@ -360,8 +369,6 @@ class CalendarScreen extends ConsumerWidget {
     WidgetRef ref,
     CalendarEvent event,
   ) async {
-    await ref
-        .read(selectedMonthEventsProvider.notifier)
-        .toggleCompleted(event);
+    await ref.read(selectedMonthEventsProvider.notifier).toggleCompleted(event);
   }
 }

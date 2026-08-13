@@ -14,7 +14,7 @@ import '../../schedule/domain/schedule.dart';
 /// 이 포맷은 플랜루틴 재임포트에 호환되도록 설계되어 있다.
 class ScheduleCsvExporter {
   ScheduleCsvExporter({DatabaseHelper? dbHelper})
-      : _dbHelper = dbHelper ?? DatabaseHelper.instance;
+    : _dbHelper = dbHelper ?? DatabaseHelper.instance;
 
   final DatabaseHelper _dbHelper;
 

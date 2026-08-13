@@ -44,14 +44,16 @@ void main() {
     EntryKind kind = EntryKind.task,
   }) async {
     final now = DateTime.now().toIso8601String();
-    await repo.insertConfirmedOrPending(Schedule(
-      title: title,
-      scheduledDate: date,
-      status: status,
-      kind: kind,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await repo.insertConfirmedOrPending(
+      Schedule(
+        title: title,
+        scheduledDate: date,
+        status: status,
+        kind: kind,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   Future<void> pumpScreen(
@@ -87,15 +89,22 @@ void main() {
     testWidgets('필터는 요약 한 줄로 접혀 있다', (tester) async {
       await tester.runAsync(() async {
         await seed('확정된 업무', '2026-03-03', status: ScheduleStatus.confirmed);
-        await seed('확정된 일정', '2026-04-10',
-            status: ScheduleStatus.confirmed, kind: EntryKind.event);
+        await seed(
+          '확정된 일정',
+          '2026-04-10',
+          status: ScheduleStatus.confirmed,
+          kind: EntryKind.event,
+        );
       });
       await pumpScreen(tester, status: ScheduleStatus.confirmed);
 
       expect(find.byKey(ScheduleFilterBar.summaryKey), findsOneWidget);
       expect(find.text('확정됨 2'), findsOneWidget);
-      expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsNothing,
-          reason: '칩 3줄은 접혀 있어야 한다');
+      expect(
+        find.byKey(ScheduleFilterBar.chipRowsKey),
+        findsNothing,
+        reason: '칩 3줄은 접혀 있어야 한다',
+      );
     });
 
     testWidgets('요약 줄을 탭하면 칩이 펼쳐진다', (tester) async {
@@ -127,8 +136,11 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsNothing);
-      expect(find.text(ScheduleStrings.chipPending(1)), findsOneWidget,
-          reason: '접힌 줄이 대기 건수를 말한다');
+      expect(
+        find.text(ScheduleStrings.chipPending(1)),
+        findsOneWidget,
+        reason: '접힌 줄이 대기 건수를 말한다',
+      );
     });
 
     testWidgets('접으면 요약이 현재 필터를 말한다', (tester) async {
@@ -143,14 +155,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(ScheduleFilterBar.kindEventKey));
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 &&
-                (find.text('과학의 달 행사').evaluate().isEmpty ||
-                    find
-                        .byType(CircularProgressIndicator)
-                        .evaluate()
-                        .isNotEmpty);
-            i++) {
+        for (
+          var i = 0;
+          i < 100 &&
+              (find.text('과학의 달 행사').evaluate().isEmpty ||
+                  find.byType(CircularProgressIndicator).evaluate().isNotEmpty);
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }
@@ -191,8 +202,11 @@ void main() {
       // 펼친 상태 — 줄 라벨은 '필터', 건수는 칩만 말한다.
       expect(find.byKey(ScheduleFilterBar.chipRowsKey), findsOneWidget);
       expect(find.text(ScheduleStrings.filter), findsOneWidget);
-      expect(find.text(ScheduleStrings.chipPending(1)), findsOneWidget,
-          reason: '건수를 말하는 곳은 상태 칩 한 군데뿐');
+      expect(
+        find.text(ScheduleStrings.chipPending(1)),
+        findsOneWidget,
+        reason: '건수를 말하는 곳은 상태 칩 한 군데뿐',
+      );
     });
   });
 
@@ -204,8 +218,11 @@ void main() {
       await pumpScreen(tester, status: ScheduleStatus.confirmed);
 
       final height = tester.getSize(find.byType(ScheduleFilterBar)).height;
-      expect(height, lessThanOrEqualTo(60),
-          reason: '접었을 때 한 줄 — 히어로와 목록에 높이를 내준다');
+      expect(
+        height,
+        lessThanOrEqualTo(60),
+        reason: '접었을 때 한 줄 — 히어로와 목록에 높이를 내준다',
+      );
     });
   });
 }

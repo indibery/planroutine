@@ -36,8 +36,7 @@ const _exempt = <String, String>{
       '범용 @SerializedName·TypeToken 규칙으로 덮인다(proguard-rules.pro 상단)',
 };
 
-final _proguard =
-    File('android/app/proguard-rules.pro').readAsStringSync();
+final _proguard = File('android/app/proguard-rules.pro').readAsStringSync();
 
 /// 플러그인 이름 → 안드로이드 소스에서 읽은 최상위 패키지 네임스페이스.
 Map<String, String> _gsonPlugins() {
@@ -45,12 +44,15 @@ Map<String, String> _gsonPlugins() {
   expect(
     configFile.existsSync(),
     isTrue,
-    reason: '.dart_tool/package_config.json 이 없다 — `flutter pub get` 후 실행할 것. '
+    reason:
+        '.dart_tool/package_config.json 이 없다 — `flutter pub get` 후 실행할 것. '
         '이 파일이 없으면 검사 대상이 0개가 되어 가드가 조용히 통과한다',
   );
 
-  final packages = (jsonDecode(configFile.readAsStringSync())
-      as Map<String, dynamic>)['packages'] as List<dynamic>;
+  final packages =
+      (jsonDecode(configFile.readAsStringSync())
+              as Map<String, dynamic>)['packages']
+          as List<dynamic>;
 
   final found = <String, String>{};
   for (final raw in packages) {
@@ -67,8 +69,10 @@ Map<String, String> _gsonPlugins() {
       final text = entity.readAsStringSync();
       if (!RegExp(r'\bGson\b|\bGsonBuilder\b').hasMatch(text)) continue;
 
-      final namespace =
-          RegExp(r'^package\s+([\w.]+)', multiLine: true).firstMatch(text)?.group(1);
+      final namespace = RegExp(
+        r'^package\s+([\w.]+)',
+        multiLine: true,
+      ).firstMatch(text)?.group(1);
       if (namespace == null) continue;
       // 가장 짧은(=최상위에 가까운) 네임스페이스를 그 플러그인의 대표로 삼는다.
       final name = pkg['name'] as String;
@@ -89,7 +93,8 @@ void main() {
       expect(
         plugins,
         isNotEmpty,
-        reason: 'Gson을 쓰는 안드로이드 플러그인을 하나도 못 찾았다 — '
+        reason:
+            'Gson을 쓰는 안드로이드 플러그인을 하나도 못 찾았다 — '
             '스캔 경로나 정규식이 깨졌다',
       );
       expect(
@@ -105,15 +110,17 @@ void main() {
       _gsonPlugins().forEach((name, namespace) {
         if (_exempt.containsKey(name)) return;
         // `-keep class <namespace>...` 형태로 그 네임스페이스가 언급되면 보호된 것으로 본다.
-        final kept = RegExp('-keep[^\\n]*${RegExp.escape(namespace)}')
-            .hasMatch(_proguard);
+        final kept = RegExp(
+          '-keep[^\\n]*${RegExp.escape(namespace)}',
+        ).hasMatch(_proguard);
         if (!kept) unprotected[name] = namespace;
       });
 
       expect(
         unprotected,
         isEmpty,
-        reason: 'Gson으로 모델을 직렬화하는데 R8 keep 규칙이 없다: $unprotected\n'
+        reason:
+            'Gson으로 모델을 직렬화하는데 R8 keep 규칙이 없다: $unprotected\n'
             '  → release에서만 Dart가 null을 받아 조용히 깨진다(디버그는 멀쩡하다).\n'
             '  → android/app/proguard-rules.pro 에 `-keep class <네임스페이스>.** { *; }` 추가,\n'
             '     또는 범용 규칙으로 덮인다면 이 테스트의 _exempt에 **이유와 함께** 등록할 것.',

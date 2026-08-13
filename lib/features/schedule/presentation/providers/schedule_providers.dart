@@ -27,28 +27,31 @@ final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
 /// 이 둘은 종류 칩 라벨로만 쓰이는데, 칩이 약속한 건수와 눌렀을 때 나오는 목록이
 /// 다르면(`행사 4`를 눌렀는데 빈 화면) 칩이 거짓말을 한 게 된다.
 /// 종류 필터 자체는 반영하지 않는다 — 지금 안 보는 종류가 몇 건인지 알아야 넘어간다.
-final scheduleCountsProvider = FutureProvider<
-    ({int pending, int confirmed, int pendingTask, int pendingEvent})>(
-        (ref) async {
-  await ref.watch(schedulesProvider.future);
-  final repository = ref.watch(scheduleRepositoryProvider);
-  final category = ref.watch(scheduleCategoryFilterProvider);
-  final pending =
-      await repository.getSchedules(status: ScheduleStatus.pending);
-  final confirmed =
-      await repository.getSchedules(status: ScheduleStatus.confirmed);
-  // 리포지토리의 `if (category != null)`과 같은 규칙이어야 한다 — 건수와 쿼리가
-  // "카테고리 없음"을 다르게 해석하면 칩이 약속한 수와 실제 대상이 갈린다.
-  final inCategory = category == null
-      ? pending
-      : pending.where((s) => s.category == category).toList();
-  return (
-    pending: pending.length,
-    confirmed: confirmed.length,
-    pendingTask: inCategory.where((s) => s.kind == EntryKind.task).length,
-    pendingEvent: inCategory.where((s) => s.kind == EntryKind.event).length,
-  );
-});
+final scheduleCountsProvider =
+    FutureProvider<
+      ({int pending, int confirmed, int pendingTask, int pendingEvent})
+    >((ref) async {
+      await ref.watch(schedulesProvider.future);
+      final repository = ref.watch(scheduleRepositoryProvider);
+      final category = ref.watch(scheduleCategoryFilterProvider);
+      final pending = await repository.getSchedules(
+        status: ScheduleStatus.pending,
+      );
+      final confirmed = await repository.getSchedules(
+        status: ScheduleStatus.confirmed,
+      );
+      // 리포지토리의 `if (category != null)`과 같은 규칙이어야 한다 — 건수와 쿼리가
+      // "카테고리 없음"을 다르게 해석하면 칩이 약속한 수와 실제 대상이 갈린다.
+      final inCategory = category == null
+          ? pending
+          : pending.where((s) => s.category == category).toList();
+      return (
+        pending: pending.length,
+        confirmed: confirmed.length,
+        pendingTask: inCategory.where((s) => s.kind == EntryKind.task).length,
+        pendingEvent: inCategory.where((s) => s.kind == EntryKind.event).length,
+      );
+    });
 
 /// 일정 카테고리 필터
 final scheduleCategoryFilterProvider = StateProvider<String?>((ref) {
@@ -58,8 +61,8 @@ final scheduleCategoryFilterProvider = StateProvider<String?>((ref) {
 /// 필터 적용된 일정 목록
 final schedulesProvider =
     AsyncNotifierProvider<SchedulesNotifier, List<Schedule>>(
-  SchedulesNotifier.new,
-);
+      SchedulesNotifier.new,
+    );
 
 /// 현재 활성 일정에서 사용 중인 카테고리 목록 (빈도순).
 /// schedulesProvider 변경에 반응해 갱신된다.

@@ -30,8 +30,7 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final path = _customPath ??
-        join(await getDatabasesPath(), _databaseName);
+    final path = _customPath ?? join(await getDatabasesPath(), _databaseName);
     return openDatabase(
       path,
       version: _databaseVersion,

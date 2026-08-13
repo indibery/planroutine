@@ -27,12 +27,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// — 스킬은 사람과 Claude가 그대로 복사해 실행하는 런북이라 같은 의무를 진다.
 /// 목록을 손으로 관리하면 새 스킬마다 이 사실을 다시 발견해야 한다.
 List<String> _docPaths() => [
-      'CLAUDE.md',
-      ...(Directory('.claude/skills').listSync().whereType<Directory>().toList()
-            ..sort((a, b) => a.path.compareTo(b.path)))
-          .map((d) => '${d.path}/SKILL.md')
-          .where((p) => File(p).existsSync()),
-    ];
+  'CLAUDE.md',
+  ...(Directory('.claude/skills').listSync().whereType<Directory>().toList()
+        ..sort((a, b) => a.path.compareTo(b.path)))
+      .map((d) => '${d.path}/SKILL.md')
+      .where((p) => File(p).existsSync()),
+];
 
 /// 플랫폼별 Fastfile 경로 — 문서의 `<platform>/bin/fastlane.sh`와 짝이다.
 const _fastfilePaths = {
@@ -59,10 +59,10 @@ Set<String> _lanesIn(String fastfilePath) {
   // 파일을 못 읽으면 레인 집합이 비고, 그러면 "문서의 모든 명령이 없는 레인"이라
   // 판정돼 요란하게 깨진다. 조용한 통과가 되지 않으므로 여기서는 존재만 본다.
   expect(file.existsSync(), isTrue, reason: '$fastfilePath 가 없다');
-  return RegExp(r'^\s*lane :(\w+)', multiLine: true)
-      .allMatches(file.readAsStringSync())
-      .map((m) => m.group(1)!)
-      .toSet();
+  return RegExp(
+    r'^\s*lane :(\w+)',
+    multiLine: true,
+  ).allMatches(file.readAsStringSync()).map((m) => m.group(1)!).toSet();
 }
 
 /// 문서에서 `./ios/bin/fastlane.sh beta`, `./android/bin/fastlane.sh build_aab` 등을
@@ -129,7 +129,8 @@ void main() {
         expect(
           ghosts,
           isEmpty,
-          reason: '문서가 없는 $platform 레인을 명령으로 적었다: '
+          reason:
+              '문서가 없는 $platform 레인을 명령으로 적었다: '
               '${ghosts.join(", ")} — 실존 레인은 ${real.toList()..sort()}',
         );
       }
@@ -150,7 +151,8 @@ void main() {
         expect(
           undocumented,
           isEmpty,
-          reason: '$platform 레인이 문서에 없다: ${undocumented.join(", ")} — '
+          reason:
+              '$platform 레인이 문서에 없다: ${undocumented.join(", ")} — '
               '${_docPaths().first}의 배포 명령 목록에 추가하거나, '
               '다른 레인만 호출하는 내부 헬퍼라면 _internalLanes에 이유와 함께 넣을 것',
         );

@@ -31,34 +31,43 @@ void main() {
 
   group('CalendarDayCell — 중요 ★ 표시', () {
     testWidgets('미완료 중요 이벤트가 있으면 골드 ★', (tester) async {
-      await pumpCell(tester, events: const [
-        CalendarEvent(
-          id: 1,
-          title: '입학식',
-          eventDate: '2026-03-02',
-          isImportant: true,
-        ),
-      ]);
+      await pumpCell(
+        tester,
+        events: const [
+          CalendarEvent(
+            id: 1,
+            title: '입학식',
+            eventDate: '2026-03-02',
+            isImportant: true,
+          ),
+        ],
+      );
       expect(star(), findsOneWidget);
     });
 
     testWidgets('일반 이벤트만 있으면 ★ 없음', (tester) async {
-      await pumpCell(tester, events: const [
-        CalendarEvent(id: 2, title: '평범', eventDate: '2026-03-02'),
-      ]);
+      await pumpCell(
+        tester,
+        events: const [
+          CalendarEvent(id: 2, title: '평범', eventDate: '2026-03-02'),
+        ],
+      );
       expect(star(), findsNothing);
     });
 
     testWidgets('중요하지만 완료된 이벤트만 있으면 ★ 없음', (tester) async {
-      await pumpCell(tester, events: const [
-        CalendarEvent(
-          id: 3,
-          title: '끝남',
-          eventDate: '2026-03-02',
-          isImportant: true,
-          completedAt: '2026-03-02T10:00:00.000',
-        ),
-      ]);
+      await pumpCell(
+        tester,
+        events: const [
+          CalendarEvent(
+            id: 3,
+            title: '끝남',
+            eventDate: '2026-03-02',
+            isImportant: true,
+            completedAt: '2026-03-02T10:00:00.000',
+          ),
+        ],
+      );
       expect(star(), findsNothing);
     });
   });

@@ -5,12 +5,12 @@ import 'package:planroutine/features/bus/domain/bus_settings_summary.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 
 BusStop _stop(String name) => BusStop(
-      nodeId: 'GGB$name',
-      nodeNm: name,
-      nodeNo: 26044,
-      cityCode: 0,
-      regionName: '군포',
-    );
+  nodeId: 'GGB$name',
+  nodeNm: name,
+  nodeNo: 26044,
+  cityCode: 0,
+  regionName: '군포',
+);
 
 void main() {
   group('buildBusSettingsSummary', () {
@@ -29,8 +29,10 @@ void main() {
     });
 
     test('한 곳만 등록하면 1곳', () {
-      final settings = BusSettings.defaults
-          .copyWith(enabled: true, departure: _stop('우방아파트'));
+      final settings = BusSettings.defaults.copyWith(
+        enabled: true,
+        departure: _stop('우방아파트'),
+      );
       expect(buildBusSettingsSummary(settings), BusStrings.summaryStops(1));
     });
 

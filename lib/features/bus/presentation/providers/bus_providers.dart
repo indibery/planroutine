@@ -21,8 +21,8 @@ final busApiClientProvider = Provider<BusApiClient>((ref) => BusApiClient());
 /// 버스 설정 — 오늘 탭이 소비하고 설정 탭이 변경한다. SharedPreferences 저장.
 final busSettingsProvider =
     AsyncNotifierProvider<BusSettingsNotifier, BusSettings>(
-  BusSettingsNotifier.new,
-);
+      BusSettingsNotifier.new,
+    );
 
 class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
   @override
@@ -65,7 +65,8 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
 
   BusSettings get _current => state.valueOrNull ?? BusSettings.defaults;
 
-  Future<void> setEnabled(bool value) => _save(_current.copyWith(enabled: value));
+  Future<void> setEnabled(bool value) =>
+      _save(_current.copyWith(enabled: value));
 
   Future<void> setStyle(BusCardStyle style) =>
       _save(_current.copyWith(style: style));
@@ -76,9 +77,11 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
   /// push 라우트라 pop 후 stale이 되기 쉬운 경로다(CLAUDE.md의 push 함정).
   Future<void> setStop(CommuteDirection direction, BusStop stop) {
     ref.read(busApiClientProvider).invalidate();
-    return _save(direction == CommuteDirection.toWork
-        ? _current.copyWith(departure: stop)
-        : _current.copyWith(arrival: stop));
+    return _save(
+      direction == CommuteDirection.toWork
+          ? _current.copyWith(departure: stop)
+          : _current.copyWith(arrival: stop),
+    );
   }
 
   /// 시간대 변경. **겹치거나 뒤집히면 저장하지 않고 false를 돌려준다.**

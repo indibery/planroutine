@@ -82,9 +82,9 @@ class StampSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'style': style.name,
-        'dimPreviousStamps': dimPreviousStamps,
-      };
+    'style': style.name,
+    'dimPreviousStamps': dimPreviousStamps,
+  };
 
   factory StampSettings.fromJson(Map<String, dynamic> json) {
     return StampSettings(

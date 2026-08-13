@@ -25,16 +25,19 @@ final eventsRevisionProvider = StateProvider<int>((ref) => 0);
 /// 현재 보고 있는 월의 이벤트
 final selectedMonthEventsProvider =
     AsyncNotifierProvider<SelectedMonthEventsNotifier, List<CalendarEvent>>(
-  SelectedMonthEventsNotifier.new,
-);
+      SelectedMonthEventsNotifier.new,
+    );
 
 /// (year, month) → 그 월의 이벤트 (PageView 페이지마다 사용).
 /// selectedMonthEventsProvider와 별도 캐시이므로 CRUD 시 둘 다 invalidate.
-final monthEventsByYearMonthProvider = FutureProvider.family<
-    List<CalendarEvent>, ({int year, int month})>((ref, key) async {
-  final repository = ref.watch(calendarRepositoryProvider);
-  return repository.getEventsByMonth(key.year, key.month);
-});
+final monthEventsByYearMonthProvider =
+    FutureProvider.family<List<CalendarEvent>, ({int year, int month})>((
+      ref,
+      key,
+    ) async {
+      final repository = ref.watch(calendarRepositoryProvider);
+      return repository.getEventsByMonth(key.year, key.month);
+    });
 
 /// 월 이벤트 관리 노티파이어
 class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
@@ -43,9 +46,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
     // 월만 구독 — 같은 달 안에서 날짜만 바뀔 때(날짜 탭) 재조회/loading 깜빡임을
     // 피한다. 재조회가 loading을 거치면 목록 위젯이 dispose→재생성되며 스크롤 위치가
     // 초기화돼 '날짜 점프'가 동작하지 않는다.
-    final ym = ref.watch(
-      selectedDateProvider.select((d) => (d.year, d.month)),
-    );
+    final ym = ref.watch(selectedDateProvider.select((d) => (d.year, d.month)));
     final repository = ref.watch(calendarRepositoryProvider);
     return repository.getEventsByMonth(ym.$1, ym.$2);
   }
@@ -97,8 +98,7 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
   }
 
   /// 이벤트 목록을 보는 다른 화면(오늘 탭)에 변경을 알린다.
-  void _bumpRevision() =>
-      ref.read(eventsRevisionProvider.notifier).state++;
+  void _bumpRevision() => ref.read(eventsRevisionProvider.notifier).state++;
 
   /// 알림 재예약 — 이벤트 변경이 알림 스케줄에 반영되도록.
   /// 실패해도 이벤트 변경 자체는 계속 진행.
@@ -112,7 +112,9 @@ class SelectedMonthEventsNotifier extends AsyncNotifier<List<CalendarEvent>> {
 }
 
 /// 선택된 날짜의 이벤트 (월 이벤트에서 필터링)
-final selectedDateEventsProvider = Provider<AsyncValue<List<CalendarEvent>>>((ref) {
+final selectedDateEventsProvider = Provider<AsyncValue<List<CalendarEvent>>>((
+  ref,
+) {
   final selectedDate = ref.watch(selectedDateProvider);
   final monthEvents = ref.watch(selectedMonthEventsProvider);
 
@@ -125,22 +127,21 @@ final selectedDateEventsProvider = Provider<AsyncValue<List<CalendarEvent>>>((re
 /// 월 이벤트를 날짜별 Map으로 변환
 final monthEventsMapProvider =
     Provider<AsyncValue<Map<String, List<CalendarEvent>>>>((ref) {
-  final monthEvents = ref.watch(selectedMonthEventsProvider);
+      final monthEvents = ref.watch(selectedMonthEventsProvider);
 
-  return monthEvents.whenData((events) {
-    final map = <String, List<CalendarEvent>>{};
-    for (final event in events) {
-      map.putIfAbsent(event.eventDate, () => []).add(event);
-    }
-    return map;
-  });
-});
+      return monthEvents.whenData((events) {
+        final map = <String, List<CalendarEvent>>{};
+        for (final event in events) {
+          map.putIfAbsent(event.eventDate, () => []).add(event);
+        }
+        return map;
+      });
+    });
 
 /// 현재 월의 이벤트를 날짜별로 그룹화하여 정렬된 리스트로 반환
 final monthEventsGroupedProvider =
     Provider<AsyncValue<List<MapEntry<String, List<CalendarEvent>>>>>((ref) {
-  return ref.watch(monthEventsMapProvider).whenData((map) {
-    return map.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-  });
-});
-
+      return ref.watch(monthEventsMapProvider).whenData((map) {
+        return map.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+      });
+    });

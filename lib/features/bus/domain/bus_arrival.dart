@@ -25,14 +25,13 @@ class BusArrival {
     required int arrMin,
     int? arrMin2,
     bool lowFloor = false,
-  }) =>
-      BusArrival(
-        routeId: routeId,
-        routeNo: routeNo,
-        arrSec: arrMin * 60,
-        arrSec2: arrMin2 == null ? null : arrMin2 * 60,
-        lowFloor: lowFloor,
-      );
+  }) => BusArrival(
+    routeId: routeId,
+    routeNo: routeNo,
+    arrSec: arrMin * 60,
+    arrSec2: arrMin2 == null ? null : arrMin2 * 60,
+    lowFloor: lowFloor,
+  );
 
   /// 노선 고유 ID. 노선 축약과 사용자 노선 필터의 기준이다.
   final String routeId;

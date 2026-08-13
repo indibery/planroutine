@@ -23,15 +23,15 @@ const _stop = BusStop(
   cityCode: 31010,
 );
 
-String _body() =>
-    File('test/fixtures/gbis/arrivals_suwoncityhall_6routes.json')
-        .readAsStringSync();
+String _body() => File(
+  'test/fixtures/gbis/arrivals_suwoncityhall_6routes.json',
+).readAsStringSync();
 
 http.Response _json(String body) => http.Response(
-      body,
-      200,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  body,
+  200,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 /// 가장 빠른 버스의 **차량** ID. 픽스처의 `92-1`(160초, `vehId1=200010883`).
 ///
@@ -68,10 +68,14 @@ void main() {
       clock: () => now,
     );
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [busApiClientProvider.overrideWithValue(client)],
-      child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(
+          home: Scaffold(body: BusCardHost(clock: () => now)),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(calls, 1, reason: '첫 조회는 나가야 한다');
@@ -87,8 +91,11 @@ void main() {
 
     final after = tester.getRect(dot).center.dx;
 
-    expect(after, lessThan(before),
-        reason: '1초 틱이 리빌드를 일으키지 않으면 점이 30초마다 순간이동한다');
+    expect(
+      after,
+      lessThan(before),
+      reason: '1초 틱이 리빌드를 일으키지 않으면 점이 30초마다 순간이동한다',
+    );
     expect(calls, 1, reason: '이동 틱은 네트워크를 부르지 않는다');
   });
 
@@ -116,10 +123,14 @@ void main() {
       clock: () => now,
     );
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [busApiClientProvider.overrideWithValue(client)],
-      child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(
+          home: Scaffold(body: BusCardHost(clock: () => now)),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(calls, 1);
 
@@ -152,10 +163,14 @@ void main() {
       clock: () => now,
     );
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [busApiClientProvider.overrideWithValue(client)],
-      child: MaterialApp(home: Scaffold(body: BusCardHost(clock: () => now))),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [busApiClientProvider.overrideWithValue(client)],
+        child: MaterialApp(
+          home: Scaffold(body: BusCardHost(clock: () => now)),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -167,7 +182,10 @@ void main() {
     now = now.add(const Duration(seconds: 5));
     await tester.pump(const Duration(seconds: 5));
 
-    expect(tester.getRect(dot).center.dx, before,
-        reason: '내려간 뒤에도 초당 리빌드가 남으면 배터리를 조용히 쓴다');
+    expect(
+      tester.getRect(dot).center.dx,
+      before,
+      reason: '내려간 뒤에도 초당 리빌드가 남으면 배터리를 조용히 쓴다',
+    );
   });
 }

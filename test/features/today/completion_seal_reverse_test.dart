@@ -66,7 +66,8 @@ void main() {
         expect(
           sealWidth(tester),
           lessThanOrEqualTo(56),
-          reason: 'reverse ${controller.value.toStringAsFixed(2)} 지점에서 '
+          reason:
+              'reverse ${controller.value.toStringAsFixed(2)} 지점에서 '
               '${sealWidth(tester).toStringAsFixed(0)}px로 부풀었다',
         );
       }
@@ -91,7 +92,8 @@ void main() {
         expect(
           sealOpacity(tester),
           lessThanOrEqualTo(resting + 0.001),
-          reason: 'reverse ${controller.value.toStringAsFixed(2)} 지점에서 '
+          reason:
+              'reverse ${controller.value.toStringAsFixed(2)} 지점에서 '
               '${sealOpacity(tester).toStringAsFixed(2)}로 진해졌다',
         );
       }

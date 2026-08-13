@@ -11,33 +11,33 @@ import 'package:planroutine/features/bus/domain/bus_card_view.dart';
 /// 실제 구조: `body.items`는 `{'item': ...}` 형태의 Map이거나, 데이터가 없을 때
 /// 빈 문자열 `''`이다(Phase 0 실측). `''`를 줄 때만 래퍼를 씌우지 않는다.
 String _body(Object? inner, {String code = '00'}) => jsonEncode({
-      'response': {
-        'header': {'resultCode': code, 'resultMsg': 'NORMAL SERVICE.'},
-        'body': {
-          'items': inner == '' ? '' : {'item': inner},
-          'numOfRows': 30,
-          'pageNo': 1,
-        },
-      },
-    });
+  'response': {
+    'header': {'resultCode': code, 'resultMsg': 'NORMAL SERVICE.'},
+    'body': {
+      'items': inner == '' ? '' : {'item': inner},
+      'numOfRows': 30,
+      'pageNo': 1,
+    },
+  },
+});
 
 Map<String, dynamic> _arr(Object routeno, String routeid, int arrtime) => {
-      'arrprevstationcnt': 3,
-      'arrtime': arrtime,
-      'nodeid': 'GGB201000156',
-      'nodenm': 'B정류장',
-      'routeid': routeid,
-      'routeno': routeno,
-      'vehicletp': '일반버스',
-    };
+  'arrprevstationcnt': 3,
+  'arrtime': arrtime,
+  'nodeid': 'GGB201000156',
+  'nodenm': 'B정류장',
+  'routeid': routeid,
+  'routeno': routeno,
+  'vehicletp': '일반버스',
+};
 
 /// TAGO는 UTF-8 JSON을 준다. content-type을 빼면 package:http가 latin1로
 /// 인코딩해 픽스처의 한글(`B정류장`)에서 터진다 — 구현이 아니라 픽스처의 함정이다.
 http.Response _json(String body, [int status = 200]) => http.Response(
-      body,
-      status,
-      headers: {'content-type': 'application/json; charset=utf-8'},
-    );
+  body,
+  status,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 /// GBIS 실측 응답 파일. **테스트는 실제 네트워크를 부르지 않는다** — GBIS 개발계정의
 /// 일일 트래픽이 1,000이다(TAGO는 10,000).
@@ -120,8 +120,10 @@ void main() {
       });
       final r = await c.fetchArrivals(cityCode: 21, nodeId: 'BSB223000123');
 
-      expect(seen?.path,
-          '/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList');
+      expect(
+        seen?.path,
+        '/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList',
+      );
       expect(seen?.queryParameters['cityCode'], '21');
       expect(seen?.queryParameters['nodeId'], 'BSB223000123');
       expect(r.state, BusCardState.ok);
@@ -293,9 +295,7 @@ void main() {
       Uri? seen;
       final c = clientWith((req) async {
         seen = req.url;
-        return _json(
-          _body({'nodeid': 'N1', 'nodenm': 'B정류장', 'nodeno': 2251}),
-        );
+        return _json(_body({'nodeid': 'N1', 'nodenm': 'B정류장', 'nodeno': 2251}));
       });
       final r = await c.searchStops(cityCode: 31010, name: '시청');
       expect(r.items.single.nodeNo, 2251);
@@ -303,9 +303,13 @@ void main() {
     });
 
     test('fetchCities는 도시코드를 int로 읽는다', () async {
-      final c = clientWith((_) async => _json(
-            _body([{'citycode': 31010, 'cityname': '수원시'}]),
-          ));
+      final c = clientWith(
+        (_) async => _json(
+          _body([
+            {'citycode': 31010, 'cityname': '수원시'},
+          ]),
+        ),
+      );
       final r = await c.fetchCities();
       expect(r.items.single.code, 31010);
     });
@@ -320,8 +324,7 @@ void main() {
       });
       final r = await c.searchGbisStops(name: 'A정류장');
 
-      expect(seen?.path,
-          '/6410000/busstationservice/v2/getBusStationListv2');
+      expect(seen?.path, '/6410000/busstationservice/v2/getBusStationListv2');
       expect(seen?.queryParameters['keyword'], 'A정류장');
       expect(seen?.queryParameters['format'], 'json');
       // 도시코드를 안 보내는 것이 이 경로의 존재 이유다 — 보내면 화면이 도시를
@@ -352,19 +355,25 @@ void main() {
 
     test('403은 keyError, 네트워크 실패는 malformed다', () async {
       final forbidden = clientWith((_) async => _json('{}', 403));
-      expect((await forbidden.searchGbisStops(name: 'x')).outcome,
-          TagoOutcome.keyError);
+      expect(
+        (await forbidden.searchGbisStops(name: 'x')).outcome,
+        TagoOutcome.keyError,
+      );
 
       final broken = clientWith((_) async => throw const _Boom());
-      expect((await broken.searchGbisStops(name: 'x')).outcome,
-          TagoOutcome.malformed);
+      expect(
+        (await broken.searchGbisStops(name: 'x')).outcome,
+        TagoOutcome.malformed,
+      );
     });
 
     test('키가 없으면 요청하지 않는다', () async {
       final c = clientWith((_) async => throw const _Boom(), key: '');
 
-      expect((await c.searchGbisStops(name: 'x')).outcome,
-          TagoOutcome.keyError);
+      expect(
+        (await c.searchGbisStops(name: 'x')).outcome,
+        TagoOutcome.keyError,
+      );
       expect(c.requestCount, 0);
     });
   });
@@ -380,8 +389,10 @@ void main() {
 
       expect(seen?.scheme, 'https');
       expect(seen?.host, 'apis.data.go.kr');
-      expect(seen?.path,
-          '/6410000/busstationservice/v2/getBusStationViaRouteListv2');
+      expect(
+        seen?.path,
+        '/6410000/busstationservice/v2/getBusStationViaRouteListv2',
+      );
       expect(seen?.queryParameters['stationId'], '225000100');
       expect(seen?.queryParameters['format'], 'json');
       expect(seen?.queryParameters['serviceKey'], 'TESTKEY');
@@ -443,9 +454,11 @@ void main() {
     test('도착정보 캐시를 건드리지 않는다', () async {
       // 두 조회가 같은 클라이언트를 쓰지만 캐시 키 공간을 공유하면, 경유노선 응답이
       // 도착정보 자리에 들어가 카드가 엉뚱한 목록을 그린다.
-      final c = clientWith((req) async => req.url.path.contains('busarrival')
-          ? _json(_gbisFixture('arrivals_jangmi_10routes'))
-          : _json(_gbisFixture('viaroutes_jangmi_10routes')));
+      final c = clientWith(
+        (req) async => req.url.path.contains('busarrival')
+            ? _json(_gbisFixture('arrivals_jangmi_10routes'))
+            : _json(_gbisFixture('viaroutes_jangmi_10routes')),
+      );
 
       await c.fetchArrivals(cityCode: 31160, nodeId: 'GGB225000100');
       await c.fetchViaRoutes(nodeId: 'GGB225000100');

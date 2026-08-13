@@ -48,8 +48,9 @@ String _sourceSection(String path) {
   return end == -1 ? rest : rest.substring(0, end);
 }
 
-Set<String> _urlsIn(String section) =>
-    RegExp(r'https://[^\s)]+').allMatches(section).map((m) => m.group(0)!).toSet();
+Set<String> _urlsIn(String section) => RegExp(
+  r'https://[^\s)]+',
+).allMatches(section).map((m) => m.group(0)!).toSet();
 
 void main() {
   group('스토어 등록정보 — 정부 정보 출처 의무', () {
@@ -60,7 +61,8 @@ void main() {
           expect(
             section,
             contains(claim.value),
-            reason: '$store 설명($path)에 "${claim.key}"는 주장이 없다 — '
+            reason:
+                '$store 설명($path)에 "${claim.key}"는 주장이 없다 — '
                 'Play가 versionCode 143을 이 결함으로 거부했다',
           );
         }
@@ -70,15 +72,25 @@ void main() {
     test('출처 절에 데이터셋 URL 넷 + 포털 + 법령이 있다', () {
       for (final (store, path) in _docs.entries.map((e) => (e.key, e.value))) {
         final urls = _urlsIn(_sourceSection(path));
-        final datasets =
-            urls.where((u) => RegExp(r'data\.go\.kr/data/\d+').hasMatch(u)).toSet();
+        final datasets = urls
+            .where((u) => RegExp(r'data\.go\.kr/data/\d+').hasMatch(u))
+            .toSet();
 
-        expect(datasets.length, greaterThanOrEqualTo(4),
-            reason: '$store 설명의 데이터셋 URL이 $datasets 뿐이다');
-        expect(urls, contains('https://www.data.go.kr'),
-            reason: '$store 설명에 공공데이터포털 링크가 없다');
-        expect(urls.any((u) => u.contains('law.go.kr')), isTrue,
-            reason: '$store 설명에 공휴일 근거 법령 링크가 없다');
+        expect(
+          datasets.length,
+          greaterThanOrEqualTo(4),
+          reason: '$store 설명의 데이터셋 URL이 $datasets 뿐이다',
+        );
+        expect(
+          urls,
+          contains('https://www.data.go.kr'),
+          reason: '$store 설명에 공공데이터포털 링크가 없다',
+        );
+        expect(
+          urls.any((u) => u.contains('law.go.kr')),
+          isTrue,
+          reason: '$store 설명에 공휴일 근거 법령 링크가 없다',
+        );
       }
     });
 
@@ -86,11 +98,15 @@ void main() {
       // 실제로 어긋났던 지점이다. Play는 고쳤는데 iOS 설명은 한동안 URL이 없었고
       // (CLAUDE.md가 "다음 iOS 제출 때 함께 넣을 것"으로 남겨 뒀다), 그 상태를
       // 알려주는 것은 사람의 기억뿐이었다.
-      final sets = _docs.map((store, path) =>
-          MapEntry(store, _urlsIn(_sourceSection(path))));
+      final sets = _docs.map(
+        (store, path) => MapEntry(store, _urlsIn(_sourceSection(path))),
+      );
 
-      expect(sets['App Store'], equals(sets['Play']),
-          reason: '두 스토어 설명의 출처 URL이 다르다 — 한쪽만 고친 상태다');
+      expect(
+        sets['App Store'],
+        equals(sets['Play']),
+        reason: '두 스토어 설명의 출처 URL이 다르다 — 한쪽만 고친 상태다',
+      );
     });
 
     test('호출하는 기관이 두 문서의 출처 절에 적혀 있다', () {
@@ -100,9 +116,13 @@ void main() {
         final section = _sourceSection(path);
         for (final agency in kDataSourceAgencies.entries) {
           if (!src.contains(agency.key)) continue;
-          expect(section, contains(agency.value),
-              reason: '${agency.key}(을)를 호출하는데 $store 설명의 출처 절에 '
-                  '${agency.value}이 없다 — 라이선스 위반이다');
+          expect(
+            section,
+            contains(agency.value),
+            reason:
+                '${agency.key}(을)를 호출하는데 $store 설명의 출처 절에 '
+                '${agency.value}이 없다 — 라이선스 위반이다',
+          );
         }
       }
     });
@@ -116,9 +136,13 @@ void main() {
         final section = _sourceSection(path);
         for (final agency in kDataSourceAgencies.entries) {
           if (src.contains(agency.key)) continue;
-          expect(section, isNot(contains(agency.value)),
-              reason: '$store 설명의 출처 절에 ${agency.value}을 적었는데 '
-                  '${agency.key}를 호출하지 않는다');
+          expect(
+            section,
+            isNot(contains(agency.value)),
+            reason:
+                '$store 설명의 출처 절에 ${agency.value}을 적었는데 '
+                '${agency.key}를 호출하지 않는다',
+          );
         }
       }
     });
@@ -130,8 +154,11 @@ void main() {
       }
 
       final src = busApiClientSource();
-      expect(kDataSourceAgencies.keys.where(src.contains), isNotEmpty,
-          reason: '기관 표의 마커가 호출부에서 하나도 안 잡힌다 — 표가 낡았다');
+      expect(
+        kDataSourceAgencies.keys.where(src.contains),
+        isNotEmpty,
+        reason: '기관 표의 마커가 호출부에서 하나도 안 잡힌다 — 표가 낡았다',
+      );
     });
   });
 }

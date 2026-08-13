@@ -40,11 +40,7 @@ class EdufineGuideSection extends StatelessWidget {
             ),
             iconColor: AppColors.sub,
             collapsedIconColor: AppColors.sub,
-            leading: Icon(
-              Icons.help_outline,
-              color: AppColors.gold,
-              size: 20,
-            ),
+            leading: Icon(Icons.help_outline, color: AppColors.gold, size: 20),
             title: Text(
               ImportStrings.edufineGuideTitle,
               style: TextStyle(
@@ -209,11 +205,7 @@ class _StepRow extends StatelessWidget {
 
 /// 방법 A/B — 소제목 + bullet 리스트 + (옵션) 팁 박스.
 class _MethodBlock extends StatelessWidget {
-  const _MethodBlock({
-    required this.title,
-    required this.steps,
-    this.tip,
-  });
+  const _MethodBlock({required this.title, required this.steps, this.tip});
 
   final String title;
   final List<String> steps;
@@ -305,11 +297,7 @@ class _TipBox extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.lightbulb_outline,
-            color: AppColors.gold,
-            size: 14,
-          ),
+          Icon(Icons.lightbulb_outline, color: AppColors.gold, size: 14),
           const SizedBox(width: AppSizes.spacing4),
           Expanded(
             child: Text(

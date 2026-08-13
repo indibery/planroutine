@@ -26,10 +26,18 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
 
   // ── 입력 탭 검토 영역용 — 2026년 분 (확정 3 / 대기 업무 17 + 대기 행사 4) ──
   final schedules = <Schedule>[
-    _s('2025학년도 새봄초등학교 1차 학급편성 결과 제출', '2026-01-03', '학생학적',
-        ScheduleStatus.confirmed),
-    _s('2025학년도 새봄초등학교 교육과정 운영 계획', '2026-01-15', '교육과정계획',
-        ScheduleStatus.confirmed),
+    _s(
+      '2025학년도 새봄초등학교 1차 학급편성 결과 제출',
+      '2026-01-03',
+      '학생학적',
+      ScheduleStatus.confirmed,
+    ),
+    _s(
+      '2025학년도 새봄초등학교 교육과정 운영 계획',
+      '2026-01-15',
+      '교육과정계획',
+      ScheduleStatus.confirmed,
+    ),
     _s('교직원 회의 계획', '2026-02-05', '조직통계', ScheduleStatus.confirmed),
     _s('학부모 총회 안내장', '2026-02-18', '일과운영관리'),
     _s('연간 교육계획 협의회', '2026-02-25', '교육과정계획'),
@@ -63,11 +71,17 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
     _e('학부모 공개수업', now, color: '#E0B96A', isImportant: true),
     _e('학급편성 결과 제출', now.add(const Duration(days: 2)), color: '#7FD4A5'),
     _e('학부모 총회 안내장 발송', now.add(const Duration(days: 5)), color: '#8BA8D4'),
-    _e('2025학년도 여름방학 운영 계획', now.add(const Duration(days: 7)),
-        color: '#8BA8D4'),
-    _e('교과서 주문 마감', now.add(const Duration(days: 9)),
-        color: '#E08978',
-        description: '교과서 수량 확정 및 주문 제출'),
+    _e(
+      '2025학년도 여름방학 운영 계획',
+      now.add(const Duration(days: 7)),
+      color: '#8BA8D4',
+    ),
+    _e(
+      '교과서 주문 마감',
+      now.add(const Duration(days: 9)),
+      color: '#E08978',
+      description: '교과서 수량 확정 및 주문 제출',
+    ),
     _e('분기 예산 협의', now.add(const Duration(days: 14)), color: '#B89AE0'),
   ];
   for (final e in events) {
@@ -88,8 +102,10 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
   // 캘린더 프로바이더 새로고침
   container.invalidate(selectedMonthEventsProvider);
 
-  print('[screenshot_seed] seeded ${schedules.length} schedules + '
-      '${events.length} events');
+  print(
+    '[screenshot_seed] seeded ${schedules.length} schedules + '
+    '${events.length} events',
+  );
   return;
 }
 
@@ -98,25 +114,29 @@ Schedule _s(
   String date,
   String category, [
   ScheduleStatus status = ScheduleStatus.pending,
-]) =>
-    Schedule(
-      title: title,
-      scheduledDate: date,
-      category: category,
-      status: status,
-    );
+]) => Schedule(
+  title: title,
+  scheduledDate: date,
+  category: category,
+  status: status,
+);
 
 /// 사진 AI 경로로 들어오는 행사 — 그 경로는 카테고리를 매기지 않는다.
 Schedule _sKind(String title, String date, EntryKind kind) =>
     Schedule(title: title, scheduledDate: date, kind: kind);
 
-CalendarEvent _e(String title, DateTime date,
-        {String? color, String? description, bool isImportant = false}) =>
-    CalendarEvent(
-      title: title,
-      eventDate: '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      isAllDay: true,
-      color: color,
-      description: description,
-      isImportant: isImportant,
-    );
+CalendarEvent _e(
+  String title,
+  DateTime date, {
+  String? color,
+  String? description,
+  bool isImportant = false,
+}) => CalendarEvent(
+  title: title,
+  eventDate:
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+  isAllDay: true,
+  color: color,
+  description: description,
+  isImportant: isImportant,
+);

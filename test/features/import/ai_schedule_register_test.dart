@@ -26,7 +26,11 @@ void main() {
     test('파싱된 행사를 검토 대기(pending) 일정으로 등록', () async {
       final result = await registerAiSchedules(repo, const [
         AiScheduleItem(title: '입학식', date: '2026-03-02'),
-        AiScheduleItem(title: '봄 현장체험학습', date: '2026-04-24', description: '4-6학년'),
+        AiScheduleItem(
+          title: '봄 현장체험학습',
+          date: '2026-04-24',
+          description: '4-6학년',
+        ),
       ]);
       expect(result.created, 2);
       expect(result.skipped, 0);

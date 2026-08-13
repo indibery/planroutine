@@ -46,7 +46,9 @@ class BusSettings {
 
   /// 두 시간대가 각자 유효하고 서로 겹치지 않는지.
   bool get rangesValid =>
-      toWorkRange.isValid && toHomeRange.isValid && !toWorkRange.overlaps(toHomeRange);
+      toWorkRange.isValid &&
+      toHomeRange.isValid &&
+      !toWorkRange.overlaps(toHomeRange);
 
   BusStop? stopFor(CommuteDirection direction) =>
       direction == CommuteDirection.toWork ? departure : arrival;
@@ -78,8 +80,9 @@ class BusSettings {
       toWorkRange: toWorkRange ?? this.toWorkRange,
       toHomeRange: toHomeRange ?? this.toHomeRange,
       overrideAt: clearOverride ? null : (overrideAt ?? this.overrideAt),
-      overrideExpanded:
-          clearOverride ? false : (overrideExpanded ?? this.overrideExpanded),
+      overrideExpanded: clearOverride
+          ? false
+          : (overrideExpanded ?? this.overrideExpanded),
     );
   }
 
@@ -87,15 +90,15 @@ class BusSettings {
   BusSettings clearOverride() => copyWith(clearOverride: true);
 
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        'departure': departure?.toJson(),
-        'arrival': arrival?.toJson(),
-        'style': style.name,
-        'toWorkRange': toWorkRange.toJson(),
-        'toHomeRange': toHomeRange.toJson(),
-        'overrideAt': overrideAt?.toIso8601String(),
-        'overrideExpanded': overrideExpanded,
-      };
+    'enabled': enabled,
+    'departure': departure?.toJson(),
+    'arrival': arrival?.toJson(),
+    'style': style.name,
+    'toWorkRange': toWorkRange.toJson(),
+    'toHomeRange': toHomeRange.toJson(),
+    'overrideAt': overrideAt?.toIso8601String(),
+    'overrideExpanded': overrideExpanded,
+  };
 
   factory BusSettings.fromJson(Map<String, dynamic> json) {
     return BusSettings(
@@ -104,7 +107,10 @@ class BusSettings {
       arrival: _stop(json['arrival']),
       style: BusCardStyle.fromName(json['style'] as String?),
       toWorkRange: _range(json['toWorkRange'], const TimeRange.hm(7, 0, 8, 30)),
-      toHomeRange: _range(json['toHomeRange'], const TimeRange.hm(16, 0, 18, 0)),
+      toHomeRange: _range(
+        json['toHomeRange'],
+        const TimeRange.hm(16, 0, 18, 0),
+      ),
       overrideAt: DateTime.tryParse(json['overrideAt'] as String? ?? ''),
       overrideExpanded: json['overrideExpanded'] as bool? ?? false,
     );

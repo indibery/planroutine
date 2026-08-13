@@ -8,7 +8,7 @@ class AppResetRepository {
   final DatabaseHelper _dbHelper;
 
   AppResetRepository({DatabaseHelper? dbHelper})
-      : _dbHelper = dbHelper ?? DatabaseHelper.instance;
+    : _dbHelper = dbHelper ?? DatabaseHelper.instance;
 
   Future<void> resetAll() => _dbHelper.resetAllData();
 }

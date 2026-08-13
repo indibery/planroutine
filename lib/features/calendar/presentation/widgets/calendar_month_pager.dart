@@ -14,17 +14,13 @@ import 'page_index_mapping.dart';
 /// - 외부에서 [selectedDateProvider]가 바뀌면 [PageController.animateToPage]로 따라감
 /// - 페이지가 슬라이드 완료되면 [selectedDateProvider]를 새 월로 갱신
 class CalendarMonthPager extends ConsumerStatefulWidget {
-  const CalendarMonthPager({
-    super.key,
-    required this.onDateSelected,
-  });
+  const CalendarMonthPager({super.key, required this.onDateSelected});
 
   /// 그리드 내 날짜 셀 탭 콜백 (calendar_screen에서 selectedDate 갱신용).
   final void Function(DateTime date) onDateSelected;
 
   @override
-  ConsumerState<CalendarMonthPager> createState() =>
-      _CalendarMonthPagerState();
+  ConsumerState<CalendarMonthPager> createState() => _CalendarMonthPagerState();
 }
 
 class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
@@ -44,25 +40,25 @@ class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
     // 외부에서 selectedDate가 바뀌면 (chevron / "오늘로 점프" / 일정 확정 등)
     // PageView를 그 페이지로 animateToPage. 무한 루프 방지를 위해
     // 현재 페이지와 다를 때만 명령.
-    _selectedDateSub = ref.listenManual<DateTime>(
-      selectedDateProvider,
-      (prev, next) {
-        final targetIndex = monthToPageIndex(
-          year: next.year,
-          month: next.month,
-          anchorYear: _anchorYear,
-          anchorMonth: _anchorMonth,
+    _selectedDateSub = ref.listenManual<DateTime>(selectedDateProvider, (
+      prev,
+      next,
+    ) {
+      final targetIndex = monthToPageIndex(
+        year: next.year,
+        month: next.month,
+        anchorYear: _anchorYear,
+        anchorMonth: _anchorMonth,
+      );
+      final currentIndex = _controller.page?.round() ?? targetIndex;
+      if (targetIndex != currentIndex) {
+        _controller.animateToPage(
+          targetIndex,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
         );
-        final currentIndex = _controller.page?.round() ?? targetIndex;
-        if (targetIndex != currentIndex) {
-          _controller.animateToPage(
-            targetIndex,
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-          );
-        }
-      },
-    );
+      }
+    });
   }
 
   @override
@@ -90,9 +86,10 @@ class _CalendarMonthPagerState extends ConsumerState<CalendarMonthPager> {
     // 그리드 영역(SizedBox 250) 안에는 어떤 에러 위젯도 넣지 않는다.
     final selectedDate = ref.watch(selectedDateProvider);
     ref.listen<AsyncValue<List<CalendarEvent>>>(
-      monthEventsByYearMonthProvider(
-        (year: selectedDate.year, month: selectedDate.month),
-      ),
+      monthEventsByYearMonthProvider((
+        year: selectedDate.year,
+        month: selectedDate.month,
+      )),
       (prev, next) {
         if (next.hasError && (prev == null || !prev.hasError)) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

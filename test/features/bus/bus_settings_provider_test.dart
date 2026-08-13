@@ -72,7 +72,10 @@ void main() {
 
   test('뒤집힌 시간대는 저장되지 않는다', () async {
     final (container, notifier) = await boot();
-    await notifier.setRange(CommuteDirection.toWork, const TimeRange.hm(9, 0, 7, 0));
+    await notifier.setRange(
+      CommuteDirection.toWork,
+      const TimeRange.hm(9, 0, 7, 0),
+    );
     expect(
       container.read(busSettingsProvider).requireValue.toWorkRange.label,
       '07:00 – 08:30',

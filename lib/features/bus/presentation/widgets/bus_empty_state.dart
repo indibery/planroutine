@@ -19,6 +19,7 @@ class BusEmptyState extends StatelessWidget {
 
   final BusCardState state;
   final VoidCallback? onRetry;
+
   /// `다시 시도`로 시작한 조회가 아직 비행 중인가.
   ///
   /// true면 그 자리에 진행 문구를 놓고 탭을 뗀다. 조회는 최대 10초 걸리는데 그동안
@@ -43,28 +44,28 @@ class BusEmptyState extends StatelessWidget {
       // 사용자의 다음 행동이 정반대다. 노선을 바꾸는 경로는 확인 시트뿐이므로
       // 액션 대신 힌트로 안내한다.
       BusCardState.filteredOut => (
-          BusStrings.emptyFiltered,
-          BusStrings.emptyFilteredHint,
-          null,
-          null,
-        ),
+        BusStrings.emptyFiltered,
+        BusStrings.emptyFilteredHint,
+        null,
+        null,
+      ),
       // stale이 빈 목록으로 여기까지 오면 갱신 실패와 구분할 정보가 없다 —
       // down과 같은 문구를 **의도적으로** 공유한다(와일드카드가 아니라 이름을 둘 다 적는다).
       // 비행 중이면 라벨을 진행 문구로 바꾸고 콜백을 뗀다. **문구만 바꾸고 콜백을
       // 남기면 안 된다** — 리빌드가 오기 전에 도착한 탭이 그대로 요청을 만든다.
       // (호스트의 `_retrying` 가드가 그 창까지 막지만, 두 겹을 함께 둔다.)
       BusCardState.stale || BusCardState.down => (
-          BusStrings.emptyDown,
-          null,
-          retrying ? BusStrings.emptyDownRetrying : BusStrings.emptyDownAction,
-          retrying ? null : onRetry,
-        ),
+        BusStrings.emptyDown,
+        null,
+        retrying ? BusStrings.emptyDownRetrying : BusStrings.emptyDownAction,
+        retrying ? null : onRetry,
+      ),
       BusCardState.keyError => (
-          BusStrings.emptyKey,
-          BusStrings.emptyKeyHint,
-          null,
-          null,
-        ),
+        BusStrings.emptyKey,
+        BusStrings.emptyKeyHint,
+        null,
+        null,
+      ),
       // **등록 액션은 여기서 그리지 않는다** — 카드 하단 행이 골드 채움 알약으로
       // 맡는다(`BusArrivalCard._registerControl`). 본문에 두던 시절에는 바로 아래
       // `출근 보기` 링크와 세로로 23dp 떨어진 채 둘 다 맨 텍스트라, 하나를 누르려다

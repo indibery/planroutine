@@ -24,10 +24,12 @@ void main() {
     db = freshDatabaseHelper();
     repo = ScheduleRepository(dbHelper: db);
     calendarRepo = CalendarRepository(dbHelper: db);
-    container = ProviderContainer(overrides: [
-      scheduleRepositoryProvider.overrideWithValue(repo),
-      calendarRepositoryProvider.overrideWithValue(calendarRepo),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        scheduleRepositoryProvider.overrideWithValue(repo),
+        calendarRepositoryProvider.overrideWithValue(calendarRepo),
+      ],
+    );
 
     await repo.insertConfirmedOrPending(
       const Schedule(title: '학급편성 결과 제출', scheduledDate: '2026-03-02'),
@@ -95,11 +97,13 @@ void main() {
 
     /// 칩이 약속한 건수와 눌렀을 때 나오는 목록이 다르면 칩이 거짓말을 한 게 된다.
     test('카테고리로 좁히면 종류 칩 건수도 그 카테고리 기준이다', () async {
-      await repo.insertConfirmedOrPending(const Schedule(
-        title: '체육대회 준비',
-        scheduledDate: '2026-05-01',
-        category: '교육과정',
-      ));
+      await repo.insertConfirmedOrPending(
+        const Schedule(
+          title: '체육대회 준비',
+          scheduledDate: '2026-05-01',
+          category: '교육과정',
+        ),
+      );
       container.read(scheduleCategoryFilterProvider.notifier).state = '교육과정';
 
       final counts = await container.read(scheduleCountsProvider.future);
@@ -156,10 +160,7 @@ void main() {
 
       await container.read(schedulesProvider.notifier).deleteAllPending();
 
-      expect(
-        await repo.getSchedules(status: ScheduleStatus.pending),
-        isEmpty,
-      );
+      expect(await repo.getSchedules(status: ScheduleStatus.pending), isEmpty);
     });
   });
 }

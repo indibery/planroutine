@@ -12,9 +12,7 @@ class GoogleCalendarService {
   final GoogleSignIn _signIn;
 
   static GoogleSignIn _buildSignIn() {
-    return GoogleSignIn(
-      scopes: const [gcal.CalendarApi.calendarEventsScope],
-    );
+    return GoogleSignIn(scopes: const [gcal.CalendarApi.calendarEventsScope]);
   }
 
   /// 현재 로그인된 계정 (없으면 null) 변화를 방출하는 스트림.
@@ -166,4 +164,3 @@ class _AuthenticatedClient extends http.BaseClient {
     super.close();
   }
 }
-

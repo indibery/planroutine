@@ -41,8 +41,9 @@ class EventListSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final target = ref.watch(
-      calendarTargetProvider
-          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+      calendarTargetProvider.select(
+        (a) => a.valueOrNull ?? CalendarTarget.none,
+      ),
     );
     final saveLabel = target == CalendarTarget.device
         ? CalendarIntegrationStrings.swipeSaveDevice

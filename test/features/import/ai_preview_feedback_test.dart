@@ -24,8 +24,7 @@ void main() {
       );
 
       expect(parsed.items.length, 1);
-      expect(parsed.invalidCount, 2,
-          reason: '이 값이 화면에 안 나가면 두 건이 소리 없이 사라진다');
+      expect(parsed.invalidCount, 2, reason: '이 값이 화면에 안 나가면 두 건이 소리 없이 사라진다');
     });
 
     test('전부 형식 오류면 유효 0 · 버림 N — 빈 응답과 구분된다', () {
@@ -43,8 +42,14 @@ void main() {
 
   group('문구가 종류를 따라간다', () {
     test('인식 건수 — 업무 쪽지에 행사라고 하지 않는다', () {
-      expect(ImportStrings.aiPreviewCountFor(EntryKind.task, 3), contains('업무'));
-      expect(ImportStrings.aiPreviewCountFor(EntryKind.event, 3), contains('행사'));
+      expect(
+        ImportStrings.aiPreviewCountFor(EntryKind.task, 3),
+        contains('업무'),
+      );
+      expect(
+        ImportStrings.aiPreviewCountFor(EntryKind.event, 3),
+        contains('행사'),
+      );
       expect(
         ImportStrings.aiPreviewCountFor(EntryKind.task, 3),
         isNot(contains('행사')),
@@ -61,10 +66,7 @@ void main() {
       // 용어가 바뀌면 배지·칩만 따라가고 이 문구만 옛 이름으로 남는 사고가
       // 이 리포에 있었다(일괄 등록 pill).
       for (final kind in EntryKind.values) {
-        expect(
-          ImportStrings.aiPreviewCountFor(kind, 1),
-          contains(kind.label),
-        );
+        expect(ImportStrings.aiPreviewCountFor(kind, 1), contains(kind.label));
       }
     });
   });

@@ -32,8 +32,9 @@ class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.ink,
-        systemOverlayStyle:
-            isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+        systemOverlayStyle: isLight
+            ? SystemUiOverlayStyle.dark
+            : SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
         color: AppColors.glass,
@@ -111,14 +112,16 @@ class AppTheme {
         style: TextButton.styleFrom(foregroundColor: AppColors.gold),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? AppColors.navy
-                : AppColors.sub),
-        trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? AppColors.gold
-                : AppColors.surfaceVariant),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.navy
+              : AppColors.sub,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.gold
+              : AppColors.surfaceVariant,
+        ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: Colors.transparent,
@@ -133,15 +136,62 @@ class AppTheme {
       ),
       fontFamily: 'Pretendard',
       textTheme: TextTheme(
-        bodyLarge: TextStyle(fontFamily: 'Pretendard', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
-        bodyMedium: TextStyle(fontFamily: 'Pretendard', fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.ink),
-        bodySmall: TextStyle(fontFamily: 'Pretendard', fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.sub),
-        titleLarge: TextStyle(fontFamily: 'Pretendard', fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: AppColors.ink),
-        titleMedium: TextStyle(fontFamily: 'Pretendard', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
-        titleSmall: TextStyle(fontFamily: 'Pretendard', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
-        labelLarge: TextStyle(fontFamily: 'Pretendard', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink),
-        labelMedium: TextStyle(fontFamily: 'Pretendard', fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.sub),
-        labelSmall: TextStyle(fontFamily: 'Pretendard', fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 2.5, color: AppColors.sub),
+        bodyLarge: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        bodyMedium: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: AppColors.ink,
+        ),
+        bodySmall: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: AppColors.sub,
+        ),
+        titleLarge: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+          color: AppColors.ink,
+        ),
+        titleMedium: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        titleSmall: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        labelLarge: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        labelMedium: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.sub,
+        ),
+        labelSmall: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 2.5,
+          color: AppColors.sub,
+        ),
       ),
     );
   }

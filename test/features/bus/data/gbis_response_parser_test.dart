@@ -9,9 +9,9 @@ import 'package:planroutine/features/bus/domain/bus_arrival.dart';
 /// 실측 응답 파일을 그대로 읽는다. **응답 JSON을 손으로 적지 않는다** —
 /// `int`/`''`(빈 문자열)/키 없음이 같은 필드에 섞이는 형태는 사람이 재현하지 못하고,
 /// 이 작업에서 손으로 쓴 픽스처가 현실과 달라 세 번 어긋났다.
-Map<String, dynamic> _fixture(String name) => jsonDecode(
-      File('test/fixtures/gbis/$name.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
+Map<String, dynamic> _fixture(String name) =>
+    jsonDecode(File('test/fixtures/gbis/$name.json').readAsStringSync())
+        as Map<String, dynamic>;
 
 /// 픽스처의 원본 행 목록. 실측 값을 한 곳만 비틀어 보는 테스트가 쓴다.
 List<Map<String, dynamic>> _rows(Map<String, dynamic> json) {
@@ -127,13 +127,18 @@ void main() {
     });
 
     test('껍데기가 다르면 malformed다', () {
-      expect(parseGbisArrivals(const {'oops': 1}).outcome,
-          TagoOutcome.malformed);
+      expect(
+        parseGbisArrivals(const {'oops': 1}).outcome,
+        TagoOutcome.malformed,
+      );
       // TAGO 껍데기(`response.header`/`response.body`)를 GBIS 파서에 주는 실수는
       // 조용히 빈 목록이 되면 안 된다.
       expect(
         parseGbisArrivals(const {
-          'response': {'header': {'resultCode': '00'}, 'body': {'items': ''}},
+          'response': {
+            'header': {'resultCode': '00'},
+            'body': {'items': ''},
+          },
         }).outcome,
         TagoOutcome.malformed,
       );
@@ -216,8 +221,9 @@ void main() {
 
     test('인천 nodeId는 접두만 다르고 숫자는 GBIS stationId와 같다', () {
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
-      final incheon =
-          r.items.firstWhere((s) => s.regionName == '인천' && s.nodeNo == 37044);
+      final incheon = r.items.firstWhere(
+        (s) => s.regionName == '인천' && s.nodeNo == 37044,
+      );
 
       expect(incheon.nodeId, 'ICB163000044');
     });
@@ -244,7 +250,10 @@ void main() {
       expect(gyeonggi, hasLength(6));
 
       // 인천만 TAGO로, 나머지는 GBIS로.
-      expect(incheon.every((s) => s.nodeId.startsWith(incheonIdPrefix)), isTrue);
+      expect(
+        incheon.every((s) => s.nodeId.startsWith(incheonIdPrefix)),
+        isTrue,
+      );
       expect(seoul.every((s) => s.nodeId.startsWith(gbisIdPrefix)), isTrue);
       expect(gyeonggi.every((s) => s.nodeId.startsWith(gbisIdPrefix)), isTrue);
 
@@ -304,10 +313,18 @@ void main() {
 
       expect(r.outcome, TagoOutcome.ok);
       expect(r.items, hasLength(10));
-      expect(
-        r.items.map((e) => e.routeNo).toSet(),
-        {'3030', '6501', '11-5', '15', '541', '5623', '87', '917', '6', '9'},
-      );
+      expect(r.items.map((e) => e.routeNo).toSet(), {
+        '3030',
+        '6501',
+        '11-5',
+        '15',
+        '541',
+        '5623',
+        '87',
+        '917',
+        '6',
+        '9',
+      });
     });
 
     test('routeId에 GGB 접두를 되붙인다 — 도착정보 파서와 같은 규칙', () {
@@ -324,10 +341,7 @@ void main() {
     test('행선지가 들어온다 — 길 양쪽 정류장을 가르는 단서', () {
       final r = parseGbisViaRoutes(_fixture('viaroutes_jangmi_10routes'));
 
-      expect(
-        r.items.firstWhere((e) => e.routeNo == '3030').destName,
-        '신사역(중)',
-      );
+      expect(r.items.firstWhere((e) => e.routeNo == '3030').destName, '신사역(중)');
       expect(
         r.items.firstWhere((e) => e.routeNo == '5623').destName,
         '여의도환승센터(1번승강장)',
@@ -357,8 +371,10 @@ void main() {
     });
 
     test('껍데기가 깨지면 malformed다', () {
-      expect(parseGbisViaRoutes(const {'oops': 1}).outcome,
-          TagoOutcome.malformed);
+      expect(
+        parseGbisViaRoutes(const {'oops': 1}).outcome,
+        TagoOutcome.malformed,
+      );
       expect(
         parseGbisViaRoutes(const {
           'response': {
@@ -385,10 +401,11 @@ void main() {
       // 카드는 빠른 순, 시트는 번호순이다. 파서가 한쪽 순서로 고정하면 다른 쪽이
       // 그것을 다시 뒤집어야 한다.
       final json = _fixture('viaroutes_jangmi_10routes');
-      final rows = ((json['response'] as Map)['msgBody'] as Map)['busRouteList']
-          as List;
-      final apiOrder =
-          rows.map((r) => (r as Map)['routeName'].toString()).toList();
+      final rows =
+          ((json['response'] as Map)['msgBody'] as Map)['busRouteList'] as List;
+      final apiOrder = rows
+          .map((r) => (r as Map)['routeName'].toString())
+          .toList();
 
       final r = parseGbisViaRoutes(json);
       expect(r.items.map((e) => e.routeNo), apiOrder);

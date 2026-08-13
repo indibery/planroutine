@@ -8,8 +8,10 @@ void main() {
       expect(escapeCsvFormula('+1'), "'+1");
       expect(escapeCsvFormula('-2차 회의'), "'-2차 회의");
       expect(escapeCsvFormula('@handle'), "'@handle");
-      expect(escapeCsvFormula('=HYPERLINK("http://evil.kr","총회")'),
-          '\'=HYPERLINK("http://evil.kr","총회")');
+      expect(
+        escapeCsvFormula('=HYPERLINK("http://evil.kr","총회")'),
+        '\'=HYPERLINK("http://evil.kr","총회")',
+      );
     });
 
     test('탭/CR/LF 시작도 무해화(선행 공백 트릭 차단)', () {

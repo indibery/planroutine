@@ -70,12 +70,14 @@ List<BusRouteChoice> buildRouteChoices({
   final base = routes.isNotEmpty
       ? routes
       : arrivals
-          .map((a) => BusRoute(
+            .map(
+              (a) => BusRoute(
                 routeId: a.routeId,
                 routeNo: a.routeNo,
                 destName: '',
-              ))
-          .toList();
+              ),
+            )
+            .toList();
 
   return base
       .map((r) => BusRouteChoice(route: r, arrMin: arrMinById[r.routeId]))

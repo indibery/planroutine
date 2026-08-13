@@ -5,9 +5,7 @@ import 'package:planroutine/app.dart';
 
 void main() {
   testWidgets('앱 기본 렌더링 테스트', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: PlanRoutineApp()),
-    );
+    await tester.pumpWidget(const ProviderScope(child: PlanRoutineApp()));
     await tester.pumpAndSettle();
 
     // 캘린더 탭이 기본 화면

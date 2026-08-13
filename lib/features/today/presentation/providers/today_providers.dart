@@ -15,8 +15,8 @@ final todayReferenceProvider = Provider<DateTime>((ref) => DateTime.now());
 /// 어긋나 다시 들어와도 예전 목록이 보인다. 수명을 화면에 묶어 재진입 = 재조회로 만든다.
 final todayViewProvider =
     AsyncNotifierProvider.autoDispose<TodayViewNotifier, TodayView>(
-  TodayViewNotifier.new,
-);
+      TodayViewNotifier.new,
+    );
 
 class TodayViewNotifier extends AutoDisposeAsyncNotifier<TodayView> {
   @override

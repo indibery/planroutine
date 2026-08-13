@@ -41,8 +41,7 @@ List<PendingNotification> computeNotifications({
 
   // 발송 시각 → 그 시각에 합쳐질 섹션별 제목 모음
   final byFireTime = <DateTime, _Digest>{};
-  _Digest digestAt(DateTime at) =>
-      byFireTime.putIfAbsent(at, () => _Digest());
+  _Digest digestAt(DateTime at) => byFireTime.putIfAbsent(at, () => _Digest());
 
   // 이번 주 종합(월요일) / 당일 아침
   for (final event in activeEvents) {
@@ -80,12 +79,14 @@ List<PendingNotification> computeNotifications({
   byFireTime.forEach((at, digest) {
     final body = digest.buildBody();
     if (body.isEmpty) return;
-    pendings.add(PendingNotification(
-      id: _dailyDigestId(at),
-      title: NotificationStrings.digestTitle,
-      body: body,
-      scheduledAt: at,
-    ));
+    pendings.add(
+      PendingNotification(
+        id: _dailyDigestId(at),
+        title: NotificationStrings.digestTitle,
+        body: body,
+        scheduledAt: at,
+      ),
+    );
   });
 
   // 시각 오름차순 정렬 후 iOS 상한에 맞춰 절단
@@ -113,9 +114,17 @@ class _Digest {
   String buildBody() {
     final lines = <String>[];
     _appendTitleSection(
-        NotificationStrings.emojiToday, NotificationStrings.digestToday, today, lines);
+      NotificationStrings.emojiToday,
+      NotificationStrings.digestToday,
+      today,
+      lines,
+    );
     _appendTitleSection(
-        NotificationStrings.emojiWeek, NotificationStrings.digestWeek, week, lines);
+      NotificationStrings.emojiWeek,
+      NotificationStrings.digestWeek,
+      week,
+      lines,
+    );
     return lines.join('\n');
   }
 
@@ -123,18 +132,25 @@ class _Digest {
   String _sectionHeader(String emoji, String label) => '$emoji $label — ';
 
   void _appendTitleSection(
-      String emoji, String label, List<_Entry> entries, List<String> out) {
+    String emoji,
+    String label,
+    List<_Entry> entries,
+    List<String> out,
+  ) {
     if (entries.isEmpty) return;
-    out.add('${_sectionHeader(emoji, label)}'
-        '${_formatTitles(_titlesByImminence(entries))}');
+    out.add(
+      '${_sectionHeader(emoji, label)}'
+      '${_formatTitles(_titlesByImminence(entries))}',
+    );
   }
 
   /// 이벤트 날짜 오름차순(가장 임박한 순), 같은 날은 제목순으로 제목 리스트 반환.
   List<String> _titlesByImminence(List<_Entry> entries) {
-    final sorted = [...entries]..sort((a, b) {
-      final byDate = a.date.compareTo(b.date);
-      return byDate != 0 ? byDate : a.title.compareTo(b.title);
-    });
+    final sorted = [...entries]
+      ..sort((a, b) {
+        final byDate = a.date.compareTo(b.date);
+        return byDate != 0 ? byDate : a.title.compareTo(b.title);
+      });
     return sorted.map((e) => e.title).toList();
   }
 

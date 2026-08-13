@@ -43,12 +43,12 @@ class NotificationSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'masterEnabled': masterEnabled,
-        'weeklyEnabled': weeklyEnabled,
-        'dayOfEnabled': dayOfEnabled,
-        'hour': hour,
-        'minute': minute,
-      };
+    'masterEnabled': masterEnabled,
+    'weeklyEnabled': weeklyEnabled,
+    'dayOfEnabled': dayOfEnabled,
+    'hour': hour,
+    'minute': minute,
+  };
 
   factory NotificationSettings.fromJson(Map<String, dynamic> json) {
     return NotificationSettings(
@@ -70,11 +70,6 @@ class NotificationSettings {
       other.minute == minute;
 
   @override
-  int get hashCode => Object.hash(
-        masterEnabled,
-        weeklyEnabled,
-        dayOfEnabled,
-        hour,
-        minute,
-      );
+  int get hashCode =>
+      Object.hash(masterEnabled, weeklyEnabled, dayOfEnabled, hour, minute);
 }

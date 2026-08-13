@@ -6,11 +6,13 @@ import 'package:planroutine/features/settings/presentation/widgets/privacy_polic
 void main() {
   testWidgets('방침 행이 보이고 탭하면 URL을 연다', (tester) async {
     final opened = <String>[];
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: PrivacyPolicyListTile(onOpen: (url) async => opened.add(url)),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrivacyPolicyListTile(onOpen: (url) async => opened.add(url)),
+        ),
       ),
-    ));
+    );
 
     expect(find.text(SettingsStrings.privacyPolicyTitle), findsOneWidget);
 
@@ -20,11 +22,15 @@ void main() {
   });
 
   testWidgets('열기에 실패하면 스낵바로 알린다', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: PrivacyPolicyListTile(onOpen: (_) async => throw Exception('no browser')),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrivacyPolicyListTile(
+            onOpen: (_) async => throw Exception('no browser'),
+          ),
+        ),
       ),
-    ));
+    );
 
     await tester.tap(find.text(SettingsStrings.privacyPolicyTitle));
     await tester.pumpAndSettle();

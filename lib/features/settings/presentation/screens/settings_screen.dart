@@ -54,10 +54,7 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          SettingsStrings.title,
-          style: AppTextStyles.heading,
-        ),
+        title: Text(SettingsStrings.title, style: AppTextStyles.heading),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
@@ -86,9 +83,7 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(
             showDivider: false,
             // 출처 표시는 앱 정보 아래에 붙인다 — 둘 다 정보성이고 탭이 없다.
-            child: Column(
-              children: [AppInfoListTile(), DataSourceListTile()],
-            ),
+            child: Column(children: [AppInfoListTile(), DataSourceListTile()]),
           ),
           const SizedBox(height: AppSizes.spacing24),
         ],

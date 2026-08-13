@@ -48,10 +48,7 @@ class CsvParser {
     } on FormatException {
       // UTF-8 실패 시 EUC-KR로 디코딩
       final uint8Bytes = Uint8List.fromList(payload);
-      final decoded = await CharsetConverter.decode(
-        'euc-kr',
-        uint8Bytes,
-      );
+      final decoded = await CharsetConverter.decode('euc-kr', uint8Bytes);
       return decoded;
     }
   }
@@ -75,7 +72,9 @@ class CsvParser {
   /// "상태" 컬럼이 있으면 플랜루틴 자체 export로 간주해
   /// 자동 확정 플로우로 분기할 수 있게 한다.
   ParsedCsv parseWithMetadata(String csvContent) {
-    final normalized = csvContent.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalized = csvContent
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
     final converter = const CsvToListConverter(eol: '\n');
     final rows = converter.convert(normalized.trim());
 

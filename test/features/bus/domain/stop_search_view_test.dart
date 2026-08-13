@@ -3,12 +3,12 @@ import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/stop_search_view.dart';
 
 BusStop _stop(String name, String? region, {int no = 1}) => BusStop(
-      nodeId: 'GGB$no',
-      nodeNm: name,
-      nodeNo: no,
-      cityCode: 0,
-      regionName: region,
-    );
+  nodeId: 'GGB$no',
+  nodeNm: name,
+  nodeNo: no,
+  cityCode: 0,
+  regionName: region,
+);
 
 List<BusStop> _many(String region, int n) =>
     List.generate(n, (i) => _stop('정류장$i', region, no: i + 1));
@@ -46,21 +46,18 @@ void main() {
 
   group('지역 칩 — 결과를 세어 만든다 (추가 조회 없음)', () {
     test('건수 내림차순이다 — 많은 쪽이 내 정류장을 담고 있을 확률이 높다', () {
-      final view = buildStopSearchView(stops: [
-        ..._many('인천', 5),
-        ..._many('갑시', 1),
-        ..._many('병시', 2),
-      ]);
+      final view = buildStopSearchView(
+        stops: [..._many('인천', 5), ..._many('갑시', 1), ..._many('병시', 2)],
+      );
 
       expect(view.regions.map((r) => r.name), ['인천', '병시', '갑시']);
       expect(view.regions.first.count, 5);
     });
 
     test('건수가 같으면 이름순 — 같은 결과에서 칩 순서가 흔들리지 않게', () {
-      final view = buildStopSearchView(stops: [
-        ..._many('정시', 2),
-        ..._many('병시', 2),
-      ]);
+      final view = buildStopSearchView(
+        stops: [..._many('정시', 2), ..._many('병시', 2)],
+      );
 
       expect(view.regions.map((r) => r.name), ['병시', '정시']);
     });
@@ -95,8 +92,10 @@ void main() {
 
       final filtered = buildStopSearchView(stops: all, region: '갑시');
 
-      expect(filtered.regions.map((r) => (r.name, r.count)),
-          [('인천', 5), ('갑시', 1)]);
+      expect(filtered.regions.map((r) => (r.name, r.count)), [
+        ('인천', 5),
+        ('갑시', 1),
+      ]);
     });
 
     test('지역명이 없는 결과(TAGO 경로)는 칩을 만들지 않는다', () {

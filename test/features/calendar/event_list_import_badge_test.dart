@@ -15,7 +15,10 @@ void main() {
   final currentYear = DateTime.now().year;
   final oldYear = currentYear - 1;
 
-  Future<void> pumpEvents(WidgetTester tester, List<CalendarEvent> events) async {
+  Future<void> pumpEvents(
+    WidgetTester tester,
+    List<CalendarEvent> events,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(

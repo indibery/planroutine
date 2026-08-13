@@ -52,7 +52,8 @@ void _expectClearsNavBar(WidgetTester tester, Finder button, String which) {
   expect(
     bottom,
     lessThanOrEqualTo(limit),
-    reason: '$which 버튼의 아래 경계가 $bottom 인데 시스템 바가 $limit 부터 시작한다 — '
+    reason:
+        '$which 버튼의 아래 경계가 $bottom 인데 시스템 바가 $limit 부터 시작한다 — '
         '${(bottom - limit).toStringAsFixed(1)}pt 가린다. '
         '아래 여백이 viewInsets(키보드)만 보고 viewPadding(시스템 바)을 안 봤다',
   );
@@ -63,8 +64,7 @@ void main() {
     await initializeDateFormatting('ko_KR', null);
   });
 
-  testWidgets('일정 추가 시트 — 키보드가 없어도 버튼이 시스템 바를 비킨다',
-      (tester) async {
+  testWidgets('일정 추가 시트 — 키보드가 없어도 버튼이 시스템 바를 비킨다', (tester) async {
     _applyNavBarOnly(tester);
     addTearDown(tester.view.reset);
 
@@ -91,20 +91,22 @@ void main() {
 
     final sheet = find.byType(EventEditDialog);
     _expectClearsNavBar(
-        tester, find.descendant(of: sheet, matching: find.byType(GoldGradientButton)), '저장');
+      tester,
+      find.descendant(of: sheet, matching: find.byType(GoldGradientButton)),
+      '저장',
+    );
     _expectClearsNavBar(
-        tester, find.descendant(of: sheet, matching: find.byType(OutlinedButton)), '취소');
+      tester,
+      find.descendant(of: sheet, matching: find.byType(OutlinedButton)),
+      '취소',
+    );
   });
 
-  testWidgets('일정 수정 시트(입력 탭) — 키보드가 없어도 버튼이 시스템 바를 비킨다',
-      (tester) async {
+  testWidgets('일정 수정 시트(입력 탭) — 키보드가 없어도 버튼이 시스템 바를 비킨다', (tester) async {
     _applyNavBarOnly(tester);
     addTearDown(tester.view.reset);
 
-    const schedule = Schedule(
-      title: '학부모 총회 안내장',
-      scheduledDate: '2026-08-06',
-    );
+    const schedule = Schedule(title: '학부모 총회 안내장', scheduledDate: '2026-08-06');
 
     await tester.pumpWidget(
       ProviderScope(
@@ -126,8 +128,14 @@ void main() {
     // 하네스의 'open'도 ElevatedButton이라 시트 안으로 좁힌다.
     final sheet = find.byType(ScheduleEditSheet);
     _expectClearsNavBar(
-        tester, find.descendant(of: sheet, matching: find.byType(ElevatedButton)), '저장');
+      tester,
+      find.descendant(of: sheet, matching: find.byType(ElevatedButton)),
+      '저장',
+    );
     _expectClearsNavBar(
-        tester, find.descendant(of: sheet, matching: find.byType(OutlinedButton)), '취소');
+      tester,
+      find.descendant(of: sheet, matching: find.byType(OutlinedButton)),
+      '취소',
+    );
   });
 }

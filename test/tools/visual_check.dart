@@ -123,11 +123,11 @@ BusArrival _a(String id, String no, int min) =>
     BusArrival.fromMinutes(routeId: id, routeNo: no, arrMin: min);
 
 BusCardView _view(BusCardState state, {int hidden = 0}) => BusCardView(
-      state: state,
-      visible: [_a('A', '82-1', 2), _a('B', '92', 8), _a('C', '720', 14)],
-      hiddenCount: hidden,
-      fetchedAt: DateTime(2026, 7, 29, 7, 32),
-    );
+  state: state,
+  visible: [_a('A', '82-1', 2), _a('B', '92', 8), _a('C', '720', 14)],
+  hiddenCount: hidden,
+  fetchedAt: DateTime(2026, 7, 29, 7, 32),
+);
 
 // ── ③ 앱 전역 훑기용 픽스처 ───────────────────────────────────────────────
 //
@@ -193,20 +193,20 @@ Schedule _sweepSchedule({
 /// TAGO 대역 — 도시 목록과 정류장 검색에 **긴 이름**을 돌려준다.
 http.Response _sweepTago(http.Request request) {
   Map<String, Object?> envelope(Object? inner) => {
-        'response': {
-          'header': {'resultCode': '00', 'resultMsg': 'NORMAL SERVICE.'},
-          'body': {
-            'items': inner == null ? '' : {'item': inner},
-            'numOfRows': 50,
-            'pageNo': 1,
-          },
-        },
-      };
+    'response': {
+      'header': {'resultCode': '00', 'resultMsg': 'NORMAL SERVICE.'},
+      'body': {
+        'items': inner == null ? '' : {'item': inner},
+        'numOfRows': 50,
+        'pageNo': 1,
+      },
+    },
+  };
   http.Response json(Object? inner) => http.Response(
-        jsonEncode(envelope(inner)),
-        200,
-        headers: {'content-type': 'application/json; charset=utf-8'},
-      );
+    jsonEncode(envelope(inner)),
+    200,
+    headers: {'content-type': 'application/json; charset=utf-8'},
+  );
 
   final path = request.url.path;
   if (path.endsWith('getCtyCodeList')) {
@@ -254,17 +254,24 @@ void main() {
       test('$b 대비', () {
         AppColors.applyBrightness(b);
         final surface = _cardSurface();
-        final chipFill =
-            Color.alphaBlend(AppColors.goldFill.withValues(alpha: 0.15), AppColors.background);
+        final chipFill = Color.alphaBlend(
+          AppColors.goldFill.withValues(alpha: 0.15),
+          AppColors.background,
+        );
 
         final pairs = <String, double>{
           'N개 더·기준시각 (sub / 카드 면)': _contrast(AppColors.sub, surface),
           '본문 (ink / 카드 면)': _contrast(AppColors.ink, surface),
           '선택 칩 라벨 (ink / 칩 면)': _contrast(AppColors.ink, chipFill),
-          '선택 칩 테두리 (gold / 배경)': _contrast(AppColors.gold, AppColors.background),
+          '선택 칩 테두리 (gold / 배경)': _contrast(
+            AppColors.gold,
+            AppColors.background,
+          ),
           'stale 기준시각 (inkRed / 카드 면)': _contrast(AppColors.inkRed, surface),
         };
-        pairs.forEach((k, v) => debugPrint('  [$b] $k → ${v.toStringAsFixed(2)}:1'));
+        pairs.forEach(
+          (k, v) => debugPrint('  [$b] $k → ${v.toStringAsFixed(2)}:1'),
+        );
 
         // 작은 글씨가 3:1 미만이면 읽기 어렵다(AA 큰글씨 기준선).
         pairs.forEach((k, v) => expect(v, greaterThan(3.0), reason: '[$b] $k'));
@@ -277,15 +284,21 @@ void main() {
         final near = AppColors.busSignalNear;
         final soon = AppColors.busSignalSoon;
         final far = AppColors.busSignalFar;
-        debugPrint('  [$b] near-soon ${_distance(near, soon).toStringAsFixed(0)} / '
-            'soon-far ${_distance(soon, far).toStringAsFixed(0)} / '
-            'near-far ${_distance(near, far).toStringAsFixed(0)} / '
-            'soon-gold ${_distance(soon, AppColors.gold).toStringAsFixed(0)}');
+        debugPrint(
+          '  [$b] near-soon ${_distance(near, soon).toStringAsFixed(0)} / '
+          'soon-far ${_distance(soon, far).toStringAsFixed(0)} / '
+          'near-far ${_distance(near, far).toStringAsFixed(0)} / '
+          'soon-gold ${_distance(soon, AppColors.gold).toStringAsFixed(0)}',
+        );
         expect(_distance(near, soon), greaterThan(60), reason: '$b 임박·곧');
         expect(_distance(soon, far), greaterThan(60), reason: '$b 곧·여유');
         expect(_distance(near, far), greaterThan(60), reason: '$b 임박·여유');
         // 스펙 §3이 우려한 지점 — 노랑이 골드와 같으면 골드의 의미가 하나 더 늘어난다.
-        expect(_distance(soon, AppColors.gold), greaterThan(40), reason: '$b 곧·골드');
+        expect(
+          _distance(soon, AppColors.gold),
+          greaterThan(40),
+          reason: '$b 곧·골드',
+        );
       }
     });
   });
@@ -300,10 +313,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       AppColors.applyBrightness(Brightness.dark);
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.of(Brightness.dark),
-        home: Scaffold(body: SingleChildScrollView(child: child)),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.of(Brightness.dark),
+          home: Scaffold(body: SingleChildScrollView(child: child)),
+        ),
+      );
       await tester.pumpAndSettle();
     }
 
@@ -335,10 +350,16 @@ void main() {
           expect(e, isNull, reason: '${w.toInt()}pt ${st.name}');
         }
 
-        await pumpAt(tester, w, BusBodyAxis(view: _view(BusCardState.ok, hidden: 2)));
+        await pumpAt(
+          tester,
+          w,
+          BusBodyAxis(view: _view(BusCardState.ok, hidden: 2)),
+        );
         expect(tester.takeException(), isNull, reason: '${w.toInt()}pt 시간 축');
-        debugPrint('  ${w.toInt()}pt 시간 축 높이 '
-            '${tester.getSize(find.byType(BusBodyAxis)).height.toStringAsFixed(1)}pt');
+        debugPrint(
+          '  ${w.toInt()}pt 시간 축 높이 '
+          '${tester.getSize(find.byType(BusBodyAxis)).height.toStringAsFixed(1)}pt',
+        );
 
         await pumpAt(
           tester,
@@ -353,8 +374,10 @@ void main() {
           ),
         );
         expect(tester.takeException(), isNull, reason: '${w.toInt()}pt 도시 칩');
-        debugPrint('  ${w.toInt()}pt 도시 칩 20개 높이 '
-            '${tester.getSize(find.byType(Wrap)).height.toStringAsFixed(1)}pt');
+        debugPrint(
+          '  ${w.toInt()}pt 도시 칩 20개 높이 '
+          '${tester.getSize(find.byType(Wrap)).height.toStringAsFixed(1)}pt',
+        );
       });
     }
 
@@ -364,20 +387,22 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       AppColors.applyBrightness(Brightness.dark);
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.of(Brightness.dark),
-        home: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () => ConfirmDialog.show(
-              context: context,
-              title: SettingsStrings.resetAllConfirmTitle,
-              message: SettingsStrings.resetAllConfirmMessage,
-              confirmLabel: SettingsStrings.resetAllConfirm,
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.of(Brightness.dark),
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => ConfirmDialog.show(
+                context: context,
+                title: SettingsStrings.resetAllConfirmTitle,
+                message: SettingsStrings.resetAllConfirmMessage,
+                confirmLabel: SettingsStrings.resetAllConfirm,
+              ),
+              child: const Text('열기'),
             ),
-            child: const Text('열기'),
           ),
         ),
-      ));
+      );
       await tester.tap(find.text('열기'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -439,10 +464,12 @@ void main() {
       Future<void> Function()? interact,
     }) async {
       setView(tester, width);
-      await tester.pumpWidget(host(
-        scroll ? SingleChildScrollView(child: child) : child,
-        overrides: overrides,
-      ));
+      await tester.pumpWidget(
+        host(
+          scroll ? SingleChildScrollView(child: child) : child,
+          overrides: overrides,
+        ),
+      );
       await tester.pumpAndSettle();
       var error = tester.takeException();
       if (error == null && interact != null) {
@@ -450,7 +477,9 @@ void main() {
         await tester.pumpAndSettle();
         error = tester.takeException();
       }
-      debugPrint('  ${width.toInt()}pt ${label.padRight(30)} → ${error ?? 'OK'}');
+      debugPrint(
+        '  ${width.toInt()}pt ${label.padRight(30)} → ${error ?? 'OK'}',
+      );
       if (error != null) into.add('${width.toInt()}pt · $label → $error');
     }
 
@@ -467,34 +496,44 @@ void main() {
     testWidgets('기본 테스트 폰트는 실측 Pretendard보다 훨씬 넓다', (tester) async {
       const sample = '화면 테마 2026.05.05 (화)';
       const style = TextStyle(fontSize: 15, fontWeight: FontWeight.w600);
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              Text(sample,
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                Text(
+                  sample,
                   key: Key('real'),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                  )),
-              // fontFamily를 비우면 폴백(테스트 폰트)으로 떨어진다.
-              Text(sample, key: Key('fallback'), style: style),
-            ],
+                  ),
+                ),
+                // fontFamily를 비우면 폴백(테스트 폰트)으로 떨어진다.
+                Text(sample, key: Key('fallback'), style: style),
+              ],
+            ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       final real = tester.getSize(find.byKey(const Key('real'))).width;
       final fallback = tester.getSize(find.byKey(const Key('fallback'))).width;
-      debugPrint('  "$sample" 실측=$real 폴백=$fallback '
-          '배율=${(fallback / real).toStringAsFixed(2)}x');
+      debugPrint(
+        '  "$sample" 실측=$real 폴백=$fallback '
+        '배율=${(fallback / real).toStringAsFixed(2)}x',
+      );
 
       // 1.3배만 넘어도 320pt(본문 288)에서는 결론이 뒤집힌다.
-      expect(fallback, greaterThan(real * 1.3),
-          reason: '폴백이 실측과 비슷해졌다면 이 그룹의 FontLoader는 필요 없다 — '
-              '그때 이 테스트를 지운다');
+      expect(
+        fallback,
+        greaterThan(real * 1.3),
+        reason:
+            '폴백이 실측과 비슷해졌다면 이 그룹의 FontLoader는 필요 없다 — '
+            '그때 이 테스트를 지운다',
+      );
     });
 
     // ── 오늘 탭 ──────────────────────────────────────────────────────
@@ -517,12 +556,18 @@ void main() {
           today: _sweepToday,
         );
 
-        await probe(tester, w, 'TodayBody (지난 접힘)', TodayBody(
-          view: view,
-          today: _sweepToday,
-          onToggle: (_) {},
-          onEventTap: (_) {},
-        ), into: problems);
+        await probe(
+          tester,
+          w,
+          'TodayBody (지난 접힘)',
+          TodayBody(
+            view: view,
+            today: _sweepToday,
+            onToggle: (_) {},
+            onEventTap: (_) {},
+          ),
+          into: problems,
+        );
 
         await probe(
           tester,
@@ -535,39 +580,63 @@ void main() {
             onEventTap: (_) {},
           ),
           into: problems,
-          interact: () => tester.tap(find.byKey(const Key('today_overdue_header'))),
+          interact: () =>
+              tester.tap(find.byKey(const Key('today_overdue_header'))),
         );
 
-        await probe(tester, w, 'TodayEventRow (지난·완료·중요)', Column(
-          children: [
-            TodayEventRow(
-              event: _sweepEvent(id: 10, done: true, imported: true),
-              stampSettings: const StampSettings(style: SealStyle.approve),
-              showOverdueDate: true,
-              onToggle: () {},
-              onTap: () {},
-            ),
-            TodayEventRow(
-              event: _sweepEvent(id: 11, important: true, description: _longDesc),
-              onToggle: () {},
-              onTap: () {},
-            ),
-          ],
-        ), into: problems, scroll: true);
-
-        await probe(tester, w, 'TodayProgressRing 149/149',
-            const TodayProgressRing(done: 149, total: 149),
-            into: problems, scroll: true);
-
-        await probe(tester, w, 'CompletionSeal 3종', Row(
-          children: [
-            for (final style in SealStyle.values)
-              CompletionSeal(
-                animation: const AlwaysStoppedAnimation(1),
-                style: style,
+        await probe(
+          tester,
+          w,
+          'TodayEventRow (지난·완료·중요)',
+          Column(
+            children: [
+              TodayEventRow(
+                event: _sweepEvent(id: 10, done: true, imported: true),
+                stampSettings: const StampSettings(style: SealStyle.approve),
+                showOverdueDate: true,
+                onToggle: () {},
+                onTap: () {},
               ),
-          ],
-        ), into: problems, scroll: true);
+              TodayEventRow(
+                event: _sweepEvent(
+                  id: 11,
+                  important: true,
+                  description: _longDesc,
+                ),
+                onToggle: () {},
+                onTap: () {},
+              ),
+            ],
+          ),
+          into: problems,
+          scroll: true,
+        );
+
+        await probe(
+          tester,
+          w,
+          'TodayProgressRing 149/149',
+          const TodayProgressRing(done: 149, total: 149),
+          into: problems,
+          scroll: true,
+        );
+
+        await probe(
+          tester,
+          w,
+          'CompletionSeal 3종',
+          Row(
+            children: [
+              for (final style in SealStyle.values)
+                CompletionSeal(
+                  animation: const AlwaysStoppedAnimation(1),
+                  style: style,
+                ),
+            ],
+          ),
+          into: problems,
+          scroll: true,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -589,47 +658,81 @@ void main() {
           '2026-07-15': [
             _sweepEvent(id: 24, date: DateTime(2026, 7, 15), important: true),
           ],
-          '2026-07-29': [
-            _sweepEvent(id: 25, done: true),
-          ],
+          '2026-07-29': [_sweepEvent(id: 25, done: true)],
         };
 
-        await probe(tester, w, 'CalendarGrid (7월)', SizedBox(
-          height: AppSizes.calendarGridHeight,
-          child: CalendarGrid(
-            year: 2026,
-            month: 7,
-            selectedDate: DateTime(2026, 7, 15),
-            eventsMap: eventsMap,
-            onDateSelected: (_) {},
+        await probe(
+          tester,
+          w,
+          'CalendarGrid (7월)',
+          SizedBox(
+            height: AppSizes.calendarGridHeight,
+            child: CalendarGrid(
+              year: 2026,
+              month: 7,
+              selectedDate: DateTime(2026, 7, 15),
+              eventsMap: eventsMap,
+              onDateSelected: (_) {},
+            ),
           ),
-        ), into: problems);
+          into: problems,
+        );
 
         // 목록 한 행에 종류 배지 + ★ + 제목 + `작년` 배지 + 완료 체크가 모인다.
         final rows = [
-          _sweepEvent(id: 30, kind: EntryKind.event, important: true, imported: true),
-          _sweepEvent(id: 31, done: true, imported: true, description: _longDesc),
-          _sweepEvent(id: 32, kind: EntryKind.event, imported: true, description: _longDesc),
+          _sweepEvent(
+            id: 30,
+            kind: EntryKind.event,
+            important: true,
+            imported: true,
+          ),
+          _sweepEvent(
+            id: 31,
+            done: true,
+            imported: true,
+            description: _longDesc,
+          ),
+          _sweepEvent(
+            id: 32,
+            kind: EntryKind.event,
+            imported: true,
+            description: _longDesc,
+          ),
         ];
 
-        await probe(tester, w, 'EventListSection (배지 총출동)', EventListSection(
-          selectedDate: _sweepToday,
-          events: rows,
-          onEventTap: (_) {},
-          onEventSaveToGoogle: (_) {},
-          onEventToggleCompleted: (_) {},
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'EventListSection (배지 총출동)',
+          EventListSection(
+            selectedDate: _sweepToday,
+            events: rows,
+            onEventTap: (_) {},
+            onEventSaveToGoogle: (_) {},
+            onEventToggleCompleted: (_) {},
+          ),
+          into: problems,
+          scroll: true,
+        );
 
-        await probe(tester, w, 'MonthEventList', MonthEventList(
-          groupedEntries: [
-            MapEntry('2026-07-29', rows),
-            MapEntry('2026-07-30', [_sweepEvent(id: 33, date: DateTime(2026, 7, 30))]),
-          ],
-          selectedDate: _sweepToday,
-          onEventTap: (_) {},
-          onEventSaveToGoogle: (_) {},
-          onEventToggleCompleted: (_) {},
-        ), into: problems);
+        await probe(
+          tester,
+          w,
+          'MonthEventList',
+          MonthEventList(
+            groupedEntries: [
+              MapEntry('2026-07-29', rows),
+              MapEntry('2026-07-30', [
+                _sweepEvent(id: 33, date: DateTime(2026, 7, 30)),
+              ]),
+            ],
+            selectedDate: _sweepToday,
+            onEventTap: (_) {},
+            onEventSaveToGoogle: (_) {},
+            onEventToggleCompleted: (_) {},
+          ),
+          into: problems,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -640,18 +743,34 @@ void main() {
       testWidgets('${w.toInt()}pt — 시트', (tester) async {
         final problems = <String>[];
 
-        await probe(tester, w, 'EventEditDialog (수정·연도 칩)', EventEditDialog(
-          initialDate: _sweepToday,
-          event: _sweepEvent(id: 40, important: true, description: _longDesc),
-        ), into: problems);
+        await probe(
+          tester,
+          w,
+          'EventEditDialog (수정·연도 칩)',
+          EventEditDialog(
+            initialDate: _sweepToday,
+            event: _sweepEvent(id: 40, important: true, description: _longDesc),
+          ),
+          into: problems,
+        );
 
-        await probe(tester, w, 'EventEditDialog (신규)', EventEditDialog(
-          initialDate: _sweepToday,
-        ), into: problems);
+        await probe(
+          tester,
+          w,
+          'EventEditDialog (신규)',
+          EventEditDialog(initialDate: _sweepToday),
+          into: problems,
+        );
 
-        await probe(tester, w, 'ScheduleEditSheet', ScheduleEditSheet(
-          schedule: _sweepSchedule(title: _longTitle, date: '2026-07-29'),
-        ), into: problems);
+        await probe(
+          tester,
+          w,
+          'ScheduleEditSheet',
+          ScheduleEditSheet(
+            schedule: _sweepSchedule(title: _longTitle, date: '2026-07-29'),
+          ),
+          into: problems,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -662,16 +781,30 @@ void main() {
       testWidgets('${w.toInt()}pt — 설정 탭', (tester) async {
         final problems = <String>[];
 
-        await probe(tester, w, 'ThemeModeTile', const SettingsSection(
-          title: SettingsStrings.appearanceSection,
-          child: ThemeModeTile(),
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'ThemeModeTile',
+          const SettingsSection(
+            title: SettingsStrings.appearanceSection,
+            child: ThemeModeTile(),
+          ),
+          into: problems,
+          scroll: true,
+        );
 
-        await probe(tester, w, 'StampSettingsTiles', const SettingsSection(
-          title: SettingsStrings.stampSection,
-          subtitle: SettingsStrings.stampDescription,
-          child: StampSettingsTiles(),
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'StampSettingsTiles',
+          const SettingsSection(
+            title: SettingsStrings.stampSection,
+            subtitle: SettingsStrings.stampDescription,
+            child: StampSettingsTiles(),
+          ),
+          into: problems,
+          scroll: true,
+        );
 
         // 정류장 이름이 긴 채로 켜져 있는 상태 — 실사용의 최악.
         const busPrefs = BusSettings(
@@ -692,11 +825,18 @@ void main() {
         SharedPreferences.setMockInitialValues({
           'bus_settings_v1': jsonEncode(busPrefs.toJson()),
         });
-        await probe(tester, w, 'BusSettingsTiles (긴 정류장)', const SettingsSection(
-          title: BusStrings.section,
-          subtitle: BusStrings.sectionDescription,
-          child: BusSettingsTiles(),
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'BusSettingsTiles (긴 정류장)',
+          const SettingsSection(
+            title: BusStrings.section,
+            subtitle: BusStrings.sectionDescription,
+            child: BusSettingsTiles(),
+          ),
+          into: problems,
+          scroll: true,
+        );
         SharedPreferences.setMockInitialValues({});
 
         await probe(
@@ -713,19 +853,26 @@ void main() {
           interact: () => tester.tap(find.text(NotificationStrings.advanced)),
         );
 
-        await probe(tester, w, '내보내기·초기화·AI 공유', const Column(
-          children: [
-            SettingsSection(
-              title: SettingsStrings.exportSection,
-              subtitle: SettingsStrings.exportDescription,
-              child: ExportListTile(),
-            ),
-            SettingsSection(
-              title: SettingsStrings.dataSection,
-              child: ResetListTile(),
-            ),
-          ],
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          '내보내기·초기화·AI 공유',
+          const Column(
+            children: [
+              SettingsSection(
+                title: SettingsStrings.exportSection,
+                subtitle: SettingsStrings.exportDescription,
+                child: ExportListTile(),
+              ),
+              SettingsSection(
+                title: SettingsStrings.dataSection,
+                child: ResetListTile(),
+              ),
+            ],
+          ),
+          into: problems,
+          scroll: true,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -751,31 +898,37 @@ void main() {
 
         await tester.runAsync(() async {
           for (var i = 0; i < 149; i++) {
-            await scheduleRepo.insertConfirmedOrPending(_sweepSchedule(
-              title: '$_longTitle ${i + 1}',
-              date: '2026-${(i % 12 + 1).toString().padLeft(2, '0')}-05',
-              kind: i % 7 == 0 ? EntryKind.event : EntryKind.task,
-              category: i % 3 == 0 ? '학교행사 및 자율활동 운영' : '교육과정 편성·운영',
-            ));
+            await scheduleRepo.insertConfirmedOrPending(
+              _sweepSchedule(
+                title: '$_longTitle ${i + 1}',
+                date: '2026-${(i % 12 + 1).toString().padLeft(2, '0')}-05',
+                kind: i % 7 == 0 ? EntryKind.event : EntryKind.task,
+                category: i % 3 == 0 ? '학교행사 및 자율활동 운영' : '교육과정 편성·운영',
+              ),
+            );
           }
           for (var i = 0; i < 12; i++) {
-            await scheduleRepo.insertConfirmedOrPending(_sweepSchedule(
-              title: '확정된 $_longTitle',
-              date: '2026-03-1${i % 10}',
-              status: ScheduleStatus.confirmed,
-              category: '학교행사 및 자율활동 운영',
-            ));
+            await scheduleRepo.insertConfirmedOrPending(
+              _sweepSchedule(
+                title: '확정된 $_longTitle',
+                date: '2026-03-1${i % 10}',
+                status: ScheduleStatus.confirmed,
+                category: '학교행사 및 자율활동 운영',
+              ),
+            );
           }
         });
 
         setView(tester, w);
-        await tester.pumpWidget(ProviderScope(
-          overrides: overrides,
-          child: MaterialApp(
-            theme: AppTheme.of(Brightness.dark),
-            home: const ScheduleScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: overrides,
+            child: MaterialApp(
+              theme: AppTheme.of(Brightness.dark),
+              home: const ScheduleScreen(),
+            ),
           ),
-        ));
+        );
 
         // DB future는 fake-async에서 끝나지 않는다 — 요약이 붙을 때까지 폴링한다
         // (`schedule_screen_review_test.dart`와 같은 이유·같은 모양).
@@ -792,7 +945,9 @@ void main() {
 
         void record(String label) {
           final error = tester.takeException();
-          debugPrint('  ${w.toInt()}pt ${label.padRight(30)} → ${error ?? 'OK'}');
+          debugPrint(
+            '  ${w.toInt()}pt ${label.padRight(30)} → ${error ?? 'OK'}',
+          );
           if (error != null) problems.add('${w.toInt()}pt · $label → $error');
         }
 
@@ -802,36 +957,50 @@ void main() {
         await tester.pump();
         record('ScheduleScreen (필터 펼침)');
 
-        await probe(tester, w, 'PhotoInputHero', PhotoInputHero(
-          onOpenCsvImport: () {},
-        ), overrides: overrides, into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'PhotoInputHero',
+          PhotoInputHero(onOpenCsvImport: () {}),
+          overrides: overrides,
+          into: problems,
+          scroll: true,
+        );
 
-        await probe(tester, w, 'ScheduleTile (확정·카테고리)', Column(
-          children: [
-            ScheduleTile(
-              schedule: _sweepSchedule(
-                title: _longTitle,
-                date: '2026-07-29',
-                status: ScheduleStatus.confirmed,
-                category: '학교행사 및 자율활동 운영',
+        await probe(
+          tester,
+          w,
+          'ScheduleTile (확정·카테고리)',
+          Column(
+            children: [
+              ScheduleTile(
+                schedule: _sweepSchedule(
+                  title: _longTitle,
+                  date: '2026-07-29',
+                  status: ScheduleStatus.confirmed,
+                  category: '학교행사 및 자율활동 운영',
+                ),
+                onConfirm: () {},
+                onDelete: () {},
+                onTap: () {},
               ),
-              onConfirm: () {},
-              onDelete: () {},
-              onTap: () {},
-            ),
-            ScheduleTile(
-              schedule: _sweepSchedule(
-                title: _longTitle,
-                date: '2026-07-29',
-                kind: EntryKind.event,
-                category: '교육과정 편성·운영',
+              ScheduleTile(
+                schedule: _sweepSchedule(
+                  title: _longTitle,
+                  date: '2026-07-29',
+                  kind: EntryKind.event,
+                  category: '교육과정 편성·운영',
+                ),
+                onConfirm: () {},
+                onDelete: () {},
+                onTap: () {},
               ),
-              onConfirm: () {},
-              onDelete: () {},
-              onTap: () {},
-            ),
-          ],
-        ), overrides: overrides, into: problems, scroll: true);
+            ],
+          ),
+          overrides: overrides,
+          into: problems,
+          scroll: true,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -845,78 +1014,94 @@ void main() {
       testWidgets('${w.toInt()}pt — 나머지 화면', (tester) async {
         final problems = <String>[];
 
-        await probe(tester, w, 'FloatingTabBar 4탭', FloatingTabBar(
-          currentIndex: 0,
-          tabs: const [
-            FloatingTabItem(
-              icon: Icons.today_outlined,
-              activeIcon: Icons.today,
-              label: AppStrings.tabToday,
-            ),
-            FloatingTabItem(
-              icon: Icons.calendar_month_outlined,
-              activeIcon: Icons.calendar_month,
-              label: AppStrings.tabCalendar,
-            ),
-            FloatingTabItem(
-              icon: Icons.edit_note_outlined,
-              activeIcon: Icons.edit_note,
-              label: AppStrings.tabSchedule,
-            ),
-            FloatingTabItem(
-              icon: Icons.settings_outlined,
-              activeIcon: Icons.settings,
-              label: SettingsStrings.title,
-            ),
-          ],
-          onTap: (_) {},
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'FloatingTabBar 4탭',
+          FloatingTabBar(
+            currentIndex: 0,
+            tabs: const [
+              FloatingTabItem(
+                icon: Icons.today_outlined,
+                activeIcon: Icons.today,
+                label: AppStrings.tabToday,
+              ),
+              FloatingTabItem(
+                icon: Icons.calendar_month_outlined,
+                activeIcon: Icons.calendar_month,
+                label: AppStrings.tabCalendar,
+              ),
+              FloatingTabItem(
+                icon: Icons.edit_note_outlined,
+                activeIcon: Icons.edit_note,
+                label: AppStrings.tabSchedule,
+              ),
+              FloatingTabItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: SettingsStrings.title,
+              ),
+            ],
+            onTap: (_) {},
+          ),
+          into: problems,
+          scroll: true,
+        );
 
         // 캘린더 안내 바는 target=none이면 통째로 숨는다 — 숨은 것을 재면 검사가 아니다.
         SharedPreferences.setMockInitialValues({'calendar_target': 'device'});
-        await probe(tester, w, '스와이프 안내 바 2종', const Column(
-          children: [SlideHintBar(), CalendarSlideHintBar()],
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          '스와이프 안내 바 2종',
+          const Column(children: [SlideHintBar(), CalendarSlideHintBar()]),
+          into: problems,
+          scroll: true,
+        );
         SharedPreferences.setMockInitialValues({});
 
-        await probe(tester, w, 'DismissibleBackground 4종', Column(
-          children: [
-            DismissibleBackground(
-              accent: AppColors.inkGreen,
-              icon: Icons.check_circle_outline,
-              label: ScheduleStrings.confirm,
-              alignment: Alignment.centerLeft,
-            ),
-            DismissibleBackground(
-              accent: AppColors.inkRed,
-              icon: Icons.delete_outline,
-              label: ScheduleStrings.delete,
-              alignment: Alignment.centerRight,
-            ),
-            DismissibleBackground(
-              accent: AppColors.inkGreen,
-              icon: Icons.cloud_upload,
-              label: CalendarIntegrationStrings.swipeSaveDevice,
-              alignment: Alignment.centerLeft,
-            ),
-            DismissibleBackground(
-              accent: AppColors.gold,
-              icon: Icons.radio_button_unchecked,
-              label: CalendarStrings.undoComplete,
-              alignment: Alignment.centerRight,
-            ),
-          ],
-        ), into: problems, scroll: true);
+        await probe(
+          tester,
+          w,
+          'DismissibleBackground 4종',
+          Column(
+            children: [
+              DismissibleBackground(
+                accent: AppColors.inkGreen,
+                icon: Icons.check_circle_outline,
+                label: ScheduleStrings.confirm,
+                alignment: Alignment.centerLeft,
+              ),
+              DismissibleBackground(
+                accent: AppColors.inkRed,
+                icon: Icons.delete_outline,
+                label: ScheduleStrings.delete,
+                alignment: Alignment.centerRight,
+              ),
+              DismissibleBackground(
+                accent: AppColors.inkGreen,
+                icon: Icons.cloud_upload,
+                label: CalendarIntegrationStrings.swipeSaveDevice,
+                alignment: Alignment.centerLeft,
+              ),
+              DismissibleBackground(
+                accent: AppColors.gold,
+                icon: Icons.radio_button_unchecked,
+                label: CalendarStrings.undoComplete,
+                alignment: Alignment.centerRight,
+              ),
+            ],
+          ),
+          into: problems,
+          scroll: true,
+        );
 
         await probe(
           tester,
           w,
           'ImportSteps + 안내 펼침',
           const Column(
-            children: [
-              ImportSteps(activeStep: 1),
-              EdufineGuideSection(),
-            ],
+            children: [ImportSteps(activeStep: 1), EdufineGuideSection()],
           ),
           into: problems,
           scroll: true,
@@ -924,8 +1109,13 @@ void main() {
           interact: () => tester.tap(find.byType(ExpansionTile)),
         );
 
-        await probe(tester, w, 'OnboardingScreen', const OnboardingScreen(),
-            into: problems);
+        await probe(
+          tester,
+          w,
+          'OnboardingScreen',
+          const OnboardingScreen(),
+          into: problems,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });
@@ -960,20 +1150,25 @@ void main() {
         });
 
         setView(tester, w);
-        await tester.pumpWidget(ProviderScope(
-          overrides: [
-            scheduleRepositoryProvider.overrideWithValue(scheduleRepo),
-            calendarRepositoryProvider.overrideWithValue(calendarRepo),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.of(Brightness.dark),
-            home: const TrashScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              scheduleRepositoryProvider.overrideWithValue(scheduleRepo),
+              calendarRepositoryProvider.overrideWithValue(calendarRepo),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.of(Brightness.dark),
+              home: const TrashScreen(),
+            ),
           ),
-        ));
+        );
         await tester.runAsync(() async {
-          for (var i = 0;
-              i < 200 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
-              i++) {
+          for (
+            var i = 0;
+            i < 200 &&
+                find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
+            i++
+          ) {
             await Future<void>.delayed(const Duration(milliseconds: 20));
             await tester.pump();
           }
@@ -981,8 +1176,10 @@ void main() {
         await tester.pump();
 
         final error = tester.takeException();
-        debugPrint('  ${w.toInt()}pt ${'TrashScreen (일정3·이벤트3)'.padRight(30)} '
-            '→ ${error ?? 'OK'}');
+        debugPrint(
+          '  ${w.toInt()}pt ${'TrashScreen (일정3·이벤트3)'.padRight(30)} '
+          '→ ${error ?? 'OK'}',
+        );
         if (error != null) {
           problems.add('${w.toInt()}pt · TrashScreen → $error');
         }
@@ -996,10 +1193,12 @@ void main() {
       testWidgets('${w.toInt()}pt — 정류장 검색', (tester) async {
         final problems = <String>[];
         final overrides = [
-          busApiClientProvider.overrideWithValue(BusApiClient(
-            client: MockClient((request) async => _sweepTago(request)),
-            serviceKey: 'TESTKEY',
-          )),
+          busApiClientProvider.overrideWithValue(
+            BusApiClient(
+              client: MockClient((request) async => _sweepTago(request)),
+              serviceKey: 'TESTKEY',
+            ),
+          ),
         ];
 
         await probe(
@@ -1018,40 +1217,56 @@ void main() {
           },
         );
 
-        await probe(tester, w, 'BusStopConfirmSheet', BusStopConfirmSheet(
-          stop: const BusStop(
-            nodeId: 'GGB201000156',
-            nodeNm: _longStop,
-            nodeNo: 2251,
-            cityCode: 31010,
+        await probe(
+          tester,
+          w,
+          'BusStopConfirmSheet',
+          BusStopConfirmSheet(
+            stop: const BusStop(
+              nodeId: 'GGB201000156',
+              nodeNm: _longStop,
+              nodeNo: 2251,
+              cityCode: 31010,
+            ),
+            // 행선지가 붙은 뒤로 이 행이 가장 넓다 — 실측에서 가져온 긴 행선지를
+            // 쓴다(`정금마을.방배경찰서(중)`). 마지막 노선은 행선지가 있고 도착
+            // 정보가 없는 조합이라, 부제만 있고 우측이 빈 행의 폭도 함께 잰다.
+            routes: const [
+              BusRoute(
+                routeId: 'R1',
+                routeNo: '82-1',
+                destName: '정금마을.방배경찰서(중)',
+              ),
+              BusRoute(
+                routeId: 'R2',
+                routeNo: '720-1',
+                destName: '부곡공영차고지(미정차)',
+              ),
+              BusRoute(routeId: 'R3', routeNo: '1006-1', destName: '금정역'),
+              BusRoute(routeId: 'R4', routeNo: '5623', destName: '여의도환승센터'),
+            ],
+            arrivals: [
+              BusArrival.fromMinutes(routeId: 'R1', routeNo: '82-1', arrMin: 2),
+              BusArrival.fromMinutes(
+                routeId: 'R2',
+                routeNo: '720-1',
+                arrMin: 8,
+              ),
+              BusArrival.fromMinutes(
+                routeId: 'R3',
+                routeNo: '1006-1',
+                arrMin: 0,
+              ),
+            ],
+            state: BusCardState.ok,
+            slot: CommuteDirection.toHome,
+            // 같은 테스트 안에서 override 개수를 바꾸면 riverpod이 assert로 죽는다
+            // (결함이 아니라 픽스처의 함정) — 두 probe에 같은 목록을 넘긴다.
           ),
-          // 행선지가 붙은 뒤로 이 행이 가장 넓다 — 실측에서 가져온 긴 행선지를
-          // 쓴다(`정금마을.방배경찰서(중)`). 마지막 노선은 행선지가 있고 도착
-          // 정보가 없는 조합이라, 부제만 있고 우측이 빈 행의 폭도 함께 잰다.
-          routes: const [
-            BusRoute(
-              routeId: 'R1',
-              routeNo: '82-1',
-              destName: '정금마을.방배경찰서(중)',
-            ),
-            BusRoute(
-              routeId: 'R2',
-              routeNo: '720-1',
-              destName: '부곡공영차고지(미정차)',
-            ),
-            BusRoute(routeId: 'R3', routeNo: '1006-1', destName: '금정역'),
-            BusRoute(routeId: 'R4', routeNo: '5623', destName: '여의도환승센터'),
-          ],
-          arrivals: [
-            BusArrival.fromMinutes(routeId: 'R1', routeNo: '82-1', arrMin: 2),
-            BusArrival.fromMinutes(routeId: 'R2', routeNo: '720-1', arrMin: 8),
-            BusArrival.fromMinutes(routeId: 'R3', routeNo: '1006-1', arrMin: 0),
-          ],
-          state: BusCardState.ok,
-          slot: CommuteDirection.toHome,
-          // 같은 테스트 안에서 override 개수를 바꾸면 riverpod이 assert로 죽는다
-          // (결함이 아니라 픽스처의 함정) — 두 probe에 같은 목록을 넘긴다.
-        ), overrides: overrides, into: problems, scroll: true);
+          overrides: overrides,
+          into: problems,
+          scroll: true,
+        );
 
         expect(problems, isEmpty, reason: problems.join('\n'));
       });

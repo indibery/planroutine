@@ -124,8 +124,9 @@ void main() {
       await repo.createBulkFromImported([
         (importedId: id1, date: DateTime(2026, 6, 6)),
       ]);
-      final sched =
-          (await repo.getSchedules()).firstWhere((s) => s.title == 'D');
+      final sched = (await repo.getSchedules()).firstWhere(
+        (s) => s.title == 'D',
+      );
       await repo.updateStatus(sched.id!, ScheduleStatus.confirmed);
 
       // 재임포트
@@ -135,8 +136,9 @@ void main() {
       ]);
       expect(second.created, 0);
 
-      final ds =
-          (await repo.getSchedules()).where((s) => s.title == 'D').toList();
+      final ds = (await repo.getSchedules())
+          .where((s) => s.title == 'D')
+          .toList();
       expect(ds.length, 1, reason: '확정+대기 중복 없음');
       expect(ds.first.status, ScheduleStatus.confirmed, reason: '확정본 유지');
     });
@@ -190,11 +192,11 @@ void main() {
       );
       await repo.updateStatus(scheduleId, ScheduleStatus.confirmed);
 
-      final confirmed =
-          await repo.getSchedules(status: ScheduleStatus.confirmed);
+      final confirmed = await repo.getSchedules(
+        status: ScheduleStatus.confirmed,
+      );
       expect(confirmed.length, 1);
-      final pending =
-          await repo.getSchedules(status: ScheduleStatus.pending);
+      final pending = await repo.getSchedules(status: ScheduleStatus.pending);
       expect(pending, isEmpty);
     });
 
@@ -277,8 +279,9 @@ void main() {
 
       await repo.confirmAllPending();
 
-      final confirmed =
-          await repo.getSchedules(status: ScheduleStatus.confirmed);
+      final confirmed = await repo.getSchedules(
+        status: ScheduleStatus.confirmed,
+      );
       expect(confirmed.length, 2);
     });
 
@@ -325,8 +328,7 @@ void main() {
       expect(all.length, 2);
     });
 
-    test('deleteAllPending은 pending 전체를 휴지통으로(soft-delete), 확정은 유지',
-        () async {
+    test('deleteAllPending은 pending 전체를 휴지통으로(soft-delete), 확정은 유지', () async {
       final id1 = await seedImportedSchedule(title: 'A');
       final id2 = await seedImportedSchedule(title: 'B');
       final id3 = await seedImportedSchedule(title: 'C');
@@ -389,10 +391,14 @@ void main() {
       final id2 = await seedImportedSchedule(title: 'A2', category: '일과운영관리');
       final id3 = await seedImportedSchedule(title: 'A3', category: '일과운영관리');
       final id4 = await seedImportedSchedule(title: 'B1', category: '학생학적관리');
-      final id5 =
-          await seedImportedSchedule(title: 'C1', category: '교육과정계획수립운영');
-      final id6 =
-          await seedImportedSchedule(title: 'C2', category: '교육과정계획수립운영');
+      final id5 = await seedImportedSchedule(
+        title: 'C1',
+        category: '교육과정계획수립운영',
+      );
+      final id6 = await seedImportedSchedule(
+        title: 'C2',
+        category: '교육과정계획수립운영',
+      );
       await repo.createFromImported(id1, DateTime(2026, 1, 1));
       await repo.createFromImported(id2, DateTime(2026, 1, 2));
       await repo.createFromImported(id3, DateTime(2026, 1, 3));
@@ -401,11 +407,7 @@ void main() {
       await repo.createFromImported(id6, DateTime(2026, 3, 2));
 
       final categories = await repo.getDistinctCategories();
-      expect(categories, [
-        '일과운영관리',
-        '교육과정계획수립운영',
-        '학생학적관리',
-      ]);
+      expect(categories, ['일과운영관리', '교육과정계획수립운영', '학생학적관리']);
     });
 
     test('NULL/빈 문자열 카테고리는 제외', () async {

@@ -9,19 +9,21 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_body_axis.dart
 import 'package:planroutine/features/bus/presentation/widgets/bus_body_text.dart';
 
 BusCardView _view(List<BusArrival> items) => BusCardView(
-      state: BusCardState.ok,
-      visible: items,
-      hiddenCount: 0,
-      fetchedAt: DateTime(2026, 7, 30, 8),
-    );
+  state: BusCardState.ok,
+  visible: items,
+  hiddenCount: 0,
+  fetchedAt: DateTime(2026, 7, 30, 8),
+);
 
 BusArrival _a(String id, int sec, {int? sec2}) =>
     BusArrival(routeId: id, routeNo: id, arrSec: sec, arrSec2: sec2);
 
 Future<void> _pump(WidgetTester tester, Widget body) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(body: SizedBox(width: 320, child: body)),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(body: SizedBox(width: 320, child: body)),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -97,16 +99,24 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text(BusStrings.nextBus(14)), findsNothing,
-          reason: '점이 위치로 말하므로 글자 줄은 뜨지 않는다');
+      expect(
+        find.text(BusStrings.nextBus(14)),
+        findsNothing,
+        reason: '점이 위치로 말하므로 글자 줄은 뜨지 않는다',
+      );
     });
 
     testWidgets('시간 축 — 다음 점은 1차보다 오른쪽에 선다', (tester) async {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
 
-      final first =
-          tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('A'))).center.dx;
-      final next = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('A_next'))).center.dx;
+      final first = tester
+          .getRect(find.byKey(BusBodyAxis.dotKeyFor('A')))
+          .center
+          .dx;
+      final next = tester
+          .getRect(find.byKey(BusBodyAxis.dotKeyFor('A_next')))
+          .center
+          .dx;
       expect(next, greaterThan(first));
     });
 

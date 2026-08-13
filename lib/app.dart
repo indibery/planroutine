@@ -56,7 +56,9 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
 
     // Cold-start로 열린 경우 native가 버퍼에 담아둔 경로를 한 번 꺼낸다
     try {
-      final initial = await _sharedFileChannel.invokeMethod<String>('getPending');
+      final initial = await _sharedFileChannel.invokeMethod<String>(
+        'getPending',
+      );
       if (initial != null && initial.isNotEmpty) {
         _handleSharedFile(initial);
       }
@@ -80,8 +82,7 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
     // 선택된 테마 모드(기본 시스템) + 기기 밝기 → effective brightness.
     // 팔레트가 전역 단일이라 MaterialApp에 theme 하나만 주고, effective에 맞춰
     // AppColors 팔레트를 동기화한다. 시스템 모드는 기기 밝기 변경 시 rebuild로 반영.
-    final mode =
-        ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
+    final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
     final effective = switch (mode) {
       ThemeMode.light => Brightness.light,
@@ -113,9 +114,7 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('ko', 'KR'),
-        ],
+        supportedLocales: const [Locale('ko', 'KR')],
         locale: const Locale('ko', 'KR'),
       ),
     );

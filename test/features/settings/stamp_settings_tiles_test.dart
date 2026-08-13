@@ -67,7 +67,9 @@ void main() {
 
       await tester.tap(find.byKey(StampSettingsTiles.styleTileKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(StampStyleSheet.optionKey(SealStyle.approve)));
+      await tester.tap(
+        find.byKey(StampStyleSheet.optionKey(SealStyle.approve)),
+      );
       await tester.pumpAndSettle();
 
       expect(current(container).style, SealStyle.approve);

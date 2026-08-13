@@ -55,10 +55,12 @@ void main() {
       ProviderScope(
         overrides: [
           importRepositoryProvider.overrideWithValue(importRepo),
-          scheduleRepositoryProvider
-              .overrideWithValue(ScheduleRepository(dbHelper: db)),
-          calendarRepositoryProvider
-              .overrideWithValue(CalendarRepository(dbHelper: db)),
+          scheduleRepositoryProvider.overrideWithValue(
+            ScheduleRepository(dbHelper: db),
+          ),
+          calendarRepositoryProvider.overrideWithValue(
+            CalendarRepository(dbHelper: db),
+          ),
         ],
         child: Consumer(
           builder: (context, ref, _) {
@@ -85,17 +87,16 @@ void main() {
         'source_year': 2025,
         'imported_at': DateTime.now().toIso8601String(),
       });
-      await container.read(importStateProvider.notifier).registerAllAsSchedules(
-        [
-          ImportedSchedule(
-            id: id,
-            title: '학급편성 결과 제출',
-            registrationDate: '2025-03-02',
-            category: '학생학적',
-          ),
-        ],
-        2025,
-      );
+      await container
+          .read(importStateProvider.notifier)
+          .registerAllAsSchedules([
+            ImportedSchedule(
+              id: id,
+              title: '학급편성 결과 제출',
+              registrationDate: '2025-03-02',
+              category: '학생학적',
+            ),
+          ], 2025);
     });
     await tester.pumpAndSettle();
 

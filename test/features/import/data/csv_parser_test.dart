@@ -12,7 +12,8 @@ void main() {
 
   group('CsvParser.parse', () {
     test('한국어 헤더가 있는 유효한 CSV 파싱', () {
-      const csv = '문서번호,결재유형,제목,기안(접수)자,등록일자,과제명,과제카드명,보존기한\n'
+      const csv =
+          '문서번호,결재유형,제목,기안(접수)자,등록일자,과제명,과제카드명,보존기한\n'
           'DOC-001,생산,교육과정 운영 계획,홍길동,2025-03-15,교육과정계획,교육과정 운영,5년\n'
           'DOC-002,생산,교직원 회의록,김교사,2025-03-20,일과운영관리,일과운영,3년';
 
@@ -40,7 +41,8 @@ void main() {
     });
 
     test('제목이 비어있는 행은 건너뛰기', () {
-      const csv = '제목,등록일자\n'
+      const csv =
+          '제목,등록일자\n'
           ',2025-03-15\n'
           '유효한 일정,2025-03-20';
 
@@ -50,7 +52,8 @@ void main() {
     });
 
     test('등록일자가 비어있는 행은 건너뛰기', () {
-      const csv = '제목,등록일자\n'
+      const csv =
+          '제목,등록일자\n'
           '일정 제목,\n'
           '유효한 일정,2025-03-20';
 
@@ -76,7 +79,8 @@ void main() {
     });
 
     test('일부 컬럼이 누락된 CSV 처리', () {
-      const csv = '제목,등록일자\n'
+      const csv =
+          '제목,등록일자\n'
           '간단한 업무,2025-06-01';
 
       final result = parser.parse(csv);
@@ -87,7 +91,8 @@ void main() {
     });
 
     test('여러 행 파싱 후 sourceYear 추출', () {
-      const csv = '제목,등록일자\n'
+      const csv =
+          '제목,등록일자\n'
           '1월 업무,2025-01-10\n'
           '6월 업무,2025-06-15\n'
           '12월 업무,2025-12-31';
@@ -141,7 +146,8 @@ void main() {
 
   group('CsvParser.parseWithMetadata', () {
     test('"상태" 컬럼이 없으면 원본 포맷으로 판정', () {
-      const csv = '제목,등록일자,과제명\n'
+      const csv =
+          '제목,등록일자,과제명\n'
           '회의록,2025-03-20,일과운영관리';
 
       final result = parser.parseWithMetadata(csv);
@@ -153,7 +159,8 @@ void main() {
     });
 
     test('"상태" 컬럼이 있으면 PlanRoutine export 포맷으로 판정', () {
-      const csv = '제목,등록일자,카테고리,설명,상태\n'
+      const csv =
+          '제목,등록일자,카테고리,설명,상태\n'
           '교육과정 운영,2025-03-15,교육과정,1학기 계획,confirmed\n'
           '직원 연수,2025-04-10,일과운영관리,,pending';
 
@@ -165,10 +172,7 @@ void main() {
       expect(result.confirmedTitles, contains('교육과정 운영|2025-03-15'));
       expect(result.confirmedTitles, isNot(contains('직원 연수|2025-04-10')));
       // description 매핑
-      expect(
-        result.descriptionsByTitle['교육과정 운영|2025-03-15'],
-        '1학기 계획',
-      );
+      expect(result.descriptionsByTitle['교육과정 운영|2025-03-15'], '1학기 계획');
       expect(
         result.descriptionsByTitle.containsKey('직원 연수|2025-04-10'),
         isFalse, // 빈 설명은 맵에 추가되지 않음
@@ -176,7 +180,8 @@ void main() {
     });
 
     test('"카테고리" 컬럼이 "과제명" alias로 동작해 category 필드 채움', () {
-      const csv = '제목,등록일자,카테고리,설명,상태\n'
+      const csv =
+          '제목,등록일자,카테고리,설명,상태\n'
           '연수,2025-04-10,조직및통계관리,,confirmed';
 
       final result = parser.parseWithMetadata(csv);
@@ -185,7 +190,8 @@ void main() {
     });
 
     test('"과제명"과 "카테고리"가 동시에 있으면 과제명이 우선', () {
-      const csv = '제목,등록일자,과제명,카테고리\n'
+      const csv =
+          '제목,등록일자,과제명,카테고리\n'
           '연수,2025-04-10,원본값,플랜루틴값';
 
       final result = parser.parseWithMetadata(csv);
@@ -193,19 +199,22 @@ void main() {
       expect(result.schedules.first.category, '원본값');
     });
 
-    test('상태가 "confirmed"가 아닌 값(archived/unknown)은 confirmedTitles에 포함 안 됨',
-        () {
-      const csv = '제목,등록일자,상태\n'
-          '일정A,2025-01-01,confirmed\n'
-          '일정B,2025-01-02,archived\n'
-          '일정C,2025-01-03,\n'
-          '일정D,2025-01-04,pending';
+    test(
+      '상태가 "confirmed"가 아닌 값(archived/unknown)은 confirmedTitles에 포함 안 됨',
+      () {
+        const csv =
+            '제목,등록일자,상태\n'
+            '일정A,2025-01-01,confirmed\n'
+            '일정B,2025-01-02,archived\n'
+            '일정C,2025-01-03,\n'
+            '일정D,2025-01-04,pending';
 
-      final result = parser.parseWithMetadata(csv);
+        final result = parser.parseWithMetadata(csv);
 
-      expect(result.isPlanRoutineFormat, isTrue);
-      expect(result.confirmedTitles, {'일정A|2025-01-01'});
-    });
+        expect(result.isPlanRoutineFormat, isTrue);
+        expect(result.confirmedTitles, {'일정A|2025-01-01'});
+      },
+    );
 
     test('빈 CSV도 안전하게 처리 (isPlanRoutineFormat=false)', () {
       final result = parser.parseWithMetadata('');
@@ -217,7 +226,8 @@ void main() {
 
   group('결재유형 자동 필터', () {
     test('결재유형 컬럼이 있으면 "생산"인 행만 임포트 + 비생산 카운트', () {
-      const csv = '문서번호,결재유형,제목,등록일자,과제명\n'
+      const csv =
+          '문서번호,결재유형,제목,등록일자,과제명\n'
           'A-1,생산,생산 문서1,2025-03-01,일과운영관리\n'
           'A-2,접수,접수 문서1,2025-03-02,일과운영관리\n'
           'A-3,생산,생산 문서2,2025-03-03,교육과정계획수립운영\n'
@@ -226,14 +236,17 @@ void main() {
       final result = parser.parseWithMetadata(csv);
 
       expect(result.schedules.length, 2);
-      expect(result.schedules.map((s) => s.title),
-          containsAll(['생산 문서1', '생산 문서2']));
+      expect(
+        result.schedules.map((s) => s.title),
+        containsAll(['생산 문서1', '생산 문서2']),
+      );
       expect(result.nonProductionSkipped, 2);
     });
 
     test('결재유형 컬럼이 없으면 모두 임포트(PlanRoutine 자체 포맷 호환)', () {
       // 상태 컬럼만 있고 결재유형 없음 — PlanRoutine export 패턴
-      const csv = '제목,등록일자,카테고리,설명,상태\n'
+      const csv =
+          '제목,등록일자,카테고리,설명,상태\n'
           '확정 일정,2026-04-08,일과운영관리,설명1,confirmed\n'
           '대기 일정,2026-04-09,교육과정계획수립운영,설명2,pending\n';
 
@@ -245,7 +258,8 @@ void main() {
     });
 
     test('결재유형 빈 값도 비생산으로 제외', () {
-      const csv = '결재유형,제목,등록일자,과제명\n'
+      const csv =
+          '결재유형,제목,등록일자,과제명\n'
           ',제목없음,2025-03-01,일과운영관리\n'
           '생산,정상,2025-03-02,일과운영관리\n';
 

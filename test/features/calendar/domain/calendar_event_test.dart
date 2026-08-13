@@ -97,10 +97,7 @@ void main() {
       });
 
       test('color가 null이면 기본 색상 반환', () {
-        final event = CalendarEvent(
-          title: '테스트',
-          eventDate: '2026-04-08',
-        );
+        final event = CalendarEvent(title: '테스트', eventDate: '2026-04-08');
 
         expect(event.eventColor, const Color(0xFF4A6FA5));
       });
@@ -123,10 +120,7 @@ void main() {
 
     group('날짜 파싱', () {
       test('eventDateTime 변환', () {
-        final event = CalendarEvent(
-          title: '테스트',
-          eventDate: '2026-04-08',
-        );
+        final event = CalendarEvent(title: '테스트', eventDate: '2026-04-08');
 
         final dt = event.eventDateTime;
         expect(dt.year, 2026);
@@ -148,10 +142,7 @@ void main() {
       });
 
       test('endDateTime 변환 - endDate가 null이면 시작일 반환', () {
-        final event = CalendarEvent(
-          title: '테스트',
-          eventDate: '2026-04-08',
-        );
+        final event = CalendarEvent(title: '테스트', eventDate: '2026-04-08');
 
         final dt = event.endDateTime;
         expect(dt.year, 2026);
@@ -162,10 +153,7 @@ void main() {
 
     group('toMap id 처리', () {
       test('id가 null이면 map에 id 미포함', () {
-        final event = CalendarEvent(
-          title: '새 이벤트',
-          eventDate: '2026-04-08',
-        );
+        final event = CalendarEvent(title: '새 이벤트', eventDate: '2026-04-08');
 
         final map = event.toMap();
         expect(map.containsKey('id'), false);
@@ -248,8 +236,10 @@ void main() {
         1,
       );
       expect(
-        const CalendarEvent(title: 'B', eventDate: '2026-03-02')
-            .toMap()['is_important'],
+        const CalendarEvent(
+          title: 'B',
+          eventDate: '2026-03-02',
+        ).toMap()['is_important'],
         0,
       );
     });

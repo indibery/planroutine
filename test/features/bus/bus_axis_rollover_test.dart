@@ -8,18 +8,23 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_body_axis.dart
 const _axisWidth = 300.0;
 
 BusCardView _view(BusArrival a) => BusCardView(
-      state: BusCardState.ok,
-      visible: [a],
-      hiddenCount: 0,
-      fetchedAt: DateTime(2026, 7, 30, 8),
-    );
+  state: BusCardState.ok,
+  visible: [a],
+  hiddenCount: 0,
+  fetchedAt: DateTime(2026, 7, 30, 8),
+);
 
 Future<void> _pump(WidgetTester tester, BusArrival a) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: SizedBox(width: _axisWidth, child: BusBodyAxis(view: _view(a))),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: _axisWidth,
+          child: BusBodyAxis(view: _view(a)),
+        ),
+      ),
     ),
-  ));
+  );
 }
 
 void main() {
@@ -32,27 +37,33 @@ void main() {
 
     testWidgets('2차였던 차량이 1차가 되면 제자리에 남는다', (tester) async {
       // 앞차 B는 곧 도착, 뒤차 C는 8분 뒤.
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 20,
-        arrSec2: 480,
-        vehicleId: 'B',
-        vehicleId2: 'C',
-      ));
+      await _pump(
+        tester,
+        const BusArrival(
+          routeId: 'R',
+          routeNo: '5623',
+          arrSec: 20,
+          arrSec2: 480,
+          vehicleId: 'B',
+          vehicleId2: 'C',
+        ),
+      );
       await tester.pumpAndSettle();
 
       final before = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('C')));
 
       // 다음 조회 — B는 지나갔고 C가 1차가 됐다. 그 뒤로 D가 새로 잡혔다.
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 470,
-        arrSec2: 1100,
-        vehicleId: 'C',
-        vehicleId2: 'D',
-      ));
+      await _pump(
+        tester,
+        const BusArrival(
+          routeId: 'R',
+          routeNo: '5623',
+          arrSec: 470,
+          arrSec2: 1100,
+          vehicleId: 'C',
+          vehicleId2: 'D',
+        ),
+      );
       await tester.pumpAndSettle();
 
       final after = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('C')));
@@ -65,39 +76,48 @@ void main() {
     });
 
     testWidgets('지나간 차량의 점은 사라진다', (tester) async {
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 20,
-        arrSec2: 480,
-        vehicleId: 'B',
-        vehicleId2: 'C',
-      ));
+      await _pump(
+        tester,
+        const BusArrival(
+          routeId: 'R',
+          routeNo: '5623',
+          arrSec: 20,
+          arrSec2: 480,
+          vehicleId: 'B',
+          vehicleId2: 'C',
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(BusBodyAxis.dotKeyFor('B')), findsOneWidget);
 
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 470,
-        arrSec2: 1100,
-        vehicleId: 'C',
-        vehicleId2: 'D',
-      ));
+      await _pump(
+        tester,
+        const BusArrival(
+          routeId: 'R',
+          routeNo: '5623',
+          arrSec: 470,
+          arrSec2: 1100,
+          vehicleId: 'C',
+          vehicleId2: 'D',
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byKey(BusBodyAxis.dotKeyFor('B')), findsNothing);
     });
 
     testWidgets('새 뒤차는 오른쪽에 생긴다', (tester) async {
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 470,
-        arrSec2: 800,
-        vehicleId: 'C',
-        vehicleId2: 'D',
-      ));
+      await _pump(
+        tester,
+        const BusArrival(
+          routeId: 'R',
+          routeNo: '5623',
+          arrSec: 470,
+          arrSec2: 800,
+          vehicleId: 'C',
+          vehicleId2: 'D',
+        ),
+      );
       await tester.pumpAndSettle();
 
       final first = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('C')));
@@ -108,11 +128,10 @@ void main() {
     testWidgets('차량 식별자가 없으면 노선으로 떨어진다 — TAGO 경로', (tester) async {
       // TAGO 응답에는 차량 ID가 없다. 그때도 점은 그려져야 한다(뒤로 가는 문제는
       // 그 경로에 남는다 — 수도권은 GBIS라 주 경로는 고쳐진다).
-      await _pump(tester, const BusArrival(
-        routeId: 'R',
-        routeNo: '5623',
-        arrSec: 300,
-      ));
+      await _pump(
+        tester,
+        const BusArrival(routeId: 'R', routeNo: '5623', arrSec: 300),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byKey(BusBodyAxis.dotKeyFor('R')), findsOneWidget);

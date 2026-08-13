@@ -36,10 +36,7 @@ Future<Uint8List> _render(double scale) async {
 
   // 불투명 네이비로 전체를 덮는다 — alpha 채널이 남으면 포털 미리보기에서
   // 배경이 흰색으로 비쳐 골드 글씨가 읽히지 않는다.
-  canvas.drawRect(
-    Rect.fromLTWH(0, 0, w, h),
-    Paint()..color = AppColors.navy,
-  );
+  canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = AppColors.navy);
 
   // 상단 1px 골드 라인(탭바와 같은 신호). 배율에 비례해 굵어진다.
   canvas.drawRect(
@@ -122,9 +119,11 @@ void main() {
       final n = scale.toInt();
       final file = File('${dir.path}/usecase_banner_${n}x.png');
       file.writeAsBytesSync(bytes);
-      print('Wrote ${bytes.length} bytes '
-          '(${(248 * scale).toInt()}x${(93 * scale).toInt()}) '
-          '→ ${file.absolute.path}');
+      print(
+        'Wrote ${bytes.length} bytes '
+        '(${(248 * scale).toInt()}x${(93 * scale).toInt()}) '
+        '→ ${file.absolute.path}',
+      );
     }
   });
 }

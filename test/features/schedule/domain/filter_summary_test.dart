@@ -29,7 +29,10 @@ void main() {
     });
 
     test('확정됨 뷰는 확정 건수를 말한다', () {
-      expect(summary(status: ScheduleStatus.confirmed, visible: 128), '확정됨 128');
+      expect(
+        summary(status: ScheduleStatus.confirmed, visible: 128),
+        '확정됨 128',
+      );
     });
 
     test('상태 필터가 없으면 전체 건수를 말한다', () {
@@ -101,8 +104,10 @@ void main() {
     });
 
     test('종류나 카테고리가 걸리면 좁혀진 상태다', () {
-      expect(hasNarrowingFilter(kind: EntryKind.task, categoryLabel: null),
-          isTrue);
+      expect(
+        hasNarrowingFilter(kind: EntryKind.task, categoryLabel: null),
+        isTrue,
+      );
       expect(hasNarrowingFilter(kind: null, categoryLabel: '일과운영'), isTrue);
     });
   });

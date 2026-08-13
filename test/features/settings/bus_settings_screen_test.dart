@@ -11,9 +11,9 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<void> pump(WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(
-      child: MaterialApp(home: BusSettingsScreen()),
-    ));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: BusSettingsScreen())),
+    );
     await tester.pumpAndSettle();
   }
 

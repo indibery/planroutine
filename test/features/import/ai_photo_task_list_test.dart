@@ -44,11 +44,11 @@ const _responses = <String, String>{
 }
 ]''',
   // GPT는 iOS 복사 과정에서 스마트 따옴표로 온다 — 파서가 정규화한다.
-  'gpt': '[{“title”:“종일플랜 동영상 만들기”,“date”:“2026-08-07”},'
+  'gpt':
+      '[{“title”:“종일플랜 동영상 만들기”,“date”:“2026-08-07”},'
       '{“title”:“콩나물 무침 만들기”,“date”:“2026-08-07”},'
       '{“title”:“앱 개발 서적 한권 읽기”,“date”:“2026-08-09”}]',
 };
-
 
 /// 30일 창 검증용 — **경계를 넘나드는 다섯 줄**의 실측 응답.
 ///
@@ -68,7 +68,8 @@ const _windowResponses = <String, String>{
 { "title": "학부모 상담 준비", "date": "2026-08-20" },
 { "title": "교재 주문", "date": "2026-08-08" }
 ]""",
-  'gpt': '[{“title”:“회비 내기”,“date”:“2026-08-05”},'
+  'gpt':
+      '[{“title”:“회비 내기”,“date”:“2026-08-05”},'
       '{“title”:“도서관 책 반납”,“date”:“2026-07-20”},'
       '{“title”:“건강검진 예약”,“date”:“2027-06-10”},'
       '{“title”:“학부모 상담 준비”,“date”:“2026-08-20”},'
@@ -81,20 +82,28 @@ void main() {
       test('$model: 세 줄이 세 건으로 들어온다', () {
         final parsed = parseAiScheduleJson(raw);
 
-        expect(parsed.items.length, 3,
-            reason: '목록의 줄 수만큼 나와야 한다 — 고치기 전에는 1건이었다');
-        expect(parsed.invalidCount, 0,
-            reason: '버려진 건이 있으면 사용자는 모른 채 항목을 잃는다');
+        expect(
+          parsed.items.length,
+          3,
+          reason: '목록의 줄 수만큼 나와야 한다 — 고치기 전에는 1건이었다',
+        );
+        expect(parsed.invalidCount, 0, reason: '버려진 건이 있으면 사용자는 모른 채 항목을 잃는다');
       });
 
       test('$model: 날짜 말이 제목에 남지 않는다', () {
         final parsed = parseAiScheduleJson(raw);
 
         for (final item in parsed.items) {
-          expect(item.title, isNot(contains('오늘')),
-              reason: '`콩나물 무침 만들기 (오늘)`은 내일 보면 틀린 제목이 된다');
-          expect(item.title, isNot(contains('까지')),
-              reason: '`(8월 9일까지)`는 date로 옮겨갔다');
+          expect(
+            item.title,
+            isNot(contains('오늘')),
+            reason: '`콩나물 무침 만들기 (오늘)`은 내일 보면 틀린 제목이 된다',
+          );
+          expect(
+            item.title,
+            isNot(contains('까지')),
+            reason: '`(8월 9일까지)`는 date로 옮겨갔다',
+          );
         }
       });
 

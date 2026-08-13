@@ -158,16 +158,22 @@ void main() {
 
         // Flutter의 해상 순서를 그대로 재현한다: 위젯의 `activeThumbColor`가
         // `switchTheme.thumbColor`를 밀어낸다(`switch.dart`의 `_widgetThumbColor`).
-        final thumb = tile.activeThumbColor ??
+        final thumb =
+            tile.activeThumbColor ??
             theme.switchTheme.thumbColor?.resolve(selected);
-        final track = tile.activeTrackColor ??
+        final track =
+            tile.activeTrackColor ??
             theme.switchTheme.trackColor?.resolve(selected);
 
         expect(thumb, isNotNull);
         expect(track, isNotNull);
-        expect(thumb, isNot(track),
-            reason: '썸과 트랙이 같은 색이면 켠 상태가 썸 없는 단색 알약이 된다 — '
-                'M3 스위치는 selected 그림자·외곽선이 없어 형태 단서도 없다');
+        expect(
+          thumb,
+          isNot(track),
+          reason:
+              '썸과 트랙이 같은 색이면 켠 상태가 썸 없는 단색 알약이 된다 — '
+              'M3 스위치는 selected 그림자·외곽선이 없어 형태 단서도 없다',
+        );
       });
     }
   });

@@ -145,8 +145,8 @@ class _HintRow extends StatelessWidget {
 /// prefKey별 독립적인 숨김 상태 — family 로 prefKey마다 notifier 1개.
 final slideHintVisibleProviderFamily =
     AsyncNotifierProvider.family<SlideHintNotifier, bool, String>(
-  SlideHintNotifier.new,
-);
+      SlideHintNotifier.new,
+    );
 
 class SlideHintNotifier extends FamilyAsyncNotifier<bool, String> {
   @override

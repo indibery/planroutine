@@ -87,8 +87,7 @@ void main() {
       expect(result!.kind, EntryKind.event);
     });
 
-    testWidgets('기존 행사를 열면 행사가 선택돼 있고 저장해도 유지된다',
-        (tester) async {
+    testWidgets('기존 행사를 열면 행사가 선택돼 있고 저장해도 유지된다', (tester) async {
       final result = await openAndSave(
         tester,
         event: const CalendarEvent(

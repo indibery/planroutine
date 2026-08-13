@@ -25,7 +25,9 @@ void main() {
 
   testWidgets('업무 행에는 업무 배지가 붙는다', (tester) async {
     await tester.pumpWidget(
-      host(const Schedule(id: 1, title: '학급편성 결과 제출', scheduledDate: '2026-03-02')),
+      host(
+        const Schedule(id: 1, title: '학급편성 결과 제출', scheduledDate: '2026-03-02'),
+      ),
     );
 
     expect(find.text(EntryKind.task.label), findsOneWidget);
@@ -34,12 +36,14 @@ void main() {
 
   testWidgets('행사 행에는 행사 배지가 붙는다', (tester) async {
     await tester.pumpWidget(
-      host(const Schedule(
-        id: 2,
-        title: '과학의 달 행사',
-        scheduledDate: '2026-04-10',
-        kind: EntryKind.event,
-      )),
+      host(
+        const Schedule(
+          id: 2,
+          title: '과학의 달 행사',
+          scheduledDate: '2026-04-10',
+          kind: EntryKind.event,
+        ),
+      ),
     );
 
     expect(find.text(EntryKind.event.label), findsOneWidget);
@@ -48,13 +52,15 @@ void main() {
 
   testWidgets('확정 배지와 종류 배지가 함께 보인다', (tester) async {
     await tester.pumpWidget(
-      host(const Schedule(
-        id: 3,
-        title: '과학의 달 행사',
-        scheduledDate: '2026-04-10',
-        kind: EntryKind.event,
-        status: ScheduleStatus.confirmed,
-      )),
+      host(
+        const Schedule(
+          id: 3,
+          title: '과학의 달 행사',
+          scheduledDate: '2026-04-10',
+          kind: EntryKind.event,
+          status: ScheduleStatus.confirmed,
+        ),
+      ),
     );
 
     expect(find.text(EntryKind.event.label), findsOneWidget);

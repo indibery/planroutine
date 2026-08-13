@@ -84,8 +84,9 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     super.initState();
     final event = widget.event;
     _titleController = TextEditingController(text: event?.title ?? '');
-    _descriptionController =
-        TextEditingController(text: event?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: event?.description ?? '',
+    );
     _eventDate = event?.eventDateTime ?? widget.initialDate;
     _isImportant = event?.isImportant ?? false;
     _kind = event?.kind ?? EntryKind.task;
@@ -143,8 +144,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                     height: 3,
                     decoration: BoxDecoration(
                       color: AppColors.faint,
-                      borderRadius:
-                          BorderRadius.circular(AppSizes.radiusFull),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     ),
                   ),
                 ),
@@ -194,10 +194,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           width: 40,
           child: _isEditing
               ? IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: AppColors.inkRed,
-                  ),
+                  icon: Icon(Icons.delete_outline, color: AppColors.inkRed),
                   tooltip: AppStrings.delete,
                   onPressed: _onDelete,
                   padding: EdgeInsets.zero,
@@ -251,11 +248,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
             padding: const EdgeInsets.only(top: AppSizes.spacing8),
             child: ActionChip(
               key: const Key('year_shift_chip'),
-              avatar: Icon(
-                Icons.event_repeat,
-                size: 18,
-                color: AppColors.gold,
-              ),
+              avatar: Icon(Icons.event_repeat, size: 18, color: AppColors.gold),
               label: Text(label),
               labelStyle: TextStyle(
                 color: AppColors.ink,
@@ -266,8 +259,9 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               onPressed: () {
                 _titleController.value = TextEditingValue(
                   text: result.title,
-                  selection:
-                      TextSelection.collapsed(offset: result.title.length),
+                  selection: TextSelection.collapsed(
+                    offset: result.title.length,
+                  ),
                 );
                 setState(() => _yearShifted = true);
               },
@@ -319,18 +313,12 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             const Spacer(),
             Text(
               formatter.format(date),
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
             ),
             const SizedBox(width: AppSizes.spacing8),
             Icon(
@@ -344,7 +332,6 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     );
   }
 
-
   /// 성격 카드 — "이 항목이 어떤 성격인가"를 정하는 값들을 한 테두리에 묶는다.
   ///
   /// 종류(업무/행사) + 중요 표시. [EventEditDialog.allowKindChange]가 false면
@@ -355,7 +342,9 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppSizes.radius12),
       ),
-      child: widget.allowKindChange ? _buildKindAndImportantRow() : _buildImportantTile(),
+      child: widget.allowKindChange
+          ? _buildKindAndImportantRow()
+          : _buildImportantTile(),
     );
   }
 
@@ -396,23 +385,27 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
                   ),
                 ),
                 // 채움은 goldFill + onGold — 라이트에서 gold(딥골드) 채움은 대비가 낮다.
-                foregroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? AppColors.onGold
-                        : AppColors.sub),
-                backgroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? AppColors.goldFill
-                        : Colors.transparent),
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.onGold
+                      : AppColors.sub,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.goldFill
+                      : Colors.transparent,
+                ),
                 side: WidgetStatePropertyAll(
                   BorderSide(color: AppColors.lineStrong, width: 0.5),
                 ),
               ),
               segments: EntryKind.values
-                  .map((k) => ButtonSegment<EntryKind>(
-                        value: k,
-                        label: Text(k.label),
-                      ))
+                  .map(
+                    (k) => ButtonSegment<EntryKind>(
+                      value: k,
+                      label: Text(k.label),
+                    ),
+                  )
                   .toList(),
               selected: {_kind},
               onSelectionChanged: (s) => setState(() => _kind = s.first),
@@ -491,28 +484,28 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   Widget _buildImportantTile() {
     return Column(
       children: [
-          SwitchListTile(
-            key: const Key('important_toggle'),
-            value: _isImportant,
-            onChanged: (v) => setState(() => _isImportant = v),
-            // **썸 색을 지정하지 않는다.** `app_theme`의 `switchTheme`이 ON 썸을
-            // navy, 트랙을 gold로 잡아 대비를 맞춰 뒀다. 여기서 `activeThumbColor`를
-            // gold로 주면 트랙과 같은 색이 돼 **ON이 썸 없는 단색 골드 알약**이
-            // 된다(두 팔레트 모두 트랙=`gold`라 다크·라이트 둘 다 재현). 같은 결함을
-            // 버스 표시 스위치(I12)에서 고친 것과 같은 이유로 지운다.
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.spacing16,
-            ),
-            secondary: Icon(Icons.star_rounded, color: AppColors.gold),
-            title: Text(
-              CalendarStrings.importantLabel,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+        SwitchListTile(
+          key: const Key('important_toggle'),
+          value: _isImportant,
+          onChanged: (v) => setState(() => _isImportant = v),
+          // **썸 색을 지정하지 않는다.** `app_theme`의 `switchTheme`이 ON 썸을
+          // navy, 트랙을 gold로 잡아 대비를 맞춰 뒀다. 여기서 `activeThumbColor`를
+          // gold로 주면 트랙과 같은 색이 돼 **ON이 썸 없는 단색 골드 알약**이
+          // 된다(두 팔레트 모두 트랙=`gold`라 다크·라이트 둘 다 재현). 같은 결함을
+          // 버스 표시 스위치(I12)에서 고친 것과 같은 이유로 지운다.
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing16,
+          ),
+          secondary: Icon(Icons.star_rounded, color: AppColors.gold),
+          title: Text(
+            CalendarStrings.importantLabel,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
+        ),
       ],
     );
   }
@@ -558,10 +551,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         ),
         const SizedBox(width: AppSizes.spacing12),
         Expanded(
-          child: GoldGradientButton(
-            label: AppStrings.save,
-            onPressed: _onSave,
-          ),
+          child: GoldGradientButton(label: AppStrings.save, onPressed: _onSave),
         ),
       ],
     );
@@ -609,8 +599,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
       // 종료 날짜 입력 UI는 없지만 endDate는 copyWith가 보존한다. 시작일을
       // 옛 종료일보다 뒤로 옮기면 기간이 거꾸로(end < start) 남아 Google/기기
       // 캘린더 저장이 실패한다 — UI로 고칠 방법도 없으니 모순되면 버린다.
-      final staleEnd = existing.endDate != null &&
-          existing.endDateTime.isBefore(_eventDate);
+      final staleEnd =
+          existing.endDate != null && existing.endDateTime.isBefore(_eventDate);
       return existing.copyWith(
         title: _titleController.text.trim(),
         description: _trimmedDescription(),

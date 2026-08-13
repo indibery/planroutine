@@ -73,17 +73,17 @@ StopSearchView buildStopSearchView({
     counts[name] = (counts[name] ?? 0) + 1;
   }
 
-  final regions = counts.entries
-      .map((e) => RegionCount(e.key, e.value))
-      .toList()
-    // 건수 내림차순, 같으면 이름순 — 같은 결과에서 칩 순서가 흔들리지 않게.
-    ..sort((a, b) {
-      final byCount = b.count.compareTo(a.count);
-      return byCount != 0 ? byCount : a.name.compareTo(b.name);
-    });
+  final regions =
+      counts.entries.map((e) => RegionCount(e.key, e.value)).toList()
+        // 건수 내림차순, 같으면 이름순 — 같은 결과에서 칩 순서가 흔들리지 않게.
+        ..sort((a, b) {
+          final byCount = b.count.compareTo(a.count);
+          return byCount != 0 ? byCount : a.name.compareTo(b.name);
+        });
 
-  final filtered =
-      region == null ? stops : stops.where((s) => s.regionName == region).toList();
+  final filtered = region == null
+      ? stops
+      : stops.where((s) => s.regionName == region).toList();
 
   return StopSearchView(
     visible: filtered.take(stopSearchRenderCap).toList(),

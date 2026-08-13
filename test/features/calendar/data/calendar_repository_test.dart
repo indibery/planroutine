@@ -241,7 +241,9 @@ void main() {
 
     test('CSV 출처(schedule.source_id 있음) 이벤트는 fromImport=true', () async {
       final scheduleId = await insertSchedule(sourceId: 77);
-      await repo.createEvent(buildEvent(title: '가져온 업무', scheduleId: scheduleId));
+      await repo.createEvent(
+        buildEvent(title: '가져온 업무', scheduleId: scheduleId),
+      );
 
       final events = await repo.getEventsByDate(DateTime(2026, 5, 1));
       expect(events.single.fromImport, true);
@@ -249,7 +251,9 @@ void main() {
 
     test('확정 경로지만 CSV 출처가 아니면 fromImport=false', () async {
       final scheduleId = await insertSchedule();
-      await repo.createEvent(buildEvent(title: '사진 AI 일정', scheduleId: scheduleId));
+      await repo.createEvent(
+        buildEvent(title: '사진 AI 일정', scheduleId: scheduleId),
+      );
 
       final events = await repo.getEventsByDate(DateTime(2026, 5, 1));
       expect(events.single.fromImport, false);

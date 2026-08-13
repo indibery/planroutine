@@ -8,18 +8,23 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_body_axis.dart
 const _axisWidth = 300.0;
 
 BusCardView _viewOf(List<BusArrival> items) => BusCardView(
-      state: BusCardState.ok,
-      visible: items,
-      hiddenCount: 0,
-      fetchedAt: DateTime(2026, 7, 30, 8, 1),
-    );
+  state: BusCardState.ok,
+  visible: items,
+  hiddenCount: 0,
+  fetchedAt: DateTime(2026, 7, 30, 8, 1),
+);
 
 Future<void> _pump(WidgetTester tester, BusCardView view) async {
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: SizedBox(width: _axisWidth, child: BusBodyAxis(view: view)),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: _axisWidth,
+          child: BusBodyAxis(view: view),
+        ),
+      ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 
@@ -64,10 +69,13 @@ void main() {
       // `AnimatedPositioned`가 프레임 사이에 같은 점을 잇는 근거다. 키가 없으면
       // Flutter가 Stack 자식을 순서로 매칭해, 정렬이 바뀔 때 A의 점이 B 자리로
       // 미끄러진다(색까지 함께 건너간다).
-      await _pump(tester, _viewOf([
-        BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 359),
-        BusArrival(routeId: 'R2', routeNo: '541', arrSec: 620),
-      ]));
+      await _pump(
+        tester,
+        _viewOf([
+          BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 359),
+          BusArrival(routeId: 'R2', routeNo: '541', arrSec: 620),
+        ]),
+      );
 
       expect(find.byKey(BusBodyAxis.dotKeyFor('R1')), findsOneWidget);
       expect(find.byKey(BusBodyAxis.dotKeyFor('R2')), findsOneWidget);
@@ -76,15 +84,23 @@ void main() {
     });
 
     testWidgets('초가 줄면 점이 실제로 왼쪽으로 이동한다', (tester) async {
-      await _pump(tester, _viewOf([
-        BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 600),
-      ]));
-      final before = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R1'))).center.dx;
+      await _pump(
+        tester,
+        _viewOf([BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 600)]),
+      );
+      final before = tester
+          .getRect(find.byKey(BusBodyAxis.dotKeyFor('R1')))
+          .center
+          .dx;
 
-      await _pump(tester, _viewOf([
-        BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 540),
-      ]));
-      final after = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R1'))).center.dx;
+      await _pump(
+        tester,
+        _viewOf([BusArrival(routeId: 'R1', routeNo: '5623', arrSec: 540)]),
+      );
+      final after = tester
+          .getRect(find.byKey(BusBodyAxis.dotKeyFor('R1')))
+          .center
+          .dx;
 
       expect(after, lessThan(before));
     });

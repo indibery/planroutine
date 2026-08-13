@@ -44,19 +44,14 @@ class ScheduleScreen extends ConsumerWidget {
           children: [
             Text('INPUT', style: AppTextStyles.eyebrow),
             const SizedBox(height: 2),
-            Text(
-              ScheduleStrings.title,
-              style: AppTextStyles.heading,
-            ),
+            Text(ScheduleStrings.title, style: AppTextStyles.heading),
           ],
         ),
       ),
       body: Column(
         children: [
           // 주 경로 = 사진 AI. 작년 업무 CSV는 히어로 안의 보조 한 줄.
-          PhotoInputHero(
-            onOpenCsvImport: () => context.push(AppRoutes.import),
-          ),
+          PhotoInputHero(onOpenCsvImport: () => context.push(AppRoutes.import)),
           const Divider(height: 1),
           // 스와이프 안내는 스와이프할 목록이 있을 때만
           if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
@@ -75,9 +70,7 @@ class ScheduleScreen extends ConsumerWidget {
               data: (schedules) => schedules.isEmpty
                   ? _buildEmptyState(ref)
                   : _buildScheduleList(context, ref, schedules),
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -112,8 +105,9 @@ class ScheduleScreen extends ConsumerWidget {
     AsyncValue<List<Schedule>> schedulesAsync,
   ) {
     final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
-    final pending =
-        list.where((s) => s.status == ScheduleStatus.pending).toList();
+    final pending = list
+        .where((s) => s.status == ScheduleStatus.pending)
+        .toList();
     if (pending.isEmpty) return const SizedBox.shrink();
 
     final taskCount = pending.where((s) => s.kind == EntryKind.task).length;
@@ -212,8 +206,9 @@ class ScheduleScreen extends ConsumerWidget {
     AsyncValue<List<Schedule>> schedulesAsync,
   ) {
     final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
-    final pendingCount =
-        list.where((s) => s.status == ScheduleStatus.pending).length;
+    final pendingCount = list
+        .where((s) => s.status == ScheduleStatus.pending)
+        .length;
     if (pendingCount == 0) return null;
     final category = ref.watch(scheduleCategoryFilterProvider);
     final kind = ref.watch(scheduleKindFilterProvider);
@@ -234,8 +229,7 @@ class ScheduleScreen extends ConsumerWidget {
   /// body의 필터 줄 숨김과 _buildEmptyState의 완료 화면 분기가 같은 기준을 쓴다.
   bool _reviewComplete(WidgetRef ref) {
     final status = ref.watch(scheduleStatusFilterProvider);
-    final hasCategoryFilter =
-        ref.watch(scheduleCategoryFilterProvider) != null;
+    final hasCategoryFilter = ref.watch(scheduleCategoryFilterProvider) != null;
     final counts = ref.watch(scheduleCountsProvider).valueOrNull;
     if (counts == null) return false;
     return status == ScheduleStatus.pending &&
@@ -246,8 +240,7 @@ class ScheduleScreen extends ConsumerWidget {
 
   Widget _buildEmptyState(WidgetRef ref) {
     final status = ref.watch(scheduleStatusFilterProvider);
-    final hasCategoryFilter =
-        ref.watch(scheduleCategoryFilterProvider) != null;
+    final hasCategoryFilter = ref.watch(scheduleCategoryFilterProvider) != null;
     final confirmedCount =
         ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
 
@@ -255,22 +248,15 @@ class ScheduleScreen extends ConsumerWidget {
       return _buildReviewDoneState(ref, confirmedCount);
     }
 
-    final hasFilter =
-        status == ScheduleStatus.confirmed || hasCategoryFilter;
+    final hasFilter = status == ScheduleStatus.confirmed || hasCategoryFilter;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.event_note,
-            size: 64,
-            color: AppColors.faint,
-          ),
+          Icon(Icons.event_note, size: 64, color: AppColors.faint),
           const SizedBox(height: AppSizes.spacing16),
           Text(
-            hasFilter
-                ? ScheduleStrings.emptyFiltered
-                : ScheduleStrings.empty,
+            hasFilter ? ScheduleStrings.emptyFiltered : ScheduleStrings.empty,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
@@ -352,12 +338,10 @@ class ScheduleScreen extends ConsumerWidget {
         ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
     final showDoneSummary =
         ref.watch(scheduleStatusFilterProvider) == ScheduleStatus.pending &&
-            confirmedCount > 0;
+        confirmedCount > 0;
 
     return ListView.builder(
-      padding: const EdgeInsets.only(
-        bottom: AppSizes.spacing16,
-      ),
+      padding: const EdgeInsets.only(bottom: AppSizes.spacing16),
       itemCount: sortedKeys.length + (showDoneSummary ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == sortedKeys.length) {
@@ -397,8 +381,7 @@ class ScheduleScreen extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.check_circle,
-                  size: 16, color: AppColors.inkGreen),
+              Icon(Icons.check_circle, size: 16, color: AppColors.inkGreen),
               const SizedBox(width: AppSizes.spacing8),
               Expanded(
                 child: Text(
@@ -410,8 +393,7 @@ class ScheduleScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  size: 16, color: AppColors.faint),
+              Icon(Icons.chevron_right, size: 16, color: AppColors.faint),
             ],
           ),
         ),
@@ -450,10 +432,9 @@ class ScheduleScreen extends ConsumerWidget {
             schedule: schedule,
             onConfirm: () {
               if (schedule.id case final id?) {
-                ref.read(schedulesProvider.notifier).updateStatus(
-                      id,
-                      ScheduleStatus.confirmed,
-                    );
+                ref
+                    .read(schedulesProvider.notifier)
+                    .updateStatus(id, ScheduleStatus.confirmed);
               }
             },
             onDelete: () {
@@ -462,13 +443,15 @@ class ScheduleScreen extends ConsumerWidget {
                 notifier.deleteSchedule(id);
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
-                  ..showSnackBar(SnackBar(
-                    content: const Text(ScheduleStrings.deletedSnack),
-                    action: SnackBarAction(
-                      label: ScheduleStrings.undoAction,
-                      onPressed: () => notifier.restoreSchedule(id),
+                  ..showSnackBar(
+                    SnackBar(
+                      content: const Text(ScheduleStrings.deletedSnack),
+                      action: SnackBarAction(
+                        label: ScheduleStrings.undoAction,
+                        onPressed: () => notifier.restoreSchedule(id),
+                      ),
                     ),
-                  ));
+                  );
               }
             },
             onTap: () => ScheduleEditSheet.show(context, schedule),
@@ -523,9 +506,9 @@ class ScheduleScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: Text(ScheduleStrings.bulkDeletedSnack(pendingCount)),
-      ));
+      ..showSnackBar(
+        SnackBar(content: Text(ScheduleStrings.bulkDeletedSnack(pendingCount))),
+      );
   }
 
   String _extractMonthKey(String dateStr) {

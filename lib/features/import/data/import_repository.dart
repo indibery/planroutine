@@ -4,11 +4,9 @@ import 'csv_parser.dart';
 
 /// 가져오기 기능의 데이터 접근 계층
 class ImportRepository {
-  ImportRepository({
-    DatabaseHelper? databaseHelper,
-    CsvParser? csvParser,
-  })  : _databaseHelper = databaseHelper ?? DatabaseHelper.instance,
-        _csvParser = csvParser ?? const CsvParser();
+  ImportRepository({DatabaseHelper? databaseHelper, CsvParser? csvParser})
+    : _databaseHelper = databaseHelper ?? DatabaseHelper.instance,
+      _csvParser = csvParser ?? const CsvParser();
 
   final DatabaseHelper _databaseHelper;
   final CsvParser _csvParser;
@@ -24,10 +22,7 @@ class ImportRepository {
     final batch = db.batch();
 
     for (final schedule in schedules) {
-      batch.insert(
-        DatabaseHelper.tableImportedSchedules,
-        schedule.toMap(),
-      );
+      batch.insert(DatabaseHelper.tableImportedSchedules, schedule.toMap());
     }
 
     final results = await batch.commit();

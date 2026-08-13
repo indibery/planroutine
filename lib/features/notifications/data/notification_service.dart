@@ -92,13 +92,16 @@ class FlutterLocalNotificationService implements NotificationService {
     // 채널이 없어 "알림이 오지 않나요?" 안내가 빈 화면으로 간다.
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(const AndroidNotificationChannel(
-          kAndroidChannelId,
-          NotificationStrings.channelName,
-          description: NotificationStrings.channelDescription,
-          importance: Importance.high,
-        ));
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            kAndroidChannelId,
+            NotificationStrings.channelName,
+            description: NotificationStrings.channelDescription,
+            importance: Importance.high,
+          ),
+        );
     _initialized = true;
   }
 
@@ -110,16 +113,20 @@ class FlutterLocalNotificationService implements NotificationService {
     //
     // 플러그인 API 이름은 `requestNotificationsPermission()` — **복수형**이다.
     // 우리 추상 메서드 이름(`requestPermission`)과 달라 헷갈리기 쉽다.
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       // API 33+는 POST_NOTIFICATIONS 다이얼로그, 그 아래는 현재 상태를 답한다
       // (no-op이 아니다).
       return await android.requestNotificationsPermission() ?? false;
     }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     final granted = await ios?.requestPermissions(
       alert: true,
       badge: true,
@@ -164,11 +171,13 @@ class FlutterLocalNotificationService implements NotificationService {
   Future<List<PendingNotificationInfo>> listPending() async {
     final list = await _plugin.pendingNotificationRequests();
     return list
-        .map((p) => PendingNotificationInfo(
-              id: p.id,
-              title: p.title ?? '',
-              body: p.body ?? '',
-            ))
+        .map(
+          (p) => PendingNotificationInfo(
+            id: p.id,
+            title: p.title ?? '',
+            body: p.body ?? '',
+          ),
+        )
         .toList();
   }
 

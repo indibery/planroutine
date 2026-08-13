@@ -21,8 +21,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('완료된 이벤트를 endToStart 스와이프하면 토글 콜백이 호출된다',
-      (tester) async {
+  testWidgets('완료된 이벤트를 endToStart 스와이프하면 토글 콜백이 호출된다', (tester) async {
     final toggled = <int>[];
     // 완료된 상태의 이벤트로 렌더 → 스와이프 → 콜백 확인
     await tester.pumpWidget(
@@ -53,8 +52,7 @@ void main() {
     expect(toggled, [7]);
   });
 
-  testWidgets('같은 이벤트를 연속 두 번 스와이프하면 콜백이 두 번 호출된다',
-      (tester) async {
+  testWidgets('같은 이벤트를 연속 두 번 스와이프하면 콜백이 두 번 호출된다', (tester) async {
     // 통합 테스트 재현: 첫 스와이프로 완료 → 리렌더 → 두 번째 스와이프로 완료 취소.
     final calls = <bool>[]; // 각 스와이프 시점의 isCompleted
     await tester.pumpWidget(
@@ -69,8 +67,7 @@ void main() {
                     id: 7,
                     title: '토글 이벤트',
                     eventDate: '2026-03-02',
-                    completedAt:
-                        isCompleted ? '2026-03-02T10:00:00.000' : null,
+                    completedAt: isCompleted ? '2026-03-02T10:00:00.000' : null,
                   ),
                 ],
                 onEventTap: (_) {},

@@ -14,14 +14,14 @@ import 'package:planroutine/features/settings/presentation/widgets/bus_settings_
 /// (실기기 신고 2026-07-30 — 이 이름이 화면을 깨뜨렸다).
 const _longName = '석수체육공원.자동차학원.원태우지사의거지';
 
-BusStop _stop(String name) => BusStop(
-      nodeId: 'GGB1',
-      nodeNm: name,
-      nodeNo: 1,
-      cityCode: 0,
-    );
+BusStop _stop(String name) =>
+    BusStop(nodeId: 'GGB1', nodeNm: name, nodeNo: 1, cityCode: 0);
 
-Future<void> _pump(WidgetTester tester, String arrivalName, double width) async {
+Future<void> _pump(
+  WidgetTester tester,
+  String arrivalName,
+  double width,
+) async {
   final settings = BusSettings.defaults.copyWith(
     enabled: true,
     departure: _stop('장미아파트'),
@@ -31,16 +31,18 @@ Future<void> _pump(WidgetTester tester, String arrivalName, double width) async 
     'bus_settings_v1': jsonEncode(settings.toJson()),
   });
 
-  await tester.pumpWidget(ProviderScope(
-    child: MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: width,
-          child: const SingleChildScrollView(child: BusSettingsTiles()),
+  await tester.pumpWidget(
+    ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: width,
+            child: const SingleChildScrollView(child: BusSettingsTiles()),
+          ),
         ),
       ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 

@@ -32,13 +32,15 @@ void main() {
 
   Future<void> seed(String title, String date, ScheduleStatus status) async {
     final now = DateTime.now().toIso8601String();
-    await repo.insertConfirmedOrPending(Schedule(
-      title: title,
-      scheduledDate: date,
-      status: status,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await repo.insertConfirmedOrPending(
+      Schedule(
+        title: title,
+        scheduledDate: date,
+        status: status,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   Future<void> pumpScreen(WidgetTester tester) async {
@@ -52,7 +54,8 @@ void main() {
     // "칩에 건수가 붙을 때까지" 조건 대기.
     bool chipHasCount() => find
         .byWidgetPredicate(
-            (w) => w is Text && (w.data?.startsWith('검토 대기 ') ?? false))
+          (w) => w is Text && (w.data?.startsWith('검토 대기 ') ?? false),
+        )
         .evaluate()
         .isNotEmpty;
     await tester.runAsync(() async {
@@ -75,8 +78,10 @@ void main() {
     test('상태 필터 기본값은 검토 대기', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(container.read(scheduleStatusFilterProvider),
-          ScheduleStatus.pending);
+      expect(
+        container.read(scheduleStatusFilterProvider),
+        ScheduleStatus.pending,
+      );
     });
 
     testWidgets('기본 뷰: 대기만 보이고 확정은 안 보임 + 전체 칩 없음 + 칩 건수', (tester) async {
@@ -88,8 +93,11 @@ void main() {
 
       expect(find.text('대기 업무'), findsOneWidget);
       expect(find.text('확정된 업무'), findsNothing);
-      expect(find.text(ScheduleStrings.all), findsNothing,
-          reason: '상태·종류 줄에 전체 칩 없음(카테고리 줄은 카테고리 없어서 숨김)');
+      expect(
+        find.text(ScheduleStrings.all),
+        findsNothing,
+        reason: '상태·종류 줄에 전체 칩 없음(카테고리 줄은 카테고리 없어서 숨김)',
+      );
       expect(find.text('검토 대기 1'), findsOneWidget);
       expect(find.text('확정됨 1'), findsOneWidget);
     });
@@ -103,15 +111,21 @@ void main() {
 
       // 히어로가 위쪽을 차지해 요약이 접힌 아래에 있다 → 리스트를 끌어올린다.
       final summary = find.textContaining('확정 1건은 캘린더에 반영됨');
-      await tester.scrollUntilVisible(summary, 120, scrollable: find.byType(Scrollable).last);
+      await tester.scrollUntilVisible(
+        summary,
+        120,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.pump();
       expect(summary, findsOneWidget);
 
       await tester.tap(summary);
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 && find.text('확정된 업무').evaluate().isEmpty;
-            i++) {
+        for (
+          var i = 0;
+          i < 100 && find.text('확정된 업무').evaluate().isEmpty;
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }
@@ -122,8 +136,7 @@ void main() {
       expect(find.text('대기 업무'), findsNothing);
     });
 
-    testWidgets('AppBar에는 가져오기 아이콘을 두지 않는다 (히어로 보조 링크로 대체)',
-        (tester) async {
+    testWidgets('AppBar에는 가져오기 아이콘을 두지 않는다 (히어로 보조 링크로 대체)', (tester) async {
       await pumpScreen(tester);
       expect(
         find.descendant(
@@ -142,8 +155,11 @@ void main() {
 
       expect(find.text(ScheduleStrings.reviewIdle), findsOneWidget);
       expect(find.text(ScheduleStrings.confirmedTotal(1)), findsOneWidget);
-      expect(find.text(ScheduleStrings.goImport), findsNothing,
-          reason: '넣기는 위 히어로가 맡는다');
+      expect(
+        find.text(ScheduleStrings.goImport),
+        findsNothing,
+        reason: '넣기는 위 히어로가 맡는다',
+      );
     });
 
     testWidgets('모두 확정이면 요약 + 확정됨 보기 링크', (tester) async {
@@ -157,9 +173,11 @@ void main() {
 
       await tester.tap(find.text(ScheduleStrings.viewConfirmed(1)));
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 && find.text('확정된 업무').evaluate().isEmpty;
-            i++) {
+        for (
+          var i = 0;
+          i < 100 && find.text('확정된 업무').evaluate().isEmpty;
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }
@@ -180,10 +198,12 @@ void main() {
       expect(find.byType(ScheduleFilterBar), findsNothing);
       // 상태 칩('검토 대기 N')이 없어야 한다. 요약의 '검토 대기 없음'은 별개.
       expect(
-        find.byWidgetPredicate((w) =>
-            w is Text &&
-            (w.data?.startsWith('검토 대기 ') ?? false) &&
-            w.data != ScheduleStrings.reviewIdle),
+        find.byWidgetPredicate(
+          (w) =>
+              w is Text &&
+              (w.data?.startsWith('검토 대기 ') ?? false) &&
+              w.data != ScheduleStrings.reviewIdle,
+        ),
         findsNothing,
       );
     });
@@ -239,9 +259,11 @@ void main() {
       expect(find.text(ScheduleStrings.bulkDeleteTitle), findsOneWidget);
       await tester.tap(find.widgetWithText(TextButton, ScheduleStrings.delete));
       await tester.runAsync(() async {
-        for (var i = 0;
-            i < 100 && find.text('대기 A').evaluate().isNotEmpty;
-            i++) {
+        for (
+          var i = 0;
+          i < 100 && find.text('대기 A').evaluate().isNotEmpty;
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           await tester.pump();
         }

@@ -20,9 +20,7 @@ import 'package:planroutine/features/settings/presentation/widgets/calendar_inte
 void main() {
   Widget host({required bool supported}) {
     return ProviderScope(
-      overrides: [
-        googleTargetSupportedProvider.overrideWithValue(supported),
-      ],
+      overrides: [googleTargetSupportedProvider.overrideWithValue(supported)],
       child: const MaterialApp(
         home: Scaffold(body: CalendarIntegrationSection()),
       ),
@@ -32,9 +30,9 @@ void main() {
   group('저장값 강등', () {
     test('지원하지 않으면 저장된 google은 none으로 낮춘다', () async {
       SharedPreferences.setMockInitialValues({'calendar_target': 'google'});
-      final container = ProviderContainer(overrides: [
-        googleTargetSupportedProvider.overrideWithValue(false),
-      ]);
+      final container = ProviderContainer(
+        overrides: [googleTargetSupportedProvider.overrideWithValue(false)],
+      );
       addTearDown(container.dispose);
 
       final target = await container.read(calendarTargetProvider.future);
@@ -45,24 +43,28 @@ void main() {
 
     test('지원하면 저장된 google을 그대로 쓴다', () async {
       SharedPreferences.setMockInitialValues({'calendar_target': 'google'});
-      final container = ProviderContainer(overrides: [
-        googleTargetSupportedProvider.overrideWithValue(true),
-      ]);
+      final container = ProviderContainer(
+        overrides: [googleTargetSupportedProvider.overrideWithValue(true)],
+      );
       addTearDown(container.dispose);
 
-      expect(await container.read(calendarTargetProvider.future),
-          CalendarTarget.google);
+      expect(
+        await container.read(calendarTargetProvider.future),
+        CalendarTarget.google,
+      );
     });
 
     test('device는 플랫폼과 무관하게 살아 있다', () async {
       SharedPreferences.setMockInitialValues({'calendar_target': 'device'});
-      final container = ProviderContainer(overrides: [
-        googleTargetSupportedProvider.overrideWithValue(false),
-      ]);
+      final container = ProviderContainer(
+        overrides: [googleTargetSupportedProvider.overrideWithValue(false)],
+      );
       addTearDown(container.dispose);
 
-      expect(await container.read(calendarTargetProvider.future),
-          CalendarTarget.device);
+      expect(
+        await container.read(calendarTargetProvider.future),
+        CalendarTarget.device,
+      );
     });
   });
 
@@ -76,7 +78,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(CalendarIntegrationStrings.targetNone), findsWidgets);
-      expect(find.text(CalendarIntegrationStrings.targetDevice), findsOneWidget);
+      expect(
+        find.text(CalendarIntegrationStrings.targetDevice),
+        findsOneWidget,
+      );
       expect(find.text(CalendarIntegrationStrings.targetGoogle), findsNothing);
     });
 
@@ -88,8 +93,14 @@ void main() {
       await tester.tap(find.text(CalendarIntegrationStrings.targetLabel));
       await tester.pumpAndSettle();
 
-      expect(find.text(CalendarIntegrationStrings.targetGoogle), findsOneWidget);
-      expect(find.text(CalendarIntegrationStrings.targetDevice), findsOneWidget);
+      expect(
+        find.text(CalendarIntegrationStrings.targetGoogle),
+        findsOneWidget,
+      );
+      expect(
+        find.text(CalendarIntegrationStrings.targetDevice),
+        findsOneWidget,
+      );
     });
   });
 }

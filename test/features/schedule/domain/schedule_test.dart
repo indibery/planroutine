@@ -126,10 +126,7 @@ void main() {
 
     group('toMap 기본 시각 처리', () {
       test('createdAt/updatedAt이 null이면 현재 시각 자동 설정', () {
-        final schedule = Schedule(
-          title: '시각 테스트',
-          scheduledDate: '2026-04-01',
-        );
+        final schedule = Schedule(title: '시각 테스트', scheduledDate: '2026-04-01');
 
         final map = schedule.toMap();
         expect(map['created_at'], isNotNull);
@@ -172,7 +169,6 @@ void main() {
         expect(schedule.status, ScheduleStatus.confirmed);
         expect(schedule.toMap()['status'], 'confirmed');
       });
-
     });
   });
 }

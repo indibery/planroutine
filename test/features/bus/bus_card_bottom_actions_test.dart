@@ -30,25 +30,27 @@ Future<void> _pumpNoStop(
   tester.view.physicalSize = Size(widthDp * 3, 844 * 3);
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(
-    home: Scaffold(
-      body: BusArrivalCard(
-        view: const BusCardView(
-          state: BusCardState.noStop,
-          visible: [],
-          hiddenCount: 0,
-          fetchedAt: null,
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: BusArrivalCard(
+          view: const BusCardView(
+            state: BusCardState.noStop,
+            visible: [],
+            hiddenCount: 0,
+            fetchedAt: null,
+          ),
+          style: BusCardStyle.text,
+          direction: CommuteDirection.toHome,
+          stopName: '',
+          expanded: true,
+          onToggleExpanded: null,
+          onFlipDirection: () {},
+          onRegister: onRegister ?? () {},
         ),
-        style: BusCardStyle.text,
-        direction: CommuteDirection.toHome,
-        stopName: '',
-        expanded: true,
-        onToggleExpanded: null,
-        onFlipDirection: () {},
-        onRegister: onRegister ?? () {},
       ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
 }
 
@@ -60,10 +62,16 @@ void main() {
       final flip = tester.getRect(find.byKey(BusArrivalCard.flipKey));
       final register = tester.getRect(find.byKey(BusArrivalCard.registerKey));
 
-      expect(register.left, greaterThan(flip.right),
-          reason: '겹치면 둘 다 오탭한다 — 새로고침과 방향 전환에 이미 적용한 규칙이다');
-      expect((flip.center.dy - register.center.dy).abs(), lessThan(8),
-          reason: '같은 행이어야 세로로 붙어 있던 원래 문제가 사라진다');
+      expect(
+        register.left,
+        greaterThan(flip.right),
+        reason: '겹치면 둘 다 오탭한다 — 새로고침과 방향 전환에 이미 적용한 규칙이다',
+      );
+      expect(
+        (flip.center.dy - register.center.dy).abs(),
+        lessThan(8),
+        reason: '같은 행이어야 세로로 붙어 있던 원래 문제가 사라진다',
+      );
     });
 
     testWidgets('손가락만 한 히트 영역 — 세로 44dp 이상', (tester) async {
@@ -74,9 +82,13 @@ void main() {
         '정류장 선택': BusArrivalCard.registerKey,
       }.entries) {
         final rect = tester.getRect(find.byKey(entry.value));
-        expect(rect.height, greaterThanOrEqualTo(44),
-            reason: '${entry.key}의 히트 높이가 ${rect.height} — 맨 텍스트(약 18dp)로 '
-                '되돌아갔다');
+        expect(
+          rect.height,
+          greaterThanOrEqualTo(44),
+          reason:
+              '${entry.key}의 히트 높이가 ${rect.height} — 맨 텍스트(약 18dp)로 '
+              '되돌아갔다',
+        );
       }
     });
 
@@ -91,24 +103,31 @@ void main() {
         '방향 전환': BusArrivalCard.flipKey,
         '정류장 선택': BusArrivalCard.registerKey,
       }.entries) {
-        final box = tester.widget<Container>(find.descendant(
-          of: find.byKey(entry.value),
-          matching: find.byType(Container),
-        ));
+        final box = tester.widget<Container>(
+          find.descendant(
+            of: find.byKey(entry.value),
+            matching: find.byType(Container),
+          ),
+        );
         final deco = box.decoration as BoxDecoration?;
         expect(deco?.color, isNull, reason: '${entry.key}에 채움이 생겼다');
         expect(deco?.border, isNull, reason: '${entry.key}에 테두리가 생겼다');
       }
     });
 
-    testWidgets('본문에는 같은 링크가 남아 있지 않다 — 표적이 둘이면 도로 헷갈린다',
-        (tester) async {
+    testWidgets('본문에는 같은 링크가 남아 있지 않다 — 표적이 둘이면 도로 헷갈린다', (tester) async {
       await _pumpNoStop(tester);
 
-      expect(find.text(BusStrings.emptyNoStopAction), findsOneWidget,
-          reason: '하단 알약 하나뿐이어야 한다(본문에도 그리면 둘이 된다)');
-      expect(find.text(BusStrings.emptyNoStop), findsOneWidget,
-          reason: '안내 문구는 본문에 남는다');
+      expect(
+        find.text(BusStrings.emptyNoStopAction),
+        findsOneWidget,
+        reason: '하단 알약 하나뿐이어야 한다(본문에도 그리면 둘이 된다)',
+      );
+      expect(
+        find.text(BusStrings.emptyNoStop),
+        findsOneWidget,
+        reason: '안내 문구는 본문에 남는다',
+      );
     });
 
     testWidgets('좁은 폭에서도 한 행에 들어간다', (tester) async {

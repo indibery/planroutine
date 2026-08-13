@@ -17,9 +17,11 @@ void main() {
     for (var i = 0; i < 15; i++) {
       final day = 1 + i * 2; // 1,3,5,...,29
       final key = '2026-07-${day.toString().padLeft(2, '0')}';
-      entries.add(MapEntry(key, [
-        CalendarEvent(id: i, title: '이벤트 $day일', eventDate: key),
-      ]));
+      entries.add(
+        MapEntry(key, [
+          CalendarEvent(id: i, title: '이벤트 $day일', eventDate: key),
+        ]),
+      );
     }
     return entries;
   }

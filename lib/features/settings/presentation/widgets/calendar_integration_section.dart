@@ -18,8 +18,9 @@ class CalendarIntegrationSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final target = ref.watch(
-      calendarTargetProvider
-          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+      calendarTargetProvider.select(
+        (a) => a.valueOrNull ?? CalendarTarget.none,
+      ),
     );
     // 안드로이드에서는 Google 선택지를 감춘다 — 근거는
     // `googleTargetSupportedProvider` 주석에 있다.
@@ -30,10 +31,7 @@ class CalendarIntegrationSection extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            leading: Icon(
-              Icons.event_note_outlined,
-              color: AppColors.primary,
-            ),
+            leading: Icon(Icons.event_note_outlined, color: AppColors.primary),
             title: const Text(CalendarIntegrationStrings.targetLabel),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -109,10 +107,7 @@ class _GoogleAccountRow extends ConsumerWidget {
 
     if (account == null) {
       return ListTile(
-        leading: Icon(
-          Icons.account_circle_outlined,
-          color: AppColors.primary,
-        ),
+        leading: Icon(Icons.account_circle_outlined, color: AppColors.primary),
         title: const Text(GoogleStrings.signIn),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _signIn(context, ref),
@@ -153,9 +148,9 @@ class _GoogleAccountRow extends ConsumerWidget {
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(googleCalendarServiceProvider).signOut();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(GoogleStrings.signOutDone)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(GoogleStrings.signOutDone)));
     }
   }
 }

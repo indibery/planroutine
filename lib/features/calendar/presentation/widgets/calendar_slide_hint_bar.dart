@@ -22,8 +22,9 @@ class CalendarSlideHintBar extends ConsumerWidget {
     }
 
     final target = ref.watch(
-      calendarTargetProvider
-          .select((a) => a.valueOrNull ?? CalendarTarget.none),
+      calendarTargetProvider.select(
+        (a) => a.valueOrNull ?? CalendarTarget.none,
+      ),
     );
     if (target == CalendarTarget.none) {
       return const SizedBox.shrink();

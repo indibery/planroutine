@@ -43,19 +43,18 @@ class ImportScreen extends ConsumerWidget {
       }
       messenger
         ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: Text(
-            ImportStrings.registeredSnack(next.created, next.skipped),
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              ImportStrings.registeredSnack(next.created, next.skipped),
+            ),
           ),
-        ));
+        );
     });
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          ImportStrings.screenTitle,
-          style: AppTextStyles.heading,
-        ),
+        title: Text(ImportStrings.screenTitle, style: AppTextStyles.heading),
       ),
       body: Column(
         children: [
@@ -89,8 +88,11 @@ class ImportScreen extends ConsumerWidget {
                   ),
                 // 등록 직후 위 listen이 pop하므로 그릴 것이 없다.
                 ImportRegistered() => const SizedBox.shrink(),
-                ImportError(:final message) =>
-                  _buildErrorView(context, ref, message),
+                ImportError(:final message) => _buildErrorView(
+                  context,
+                  ref,
+                  message,
+                ),
               },
             ),
           ),
@@ -100,10 +102,10 @@ class ImportScreen extends ConsumerWidget {
   }
 
   int _stepFor(ImportState state) => switch (state) {
-        ImportInitial() || ImportError() => 0,
-        ImportLoading() || ImportSuccess() => 1,
-        ImportRegistered() => 2,
-      };
+    ImportInitial() || ImportError() => 0,
+    ImportLoading() || ImportSuccess() => 1,
+    ImportRegistered() => 2,
+  };
 
   Widget _buildInitialView(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -149,9 +151,7 @@ class ImportScreen extends ConsumerWidget {
                     label: ImportStrings.selectFile,
                     icon: Icons.file_open,
                     onPressed: () {
-                      ref
-                          .read(importStateProvider.notifier)
-                          .pickAndImportCsv();
+                      ref.read(importStateProvider.notifier).pickAndImportCsv();
                     },
                   ),
                 ),
@@ -233,11 +233,7 @@ class ImportScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorView(
-    BuildContext context,
-    WidgetRef ref,
-    String message,
-  ) {
+  Widget _buildErrorView(BuildContext context, WidgetRef ref, String message) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.pagePadding,

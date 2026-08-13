@@ -66,9 +66,10 @@ class _TodayEventRowState extends State<TodayEventRow>
   static final Animatable<double> _pressScale = TweenSequence<double>([
     TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.975), weight: 22),
     TweenSequenceItem(
-      tween: Tween(begin: 0.975, end: 1.0).chain(
-        CurveTween(curve: Curves.easeOut),
-      ),
+      tween: Tween(
+        begin: 0.975,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeOut)),
       weight: 78,
     ),
   ]);
@@ -119,10 +120,8 @@ class _TodayEventRowState extends State<TodayEventRow>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _press,
-      builder: (context, child) => Transform.scale(
-        scale: _pressScale.evaluate(_press),
-        child: child,
-      ),
+      builder: (context, child) =>
+          Transform.scale(scale: _pressScale.evaluate(_press), child: child),
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
@@ -250,8 +249,8 @@ class _TodayEventRowState extends State<TodayEventRow>
                   color: isDone
                       ? AppColors.faint
                       : (widget.showOverdueDate
-                          ? AppColors.inkRed
-                          : AppColors.sub),
+                            ? AppColors.inkRed
+                            : AppColors.sub),
                 ),
               ),
             ),
@@ -284,7 +283,8 @@ class _TodayEventRowState extends State<TodayEventRow>
                     key: Key('today_seal_${widget.event.id}'),
                     animation: _seal,
                     style: widget.stampSettings.style,
-                    dimmed: widget.stampSettings.dimPreviousStamps &&
+                    dimmed:
+                        widget.stampSettings.dimPreviousStamps &&
                         _stampedOnEntry,
                   ),
                 )

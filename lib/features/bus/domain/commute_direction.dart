@@ -30,13 +30,13 @@ enum CommuteDirection {
   ///
   /// 검색 화면 제목과 확인 시트가 **같은 값**을 쓴다. 화면이 `출발지`라고 말하면서
   /// 도착지에 저장하는 어긋남이 구조적으로 생기지 않게, 라벨을 방향에서 한 번만 만든다.
-  String get slotLabel =>
-      this == CommuteDirection.toWork
-          ? BusStrings.slotDeparture
-          : BusStrings.slotArrival;
+  String get slotLabel => this == CommuteDirection.toWork
+      ? BusStrings.slotDeparture
+      : BusStrings.slotArrival;
 
-  CommuteDirection get flipped =>
-      this == CommuteDirection.toWork ? CommuteDirection.toHome : CommuteDirection.toWork;
+  CommuteDirection get flipped => this == CommuteDirection.toWork
+      ? CommuteDirection.toHome
+      : CommuteDirection.toWork;
 
   /// `?slot=toWork` 쿼리 이름 → 방향. 모르는 값·null이면 **null**이다.
   ///

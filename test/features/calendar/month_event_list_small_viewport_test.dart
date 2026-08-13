@@ -17,7 +17,11 @@ void main() {
     return [
       for (var i = 0; i < days.length; i++)
         MapEntry('2026-07-${days[i]}', [
-          CalendarEvent(id: i, title: '이벤트 ${days[i]}일', eventDate: '2026-07-${days[i]}'),
+          CalendarEvent(
+            id: i,
+            title: '이벤트 ${days[i]}일',
+            eventDate: '2026-07-${days[i]}',
+          ),
         ]),
     ];
   }
@@ -65,8 +69,15 @@ void main() {
     expect(finder, findsOneWidget);
     // 목록 영역은 화면 y=500~780. 27일이 그 안에 들어와야 한다.
     final rect = tester.getRect(finder);
-    expect(rect.top, greaterThanOrEqualTo(500),
-        reason: '목록 뷰포트 위(캘린더 영역)로 넘어가면 안 됨');
-    expect(rect.top, lessThan(780), reason: '목록 뷰포트 안에 보여야 함 (현재: ${rect.top})');
+    expect(
+      rect.top,
+      greaterThanOrEqualTo(500),
+      reason: '목록 뷰포트 위(캘린더 영역)로 넘어가면 안 됨',
+    );
+    expect(
+      rect.top,
+      lessThan(780),
+      reason: '목록 뷰포트 안에 보여야 함 (현재: ${rect.top})',
+    );
   });
 }

@@ -19,11 +19,10 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 /// 알림 설정 AsyncNotifier — SharedPreferences에 JSON 직렬화 저장
 final notificationSettingsProvider =
     AsyncNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
-  NotificationSettingsNotifier.new,
-);
+      NotificationSettingsNotifier.new,
+    );
 
-class NotificationSettingsNotifier
-    extends AsyncNotifier<NotificationSettings> {
+class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettings> {
   @override
   Future<NotificationSettings> build() async {
     final prefs = await SharedPreferences.getInstance();
@@ -49,8 +48,9 @@ class NotificationSettingsNotifier
     final current = state.valueOrNull ?? NotificationSettings.defaults;
     // 마스터 ON 전환 시 권한 요청 시도
     if (value && !current.masterEnabled) {
-      final ok =
-          await ref.read(notificationServiceProvider).requestPermission();
+      final ok = await ref
+          .read(notificationServiceProvider)
+          .requestPermission();
       if (!ok) {
         // 권한 거부되면 마스터도 OFF 유지
         await save(current.copyWith(masterEnabled: false));
@@ -60,18 +60,25 @@ class NotificationSettingsNotifier
     await save(current.copyWith(masterEnabled: value));
   }
 
-  Future<void> setWeekly(bool value) async =>
-      save((state.valueOrNull ?? NotificationSettings.defaults)
-          .copyWith(weeklyEnabled: value));
+  Future<void> setWeekly(bool value) async => save(
+    (state.valueOrNull ?? NotificationSettings.defaults).copyWith(
+      weeklyEnabled: value,
+    ),
+  );
 
-  Future<void> setDayOf(bool value) async =>
-      save((state.valueOrNull ?? NotificationSettings.defaults)
-          .copyWith(dayOfEnabled: value));
+  Future<void> setDayOf(bool value) async => save(
+    (state.valueOrNull ?? NotificationSettings.defaults).copyWith(
+      dayOfEnabled: value,
+    ),
+  );
 
   /// 알림 발송 시각 변경. 저장 후 자동 재동기화.
-  Future<void> setTime({required int hour, required int minute}) async =>
-      save((state.valueOrNull ?? NotificationSettings.defaults)
-          .copyWith(hour: hour, minute: minute));
+  Future<void> setTime({required int hour, required int minute}) async => save(
+    (state.valueOrNull ?? NotificationSettings.defaults).copyWith(
+      hour: hour,
+      minute: minute,
+    ),
+  );
 }
 
 /// 이벤트 CRUD / 설정 변경 시 알림을 재동기화하는 서비스

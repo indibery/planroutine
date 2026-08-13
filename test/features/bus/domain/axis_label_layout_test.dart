@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/features/bus/domain/axis_label_layout.dart';
 
-const _w = 34.0;   // BusBodyAxis.labelWidth
+const _w = 34.0; // BusBodyAxis.labelWidth
 const _axis = 300.0;
 
 void main() {
@@ -52,8 +52,11 @@ void main() {
       expect(out.first, greaterThanOrEqualTo(_w / 2 - 0.01));
       expect(out.last, lessThanOrEqualTo(_axis - _w / 2 + 0.01));
       for (var i = 1; i < out.length; i++) {
-        expect(out[i], greaterThanOrEqualTo(out[i - 1]),
-            reason: '순서가 뒤집히면 라벨과 점의 대응이 무너진다');
+        expect(
+          out[i],
+          greaterThanOrEqualTo(out[i - 1]),
+          reason: '순서가 뒤집히면 라벨과 점의 대응이 무너진다',
+        );
       }
     });
 

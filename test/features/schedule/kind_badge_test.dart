@@ -9,7 +9,9 @@ void main() {
   Future<void> pump(WidgetTester tester, EntryKind kind) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: Center(child: KindBadge(kind: kind))),
+        home: Scaffold(
+          body: Center(child: KindBadge(kind: kind)),
+        ),
       ),
     );
   }

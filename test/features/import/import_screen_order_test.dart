@@ -30,8 +30,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          scheduleRepositoryProvider
-              .overrideWithValue(ScheduleRepository(dbHelper: db)),
+          scheduleRepositoryProvider.overrideWithValue(
+            ScheduleRepository(dbHelper: db),
+          ),
         ],
         child: const MaterialApp(home: ImportScreen()),
       ),

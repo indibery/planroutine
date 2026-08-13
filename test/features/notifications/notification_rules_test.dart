@@ -145,8 +145,9 @@ void main() {
         settings: master.copyWith(dayOfEnabled: false),
         now: now,
       );
-      final mon =
-          result.where((p) => p.scheduledAt == DateTime(2026, 6, 1, 8)).toList();
+      final mon = result
+          .where((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .toList();
       expect(mon.length, 1);
       expect(mon.first.body, contains('이번 주'));
       expect(mon.first.body, contains('화건'));
@@ -160,8 +161,9 @@ void main() {
         settings: master,
         now: now,
       );
-      final mon =
-          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      final mon = result.firstWhere(
+        (p) => p.scheduledAt == DateTime(2026, 6, 1, 8),
+      );
       expect(mon.body, contains('오늘'));
       expect(mon.body, contains('월건'));
       expect(mon.body, isNot(contains('이번 주')));
@@ -177,8 +179,9 @@ void main() {
         settings: master.copyWith(dayOfEnabled: false),
         now: now,
       );
-      final mon =
-          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      final mon = result.firstWhere(
+        (p) => p.scheduledAt == DateTime(2026, 6, 1, 8),
+      );
       expect(mon.body, contains('이번 주'));
       expect(mon.body, contains('월건'));
       expect(mon.body, contains('수건'));
@@ -252,8 +255,9 @@ void main() {
         settings: master,
         now: now,
       );
-      final mon =
-          result.firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8));
+      final mon = result.firstWhere(
+        (p) => p.scheduledAt == DateTime(2026, 6, 1, 8),
+      );
       expect(mon.body, contains('오늘'));
       expect(mon.body, contains('월건'));
       expect(mon.body, contains('이번 주'));
@@ -329,10 +333,11 @@ void main() {
         40,
         (i) => event(
           id: i + 1,
-          date: DateTime(2026, 6, 1)
-              .add(Duration(days: i))
-              .toIso8601String()
-              .substring(0, 10),
+          date: DateTime(
+            2026,
+            6,
+            1,
+          ).add(Duration(days: i)).toIso8601String().substring(0, 10),
         ),
       );
       final result = computeNotifications(
@@ -349,10 +354,11 @@ void main() {
         70,
         (i) => event(
           id: i + 1,
-          date: DateTime(2026, 6, 1)
-              .add(Duration(days: i))
-              .toIso8601String()
-              .substring(0, 10),
+          date: DateTime(
+            2026,
+            6,
+            1,
+          ).add(Duration(days: i)).toIso8601String().substring(0, 10),
         ),
       );
       final result = computeNotifications(
@@ -374,10 +380,11 @@ void main() {
         40,
         (i) => event(
           id: i + 1,
-          date: DateTime(2026, 7, 1)
-              .add(Duration(days: i))
-              .toIso8601String()
-              .substring(0, 10),
+          date: DateTime(
+            2026,
+            7,
+            1,
+          ).add(Duration(days: i)).toIso8601String().substring(0, 10),
         ),
       );
       final result = computeNotifications(

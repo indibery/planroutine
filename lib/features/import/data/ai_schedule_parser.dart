@@ -5,7 +5,11 @@ import '../../schedule/domain/entry_kind.dart';
 
 /// AI가 사진에서 뽑아준 행사 한 건.
 class AiScheduleItem {
-  const AiScheduleItem({required this.title, required this.date, this.description});
+  const AiScheduleItem({
+    required this.title,
+    required this.date,
+    this.description,
+  });
 
   final String title;
 
@@ -59,12 +63,14 @@ ParsedAiSchedules parseAiScheduleJson(String text) {
     }
     final rawDesc = entry['description'];
     final desc = rawDesc is String ? _sanitize(rawDesc) : '';
-    items.add(AiScheduleItem(
-      title: title,
-      // 다른 삽입 경로와 동일하게 YYYY-MM-DD로 정규화 — 월별조회·중복체크 불변식 유지.
-      date: du.formatDate(parsedDate),
-      description: desc.isEmpty ? null : desc,
-    ));
+    items.add(
+      AiScheduleItem(
+        title: title,
+        // 다른 삽입 경로와 동일하게 YYYY-MM-DD로 정규화 — 월별조회·중복체크 불변식 유지.
+        date: du.formatDate(parsedDate),
+        description: desc.isEmpty ? null : desc,
+      ),
+    );
   }
   return ParsedAiSchedules(items: items, invalidCount: invalid);
 }
@@ -74,8 +80,9 @@ String _sanitize(String raw) {
   final s = raw
       .replaceAll(RegExp('[\u0000-\u001F\u007F]'), ' ') // control chars
       .replaceAll(
-          RegExp('[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]'),
-          '') // bidi override / zero-width
+        RegExp('[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]'),
+        '',
+      ) // bidi override / zero-width
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
   return s.length > 200 ? s.substring(0, 200) : s;

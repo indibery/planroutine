@@ -36,14 +36,16 @@ void main() {
 
   group('rangesValid', () {
     test('겹치면 무효다', () {
-      final s = BusSettings.defaults
-          .copyWith(toHomeRange: const TimeRange.hm(8, 0, 18, 0));
+      final s = BusSettings.defaults.copyWith(
+        toHomeRange: const TimeRange.hm(8, 0, 18, 0),
+      );
       expect(s.rangesValid, isFalse);
     });
 
     test('뒤집히면 무효다', () {
-      final s = BusSettings.defaults
-          .copyWith(toWorkRange: const TimeRange.hm(9, 0, 7, 0));
+      final s = BusSettings.defaults.copyWith(
+        toWorkRange: const TimeRange.hm(9, 0, 7, 0),
+      );
       expect(s.rangesValid, isFalse);
     });
   });

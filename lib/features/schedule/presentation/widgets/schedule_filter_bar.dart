@@ -62,8 +62,10 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
     // 기본은 접힘. 넣기(히어로)와 검토 목록에 높이를 내주는 것이 이 탭의 목적이고,
     // 필터를 쓰는 순간은 그보다 드물다. 접힌 줄이 현재 필터를 말해주므로 정보 손실도 없다.
     final expanded = _expandedOverride ?? false;
-    final narrowed =
-        hasNarrowingFilter(kind: kind, categoryLabel: categoryLabel);
+    final narrowed = hasNarrowingFilter(
+      kind: kind,
+      categoryLabel: categoryLabel,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,12 +89,16 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
                     // 펼치면 아래 칩이 주역이므로 테두리를 벗고 조용해진다.
                     padding: expanded
                         ? EdgeInsets.zero
-                        : const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                        : const EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: 5,
+                          ),
                     decoration: expanded
                         ? null
                         : BoxDecoration(
-                            borderRadius:
-                                BorderRadius.circular(AppSizes.radiusPill),
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusPill,
+                            ),
                             border: Border.all(
                               color: narrowed ? AppColors.gold : AppColors.line,
                               width: narrowed ? 1.0 : 0.5,
@@ -151,11 +157,7 @@ class _ScheduleFilterBarState extends ConsumerState<ScheduleFilterBar> {
           const Column(
             key: ScheduleFilterBar.chipRowsKey,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _StatusRow(),
-              _KindRow(),
-              _CategoryRow(),
-            ],
+            children: [_StatusRow(), _KindRow(), _CategoryRow()],
           ),
       ],
     );
@@ -227,8 +229,9 @@ class _KindRow extends ConsumerWidget {
 
     // 같은 칩 재탭 = 해제. 별도 '전체' 칩 없이 전체로 돌아가는 길을 준다.
     void toggle(EntryKind kind) =>
-        ref.read(scheduleKindFilterProvider.notifier).state =
-            current == kind ? null : kind;
+        ref.read(scheduleKindFilterProvider.notifier).state = current == kind
+        ? null
+        : kind;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,

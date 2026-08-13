@@ -141,10 +141,10 @@ class BusBodyAxis extends StatelessWidget {
 
   Widget _scale() {
     TextStyle style() => TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 10,
-          color: AppColors.faint,
-        );
+      fontFamily: 'Pretendard',
+      fontSize: 10,
+      color: AppColors.faint,
+    );
     return Row(
       children: [
         Text(BusStrings.axisNow, style: style()),
@@ -200,11 +200,7 @@ class BusBodyAxis extends StatelessWidget {
         Positioned(
           left: (m / axisRange) * width,
           top: 4,
-          child: Container(
-            width: 1,
-            height: 6,
-            color: AppColors.busSignalOff,
-          ),
+          child: Container(width: 1, height: 6, color: AppColors.busSignalOff),
         ),
     ];
   }
@@ -276,7 +272,8 @@ class BusBodyAxis extends StatelessWidget {
               key: labelKeyFor(_idOf(a)),
               center: dotPosition(a.arrSec) * width,
               text: a.routeNo,
-              semantics: '${BusStrings.routeLabel(a.routeNo)} '
+              semantics:
+                  '${BusStrings.routeLabel(a.routeNo)} '
                   '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
               color: isUrgent(a.arrMin) ? AppColors.ink : AppColors.sub,
               weight: FontWeight.w700,
@@ -345,7 +342,6 @@ class BusBodyAxis extends StatelessWidget {
       },
     );
   }
-
 }
 
 /// 라벨 한 개가 그려지는 데 필요한 것 전부. 밀어내기 계산과 렌더를 갈라 두려고 둔다.

@@ -24,10 +24,7 @@ class TrashScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          TrashStrings.title,
-          style: AppTextStyles.heading,
-        ),
+        title: Text(TrashStrings.title, style: AppTextStyles.heading),
       ),
       body: snapshotAsync.when(
         data: (snapshot) => snapshot.isEmpty
@@ -89,10 +86,7 @@ class TrashScreen extends ConsumerWidget {
               Expanded(
                 child: Text(
                   '${TrashStrings.autoPurgeNotice} · 총 ${snapshot.total}건',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textHint,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.textHint),
                 ),
               ),
             ],
@@ -106,9 +100,7 @@ class TrashScreen extends ConsumerWidget {
               trailing: _SectionCountBadge(count: snapshot.schedules.length),
             ),
           ),
-          ...snapshot.schedules.map(
-            (s) => _TrashScheduleTile(schedule: s),
-          ),
+          ...snapshot.schedules.map((s) => _TrashScheduleTile(schedule: s)),
         ],
         if (snapshot.events.isNotEmpty) ...[
           Padding(
@@ -118,9 +110,7 @@ class TrashScreen extends ConsumerWidget {
               trailing: _SectionCountBadge(count: snapshot.events.length),
             ),
           ),
-          ...snapshot.events.map(
-            (e) => _TrashEventTile(event: e),
-          ),
+          ...snapshot.events.map((e) => _TrashEventTile(event: e)),
         ],
       ],
     );

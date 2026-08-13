@@ -136,7 +136,8 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
       // GBIS로 저장한 정류장은 cityCode가 0이라 일치하는 도시가 없어 자연히
       // 복원되지 않는다 — 그 정류장은 애초에 도시로 찾은 것이 아니다.
       final saved = ref.read(busSettingsProvider).valueOrNull;
-      final code = saved?.stopFor(_slot)?.cityCode ??
+      final code =
+          saved?.stopFor(_slot)?.cityCode ??
           saved?.stopFor(_slot.flipped)?.cityCode;
       final matched = _cities.where((c) => c.code == code).toList();
       _city = matched.isEmpty ? null : matched.first;
@@ -253,10 +254,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
           // **이름 칸이 첫 컨트롤이다.** 도시 선택이 위에 있으면 대부분의 사용자가
           // 필요 없는 단계를 먼저 만난다.
           _stopSearchField(),
-          if (_regionMode) ...[
-            const Divider(height: 1),
-            _cityPicker(),
-          ],
+          if (_regionMode) ...[const Divider(height: 1), _cityPicker()],
           const Divider(height: 1),
           if (_loading)
             const Padding(
@@ -298,8 +296,8 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     final cities = _cityFilter.text.trim().isEmpty
         ? _cities
         : _cities
-            .where((c) => c.name.contains(_cityFilter.text.trim()))
-            .toList();
+              .where((c) => c.name.contains(_cityFilter.text.trim()))
+              .toList();
 
     return Padding(
       padding: const EdgeInsets.all(AppSizes.pagePadding),
@@ -407,16 +405,18 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
         _notice(BusStrings.searchTooMany(view.total)),
         _hint(BusStrings.searchTooManyHint),
       ],
-      ...view.visible.map((stop) => ListTile(
-            title: Text(stop.nodeNm),
-            // **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않으므로 화면
-            // 어디에도 지역 정보가 없고, 같은 이름의 정류장이 여러 시·군에 있다
-            // (실측 `A정류장` → 경기 3개 시·인천). 도시 선택 단계가 조용히
-            // 제공하던 정보를 결과 행으로 옮긴 것이다.
-            subtitle: Text(_subtitleOf(stop)),
-            trailing: Icon(Icons.chevron_right, color: AppColors.faint),
-            onTap: () => _pick(stop),
-          )),
+      ...view.visible.map(
+        (stop) => ListTile(
+          title: Text(stop.nodeNm),
+          // **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않으므로 화면
+          // 어디에도 지역 정보가 없고, 같은 이름의 정류장이 여러 시·군에 있다
+          // (실측 `A정류장` → 경기 3개 시·인천). 도시 선택 단계가 조용히
+          // 제공하던 정보를 결과 행으로 옮긴 것이다.
+          subtitle: Text(_subtitleOf(stop)),
+          trailing: Icon(Icons.chevron_right, color: AppColors.faint),
+          onTap: () => _pick(stop),
+        ),
+      ),
       // 결과가 있어도 남긴다 — 이름이 겹쳐 수도권 결과만 나오는 경우
       // (실측 `서면` → 부산 없이 12건) 여기가 유일한 출구다.
       if (!_regionMode) _otherRegionLink(),
@@ -439,11 +439,13 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
             selected: _region == null,
             onTap: () => setState(() => _region = null),
           ),
-          ...view.regions.map((r) => PillChip(
-                label: BusStrings.regionChip(r.name, r.count),
-                selected: r.name == _region,
-                onTap: () => setState(() => _region = r.name),
-              )),
+          ...view.regions.map(
+            (r) => PillChip(
+              label: BusStrings.regionChip(r.name, r.count),
+              selected: r.name == _region,
+              onTap: () => setState(() => _region = r.name),
+            ),
+          ),
         ],
       ),
     );
@@ -484,17 +486,14 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
 
   /// 키 문제와 그 밖의 장애를 갈라 말한다 — 확인 시트와 같은 문구를 쓴다.
   /// 사용자가 읽는 사실이 같은데 문구를 따로 만들면 둘 중 하나만 손보게 된다.
-  String _failureMessage(TagoOutcome outcome) =>
-      outcome == TagoOutcome.keyError
-          ? BusStrings.emptyKey
-          : BusStrings.emptyDown;
+  String _failureMessage(TagoOutcome outcome) => outcome == TagoOutcome.keyError
+      ? BusStrings.emptyKey
+      : BusStrings.emptyDown;
 
   /// 안내 문구 아래 붙는 한 줄. 본문보다 작고 조용하다.
   Widget _hint(String message) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.pagePadding,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
       child: Text(
         message,
         textAlign: TextAlign.center,

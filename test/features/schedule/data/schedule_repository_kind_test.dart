@@ -75,10 +75,7 @@ void main() {
 
     test('kind를 주지 않으면 전부 확정된다 (기존 동작)', () async {
       expect(await repo.confirmAllPending(), 3);
-      expect(
-        await repo.getSchedules(status: ScheduleStatus.pending),
-        isEmpty,
-      );
+      expect(await repo.getSchedules(status: ScheduleStatus.pending), isEmpty);
     });
 
     test('카테고리와 종류를 함께 좁힐 수 있다', () async {

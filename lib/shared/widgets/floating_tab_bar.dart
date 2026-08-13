@@ -27,9 +27,7 @@ class FloatingTabBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: surface,
-        border: Border(
-          top: BorderSide(color: AppColors.line, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: AppColors.line, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -56,8 +54,9 @@ class FloatingTabBar extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 10,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           color: selected ? AppColors.gold : AppColors.faint,
                         ),
                       ),

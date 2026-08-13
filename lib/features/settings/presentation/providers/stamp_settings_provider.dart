@@ -10,8 +10,8 @@ const _prefsKey = 'stamp_settings_v1';
 /// 완료 도장 설정 — 오늘 탭이 소비하고 설정 탭이 변경한다. SharedPreferences 저장.
 final stampSettingsProvider =
     AsyncNotifierProvider<StampSettingsNotifier, StampSettings>(
-  StampSettingsNotifier.new,
-);
+      StampSettingsNotifier.new,
+    );
 
 class StampSettingsNotifier extends AsyncNotifier<StampSettings> {
   @override
