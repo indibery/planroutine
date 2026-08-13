@@ -1081,6 +1081,74 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
   - 업무 분류·공개구분(공개/부분공개/비공개) 다양성을 갖춰 파서·필터 테스트용 커버리지 유지
   - ⚠️ 실제 학교 데이터 절대 커밋 금지 — 이 파일은 포맷 예시일 뿐(과거 실데이터는 히스토리에서 제거됨, 2026-07)
 
+## Claude Code 훅 (`.claude/`)
+
+산문 규칙은 컨텍스트가 길어지면 강제력이 사라진다. 절대 규칙 셋을 훅으로 내렸다
+(`.claude/settings.json` + `.claude/hooks/*.sh`).
+
+| 훅 | 시점 | 하는 일 |
+|---|---|---|
+| `guard-bash.sh` | PreToolUse(Bash) | 위험 명령 차단 + `android beta` 전제조건 검사 |
+| `protect-tests.sh` | PreToolUse(Edit\|Write) | 테스트 **선언 개수 감소** 차단 |
+| `analyze-edited.sh` | PostToolUse(Edit\|Write) | 편집한 `.dart` 하나만 `dart analyze` |
+
+**종료 코드가 곧 정책이다**: `0` 통과(stdout은 디버그 로그로만 간다 — 아무도 못 본다) /
+`2` 차단(stderr **전문**이 Claude에게) / **그 밖은 비차단 경고**(실행은 계속되고
+transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 줄로 쓴다).
+
+### deny는 "위험한가"가 아니라 "정당한 사용이 0인가"로 정한다
+
+- **`bootstrap`·force push·커밋 훅 건너뛰기·`test|integration_test|lib`를 지우는 `rm`**
+  → 무조건 차단. 정당한 사용이 없거나(패키지명은 확정됐다) 사용자가 직접 하면 된다.
+- **`rm -rf build ios/Pods`는 막지 않는다** — 이 리포의 정상 절차(수동 캐시 리셋)다.
+- **`android beta`는 막지 않는다.** 정당한 사용이 있는 명령을 매번 막으면 마찰이 쌓이고,
+  **마찰은 훅을 지운다**(그러면 `bootstrap` 차단까지 함께 사라진다). 대신 전제조건을 본다.
+
+### `beta` 게이트가 보는 것과 보지 않는 것
+
+`flutter analyze` + **배포 가드 테스트만**(`test/deploy` + `data_source_credit_test`).
+실측 warm 10.2초. 전체 926건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
+않는다**(의도된 한계). 릴리즈 노트가 없으면 **경고만** 한다: 레인이 의도적으로 막지 않는
+지점이라(M1 껍데기 업로드를 문구 작성에 걸리게 하지 않으려고) 훅이 그 설계를 뒤집지 않는다.
+
+- **fail-closed다.** `flutter`를 못 찾으면 통과시키지 않는다. 조용히 통과하면 "게이트가
+  걸려 있다고 믿는데 안 걸린" 상태가 되고, 그 업로드는 `release_status: "completed"`라
+  **즉시 Play 심사**로 가며 versionCode는 되돌릴 수 없다.
+- ⚠️ **훅은 로그인 셸을 거치지 않아 `/opt/homebrew/bin`이 PATH에 없다**(실측: bare PATH에서
+  `flutter`·`dart` 모두 not found, `jq`만 `/usr/bin`에 있다). 스크립트가 PATH를 주입한다.
+- iOS `beta`는 게이트하지 않는다(요청 범위). 넓히려면 `guard-bash.sh` 아래쪽 `case`에
+  한 줄을 더한다.
+
+### 명령 문자열에서 데이터를 걷어낸다 (`strip_data`)
+
+**이 가드가 처음 오차단한 것은 자기 자신을 커밋하는 명령이었다**(2026-08-13). 커밋 메시지가
+`--no-verify`를 **설명**하기만 해도 플래그로 읽혔다. `strip_data`가 힙독 본문과 인용
+문자열을 걷어낸 뒤 검사한다 — 플래그는 인용 밖에 있고, 인용·힙독 안은 사람이 읽을 글이다.
+
+- 같은 이유로 위험 패턴은 **명령 세그먼트 단위**로 본다. 통으로 grep하면
+  `rm -f x && git push`의 `-f`가 force push로, `rm -f x && flutter test test/foo`의 `test/`가
+  테스트 삭제로 읽힌다(둘 다 실제로 밟았다).
+- 남은 구멍 둘: 힙독은 **첫 `<<` 뒤를 끝까지** 자르므로 `cmd <<EOF … EOF && git push --force`를
+  놓치고, 인용 제거는 줄 단위라 **여러 줄에 걸친 `-m "…"`** 안의 플래그는 아직 걸린다.
+
+### 테스트 보존은 "Write 금지"가 아니라 "감소 금지"다
+
+전면 재작성은 정당한 사용이 있다(큰 리팩터 뒤 구조 변경). 막아야 할 것은 재작성이 아니라
+**감소**라, `test(`·`testWidgets(`·`group(` 선언 수를 세어 비교한다(Write는 디스크 대 새 내용,
+Edit는 `old_string` 대 `new_string`). 새 파일은 검사 대상이 아니다.
+
+### `dart format` 훅은 두지 않는다
+
+실측으로 **273개 중 177개가 바뀐다** — 이 리포는 Dart 3.7+ tall-style로 포맷된 적이 없다.
+편집 파일만 포맷해도 실제 변경과 포맷 잡음이 한 커밋에 섞인다. 포맷을 도입하려면 훅이 아니라
+**전용 커밋 1회**로 바닥을 맞춘 뒤에.
+
+### 가드의 가드
+
+`bash .claude/hooks/test_hooks.sh` — 26건. 훅은 `flutter test`가 스캔하지 않는 자리에 있어
+스스로 지켜야 한다. **자산은 오차단 케이스 5건**이다(위에 적은 실제로 밟은 것들). 차단 규칙을
+손볼 때 그것들이 먼저 깨지는지 본다.
+
 ## 코딩 규칙
 - Feature-first 구조: `lib/features/{기능}/data|domain|presentation/`
 - Riverpod Provider: `presentation/providers/`에 배치
