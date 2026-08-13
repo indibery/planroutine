@@ -20,13 +20,19 @@ Play가 `versionCode 143`을 거부한 곳은 바이너리가 아니라 **문안
 
 **기계 검사를 먼저 돌린다.** 거기서 깨지면 이 스킬을 계속하지 말고 그것부터 고친다.
 
-## 현재 상태
-
-- pubspec: !`grep '^version:' pubspec.yaml`
-- 기준 버전 표기: !`grep -h '기준 버전' docs/app_store_description.md docs/play_store_description.md`
-- 릴리즈 노트: !`ls docs/release_notes/`
-
 ## 절차
+
+### 0. 현재 상태
+
+```bash
+grep '^version:' pubspec.yaml
+grep -h '기준 버전' docs/app_store_description.md docs/play_store_description.md
+ls docs/release_notes/
+```
+
+> 스킬 프런트매터의 `` !`cmd` `` 동적 주입으로 이 세 줄을 자동 삽입할 수도 있지만
+> **이 리포에서 그 메커니즘이 검증된 적이 없다**(쓰는 스킬이 하나도 없다). 주입이
+> 안 되면 백틱이 그대로 보이는 대신 조용히 정보가 빠지므로, 명령으로 적어 둔다.
 
 ### 1. 기계 검사
 
