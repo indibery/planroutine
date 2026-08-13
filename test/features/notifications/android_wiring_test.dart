@@ -24,9 +24,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/notifications/data/notification_details.dart';
 
-String _serviceSource() =>
-    File('lib/features/notifications/data/notification_service.dart')
-        .readAsStringSync();
+String _serviceSource() => File(
+  'lib/features/notifications/data/notification_service.dart',
+).readAsStringSync();
 
 String _manifest() =>
     File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
@@ -34,9 +34,13 @@ String _manifest() =>
 void main() {
   group('스케줄 모드 — 두 경로가 같은 상수를 쓴다', () {
     test('inexact다 — exact로 되돌리면 Play 고위험 권한 선언 대상이 된다', () {
-      expect(kAndroidScheduleMode, AndroidScheduleMode.inexactAllowWhileIdle,
-          reason: 'exact*는 SCHEDULE_EXACT_ALARM 선언 양식을 요구한다. '
-              '이 앱은 하루 1건으로 병합돼 Doze 9분 규칙이 무해하다');
+      expect(
+        kAndroidScheduleMode,
+        AndroidScheduleMode.inexactAllowWhileIdle,
+        reason:
+            'exact*는 SCHEDULE_EXACT_ALARM 선언 양식을 요구한다. '
+            '이 앱은 하루 1건으로 병합돼 Doze 9분 규칙이 무해하다',
+      );
     });
 
     test('두 예약 경로가 리터럴 대신 상수를 쓴다', () {
@@ -44,10 +48,15 @@ void main() {
       // **런타임 예외로만** 드러난다(`ExactAlarmPermissionException`).
       final src = _serviceSource();
 
-      expect(src, isNot(contains('AndroidScheduleMode.exact')),
-          reason: '정확 알람 리터럴이 남아 있다');
       expect(
-        RegExp('androidScheduleMode: kAndroidScheduleMode').allMatches(src).length,
+        src,
+        isNot(contains('AndroidScheduleMode.exact')),
+        reason: '정확 알람 리터럴이 남아 있다',
+      );
+      expect(
+        RegExp(
+          'androidScheduleMode: kAndroidScheduleMode',
+        ).allMatches(src).length,
         2,
         reason: '_schedule과 scheduleQuickTest 양쪽이 상수를 써야 한다',
       );
@@ -68,8 +77,11 @@ void main() {
       // 안 보인다. iOS는 여러 줄을 그대로 보여줘 차이가 안 드러났다.
       final style = android.styleInformation;
       expect(style, isA<BigTextStyleInformation>());
-      expect((style! as BigTextStyleInformation).bigText, body,
-          reason: '본문을 넘기지 않으면 펼쳐도 빈다');
+      expect(
+        (style! as BigTextStyleInformation).bigText,
+        body,
+        reason: '본문을 넘기지 않으면 펼쳐도 빈다',
+      );
     });
 
     test('iOS 경로는 그대로다 — timeSensitive 유지', () {
@@ -80,15 +92,18 @@ void main() {
     test('채널 이름·설명은 Strings에서 온다 — 사용자에게 보이는 문자열이다', () {
       final android = buildNotificationDetails('x').android!;
       expect(android.channelName, NotificationStrings.channelName);
-      expect(android.channelDescription, NotificationStrings.channelDescription);
+      expect(
+        android.channelDescription,
+        NotificationStrings.channelDescription,
+      );
     });
 
     test('채널 id는 Strings에 두지 않는다 — 바뀌면 사용자 설정이 초기화된다', () {
       // id는 UI 문자열이 아니라 DB 키에 가깝다. `*Strings`에 두면 문구를 정리하다
       // 바뀌고, 그러면 채널이 갈라져 사용자가 해둔 알림 설정이 날아간다.
-      final strings =
-          File('lib/core/constants/strings/notification_strings.dart')
-              .readAsStringSync();
+      final strings = File(
+        'lib/core/constants/strings/notification_strings.dart',
+      ).readAsStringSync();
       expect(strings, isNot(contains(kAndroidChannelId)));
     });
   });
@@ -111,9 +126,25 @@ void main() {
       expect(src, contains('requestNotificationsPermission()'));
       // Android 분기가 iOS보다 **먼저** 와야 한다 — iOS resolve가 Android에서
       // null을 주는 것에 기대는 구조라, 순서가 뒤집혀도 동작은 같지만 의도가 흐려진다.
+      //
+      // ⚠️ **공백이 박힌 리터럴로 찾지 않는다.** 원래 이 검사는
+      // `'…Plugin>();\n    if (android'`를 찾았는데, `dart format`(tall style)이
+      // 제네릭 인자를 세 줄로 쪼개자 그 문자열이 사라져 가드가 깨졌다(2026-08-14).
+      // 검사하려던 것은 들여쓰기가 아니라 **순서**다 — 소스를 텍스트로 읽는 가드는
+      // 포매터에 취약하니 공백에 기대지 말 것.
+      final from = src.indexOf('Future<bool> requestPermission() async {');
+      expect(from, greaterThan(0), reason: 'requestPermission 구현을 못 찾았다');
+
+      final androidAt = src.indexOf(
+        'AndroidFlutterLocalNotificationsPlugin',
+        from,
+      );
+      final iosAt = src.indexOf('IOSFlutterLocalNotificationsPlugin', from);
+      expect(androidAt, greaterThan(from), reason: 'Android를 resolve하지 않는다');
+      expect(iosAt, greaterThan(from), reason: 'iOS를 resolve하지 않는다');
       expect(
-        src.indexOf('AndroidFlutterLocalNotificationsPlugin>();\n    if (android'),
-        greaterThan(0),
+        androidAt,
+        lessThan(iosAt),
         reason: 'Android를 먼저 resolve하고 분기해야 한다',
       );
     });
@@ -129,11 +160,17 @@ void main() {
     test('부팅 후 재예약 리시버와 권한이 있다', () {
       final m = _manifest();
       expect(m, contains('ScheduledNotificationBootReceiver'));
-      expect(m, contains('android.permission.RECEIVE_BOOT_COMPLETED'),
-          reason: '플러그인이 이 권한을 자체 선언하지 않는다');
+      expect(
+        m,
+        contains('android.permission.RECEIVE_BOOT_COMPLETED'),
+        reason: '플러그인이 이 권한을 자체 선언하지 않는다',
+      );
       expect(m, contains('android.intent.action.BOOT_COMPLETED'));
-      expect(m, contains('android.intent.action.MY_PACKAGE_REPLACED'),
-          reason: '앱 교체 후에도 재예약해야 한다');
+      expect(
+        m,
+        contains('android.intent.action.MY_PACKAGE_REPLACED'),
+        reason: '앱 교체 후에도 재예약해야 한다',
+      );
     });
 
     test('정확 알람 권한을 선언하지 않는다 — inexact를 쓰기 때문이다', () {
@@ -146,30 +183,38 @@ void main() {
   group('아이콘', () {
     test('drawable에 있다 — mipmap이면 플러그인이 못 찾는다', () {
       // 네이티브가 `getIdentifier(name, "drawable", pkg)`로 찾고 defType이 고정이다.
-      expect(File('android/app/src/main/res/drawable/ic_notification.xml').existsSync(),
-          isTrue);
+      expect(
+        File(
+          'android/app/src/main/res/drawable/ic_notification.xml',
+        ).existsSync(),
+        isTrue,
+      );
     });
 
     test('리소스 축소로부터 보호된다 — Dart 문자열만 참조한다', () {
       // release는 리소스 축소가 기본 ON이라, 지워지면 initialize가 아이콘 검증에
       // 실패해 **알림이 한 건도 뜨지 않는다.** release에서만 깨져 알기 어렵다.
-      final keep = File('android/app/src/main/res/raw/keep.xml').readAsStringSync();
+      final keep = File(
+        'android/app/src/main/res/raw/keep.xml',
+      ).readAsStringSync();
       expect(keep, contains('@drawable/ic_notification'));
     });
 
     test('테두리를 한 path로 그리지 않는다 — 상태바에 흰 사각형이 뜬다', () {
       // 기본 fillType이 nonZero라 "바깥 사각형 + 안쪽 사각형"을 한 path에 넣으면
       // 구멍이 안 뚫리고 통째로 칠해진다.
-      final svg =
-          File('android/app/src/main/res/drawable/ic_notification.xml')
-              .readAsStringSync();
+      final svg = File(
+        'android/app/src/main/res/drawable/ic_notification.xml',
+      ).readAsStringSync();
       final paths = RegExp(r'android:pathData="([^"]+)"').allMatches(svg);
 
-      expect(paths.length, greaterThanOrEqualTo(8),
-          reason: '막대·격자를 나눠 그려야 한다');
+      expect(paths.length, greaterThanOrEqualTo(8), reason: '막대·격자를 나눠 그려야 한다');
       for (final m in paths) {
-        expect(m.group(1)!.toLowerCase().split('m').length - 1, 1,
-            reason: '한 pathData에 서브패스가 둘이면 nonZero로 메워진다: ${m.group(1)}');
+        expect(
+          m.group(1)!.toLowerCase().split('m').length - 1,
+          1,
+          reason: '한 pathData에 서브패스가 둘이면 nonZero로 메워진다: ${m.group(1)}',
+        );
       }
     });
   });
