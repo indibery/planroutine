@@ -21,10 +21,18 @@ import 'package:flutter_test/flutter_test.dart';
 /// `docs/superpowers/specs/`는 일부러 제외한다 — 그 문서들은 특정 시점의 설계
 /// 기록이라 "당시 계획했던 레인"을 적고 있을 수 있고, 지금 실물과 맞아야 할
 /// 이유가 없다. 여기서 지키려는 것은 **사람이 명령을 복사해 실행하는 문서**다.
-const _docPaths = [
-  'CLAUDE.md',
-  '.claude/skills/deploy/SKILL.md',
-];
+///
+/// **스킬은 목록에 손으로 적지 않고 훑는다.** 처음에는 `deploy` 스킬 하나를 박아
+/// 뒀는데, `store-listing` 스킬을 추가하면서 그 파일이 가드 밖이라는 사실이 드러났다
+/// — 스킬은 사람과 Claude가 그대로 복사해 실행하는 런북이라 같은 의무를 진다.
+/// 목록을 손으로 관리하면 새 스킬마다 이 사실을 다시 발견해야 한다.
+List<String> _docPaths() => [
+      'CLAUDE.md',
+      ...(Directory('.claude/skills').listSync().whereType<Directory>().toList()
+            ..sort((a, b) => a.path.compareTo(b.path)))
+          .map((d) => '${d.path}/SKILL.md')
+          .where((p) => File(p).existsSync()),
+    ];
 
 /// 플랫폼별 Fastfile 경로 — 문서의 `<platform>/bin/fastlane.sh`와 짝이다.
 const _fastfilePaths = {
@@ -63,7 +71,7 @@ Map<String, Set<String>> _documentedCommands() {
   final found = {for (final p in _fastfilePaths.keys) p: <String>{}};
   final pattern = RegExp(r'(ios|android)/bin/fastlane\.sh\s+([a-z_]+)');
 
-  for (final path in _docPaths) {
+  for (final path in _docPaths()) {
     final file = File(path);
     expect(file.existsSync(), isTrue, reason: '$path 가 없다 — 검사 대상 문서다');
     for (final m in pattern.allMatches(file.readAsStringSync())) {
@@ -98,6 +106,14 @@ void main() {
           reason: '${entry.value}에서 레인을 하나도 못 뽑았다',
         );
       }
+
+      // 스킬 훑기가 죽으면(디렉터리 이름이 바뀌거나 glob이 깨지면) 검사 대상이
+      // CLAUDE.md 하나로 조용히 줄어든다 — 그때도 위 검사들은 통과한다.
+      expect(
+        _docPaths(),
+        contains('.claude/skills/deploy/SKILL.md'),
+        reason: '스킬 SKILL.md를 훑지 못했다 — 검사 대상이 CLAUDE.md로 줄었다',
+      );
     });
 
     // **이것이 실제로 데인 방향이다.** 없는 명령을 적어두면 그것을 믿고 실행한
@@ -135,7 +151,7 @@ void main() {
           undocumented,
           isEmpty,
           reason: '$platform 레인이 문서에 없다: ${undocumented.join(", ")} — '
-              '${_docPaths.first}의 배포 명령 목록에 추가하거나, '
+              '${_docPaths().first}의 배포 명령 목록에 추가하거나, '
               '다른 레인만 호출하는 내부 헬퍼라면 _internalLanes에 이유와 함께 넣을 것',
         );
       }
