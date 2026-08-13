@@ -27,7 +27,7 @@
 - **Freezed + json_serializable**(불변 모델)
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
 - **google_sign_in + googleapis**(Google Calendar) · **flutter_local_notifications + timezone**
-- 테스트: flutter_test(유닛/위젯 926) · integration_test(iPhone E2E 19) · sqflite_common_ffi
+- 테스트: flutter_test(유닛/위젯 1003) · integration_test(iPhone E2E 19) · sqflite_common_ffi
 
 ## 시작하기
 
@@ -76,7 +76,10 @@ flutter run
 
 ## 더 보기
 
-설계 결정·용어 규칙·배포 런북은 [CLAUDE.md](./CLAUDE.md)가 단일 소스다.
+설계 결정·용어 규칙은 [CLAUDE.md](./CLAUDE.md)가 단일 소스다.
+**배포 런북**(명령·레인·게이트·트러블슈팅)은 [.claude/skills/deploy/SKILL.md](./.claude/skills/deploy/SKILL.md) —
+CLAUDE.md에는 배포 밖에서도 밟는 급소만 남겨 뒀다.
+파일별 상세 구조는 [docs/notes/project-structure.md](./docs/notes/project-structure.md),
 데이터 스키마는 [docs/data-schema.md](./docs/data-schema.md).
 
 ## 라이선스

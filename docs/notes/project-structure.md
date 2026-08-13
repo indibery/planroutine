@@ -63,8 +63,9 @@ planroutine/
 │   │   │       │   └── bus_settings_screen.dart    # /bus/settings — BusSettingsTiles를 감싼다
 │   │   │       ├── widgets/
 │   │   │       │   ├── settings_section.dart       # 헤더+본문+Divider wrapper
+│   │   │       │   ├── theme_mode_tile.dart        # 시스템/밝게/어둡게 세그먼트
 │   │   │       │   ├── export_list_tile.dart
-│   │   │       │   ├── google_account_list_tile.dart
+│   │   │       │   ├── calendar_integration_section.dart  # 옛 google_account_list_tile
 │   │   │       │   ├── notification_settings_tiles.dart
 │   │   │       │   ├── stamp_settings_tiles.dart   # 도장 모양 한 줄 + 흐리게
 │   │   │       │   ├── stamp_style_sheet.dart      # 도장 모양 2열 그리드 시트
@@ -72,7 +73,9 @@ planroutine/
 │   │   │       │   ├── bus_summary_list_tile.dart  # 설정 탭 버스 요약 한 줄
 │   │   │       │   ├── trash_list_tile.dart
 │   │   │       │   ├── reset_list_tile.dart
-│   │   │       │   └── app_info_list_tile.dart
+│   │   │       │   ├── privacy_policy_list_tile.dart   # 법적 표시 — 탭 가능한 별 섹션
+│   │   │       │   ├── app_info_list_tile.dart
+│   │   │       │   └── data_source_list_tile.dart      # 출처 표시 (라이선스 의무)
 │   │   │       └── providers/
 │   │   ├── google/                     # Google Calendar 연동
 │   │   │   ├── data/                   # google_calendar_service
