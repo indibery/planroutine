@@ -60,8 +60,12 @@ class ScheduleStrings {
   /// ⚠️ **이 규율이 미치는 범위는 "확정 동작을 가리키는 버튼·다이얼로그 낱말"뿐이다.**
   /// [empty]의 `등록된 일정이 없습니다`처럼 파이프라인 단계를 가리키지 않는
   /// 형용사까지 금지하는 뜻이 아니다.
+  /// 건수를 뺀 어간. 스토어 문안이 이 버튼을 제대로 부르는지 검사하는 가드가
+  /// 쓴다 — `$n건`이 붙어 있으면 문서에서 부분문자열로 찾을 수 없다.
+  static String bulkConfirmLabel(String kindLabel) => '일괄 $kindLabel $confirm';
+
   static String bulkConfirm(String kindLabel, int n) =>
-      '일괄 $kindLabel $confirm $n건';
+      '${bulkConfirmLabel(kindLabel)} $n건';
 
   static const bulkConfirmTitle = '일괄 $confirm';
   static String bulkConfirmMessageFor(String scope, int count) =>

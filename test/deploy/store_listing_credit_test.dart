@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
+
 import '../helpers/data_source_agencies.dart';
 
 /// 스토어 등록정보 ↔ 실제 호출 · 정책 요건.
@@ -25,6 +28,10 @@ const _docs = {
 
 const _sourceHeading = '■ 정보 출처와 면책조항';
 
+/// 스토어에 나가는 **기능 설명** 절. 변경 이력(`## …에서 고친 것`)은 이 절 밖이라
+/// 낡은 라벨을 일부러 인용해도 여기 검사에 걸리지 않는다.
+const _featureHeading = '■ 주요 기능';
+
 /// 면책조항의 실체. 문구를 그대로 베끼지 않고 **정책이 요구하는 주장**만 고정한다 —
 /// 문장을 다듬는 것은 막지 않고, 주장이 사라지는 것은 막는다.
 const _disclaimerClaims = {
@@ -38,15 +45,17 @@ const _disclaimerClaims = {
 /// ⚠️ **첫 등장만 쓴다.** `app_store_description.md`는 변경 이력 표 안에서 같은 절
 /// 제목을 한 번 더 쓴다(`정부 정보 출처 URL 없음 | ■ 정보 출처와 면책조항 절 추가`) —
 /// 마지막 등장을 잡으면 절이 아니라 표를 검사하고, 그러면 URL이 하나도 없는데 통과한다.
-String _sourceSection(String path) {
+String _section(String path, String heading) {
   final text = File(path).readAsStringSync();
-  final start = text.indexOf(_sourceHeading);
-  expect(start, isNot(-1), reason: '$path 에 "$_sourceHeading" 절이 없다');
+  final start = text.indexOf(heading);
+  expect(start, isNot(-1), reason: '$path 에 "$heading" 절이 없다');
 
-  final rest = text.substring(start + _sourceHeading.length);
+  final rest = text.substring(start + heading.length);
   final end = rest.indexOf('\n■ ');
   return end == -1 ? rest : rest.substring(0, end);
 }
+
+String _sourceSection(String path) => _section(path, _sourceHeading);
 
 Set<String> _urlsIn(String section) => RegExp(
   r'https://[^\s)]+',
@@ -160,5 +169,39 @@ void main() {
         reason: '기관 표의 마커가 호출부에서 하나도 안 잡힌다 — 표가 낡았다',
       );
     });
+  });
+
+  // 스토어 문안이 **없는 버튼**을 부르는 것을 막는다.
+  //
+  // 2026-08-14에 실제로 났다 — pill 낱말을 `등록`→`확정`으로 바꾸면서 두 스토어
+  // 문서를 손으로 훑었는데, 인용부호 안의 라벨은 고치고 **같은 문장의 동사**와
+  // 두 문서의 동기화 색인을 지나쳤다. "이게 바뀌면 여기를 고쳐라"라고 적어둔
+  // 산문 체크리스트는 스스로 실행되지 않는다.
+  //
+  // ⚠️ **방향이 code→doc이어야 한다.** 반대로 "문서에 인용된 라벨이 앱에 있는가"를
+  // 검사하면 `app_store_description.md`의 변경 이력 표가 **없어진 라벨을 일부러
+  // 인용**하는 것(`도장 "…좋아요"`)에 걸린다. 이 리포가 네 번 밟은
+  // "스캐너는 언급과 사용을 구별하지 못한다" 함정의 다섯 번째가 된다.
+  //
+  // 못 잡는 것: `한 번에 등록할 수 있습니다` 같은 **산문 동사**. 라벨이 아니라
+  // 원리적으로 이 방향으로는 안 잡힌다.
+  group('스토어 문안 — 현재 UI 라벨을 부른다', () {
+    for (final kind in EntryKind.values) {
+      test('${kind.label} 일괄 확정 pill 이름이 두 스토어 설명에 있다', () {
+        final label = ScheduleStrings.bulkConfirmLabel(kind.label);
+
+        for (final (store, path) in _docs.entries.map(
+          (e) => (e.key, e.value),
+        )) {
+          expect(
+            _section(path, _featureHeading),
+            contains(label),
+            reason:
+                '$store 문안이 `$label`을 안 부른다 — 앱에 없는 버튼 이름을 '
+                '적고 있거나, 라벨을 바꾸고 문서를 안 고쳤다',
+          );
+        }
+      });
+    }
   });
 }
