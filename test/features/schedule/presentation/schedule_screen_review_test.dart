@@ -241,7 +241,7 @@ void main() {
       expect(find.text(ScheduleStrings.deletePending(2)), findsOneWidget);
       // 확정은 하단 종류별 일괄 등록 pill로 옮겼다.
       expect(
-        find.text(ScheduleStrings.bulkRegister(EntryKind.task.label, 2)),
+        find.text(ScheduleStrings.bulkConfirm(EntryKind.task.label, 2)),
         findsOneWidget,
       );
     });

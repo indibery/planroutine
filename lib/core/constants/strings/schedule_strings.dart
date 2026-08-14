@@ -42,12 +42,17 @@ class ScheduleStrings {
   static const kindTask = '업무';
   static const kindEvent = '행사';
 
-  /// 일괄 등록 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
+  /// 일괄 확정 pill — 종류별로 나눠 성격이 다른 것이 섞여 확정되지 않게 한다.
   ///
   /// 종류 이름은 **인자로 받는다**([EntryKind.label]). 여기에 `업무`/`행사`를 다시
   /// 박으면 다음 용어 변경 때 배지·필터 칩만 따라가고 이 pill만 옛 이름으로 남는다 —
   /// 직전 main이 정확히 그 상태였다(`kindEvent`는 `학교일정`, pill은 `일괄 일정 등록`).
-  static String bulkRegister(String kindLabel, int n) => '일괄 $kindLabel 등록 $n건';
+  ///
+  /// **낱말은 `확정`이다.** 한동안 이 pill만 `등록`이었는데, 그 pill이 여는
+  /// 다이얼로그는 제목·본문·버튼이 전부 `확정`이라 버튼과 창이 어긋났다. 게다가
+  /// `등록`은 가져오기 스낵바에서 **검토 대기로 넣기**를 가리켜, 한 낱말이
+  /// 파이프라인의 두 단계(넣기·확정)를 동시에 지고 있었다.
+  static String bulkConfirm(String kindLabel, int n) => '일괄 $kindLabel 확정 $n건';
 
   static const bulkConfirmTitle = '일괄 확정';
   static String bulkConfirmMessageFor(String scope, int count) =>

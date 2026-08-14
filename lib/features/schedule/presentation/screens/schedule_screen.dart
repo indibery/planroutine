@@ -129,7 +129,7 @@ class ScheduleScreen extends ConsumerWidget {
             Expanded(
               child: _BulkRegisterPill(
                 key: bulkRegisterTaskKey,
-                label: ScheduleStrings.bulkRegister(
+                label: ScheduleStrings.bulkConfirm(
                   EntryKind.task.label,
                   taskCount,
                 ),
@@ -145,7 +145,7 @@ class ScheduleScreen extends ConsumerWidget {
             Expanded(
               child: _BulkRegisterPill(
                 key: bulkRegisterEventKey,
-                label: ScheduleStrings.bulkRegister(
+                label: ScheduleStrings.bulkConfirm(
                   EntryKind.event.label,
                   eventCount,
                 ),

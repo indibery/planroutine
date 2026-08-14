@@ -153,6 +153,39 @@ void main() {
       expect(p, contains('그대로** 씁니다'));
     });
 
+    // 제목 규칙은 **갈래마다 달라야 한다.** 원본이 손글씨 목록이냐 공문이냐에 따라
+    // 정답이 반대다 — 아래 두 테스트가 그 분리를 고정한다.
+    test('`그대로`는 (가) 목록 갈래에만 건다 — 공통에 두면 공문까지 걸린다', () {
+      final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
+
+      expect(
+        _sectionOf(p, '**(가)'),
+        contains('그대로** 씁니다'),
+        reason: '손글씨 세 줄이 한 줄로 뭉갠 8/07 사고를 막는 규칙이라 여기 있어야 한다',
+      );
+      expect(
+        _sectionOf(p, '공통 규칙:'),
+        isNot(contains('그대로** 씁니다')),
+        reason: '공통에 있으면 (나) 공문에도 걸려 경어체 문장이 그대로 제목이 된다',
+      );
+    });
+
+    test('(나) 문서 갈래는 제목을 할 일 이름으로 쓰라고 말한다', () {
+      // 실측(2026-08-14): 문자 안내문에서 `설문에 참여하여 주시기 바랍니다`가
+      // 그대로 제목이 됐다. 오늘 탭에 그 문장이 뜨면 무슨 일인지 안 읽힌다.
+      final doc = _sectionOf(
+        buildAiPhotoPrompt(now, kind: EntryKind.task),
+        '**(나)',
+      );
+
+      expect(doc, contains('할 일 이름'));
+      expect(
+        doc,
+        contains('지어내지 않습니다'),
+        reason: '다듬으라고만 하면 사진에 없는 말을 만들어낼 수 있다',
+      );
+    });
+
     test('date를 반드시 채우라고 말한다 — 파서가 빈 date를 버린다', () {
       // `parseAiScheduleJson`은 `date`가 문자열이 아니면 invalid로 센다. 그리고
       // 그 건수는 **아무도 읽지 않아** 화면에 안 나온다 — 항목이 소리 없이 사라진다.
@@ -299,4 +332,22 @@ void main() {
       expect(p, contains('남이 하는 일'));
     });
   });
+}
+
+/// 프롬프트에서 [marker]로 시작하는 절만 잘라낸다 — 다음 절 머리 직전까지.
+///
+/// **절 단위로 봐야 하는 이유**: 규칙이 프롬프트 안에 있느냐가 아니라 **어느 갈래에
+/// 걸려 있느냐**가 문제다. 통째로 `contains`하면 공통 규칙에 있어도 통과해,
+/// 공문까지 `그대로`가 걸린 상태를 그대로 놓친다.
+String _sectionOf(String prompt, String marker) {
+  const heads = ['**(가)', '**(나)', '공통 규칙:'];
+  final start = prompt.indexOf(marker);
+  if (start < 0) return '';
+  var end = prompt.length;
+  for (final h in heads) {
+    if (h == marker) continue;
+    final i = prompt.indexOf(h, start + marker.length);
+    if (i >= 0 && i < end) end = i;
+  }
+  return prompt.substring(start, end);
 }

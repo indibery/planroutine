@@ -637,7 +637,7 @@ void main() {
         reason: '사진 경로로 들어온 것은 행사 배지를 단다',
       );
       expect(
-        find.text(ScheduleStrings.bulkRegister(EntryKind.event.label, 2)),
+        find.text(ScheduleStrings.bulkConfirm(EntryKind.event.label, 2)),
         findsOneWidget,
       );
     });

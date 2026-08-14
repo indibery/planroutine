@@ -104,6 +104,20 @@ void main() {
   });
 
   group('일괄 등록을 종류별로 나눈다', () {
+    // pill 라벨과 그 pill이 여는 다이얼로그가 **같은 낱말**을 써야 한다.
+    // 한동안 pill만 `등록`이고 다이얼로그는 제목·본문·버튼이 전부 `확정`이었다 —
+    // 버튼과 그 버튼이 여는 창이 서로 다른 이름을 부르는 상태였다.
+    // `등록`은 CSV 가져오기 스낵바에서 **검토 대기로 넣기**를 가리키므로,
+    // 확정에까지 쓰면 한 낱말이 파이프라인의 두 단계를 동시에 진다.
+    test('pill 라벨은 다이얼로그와 같은 낱말을 쓴다', () {
+      final label = ScheduleStrings.bulkConfirm(EntryKind.event.label, 2);
+
+      expect(label, contains(ScheduleStrings.confirm));
+      expect(label, contains(EntryKind.event.label));
+      expect(label, contains('2'));
+      expect(label, isNot(contains('등록')), reason: '`등록`은 검토 대기로 넣는 단계의 낱말이다');
+    });
+
     testWidgets('업무·행사 대기가 있으면 pill이 각각 건수를 달고 보인다', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
@@ -113,11 +127,11 @@ void main() {
       await pumpScreen(tester);
 
       expect(
-        find.text(ScheduleStrings.bulkRegister(EntryKind.task.label, 2)),
+        find.text(ScheduleStrings.bulkConfirm(EntryKind.task.label, 2)),
         findsOneWidget,
       );
       expect(
-        find.text(ScheduleStrings.bulkRegister(EntryKind.event.label, 1)),
+        find.text(ScheduleStrings.bulkConfirm(EntryKind.event.label, 1)),
         findsOneWidget,
       );
     });
