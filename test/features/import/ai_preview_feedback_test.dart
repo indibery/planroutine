@@ -41,17 +41,32 @@ void main() {
   });
 
   group('문구가 종류를 따라간다', () {
-    test('인식 건수 — 업무 쪽지에 행사라고 하지 않는다', () {
+    test('넣은 건수 — 업무 쪽지에 행사라고 하지 않는다', () {
       expect(
-        ImportStrings.aiPreviewCountFor(EntryKind.task, 3),
+        ImportStrings.aiRegisterSummary(
+          EntryKind.task,
+          created: 3,
+          dup: 0,
+          skipped: 0,
+        ),
         contains('업무'),
       );
       expect(
-        ImportStrings.aiPreviewCountFor(EntryKind.event, 3),
+        ImportStrings.aiRegisterSummary(
+          EntryKind.event,
+          created: 3,
+          dup: 0,
+          skipped: 0,
+        ),
         contains('행사'),
       );
       expect(
-        ImportStrings.aiPreviewCountFor(EntryKind.task, 3),
+        ImportStrings.aiRegisterSummary(
+          EntryKind.task,
+          created: 3,
+          dup: 0,
+          skipped: 0,
+        ),
         isNot(contains('행사')),
         reason: '예전에는 `행사 3건 인식`으로 고정이었다',
       );
@@ -66,8 +81,54 @@ void main() {
       // 용어가 바뀌면 배지·칩만 따라가고 이 문구만 옛 이름으로 남는 사고가
       // 이 리포에 있었다(일괄 등록 pill).
       for (final kind in EntryKind.values) {
-        expect(ImportStrings.aiPreviewCountFor(kind, 1), contains(kind.label));
+        expect(
+          ImportStrings.aiRegisterSummary(kind, created: 1, dup: 0, skipped: 0),
+          contains(kind.label),
+        );
       }
+    });
+  });
+
+  // 시트를 없앤 뒤로 이 한 줄이 시트 부제가 하던 말을 전부 진다
+  // (인식 건수 · 중복 제외 · 형식 오류 건너뜀).
+  group('결과 한 줄이 미리보기 시트를 대신한다', () {
+    test('중복도 형식 오류도 없으면 넣은 건수만 말한다', () {
+      final msg = ImportStrings.aiRegisterSummary(
+        EntryKind.event,
+        created: 2,
+        dup: 0,
+        skipped: 0,
+      );
+
+      expect(msg, contains('2'));
+      expect(msg, isNot(contains('중복')), reason: '0건인 말은 붙이지 않는다');
+      expect(msg, isNot(contains('형식')));
+    });
+
+    test('중복과 형식 오류가 있으면 한 줄에 함께 말한다', () {
+      final msg = ImportStrings.aiRegisterSummary(
+        EntryKind.event,
+        created: 1,
+        dup: 2,
+        skipped: 3,
+      );
+
+      expect(msg, contains(ImportStrings.aiPreviewDup(2)));
+      expect(msg, contains(ImportStrings.aiPreviewSkipped(3)));
+    });
+
+    test('새로 넣은 게 없어도 조용히 지나가지 않는다', () {
+      // 시트가 사라져 이 문구가 "붙여넣기가 됐다"는 유일한 신호다.
+      // 전부 중복이면 목록이 그대로라 화면만 봐서는 눌린 건지 알 수 없다.
+      final msg = ImportStrings.aiRegisterSummary(
+        EntryKind.event,
+        created: 0,
+        dup: 3,
+        skipped: 0,
+      );
+
+      expect(msg, isNotEmpty);
+      expect(msg, contains(ImportStrings.aiPreviewDup(3)));
     });
   });
 

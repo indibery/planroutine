@@ -548,7 +548,9 @@ class _BulkRegisterPill extends StatelessWidget {
       onTap: onPressed,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 40,
+        // 붙여넣기 스낵바가 이 바를 비켜 뜨려면 높이를 한 곳에서 읽어야 한다
+        // (`AppSizes.bulkRegisterBarHeight`가 이 값에서 파생된다).
+        height: AppSizes.bulkRegisterPillHeight,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(

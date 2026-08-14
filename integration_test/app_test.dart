@@ -612,15 +612,21 @@ void main() {
         ),
       );
 
-      // 붙여넣기 → 미리보기 시트
+      // 붙여넣기 한 번으로 끝난다 — 확인 시트를 거치지 않는다.
       await tester.tap(aiPaste);
       await tester.pumpAndSettle();
-      expect(find.text(ImportStrings.aiPreviewTitle), findsOneWidget);
-      expect(find.text('입학식'), findsOneWidget);
-
-      // 등록 → 시트 닫힘
-      await tester.tap(find.text(ImportStrings.aiRegisterButton(2)));
-      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          ImportStrings.aiRegisterSummary(
+            EntryKind.event,
+            created: 2,
+            dup: 0,
+            skipped: 0,
+          ),
+        ),
+        findsOneWidget,
+        reason: '시트가 사라졌으므로 이 한 줄이 붙여넣기가 됐다는 유일한 신호다',
+      );
 
       // 같은 화면 아래 검토 목록에 행사로 올라온다.
       expect(find.text('입학식'), findsOneWidget);

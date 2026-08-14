@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/utils/date_utils.dart' as du;
 import '../../schedule/presentation/providers/schedule_providers.dart';
 import '../data/ai_schedule_parser.dart';
 import '../data/ai_schedule_register.dart';
@@ -13,14 +11,13 @@ import '../../schedule/domain/entry_kind.dart';
 
 /// 사진 → AI → 붙여넣기 왕복 흐름의 두 동작.
 ///
-/// 입력 탭 히어로([PhotoInputHero])와 가져오기 화면 섹션([AiPhotoImportSection])이
-/// 같은 동작을 다른 모양으로 노출하므로, 로직은 여기 한 곳에만 둔다.
+/// 입력 탭 히어로([PhotoInputHero])가 이 둘을 한 상태에서 읽어 쓴다.
 
 /// ① 변환 프롬프트를 클립보드에 싣는다.
 ///
-/// [kind]는 히어로에서 고른 소스 종류다. **②의 [pasteAiSchedulesAndPreview]에 같은
+/// [kind]는 히어로에서 고른 소스 종류다. **②의 [pasteAiSchedulesAndRegister]에 같은
 /// 값을 넘겨야 한다** — 갈리면 쪽지 프롬프트로 뽑은 마감 기한이 행사로 저장돼 오늘
-/// 탭에 뜨지 않는다. 호출부(히어로·가져오기 섹션)가 하나의 상태에서 둘 다 읽는다.
+/// 탭에 뜨지 않는다. 호출부(히어로)가 하나의 상태에서 둘 다 읽는다.
 Future<void> copyAiPhotoPrompt(
   BuildContext context, {
   EntryKind kind = EntryKind.event,
@@ -29,15 +26,20 @@ Future<void> copyAiPhotoPrompt(
     ClipboardData(text: buildAiPhotoPrompt(DateTime.now(), kind: kind)),
   );
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(content: Text(ImportStrings.aiPromptCopiedFor(kind))),
-    );
+  _showFlowSnack(context, ImportStrings.aiPromptCopiedFor(kind));
 }
 
-/// ② 클립보드의 AI 응답을 파싱해 미리보기 시트를 띄우고, 승인 시 검토 대기로 등록한다.
-Future<void> pasteAiSchedulesAndPreview(
+/// ② 클립보드의 AI 응답을 파싱해 **곧바로 검토 대기로 등록한다.**
+///
+/// 확인 시트를 거치지 않는다. 예전에는 미리보기 시트에서 `등록`을 한 번 누르고
+/// 검토 목록에서 또 확정해야 해서, 한 흐름에 같은 것을 묻는 관문이 둘이었다
+/// (사용자 요청 2026-08-14). 시트가 하던 말(인식 건수 · 중복 제외 · 형식 오류)은
+/// [ImportStrings.aiRegisterSummary]가 한 줄로 진다.
+///
+/// **취소 자리가 없어졌다** — 잘못 붙여넣으면 되돌릴 기회 없이 목록에 들어온다.
+/// 대신 검토 목록에서 ← 스와이프나 `대기 N건 삭제`로 걷어낼 수 있고 둘 다
+/// soft-delete라, 잃는 것이 휴지통을 거치는 한 걸음뿐이다.
+Future<void> pasteAiSchedulesAndRegister(
   BuildContext context,
   WidgetRef ref, {
   EntryKind kind = EntryKind.event,
@@ -49,22 +51,18 @@ Future<void> pasteAiSchedulesAndPreview(
     // **못 뽑은 것과 못 읽은 것을 구분한다.** 형식 오류만 있었다면 AI는 답을
     // 줬는데 우리가 못 받은 것이고, 사용자가 할 일이 다르다 — 다시 복사할
     // 게 아니라 AI에 다시 요청해야 한다.
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            parsed.invalidCount > 0
-                ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
-                : ImportStrings.aiParseEmptyFor(kind),
-          ),
-        ),
-      );
+    _showFlowSnack(
+      context,
+      parsed.invalidCount > 0
+          ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
+          : ImportStrings.aiParseEmptyFor(kind),
+    );
     return;
   }
 
-  // 기존 활성 일정(title+date)과 대조해 미리보기에서 중복을 표시.
-  final existing = await ref.read(scheduleRepositoryProvider).getSchedules();
+  // 기존 활성 일정(title+date)과 대조해 중복은 넣지 않는다.
+  final repository = ref.read(scheduleRepositoryProvider);
+  final existing = await repository.getSchedules();
   final existingKeys = existing
       .map((s) => '${s.title}|${s.scheduledDate}')
       .toSet();
@@ -80,177 +78,49 @@ Future<void> pasteAiSchedulesAndPreview(
     }
   }
 
+  final result = await registerAiSchedules(
+    repository,
+    fresh,
+    // ①에서 복사한 프롬프트와 **같은 종류**로 저장한다.
+    kind: kind,
+  );
+  ref.invalidate(schedulesProvider);
   if (!context.mounted) return;
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useRootNavigator: true,
-    backgroundColor: AppColors.navyMid,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(AppSizes.radius16),
-      ),
-    ),
-    builder: (sheetContext) => _AiPreviewSheet(
-      items: parsed.items,
-      kind: kind,
-      freshCount: fresh.length,
-      dupCount: dupCount,
-      skippedCount: parsed.invalidCount,
-      onRegister: () async {
-        final result = await registerAiSchedules(
-          ref.read(scheduleRepositoryProvider),
-          fresh,
-          // ①에서 복사한 프롬프트와 **같은 종류**로 저장한다.
-          kind: kind,
-        );
-        ref.invalidate(schedulesProvider);
-        if (!sheetContext.mounted) return;
-        Navigator.of(sheetContext).pop();
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            SnackBar(content: Text(ImportStrings.aiRegistered(result.created))),
-          );
-      },
+  _showFlowSnack(
+    context,
+    ImportStrings.aiRegisterSummary(
+      kind,
+      created: result.created,
+      // `insertConfirmedOrPending`이 한 번 더 걸러낸 건수(`skipped`)를 합친다.
+      // 빼면 우리 키 검사를 통과한 중복이 조용히 사라진다.
+      dup: dupCount + result.skipped,
+      skipped: parsed.invalidCount,
     ),
   );
 }
 
-/// 붙여넣기 미리보기 바텀시트 — 인식/중복 건수 + 항목 목록 + 등록 확정.
-class _AiPreviewSheet extends StatelessWidget {
-  const _AiPreviewSheet({
-    required this.items,
-    required this.kind,
-    required this.freshCount,
-    required this.dupCount,
-    required this.skippedCount,
-    required this.onRegister,
-  });
-
-  final List<AiScheduleItem> items;
-  final EntryKind kind;
-  final int freshCount;
-  final int dupCount;
-
-  /// 형식이 어긋나 파서가 버린 건수. 0이면 줄에 넣지 않는다.
-  final int skippedCount;
-  final Future<void> Function() onRegister;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.7;
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSizes.spacing16,
-        right: AppSizes.spacing16,
-        top: AppSizes.spacing16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSizes.spacing16,
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              ImportStrings.aiPreviewTitle,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(height: AppSizes.spacing4),
-            Text(
-              [
-                ImportStrings.aiPreviewCountFor(kind, items.length),
-                if (dupCount > 0) ImportStrings.aiPreviewDup(dupCount),
-                if (skippedCount > 0)
-                  ImportStrings.aiPreviewSkipped(skippedCount),
-              ].join(' · '),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                // 버린 것이 있으면 그 줄이 눈에 걸려야 한다 — 조용히 지나가면
-                // 보여주는 의미가 없다.
-                color: skippedCount > 0 ? AppColors.inkRed : AppColors.sub,
-              ),
-            ),
-            const SizedBox(height: AppSizes.spacing12),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: items.length,
-                itemBuilder: (_, i) {
-                  final item = items[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 3,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: AppColors.goldMuted,
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radius4,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSizes.spacing8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                              Text(
-                                du.formatDate(DateTime.parse(item.date)),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.faint,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSizes.spacing12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(AppStrings.cancel),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.spacing8),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    onPressed: freshCount > 0 ? onRegister : null,
-                    child: Text(ImportStrings.aiRegisterButton(freshCount)),
-                  ),
-                ),
-              ],
-            ),
-          ],
+/// 이 흐름의 스낵바는 **일괄등록 바 위로 띄운다.**
+///
+/// 기본값(`SnackBarBehavior.fixed`)은 화면 맨 아래에 앉는데, 입력 탭에서는 그
+/// 자리가 정확히 일괄등록 pill이라 4초 동안 확정을 누를 수 없다(사용자 신고
+/// 2026-08-14). 시트를 없앤 뒤로는 이 한 줄이 "붙여넣기가 됐다"는 유일한 신호라
+/// 띄우지 않는 선택지가 없어, 자리를 비켜주는 쪽으로 푼다.
+///
+/// 전역 `snackBarTheme`으로 올리지 않는다 — 이 앱의 다른 스낵바 스무 곳의 모양이
+/// 함께 바뀐다.
+void _showFlowSnack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(
+          AppSizes.spacing8,
+          0,
+          AppSizes.spacing8,
+          AppSizes.bulkRegisterBarHeight,
         ),
       ),
     );
-  }
 }

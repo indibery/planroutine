@@ -137,7 +137,7 @@ class _PhotoInputHeroState extends ConsumerState<PhotoInputHero> {
                         label: ImportStrings.heroStepPaste,
                         icon: Icons.auto_awesome,
                         primary: true,
-                        onTap: () => pasteAiSchedulesAndPreview(
+                        onTap: () => pasteAiSchedulesAndRegister(
                           context,
                           ref,
                           kind: _source,

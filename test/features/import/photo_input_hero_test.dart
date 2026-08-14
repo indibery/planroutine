@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:planroutine/core/constants/app_sizes.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/import/presentation/widgets/photo_input_hero.dart';
@@ -102,35 +103,18 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('② 붙여넣기 → 미리보기 → 등록하면 검토 대기로 저장된다', (tester) async {
+  testWidgets('② 붙여넣기를 누르면 확인 단계 없이 곧바로 검토 대기로 저장된다', (tester) async {
     await pumpHero(tester);
     clipboardText =
         '[{"title":"입학식","date":"2026-03-02"},{"title":"봄 현장체험학습","date":"2026-04-24"}]';
 
     // FFI DB 호출은 실제 비동기라 runAsync로 감싸고, 고정 delay 대신
-    // 시트가 열릴 때까지 조건 대기(첫 DB 오픈은 수백 ms 걸릴 수 있음).
+    // 결과 스낵바가 뜰 때까지 조건 대기(첫 DB 오픈은 수백 ms 걸릴 수 있음).
     await tester.runAsync(() async {
       await tester.tap(find.text(ImportStrings.heroStepPaste));
       for (
         var i = 0;
-        i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
-        i++
-      ) {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-        await tester.pump();
-      }
-    });
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('2건'), findsWidgets);
-    expect(find.text('입학식'), findsOneWidget);
-
-    await tester.runAsync(() async {
-      await tester.tap(find.textContaining('검토 목록에 등록'));
-      for (
-        var i = 0;
-        i < 100 &&
-            find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+        i < 100 && find.byType(SnackBar).evaluate().isEmpty;
         i++
       ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -146,7 +130,48 @@ void main() {
       isTrue,
       reason: '기본 선택(행사 일정표)이면 행사로 저장된다',
     );
+    // 시트를 없앴으므로 결과 한 줄이 "붙여넣기가 됐다"는 유일한 신호다.
+    expect(
+      find.text(
+        ImportStrings.aiRegisterSummary(
+          EntryKind.event,
+          created: 2,
+          dup: 0,
+          skipped: 0,
+        ),
+      ),
+      findsOneWidget,
+    );
     await tester.pump(const Duration(seconds: 4)); // 스낵바 타이머 소진
+  });
+
+  testWidgets('결과 스낵바는 일괄등록 바 위로 띄운다 — 다음 동작을 가리지 않는다', (tester) async {
+    // 기본값(fixed)은 화면 맨 아래에 앉는데 그 자리가 정확히 입력 탭의
+    // 일괄등록 pill이라, 4초 동안 확정을 못 누른다(사용자 신고 2026-08-14).
+    await pumpHero(tester);
+    clipboardText = '[{"title":"입학식","date":"2026-03-02"}]';
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text(ImportStrings.heroStepPaste));
+      for (
+        var i = 0;
+        i < 100 && find.byType(SnackBar).evaluate().isEmpty;
+        i++
+      ) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    await tester.pumpAndSettle();
+
+    final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snack.behavior, SnackBarBehavior.floating);
+    expect(
+      snack.margin?.resolve(TextDirection.ltr).bottom,
+      greaterThanOrEqualTo(AppSizes.bulkRegisterBarHeight),
+      reason: '바 높이보다 낮게 띄우면 pill이 다시 가려진다',
+    );
+    await tester.pump(const Duration(seconds: 4));
   });
 
   testWidgets('클립보드에 일정 JSON이 없으면 안내만 하고 등록하지 않는다', (tester) async {
@@ -213,21 +238,7 @@ void main() {
       await tester.tap(find.text(ImportStrings.heroStepPaste));
       for (
         var i = 0;
-        i < 100 && find.text(ImportStrings.aiPreviewTitle).evaluate().isEmpty;
-        i++
-      ) {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-        await tester.pump();
-      }
-    });
-    await tester.pumpAndSettle();
-
-    await tester.runAsync(() async {
-      await tester.tap(find.textContaining('검토 목록에 등록'));
-      for (
-        var i = 0;
-        i < 100 &&
-            find.text(ImportStrings.aiPreviewTitle).evaluate().isNotEmpty;
+        i < 100 && find.byType(SnackBar).evaluate().isEmpty;
         i++
       ) {
         await Future<void>.delayed(const Duration(milliseconds: 50));

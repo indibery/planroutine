@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1003** 유닛/위젯 + 19 E2E (실측 2026-08-13. 926으로 적혀 있던 값이 오래 낡아 있었다 — 이 숫자를 지키는 가드는 없다) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1019** 유닛/위젯 + 19 E2E (실측 2026-08-14. 926으로 적혀 있던 값이 오래 낡아 있었다 — 이 숫자를 지키는 가드는 없다) |
 
 ## 프로젝트 구조
 
@@ -412,7 +412,14 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
 ### 입력 탭 구조
 - **넣기가 주인공**, 검토는 그 아래. 화면 제목 `입력`(eyebrow `INPUT`), 탭 라벨 `입력`.
 - `PhotoInputHero`(import feature) — 왕복 3단 `① 프롬프트 · AI 앱 · ② 붙여넣기`. 가운데 칸은 앱 밖에서 벌어지는 일이라 **누를 수 없다**. 작년 업무 CSV는 아래 **테두리 카드 한 줄**(옅은 글씨면 학기 초에 못 찾는다 — 히어로는 골드 채움이라 위계는 유지된다).
-- AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndPreview`에 있다 — 히어로와 가져오기 화면 섹션이 같은 로직을 공유한다.
+- AI 동작 자체는 `import/presentation/ai_photo_flow.dart`의 `copyAiPhotoPrompt`/`pasteAiSchedulesAndRegister`에 있다 — 호출부는 히어로 하나뿐이다.
+- **② 붙여넣기는 확인 시트를 거치지 않는다**(2026-08-14). 예전에는 미리보기 시트에서 `등록`을 누르고 검토 목록에서 또 확정해야 해서, **한 흐름에 같은 것을 묻는 관문이 둘**이었다(사용자 요청). 시트가 하던 말(인식 건수 · 중복 제외 · 형식 오류)은 `ImportStrings.aiRegisterSummary` 한 줄이 진다.
+  - **잃은 것은 시트의 취소 버튼이다.** 잘못 붙여넣으면 되돌릴 기회 없이 목록에 들어온다 — 대신 ← 스와이프나 `대기 N건 삭제`로 걷어내고 둘 다 soft-delete라, 값은 휴지통을 거치는 한 걸음뿐이다.
+  - `created`가 0이어도 **조용히 지나가지 않는다.** 전부 중복이면 목록이 그대로라, 문구가 없으면 버튼이 눌린 건지 알 수 없다.
+  - `insertConfirmedOrPending`이 한 번 더 걸러낸 `skipped`를 중복 건수에 **합쳐서** 말한다. 빼면 우리 키 검사를 통과한 중복이 조용히 사라진다.
+- **결과 스낵바는 `SnackBarBehavior.floating` + 아래 `AppSizes.bulkRegisterBarHeight` 여백으로 띄운다.** 기본값(`fixed`)이 앉는 자리가 정확히 하단 일괄등록 pill이라, 4초 동안 확정을 누를 수 없었다(사용자 신고 2026-08-14). 시트를 없앤 뒤로는 이 한 줄이 "붙여넣기가 됐다"는 **유일한 신호**라 안 띄우는 선택지가 없어, 자리를 비켜주는 쪽으로 풀었다.
+  - 전역 `snackBarTheme`으로 올리지 않는다 — 이 앱의 다른 스낵바 스무 곳의 모양이 함께 바뀐다.
+  - 바 높이는 `AppSizes.bulkRegisterPillHeight`에서 **파생**된다. 스낵바 쪽에 숫자를 따로 박으면 pill 높이를 바꿀 때 조용히 어긋난다 — 가드가 `photo_input_hero_test.dart`에서 `margin.bottom ≥ 바 높이`를 검사한다.
 - 하단 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 행사 등록 N건`. 건수는 **현재 뷰**(카테고리·종류 필터 반영) 기준이고 0이면 그 pill은 숨는다.
   - 라벨은 `ScheduleStrings.bulkRegister(kind.label, n)`으로 **조립**한다 — `업무`/`행사`를 여기 다시 박으면 다음 용어 변경 때 배지·칩만 따라가고 pill만 옛 이름으로 남는다(직전 main이 그 상태였다: `kindEvent`는 `학교일정`, pill은 `일괄 일정 등록`).
   - "0건이면 숨는다" 가드는 **`ScheduleScreen.bulkRegister{Task,Event}Key`** 로 검사한다. 문자열 `findsNothing`은 라벨을 한 번만 손봐도 아무 데서도 렌더되지 않는 문자열을 찾게 돼 0건 pill을 보고도 통과한다.
@@ -909,7 +916,7 @@ transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 �
 ### `beta` 게이트가 보는 것과 보지 않는 것
 
 `flutter analyze` + **배포 가드 테스트만**(`test/deploy` + `data_source_credit_test`).
-실측 warm 10.2초. 전체 1003건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
+실측 warm 10.2초. 전체 1019건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
 않는다**(의도된 한계). 릴리즈 노트가 없으면 **경고만** 한다: 레인이 의도적으로 막지 않는
 지점이라(M1 껍데기 업로드를 문구 작성에 걸리게 하지 않으려고) 훅이 그 설계를 뒤집지 않는다.
 

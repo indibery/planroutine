@@ -38,7 +38,7 @@ planroutine/
 │   │   │   ├── data/                   # csv_parser, import_repository, ai_schedule_parser/register
 │   │   │   ├── domain/                 # imported_schedule
 │   │   │   └── presentation/
-│   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기+미리보기 (히어로·가져오기 화면 공유)
+│   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기→바로 검토 대기 등록 (히어로 전용)
 │   │   │       ├── screens/import_screen.dart  # 작년 업무 CSV 전용 풀스크린 + sticky 스테퍼
 │   │   │       ├── widgets/
 │   │   │       │   ├── photo_input_hero.dart   # 입력 탭 히어로 (왕복 3단 + CSV 보조 카드)

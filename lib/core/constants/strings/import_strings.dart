@@ -63,12 +63,6 @@ class ImportStrings {
   static String aiParseAllInvalid(int n) =>
       '$n건을 받았지만 날짜 형식이 맞지 않아 읽지 못했어요. AI에 다시 요청해 주세요';
 
-  static const aiPreviewTitle = '붙여넣기 미리보기';
-
-  /// **종류에 맞춰 말한다.** 예전에는 `행사 $n건 인식`으로 고정이라, 업무 쪽지로
-  /// 넣어도 행사라고 떴다.
-  static String aiPreviewCountFor(EntryKind kind, int n) =>
-      '${kind.label} $n건 인식';
   static String aiPreviewDup(int n) => '중복 $n건 제외';
 
   /// 형식이 어긋나 버린 건수. **보여주지 않으면 조용히 사라진다** —
@@ -76,8 +70,26 @@ class ImportStrings {
   /// 나머지가 어디 갔는지 알 길이 없었다. 손글씨 목록에서는 모든 줄이
   /// 살아남아야 해서 더 문제다.
   static String aiPreviewSkipped(int n) => '형식 오류 $n건 건너뜀';
-  static String aiRegisterButton(int n) => '$n건 검토 목록에 등록';
-  static String aiRegistered(int n) => '$n건을 검토 목록에 등록했어요';
+
+  /// 붙여넣기 결과 한 줄 — **미리보기 시트가 하던 말을 그대로 진다**
+  /// (인식 건수 · 중복 제외 · 형식 오류 건너뜀).
+  ///
+  /// 시트를 없앤 뒤로 이 문구가 "붙여넣기가 됐다"는 **유일한 신호**다. 그래서
+  /// [created]가 0이어도 조용히 지나가지 않는다 — 전부 중복이면 목록이 그대로라
+  /// 화면만 봐서는 버튼이 눌린 건지 알 수 없다.
+  ///
+  /// 종류 이름은 **[EntryKind.label]에서 온다.** 여기 다시 박으면 용어가 바뀔 때
+  /// 배지·칩만 따라가고 이 문구만 옛 이름으로 남는다(일괄 등록 pill이 그랬다).
+  static String aiRegisterSummary(
+    EntryKind kind, {
+    required int created,
+    required int dup,
+    required int skipped,
+  }) => [
+    if (created > 0) '${kind.label} $created건을 검토 목록에 넣었어요' else '새로 넣을 게 없어요',
+    if (dup > 0) aiPreviewDup(dup),
+    if (skipped > 0) aiPreviewSkipped(skipped),
+  ].join(' · ');
 
   // 입력 탭 히어로 — 사진 AI가 주 경로, 작년 업무 CSV는 보조 한 줄
   /// **`행사`를 떼었다.** 쪽지의 마감 기한도 이 경로로 들어오므로(업무로 저장된다)

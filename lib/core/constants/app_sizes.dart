@@ -48,6 +48,19 @@ class AppSizes {
   static const fabSize = 56.0;
   static const tabBarHeight = 72.0;
 
+  // ── 입력 탭 일괄등록 바 ──────────────────────────────────
+  /// 일괄등록 pill 한 개의 높이.
+  static const bulkRegisterPillHeight = 40.0;
+
+  /// 일괄등록 바 전체 높이 — 위 여백 + pill + 아래 여백.
+  ///
+  /// 붙여넣기 결과 스낵바를 **이 바 위로** 띄우는 데 쓴다. 기본값(fixed) 스낵바는
+  /// 화면 맨 아래에 앉는데 그 자리가 정확히 이 바라, 4초 동안 확정을 못 누른다
+  /// (사용자 신고 2026-08-14). 숫자를 스낵바 쪽에 따로 박으면 pill 높이를 바꿀 때
+  /// 조용히 어긋나므로 여기서 파생시킨다.
+  static const bulkRegisterBarHeight =
+      spacing8 + bulkRegisterPillHeight + spacing12;
+
   // ── 캘린더 그리드 ────────────────────────────────────────
   /// 날짜 셀 한 칸 높이. dot 유무로 행 높이가 흔들리지 않게 명시한다.
   static const calendarCellHeight = 34.0;
