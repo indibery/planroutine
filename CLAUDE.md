@@ -45,7 +45,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1019** 유닛/위젯 + 19 E2E (실측 2026-08-14. 926으로 적혀 있던 값이 오래 낡아 있었다 — 이 숫자를 지키는 가드는 없다) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1037** 유닛/위젯 + 19 E2E (실측 2026-08-14. 926으로 적혀 있던 값이 오래 낡아 있었다 — 이 숫자를 지키는 가드는 없다) |
 
 ## 프로젝트 구조
 
@@ -405,6 +405,10 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
 - **승계 지점이 급소**: `CalendarRepository.createFromSchedule`이 `schedules.kind`를 이벤트로 옮긴다. 여기서 끊기면 데이터는 멀쩡한데 오늘 탭에 운동회가 뜨는, 원인이 두 레이어 떨어진 버그가 된다.
 - `buildTodayView`가 `e.kind.showsInToday`로 걸러 **오늘 탭은 업무만** 담는다 — 행사에는 완료 개념이 없어 도장·진행 링의 의미가 깨진다.
 - 캘린더는 둘 다 보여준다. 월 그리드 점의 종류별 색 구분은 하지 않는다(색 규칙이 이미 골드=오늘·중요, 붉은색=공휴일·일요일, 파랑=토요일·이벤트로 포화). **대신 목록 행에서 구분한다** — 제목 앞 인라인 `KindBadge`(업무=회색 `sub` / 행사=파랑 `info`, 옅은배경 15% + 10px w700).
+- **배지는 색이 아니라 세기로 갈린다**(2026-08-14). 라이트에서 업무(`sub`)와 행사(`info`)가 **서로 1.39:1**이라 10px 배지에서 구별이 안 됐다(사용자 신고). 같은 파랑을 **채움/틴트** 두 세기로 나눈다 — **업무가 채움**(내가 처리할 일이고 오늘 탭의 주인공이라 강조를 가져간다), 행사는 틴트.
+  - **회색을 쓰지 않는다.** `작년` 배지가 회색 테두리형이라 한 행에 같이 뜬다 — 색 축은 종류, 회색은 출처. 초록은 `확정됨`(`schedule_tile.dart`가 **같은 조립**으로 그린다), 골드는 오늘·중요가 이미 쓴다.
+  - 전용 토큰 셋(`kindTaskFill`·`onKindTaskFill`·`kindEvent`)을 새로 뒀다 — `sub`·`info`는 313곳이 써서 못 건드린다. 대비: 라이트 채움 위 흰 글씨 6.32:1, 다크 채움 위 네이비 5.46:1(다크는 흰 글씨가 3.32로 미달이라 네이비를 얹는다).
+  - 가드는 `kind_badge_test.dart` — 업무 채움의 알파가 1.0인지, 행사가 0.5 미만인지, 행사 색이 `sub`와 다른지.
 - `KindBadge`는 `features/schedule/presentation/widgets/`에 산다(`shared/widgets/`가 아니다). `EntryKind`에 종속인데 `shared/widgets/` 아래 어떤 위젯도 `features/`를 import 하지 않기 때문 — 캘린더가 schedule을 가져다 쓰는 방향은 이미 `calendar_event.dart`에 있다.
 - **시트에서 종류를 고를 수 있다**(캘린더 경로만). 손으로 넣은 항목이 전부 업무가 되던 문제를 없앤다. **오늘 탭에서 열면 종류 행을 숨긴다**(`allowKindChange: false`) — 거기서 행사를 만들면 저장 직후 목록에서 사라져 저장 실패로 읽힌다. 행만 숨기고 `_kind` 상태는 살려둬야 오늘 탭에서 편집해도 종류가 보존된다.
 - 캘린더에서 종류를 바꿔도 원본 `schedules.kind`는 그대로다(역방향 동기화 없음). `scheduleId`가 있는 이벤트의 종류를 뒤집으면 입력 탭 확정 목록과 캘린더의 배지가 어긋나고 CSV 내보내기는 옛 종류로 나간다. 빈도가 낮아 두고 있는 상태이지 버그가 아니다.
@@ -846,6 +850,29 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
 - **골드 의미 토큰**: `gold`(배경 위 텍스트/아이콘/보더 — 라이트에선 대비용 딥골드) / `goldFill`(배지·pill·버튼·오늘 셀 채움 — 밝은 골드) / `onGold`(goldFill 채움 위 네이비 글씨). "골드 채움은 goldFill + onGold" 규칙으로 다크/라이트 대비를 함께 맞춘다.
 - **테마 변경 = 전체 재생성**: `app.dart`가 effective brightness로 `AppColors.applyBrightness` + `AppTheme.of(brightness)` 동기화 후, MaterialApp `builder`에서 brightness를 `KeyedSubtree` key로 주어 라우트 하위 전체를 재생성한다(라우터 상태는 상위라 현재 탭 유지). 전역 팔레트가 개별 위젯 리빌드 순서에 의존하지 않게 하는 핵심.
 
+#### Material이 그리는 컴포넌트에 `primary`를 채움으로 주면 안 된다 (2026-08-14)
+
+`colorScheme.primary`는 `AppColors.gold`인데, **라이트에서 그건 배경 위 텍스트·아이콘용
+딥골드**(`#9A7415`)다. Material의 날짜 선택은 선택 칸을 `primary`로 칠하고 `onPrimary`
+(네이비)로 쓰므로 **3.57:1**이 돼 날짜가 안 읽혔다(사용자 신고).
+
+**다크에서는 안 드러난다** — 다크는 `gold`와 `goldFill`이 **같은 값**이라 우연히 맞는다
+(9.77:1). 라이트에서만 둘이 갈린다. 그래서 이 부류의 결함은 **라이트로 봐야 보인다.**
+
+- 우리가 직접 그리는 곳은 `골드 채움 = goldFill + onGold` 규칙을 지키는데, **Material이
+  그리는 것만 `primary`를 거쳐 그 규칙을 우회**하고 있었다. `datePickerTheme`·
+  `timePickerTheme`으로 명시적으로 물린다(**8.37:1**). 시각 선택은 3곳(버스·알림 설정).
+- ⚠️ **`colorScheme.primary` 자체는 바꾸지 않는다** — 배경 위 아이콘·텍스트로 쓰는 곳이
+  많아 전역이 흔들린다.
+- ⚠️ **오늘 칸은 `dayBackgroundColor`가 아니라 `todayBackgroundColor`가 칠하고, 글씨는
+  `todayForegroundColor`가 쓴다.** 후자를 `gold` 고정으로 두면 **골드 위 골드**가 돼 숫자가
+  통째로 사라진다. 가드가 두 번 통과했는데 화면은 깨져 있었고, **실제 렌더로 잡았다** —
+  가드가 Material이 실제로 칠하는 짝이 아닌 짝을 재고 있었다.
+- 가드는 `test/core/theme/picker_contrast_test.dart`(두 테마 × 대비·토큰·다이얼).
+  미리보기는 `test/tools/kind_badge_preview.dart`가 **진짜 `DatePickerDialog`** 를 그린다.
+  ⚠️ `AppColors`가 전역이라 **테마마다 따로 뽑아야 한다** — 한 트리에 둘을 넣으면 마지막
+  팔레트가 둘 다 칠한다(실제로 다크 패널에 라이트 배지가 그려졌다).
+
 ## 배포 · 빌드 도구
 
 명령·레인·게이트·트러블슈팅·검증 함정은 **`.claude/skills/deploy/SKILL.md`** 런북에 있다
@@ -918,7 +945,7 @@ transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 �
 ### `beta` 게이트가 보는 것과 보지 않는 것
 
 `flutter analyze` + **배포 가드 테스트만**(`test/deploy` + `data_source_credit_test`).
-실측 warm 10.2초. 전체 1019건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
+실측 warm 10.2초. 전체 1037건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
 않는다**(의도된 한계). 릴리즈 노트가 없으면 **경고만** 한다: 레인이 의도적으로 막지 않는
 지점이라(M1 껍데기 업로드를 문구 작성에 걸리게 하지 않으려고) 훅이 그 설계를 뒤집지 않는다.
 
