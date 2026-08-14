@@ -11,7 +11,7 @@ import 'package:planroutine/features/schedule/presentation/providers/schedule_pr
 
 import '../../../helpers/test_database.dart';
 
-/// 입력 탭의 종류 필터·종류별 일괄 등록이 의존하는 프로바이더 계약.
+/// 입력 탭의 종류 필터·종류별 일괄 확정이 의존하는 프로바이더 계약.
 void main() {
   setUpAll(setUpFfiForTests);
 

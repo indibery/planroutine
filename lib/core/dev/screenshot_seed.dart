@@ -56,7 +56,7 @@ Future<void> seedScreenshotData(ProviderContainer container) async {
     _s('방학 중 교직원 연수', '2026-07-25', '조직통계'),
     _s('2학기 개학 준비', '2026-08-20', '교육과정계획'),
     _s('9월 생활지도 계획', '2026-09-02', '일과운영관리'),
-    // 월간 일정표 사진(AI 변환)으로 들어오는 행사 — 종류 배지·일괄 행사 등록용
+    // 월간 일정표 사진(AI 변환)으로 들어오는 행사 — 종류 배지·일괄 행사 확정용
     _sKind('입학식', '2026-03-02', EntryKind.event),
     _sKind('과학의 달 체험전', '2026-04-10', EntryKind.event),
     _sKind('운동회', '2026-05-15', EntryKind.event),

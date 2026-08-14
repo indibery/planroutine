@@ -37,8 +37,8 @@ App Store Connect → 공직플랜 → 버전 → **설명(Description)** 에 �
 
 · 검토 후 확정
 넣은 일정은 입력 탭 아래 검토 목록에서 슬라이드로 확정하거나 삭제합니다.
-종류·카테고리로 걸러 볼 수 있고, "일괄 업무 등록"·"일괄 행사 등록" 버튼으로 성격이
-같은 것만 한 번에 등록할 수 있습니다. 검토할 것이 없으면 요약 한 줄로 줄어듭니다.
+종류·카테고리로 걸러 볼 수 있고, "일괄 업무 확정"·"일괄 행사 확정" 버튼으로 성격이
+같은 것만 한 번에 확정할 수 있습니다. 검토할 것이 없으면 요약 한 줄로 줄어듭니다.
 
 · 자체 캘린더
 앱 내에서 직접 이벤트를 만들고 편집할 수 있습니다. 설명 메모, 중요 표시,
@@ -136,7 +136,7 @@ bery97@gmail.com
 - 알림 구성 (`notification_strings.dart` / `notification_rules.dart`)
 - `app_features.dart`의 `googleCalendarEnabled`
 - 탭 구성·이름 (`main_shell.dart`)
-- 확정·일괄 등록 라벨, 종류 이름 (`schedule_strings.dart`)
+- 확정·일괄 확정 pill 라벨, 종류 이름 (`schedule_strings.dart`)
 - 종류 구분 규칙 (`entry_kind.dart` — 어떤 입력 경로가 어떤 종류가 되는지)
 - 도장 종류 (`stamp_settings.dart`의 `SealStyle`)
 

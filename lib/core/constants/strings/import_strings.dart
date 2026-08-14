@@ -25,7 +25,6 @@ class ImportStrings {
   static String registeredSnack(int created, int skipped) => skipped > 0
       ? '$created건을 검토 목록에 등록했어요 (중복 $skipped건 제외)'
       : '$created건을 검토 목록에 등록했어요';
-  static const registerCount = '건 등록됨';
 
   static const csvTitle = '작년 업무 CSV 올리기';
 
@@ -79,7 +78,7 @@ class ImportStrings {
   /// 화면만 봐서는 버튼이 눌린 건지 알 수 없다.
   ///
   /// 종류 이름은 **[EntryKind.label]에서 온다.** 여기 다시 박으면 용어가 바뀔 때
-  /// 배지·칩만 따라가고 이 문구만 옛 이름으로 남는다(일괄 등록 pill이 그랬다).
+  /// 배지·칩만 따라가고 이 문구만 옛 이름으로 남는다(일괄 확정 pill이 그랬다).
   static String aiRegisterSummary(
     EntryKind kind, {
     required int created,

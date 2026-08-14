@@ -79,7 +79,7 @@ void main() {
 
     test('종류 이름을 여기 다시 박지 않는다 — EntryKind.label에서 온다', () {
       // 용어가 바뀌면 배지·칩만 따라가고 이 문구만 옛 이름으로 남는 사고가
-      // 이 리포에 있었다(일괄 등록 pill).
+      // 이 리포에 있었다(일괄 확정 pill).
       for (final kind in EntryKind.values) {
         expect(
           ImportStrings.aiRegisterSummary(kind, created: 1, dup: 0, skipped: 0),

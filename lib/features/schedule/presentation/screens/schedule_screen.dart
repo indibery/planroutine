@@ -27,7 +27,7 @@ import '../widgets/slide_hint_bar.dart';
 class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key});
 
-  /// 종류별 일괄 등록 pill — 테스트가 문구가 아니라 **정체**로 찾게 한다.
+  /// 종류별 일괄 확정 pill — 테스트가 문구가 아니라 **정체**로 찾게 한다.
   /// "해당 종류 0건이면 숨는다"를 문자열로 검사하면, 다음 문구 개편에서 그 문자열이
   /// 아무 데서도 렌더되지 않는 순간 `findsNothing`이 0건 pill을 보고도 통과한다.
   static const bulkRegisterTaskKey = Key('bulk_register_task');
@@ -95,7 +95,7 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
-  /// 종류별 일괄 등록 바 — `일괄 업무 등록 N건` / `일괄 행사 등록 N건`.
+  /// 종류별 일괄 확정 바 — `일괄 업무 확정 N건` / `일괄 행사 확정 N건`.
   ///
   /// 현재 뷰(카테고리·종류 필터 반영)의 대기 건수 기준이고, 해당 종류의 대기가
   /// 0이면 그 pill은 숨는다. 성격이 다른 것이 한 번에 섞여 확정되지 않게 나눴다.
@@ -127,7 +127,7 @@ class ScheduleScreen extends ConsumerWidget {
         children: [
           if (taskCount > 0)
             Expanded(
-              child: _BulkRegisterPill(
+              child: _BulkConfirmPill(
                 key: bulkRegisterTaskKey,
                 label: ScheduleStrings.bulkConfirm(
                   EntryKind.task.label,
@@ -143,7 +143,7 @@ class ScheduleScreen extends ConsumerWidget {
             ),
           if (eventCount > 0)
             Expanded(
-              child: _BulkRegisterPill(
+              child: _BulkConfirmPill(
                 key: bulkRegisterEventKey,
                 label: ScheduleStrings.bulkConfirm(
                   EntryKind.event.label,
@@ -531,9 +531,9 @@ class ScheduleScreen extends ConsumerWidget {
   }
 }
 
-/// 하단 종류별 일괄 등록 pill — 골드 채움 + onGold 글씨.
-class _BulkRegisterPill extends StatelessWidget {
-  const _BulkRegisterPill({
+/// 하단 종류별 일괄 확정 pill — 골드 채움 + onGold 글씨.
+class _BulkConfirmPill extends StatelessWidget {
+  const _BulkConfirmPill({
     super.key,
     required this.label,
     required this.onPressed,

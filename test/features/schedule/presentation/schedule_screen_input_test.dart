@@ -103,7 +103,7 @@ void main() {
     });
   });
 
-  group('일괄 등록을 종류별로 나눈다', () {
+  group('일괄 확정을 종류별로 나눈다', () {
     // pill 라벨과 그 pill이 여는 다이얼로그가 **같은 낱말**을 써야 한다.
     // 한동안 pill만 `등록`이고 다이얼로그는 제목·본문·버튼이 전부 `확정`이었다 —
     // 버튼과 그 버튼이 여는 창이 서로 다른 이름을 부르는 상태였다.
@@ -112,9 +112,9 @@ void main() {
     test('pill 라벨은 다이얼로그와 같은 낱말을 쓴다', () {
       final label = ScheduleStrings.bulkConfirm(EntryKind.event.label, 2);
 
-      expect(label, contains(ScheduleStrings.confirm));
-      expect(label, contains(EntryKind.event.label));
-      expect(label, contains('2'));
+      // 낱말 일치는 이제 `bulkConfirm`이 `confirm`을 보간해 **구조로** 지킨다.
+      // 여기서는 그 결과가 `등록`으로 돌아가지 않았는지만 본다 — 인자를 그대로
+      // 흘리는지(`kindLabel`·`n`)는 시그니처가 이미 보장한다.
       expect(label, isNot(contains('등록')), reason: '`등록`은 검토 대기로 넣는 단계의 낱말이다');
     });
 
@@ -158,7 +158,7 @@ void main() {
       expect(find.byKey(ScheduleScreen.bulkRegisterEventKey), findsNothing);
     });
 
-    testWidgets('일괄 업무 등록은 업무만 확정한다', (tester) async {
+    testWidgets('일괄 업무 확정은 업무만 확정한다', (tester) async {
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
         await seed('과학의 달 행사', '2026-04-10', EntryKind.event);

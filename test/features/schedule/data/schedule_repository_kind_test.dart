@@ -9,7 +9,7 @@ import '../../../helpers/test_database.dart';
 
 /// 종류별 조회·일괄 확정.
 ///
-/// 입력 탭에서 `일괄 업무 등록` / `일괄 행사 등록`을 따로 누르므로, 한쪽을 확정할 때
+/// 입력 탭이 종류별로 나눠 확정하므로, 한쪽을 확정할 때
 /// 다른 쪽이 함께 넘어가지 않아야 한다.
 void main() {
   setUpAll(setUpFfiForTests);

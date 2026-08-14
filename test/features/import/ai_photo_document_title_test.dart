@@ -26,11 +26,15 @@ const _response =
     '{“title”:“경기도교육청 교권보호전담관 발대식”,“date”:“2026-08-22”,'
     '“description”:“10:00~12:00, 경기도교육청 조원청사 별관 2층 대강당(수원시 장안구 조원로 18)”}]';
 
-/// 고치기 전에 실제로 들어왔던 제목 — 이 서명이 다시 나타나면 퇴행이다.
-const _sentenceEndings = ['주시기 바랍니다', '하시기 바랍니다', '바랍니다'];
+/// 고치기 전에 실제로 들어왔던 제목의 서명 — `설문에 참여하여 **주시기 바랍니다**`.
+/// `주시기 바랍니다`·`하시기 바랍니다`를 따로 적을 필요가 없다. 둘 다 이 어미를
+/// 접미부로 담고 있어 `contains`가 함께 잡는다.
+const _sentenceEnding = '바랍니다';
 
 void main() {
-  group('문서 사진 — 실측 응답', () {
+  // ⚠️ 이 그룹이 지키는 것은 **파서 회귀**다. `_response`가 이 파일 안 `const`라
+  // 프롬프트가 퇴행해도 여기서는 안 잡힌다 — 그 몫은 `ai_photo_source_kind_test`.
+  group('문서 사진 실측 응답 — 파서 회귀', () {
     test('두 건이 그대로 들어온다', () {
       final parsed = parseAiScheduleJson(_response);
 
@@ -40,17 +44,15 @@ void main() {
       expect(parsed.items[1].date, '2026-08-22');
     });
 
-    test('제목이 문장이 아니다 — 경어체 서술이 남지 않는다', () {
+    test('이 응답의 제목에는 경어체 서술이 없다 (기록)', () {
       final parsed = parseAiScheduleJson(_response);
 
       for (final item in parsed.items) {
-        for (final ending in _sentenceEndings) {
-          expect(
-            item.title,
-            isNot(contains(ending)),
-            reason: '`${item.title}`은 할 일 이름이 아니라 문서 문장이다',
-          );
-        }
+        expect(
+          item.title,
+          isNot(contains(_sentenceEnding)),
+          reason: '`${item.title}`은 할 일 이름이 아니라 문서 문장이다',
+        );
       }
     });
 

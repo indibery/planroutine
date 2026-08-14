@@ -148,9 +148,8 @@ void main() {
       final p = buildAiPhotoPrompt(now, kind: EntryKind.task);
 
       expect(p, contains('날짜를 가리키는 말은 title에서 뺍니다'));
-      // 그렇다고 제목을 요약하라는 뜻은 아니다 — 줄여 쓰면 `앱 개발 서적 한권
-      // 읽기`가 `앱 개발 서적 읽기`가 된다(실측).
-      expect(p, contains('그대로** 씁니다'));
+      // `그대로 씁니다`는 아래 절 검사가 **(가)에 있는지까지** 본다 — 여기서
+      // 프롬프트 전체에 대고 한 번 더 물으면 그 검사에 삼켜져 절대 실패할 수 없다.
     });
 
     // 제목 규칙은 **갈래마다 달라야 한다.** 원본이 손글씨 목록이냐 공문이냐에 따라
@@ -339,15 +338,21 @@ void main() {
 /// **절 단위로 봐야 하는 이유**: 규칙이 프롬프트 안에 있느냐가 아니라 **어느 갈래에
 /// 걸려 있느냐**가 문제다. 통째로 `contains`하면 공통 규칙에 있어도 통과해,
 /// 공문까지 `그대로`가 걸린 상태를 그대로 놓친다.
+///
+/// ⚠️ **마커가 없으면 여기서 실패시킨다.** 빈 문자열을 돌려주면 `isNot(contains(...))`
+/// 부정 단언이 **공허하게 통과**한다 — 절 머리를 개명하는 것만으로 이 파일이 지키는
+/// 버그(`그대로`가 공문에도 걸림)가 되살아나도 초록으로 남는다. 절이 사라진 것과
+/// 규칙이 없는 것은 다른 사실이고, 전자는 테스트를 함께 고치라는 신호여야 한다.
 String _sectionOf(String prompt, String marker) {
-  const heads = ['**(가)', '**(나)', '공통 규칙:'];
-  final start = prompt.indexOf(marker);
-  if (start < 0) return '';
-  var end = prompt.length;
-  for (final h in heads) {
-    if (h == marker) continue;
-    final i = prompt.indexOf(h, start + marker.length);
-    if (i >= 0 && i < end) end = i;
-  }
-  return prompt.substring(start, end);
+  // 절은 **빈 줄로 갈린다** — 절 머리 목록을 따로 들고 있으면 프롬프트가 이미 아는
+  // 사실의 두 번째 사본이 되고, 절을 하나 더 넣을 때 함께 고쳐야 한다.
+  final blocks = prompt.split('\n\n').where((b) => b.startsWith(marker));
+  expect(
+    blocks,
+    hasLength(1),
+    reason:
+        '절 머리 `$marker`가 프롬프트에 정확히 하나여야 한다 — '
+        '개명했거나 둘로 늘었다면 이 테스트도 함께 고쳐야 한다',
+  );
+  return blocks.single;
 }

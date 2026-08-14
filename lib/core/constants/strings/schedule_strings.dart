@@ -48,13 +48,22 @@ class ScheduleStrings {
   /// 박으면 다음 용어 변경 때 배지·필터 칩만 따라가고 이 pill만 옛 이름으로 남는다 —
   /// 직전 main이 정확히 그 상태였다(`kindEvent`는 `학교일정`, pill은 `일괄 일정 등록`).
   ///
-  /// **낱말은 `확정`이다.** 한동안 이 pill만 `등록`이었는데, 그 pill이 여는
-  /// 다이얼로그는 제목·본문·버튼이 전부 `확정`이라 버튼과 창이 어긋났다. 게다가
-  /// `등록`은 가져오기 스낵바에서 **검토 대기로 넣기**를 가리켜, 한 낱말이
-  /// 파이프라인의 두 단계(넣기·확정)를 동시에 지고 있었다.
-  static String bulkConfirm(String kindLabel, int n) => '일괄 $kindLabel 확정 $n건';
+  /// **동사도 인자로 받는다** — [confirm]을 보간해 pill·다이얼로그가 한 상수에서
+  /// 나오게 한다. 한동안 이 pill만 `등록`이었는데, 그 pill이 여는 다이얼로그는
+  /// 제목·본문·버튼이 전부 `확정`이라 버튼과 창이 어긋났다. 게다가 `등록`은
+  /// 가져오기 스낵바에서 **검토 대기로 넣기**를 가리켜, 한 낱말이 파이프라인의
+  /// 두 단계(넣기·확정)를 동시에 지고 있었다.
+  ///
+  /// 세 리터럴이 **우연히 일치**하던 것을 보간으로 묶었다 — 테스트로 관찰하던 것을
+  /// 컴파일러가 지게 만드는 쪽이 한 단 위다.
+  ///
+  /// ⚠️ **이 규율이 미치는 범위는 "확정 동작을 가리키는 버튼·다이얼로그 낱말"뿐이다.**
+  /// [empty]의 `등록된 일정이 없습니다`처럼 파이프라인 단계를 가리키지 않는
+  /// 형용사까지 금지하는 뜻이 아니다.
+  static String bulkConfirm(String kindLabel, int n) =>
+      '일괄 $kindLabel $confirm $n건';
 
-  static const bulkConfirmTitle = '일괄 확정';
+  static const bulkConfirmTitle = '일괄 $confirm';
   static String bulkConfirmMessageFor(String scope, int count) =>
       '$scope 검토 대기 $count건을 확정하고 캘린더에 반영합니다.';
 

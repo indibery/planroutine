@@ -137,7 +137,7 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
 
   /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성).
   /// 카테고리 필터가 켜져 있으면 그 카테고리만 대상.
-  /// [kind]를 주면 그 종류만 — 입력 탭의 `일괄 업무 등록`/`일괄 행사 등록`.
+  /// [kind]를 주면 그 종류만 — 입력 탭이 종류별로 나눠 확정한다.
   Future<void> confirmAllPending({EntryKind? kind}) async {
     final repository = ref.read(scheduleRepositoryProvider);
     final category = ref.read(scheduleCategoryFilterProvider);
