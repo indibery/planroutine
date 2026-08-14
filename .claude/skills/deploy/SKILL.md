@@ -180,6 +180,15 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
   원본은 `docs/screenshots/appstore/{6.5,6.9}/`, 촬영은 `screenshot_test.dart`.
   ⚠️ **심사 대기/진행 중에는 가드 D가 막는다** — 스크린샷을 갈아치우면 심사가 되돌려질 수
   있다. 다음 버전 준비 때 올리거나, ASC에서 '심사에서 제거' 후 올릴 것(대기열 처음으로).
+- ⚠️ **릴리즈 노트 길이 — Play 상한 500자.** 넘으면 clean 빌드를 **다 돌고 업로드
+  마지막 단계에서** 거부된다(실측 2026-08-14: `notes in language ko-KR with length 787,
+  which is too long (max: 500)`). 가드 E는 **존재**만 봤지 길이는 아무도 안 봤다 →
+  `test/deploy/release_notes_length_test.dart`로 승격했다.
+  - **`.strip` 기준으로 센다** — `Fastfile:222`의 `stage_changelog`가
+    `File.read(src).strip`으로 쓰므로 끝 개행이 빠진다(`wc -m` 788 ↔ Play 787).
+  - 이때 **versionCode는 소비되지 않는다**(Play edit이 commit에서 거부돼 트랙이
+    그대로다 — 실측으로 확인). 잃는 것은 빌드 시간이다.
+  - App Store 상한은 4000자로 넉넉해 같은 사고가 나기 어렵다.
 - **가드 E (릴리즈 노트 없음)**: `docs/release_notes/<버전>.ko.txt`가 없으면 중단.
   Apple이 "이번 버전의 새로운 기능"을 업데이트 심사에 필수로 요구하므로 비어 있으면
   어차피 제출이 막힌다. **버전을 올리면 이 파일을 먼저 만든다.**
