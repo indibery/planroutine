@@ -1,0 +1,12 @@
+# XcodeBuildMCP 워크플로 설정 (워크스페이스 루트에 둔다 — 이 경로가 아니면 조용히 무시된다)
+#
+# `ui-automation`을 켜는 이유:
+#   기본값은 `simulator`만이라 `snapshot_ui`는 나오는데 그것이 참조하는 `tap`이 없다.
+#   반쪽이라 도구 목록만 봐서는 UI 자동화가 있다고 오해하기 쉽다. 그래서 시뮬레이터
+#   검증을 할 때마다 mobile MCP의 **좌표 기반** 탭으로 우회하고, 스크린샷 픽셀을
+#   논리 포인트로 손수 환산해야 했다(2026-08-14, 붙여넣기 스낵바 검증).
+#   켜면 `snapshot_ui`의 elementRef로 바로 탭할 수 있어 그 환산이 통째로 없어진다.
+#
+# 이 리포는 배포 전 시뮬레이터 런타임 확인을 게이트로 두므로(.claude/skills/deploy)
+# UI 자동화가 상시 필요하다.
+enabledWorkflows: ["simulator", "ui-automation"]
