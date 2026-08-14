@@ -61,6 +61,59 @@ class AppTheme {
           ),
         ),
       ),
+      // ── Material이 그리는 선택 UI ────────────────────────────
+      // **`primary`를 채움으로 쓰면 안 된다.** `colorScheme.primary`는
+      // `AppColors.gold`인데, 라이트에서 그건 **배경 위 텍스트·아이콘용 딥골드**
+      // (`#9A7415`)다. 그 위에 `onPrimary`(네이비)를 얹으면 **3.57:1**로 날짜가
+      // 안 읽힌다(사용자 신고 2026-08-14, 라이트 전용).
+      //
+      // 다크에서 안 드러난 이유: 다크는 `gold`와 `goldFill`이 같은 값이라 우연히
+      // 맞았다(9.77:1). 라이트에서만 둘이 갈린다.
+      //
+      // 이 앱의 규칙은 이미 `골드 채움 = goldFill + onGold`다. 우리가 직접 그리는
+      // 곳은 그 규칙을 지키는데, Material이 그리는 컴포넌트만 `primary`를 거쳐
+      // 우회하고 있었다 → 여기서 명시적으로 물린다(**8.37:1**).
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        // ⚠️ **오늘이면서 선택된 날**은 채움을 `dayBackgroundColor`로 받고 글씨는
+        // 여기서 받는다. 이걸 `gold` 고정으로 두면 **골드 채움 위 골드 글씨**가 돼
+        // 숫자가 통째로 사라진다(실제 렌더로 확인 — 가드만으로는 못 잡았다).
+        todayForegroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.onGold
+              : AppColors.gold,
+        ),
+        // ⚠️ **오늘 칸의 채움은 `dayBackgroundColor`가 아니라 여기서 온다.**
+        // 안 주면 `primary`(딥골드)로 떨어져, 위 `todayForegroundColor`를 고쳐도
+        // 원이 어두운 채로 남는다(실제 렌더로 확인).
+        todayBackgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.goldFill : null,
+        ),
+        todayBorder: BorderSide(color: AppColors.gold),
+        dayForegroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.onGold
+              : AppColors.ink,
+        ),
+        dayBackgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.goldFill : null,
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: AppColors.surface,
+        hourMinuteColor: AppColors.surfaceVariant,
+        hourMinuteTextColor: AppColors.ink,
+        dialHandColor: AppColors.goldFill,
+        // 다이얼 위 숫자는 손잡이(골드 채움)에 걸치는 순간 `onGold`여야 읽힌다.
+        dialTextColor: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.onGold
+              : AppColors.ink,
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,

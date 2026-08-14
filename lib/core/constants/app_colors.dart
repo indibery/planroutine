@@ -26,6 +26,9 @@ class _Palette {
     required this.inkRed,
     required this.inkGreen,
     required this.info,
+    required this.kindTaskFill,
+    required this.onKindTaskFill,
+    required this.kindEvent,
     required this.eventAccent,
     required this.calendarToday,
     required this.calendarSelected,
@@ -62,6 +65,15 @@ class _Palette {
   final Color inkRed;
   final Color inkGreen;
   final Color info;
+
+  /// 업무 배지 **채움** 배경 — 종류를 색이 아니라 세기로 가른다.
+  final Color kindTaskFill;
+
+  /// [kindTaskFill] 위 글씨.
+  final Color onKindTaskFill;
+
+  /// 행사 배지 색 — 15% 틴트 배경 + 이 색 글씨.
+  final Color kindEvent;
   final Color eventAccent;
   final Color calendarToday;
   final Color calendarSelected;
@@ -111,6 +123,10 @@ const _dark = _Palette(
   inkRed: Color(0xFFE08978),
   inkGreen: Color(0xFF7FD4A5),
   info: Color(0xFF5B8FD4),
+  // 업무 채움 위 흰 글씨는 3.32:1로 미달이라 네이비를 얹는다(5.46:1).
+  kindTaskFill: Color(0xFF5B8FD4),
+  onKindTaskFill: Color(0xFF0A1628),
+  kindEvent: Color(0xFF5B8FD4),
   eventAccent: Color(0xFF4A6FA5),
   calendarToday: Color(0xFFE0B96A),
   calendarSelected: Color(0x29E0B96A),
@@ -148,6 +164,10 @@ const _light = _Palette(
   inkRed: Color(0xFFC0392B),
   inkGreen: Color(0xFF1E9E63),
   info: Color(0xFF3E6BB0),
+  // 흰 글씨 6.32:1. 행사(#3E6BB0 틴트)보다 진해 세기 차가 또렷하다.
+  kindTaskFill: Color(0xFF2F5FA8),
+  onKindTaskFill: Color(0xFFFFFFFF),
+  kindEvent: Color(0xFF3E6BB0),
   eventAccent: Color(0xFF3E6BB0), // 이벤트 레일(밝은 블루)
   calendarToday: Color(0xFFE6B95C), // 밝은 골드 원 + 네이비 텍스트
   calendarSelected: Color(0x1FE6B95C),
@@ -224,6 +244,9 @@ class AppColors {
   static Color get warning => _current.gold;
   static Color get error => _current.inkRed;
   static Color get info => _current.info;
+  static Color get kindTaskFill => _current.kindTaskFill;
+  static Color get onKindTaskFill => _current.onKindTaskFill;
+  static Color get kindEvent => _current.kindEvent;
 
   static Color get statusPending => _current.goldMuted;
   static Color get statusConfirmed => _current.inkGreen;
