@@ -22,10 +22,13 @@ void main() {
             body: EventEditDialog(
               initialDate: DateTime(currentYear, 3, 2),
               // 연도 칩은 수정 경로에서만 뜬다 — 기존 이벤트를 넘겨 편집 모드로 만든다.
+              // 칩은 `작년` 배지(`showsImportBadge`)가 붙은 항목에만 뜬다 —
+              // 에듀파인 CSV로 들어왔고(`fromImport`) 아직 검토 안 한 것.
               event: CalendarEvent(
                 id: 1,
                 title: '초기 제목',
                 eventDate: '$currentYear-03-02',
+                fromImport: true,
               ),
             ),
           ),
@@ -120,6 +123,37 @@ void main() {
 
       expect(find.byKey(const Key('year_shift_chip')), findsNothing);
     });
+
+    // 사용자 신고(2026-08-18): 사진 AI로 올해 공문을 등록했는데 편집 시트에
+    // `2026 → 2027` 칩이 떴다. 연도 밀기가 필요한 이유는 "작년 CSV를 가져와
+    // 제목에 옛 연도가 남았다"인데, 그 조건을 안 보고 **연도가 있는지만** 봤다.
+    //
+    // 원인은 커밋 7643967(올해로 맞추기 → 한 해 밀기)의 부수 효과다. 옛
+    // `bumpTitleYear(title, currentYear)`의 `if (year < currentYear)`가 치환
+    // 로직과 가시성을 **겸하고** 있었고, 로직만 상대 이동으로 바꾸면서 관문이
+    // 함께 사라졌다.
+    testWidgets('가져온 자료가 아니면(사진 AI·수기) 연도가 있어도 칩이 없다', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EventEditDialog(
+                initialDate: DateTime(currentYear, 8, 25),
+                event: CalendarEvent(
+                  id: 3,
+                  title: '$currentYear 하반기 학교 현황 제출',
+                  eventDate: '$currentYear-08-25',
+                  // 사진 AI 경로는 `source_id`가 없어 `from_import`가 0이다.
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('year_shift_chip')), findsNothing);
+    });
   });
 
   group('캘린더 이벤트 편집 — 색상 피커 제거', () {
@@ -157,10 +191,13 @@ void main() {
             home: Scaffold(
               body: EventEditDialog(
                 initialDate: DateTime(currentYear, 3, 2),
+                // `fromImport`를 켜 둬야 이 테스트가 **검토 여부**를 검사한다.
+                // 끄면 출처 때문에 안 뜨는 것이라 단정이 공허해진다.
                 event: CalendarEvent(
                   id: 2,
                   title: '$oldYear학년도 졸업식',
                   eventDate: '$currentYear-03-02',
+                  fromImport: true,
                   reviewedAt: '$currentYear-03-03T10:00:00.000',
                 ),
               ),

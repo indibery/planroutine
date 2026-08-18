@@ -227,13 +227,30 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   /// 컨트롤러를 구독해 입력 중에도 실시간으로 노출/숨김된다. 탭하면 제목의 **모든**
   /// 연도를 +1년 하고 커서를 끝으로 옮긴 뒤 **칩을 감춘다**(저장은 사용자가 직접).
   ///
+  /// **`작년` 배지가 붙은 항목에만 권한다**([CalendarEvent.showsImportBadge] =
+  /// `fromImport && reviewedAt == null`). 연도를 밀어야 하는 이유는 "작년 CSV를
+  /// 가져와 제목에 옛 연도가 남았다"이지 "제목에 연도가 있다"가 아니다.
+  ///
+  /// 예전에는 연도 유무만 봐서, 사진 AI로 올해 공문을 넣어도 `2026 → 2027` 칩이
+  /// 떴다(사용자 신고 2026-08-18). 원인은 커밋 `7643967`(올해로 맞추기 → 한 해
+  /// 밀기)의 부수 효과다 — 옛 `bumpTitleYear`의 `if (year < currentYear)`가 치환
+  /// 로직과 가시성을 **겸하고** 있었고, 로직만 상대 이동으로 바꾸면서 관문이 함께
+  /// 사라졌다. **한 조건이 두 일을 겸하면 한쪽이 조용히 빠진다.**
+  ///
+  /// 대안이던 "올해보다 이전 연도가 있을 때만"은 **연말에 CSV 항목을 내년으로 미는
+  /// 경로를 죽인다.** 배지 조건은 그것을 살린다.
+  ///
+  /// ⚠️ `fromImport`는 **조회 시점 파생 필드**다(`getEventsByDateRange`의 LEFT JOIN).
+  /// 두 호출부(캘린더·오늘 탭)가 모두 그 쿼리를 쓰므로 여기까지 살아 온다 — 다른
+  /// 경로로 이벤트를 넘기게 되면 이 조건이 조용히 false가 된다.
+  ///
   /// 꺼지는 이유가 셋이고 수명이 다르다:
   ///   - `!_isEditing` — 신규 생성은 방금 본인이 타이핑한 연도라 밀라고 권할 이유가 없다.
-  ///   - `reviewedAt != null` — 이미 저장해 정리한 항목. **영구**(DB 컬럼).
+  ///   - `!showsImportBadge` — 가져온 자료가 아니거나 이미 검토했다. **영구**(DB).
   ///   - `_yearShifted` — 이 시트에서 이미 눌렀다. **세션 한정**이라 취소하면 돌아온다.
   Widget _buildYearShiftChip() {
     if (!_isEditing || _yearShifted) return const SizedBox.shrink();
-    if (widget.event?.reviewedAt != null) return const SizedBox.shrink();
+    if (widget.event?.showsImportBadge != true) return const SizedBox.shrink();
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _titleController,
       builder: (context, value, _) {
