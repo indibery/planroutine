@@ -35,6 +35,7 @@ class _Palette {
     required this.calendarSaturday,
     required this.calendarWeekendTint,
     required this.calendarSaturdayTint,
+    required this.calendarHolidayRowFill,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
     required this.busSignalNear,
@@ -86,6 +87,12 @@ class _Palette {
   /// 요일 헤더부터 마지막 주까지 세로로 이어져 요일이 '열'로 읽히게 한다.
   final Color calendarWeekendTint;
   final Color calendarSaturdayTint;
+
+  /// 목록의 공휴일 행 배경. **라이트에서는 투명하다** — 알파 하나로 두 테마를 맞출 수
+  /// 없다. 라이트의 `inkRed`(#C0392B)가 다크(#E08978)보다 진해서, 같은 7%가 흰 배경
+  /// 위에서는 분홍 띠로 읽혔다(실기기 신고 2026-08-18). 테두리와 붉은 글씨가 남으므로
+  /// "누를 수 없는 배경 사실"이라는 신호는 유지된다.
+  final Color calendarHolidayRowFill;
   final Color categoryDailyOps;
   final Color categoryCurriculum;
 
@@ -133,6 +140,7 @@ const _dark = _Palette(
   calendarSaturday: Color(0xFF8BA8D4), // 중립 파랑 (골드 강조와 분리)
   calendarWeekendTint: Color(0x1FE08978), // 일요일 열 — 붉은 기 12%
   calendarSaturdayTint: Color(0x1F8BA8D4), // 토요일 열 — 파란 기 12%
+  calendarHolidayRowFill: Color(0x12E08978), // 공휴일 행 — 붉은 기 7%
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
   busSignalNear: Color(0xFFEF5F52),
@@ -174,6 +182,7 @@ const _light = _Palette(
   calendarSaturday: Color(0xFF3F5F94), // 중립 파랑 (골드 강조와 분리)
   calendarWeekendTint: Color(0x12C0392B), // 일요일 열 — 붉은 기 7%
   calendarSaturdayTint: Color(0x143F5F94), // 토요일 열 — 파란 기 8%
+  calendarHolidayRowFill: Color(0x00000000), // 공휴일 행 — 채우지 않는다
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
   // 라이트 노랑은 흰 배경 대비가 없어 딥 앰버로 잡는다. 라이트 gold(#9A7415)와
@@ -269,6 +278,7 @@ class AppColors {
   /// 주말 열 배경 tint (일요일 / 토요일).
   static Color get calendarWeekendTint => _current.calendarWeekendTint;
   static Color get calendarSaturdayTint => _current.calendarSaturdayTint;
+  static Color get calendarHolidayRowFill => _current.calendarHolidayRowFill;
 
   /// 이벤트 점·막대 공통 액센트색.
   static Color get eventAccent => _current.eventAccent;

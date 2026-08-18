@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/widgets/event_list_section.dart';
 
@@ -97,6 +98,64 @@ void main() {
 
       expect(find.byKey(const Key('holiday_row')), findsOneWidget);
       expect(find.text('일정이 없습니다'), findsNothing);
+    });
+  });
+
+  // 라이트에서 붉은 틴트가 과했다(실기기 신고 2026-08-18) — 흰 배경 위에서는 7%
+  // 채움이 분홍 띠로 읽힌다. 다크에서는 같은 값이 거의 안 보여 괜찮았다.
+  //
+  // **라이트의 `inkRed`가 다크보다 진하기 때문이다**(#C0392B 대 #E08978). 그래서
+  // 알파 하나로 두 테마를 맞출 수 없고, 채움 여부 자체를 팔레트가 정해야 한다.
+  //
+  // 테두리와 글씨는 양쪽 다 붉게 남는다 — 채움을 빼도 "누를 수 없는 배경 사실"이라는
+  // 신호는 형태(테두리)와 색(붉은 글씨)이 그대로 진다.
+  group('행 배경 — 라이트에서는 채우지 않는다', () {
+    BoxDecoration decorationOf(WidgetTester tester) {
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byKey(const Key('holiday_row')),
+          matching: find.byType(Container),
+        ),
+      );
+      return container.decoration! as BoxDecoration;
+    }
+
+    tearDown(() => AppColors.applyBrightness(Brightness.dark));
+
+    testWidgets('라이트: 배경을 채우지 않는다', (tester) async {
+      AppColors.applyBrightness(Brightness.light);
+      await pump(tester, DateTime(2026, 10, 3));
+
+      expect(
+        decorationOf(tester).color?.a ?? 0,
+        0,
+        reason: '흰 배경 위 붉은 채움은 분홍 띠로 읽힌다 — 테두리와 글씨로만 강조한다',
+      );
+    });
+
+    testWidgets('라이트: 채움을 빼도 테두리와 글씨는 붉다', (tester) async {
+      AppColors.applyBrightness(Brightness.light);
+      await pump(tester, DateTime(2026, 10, 3));
+
+      final border = decorationOf(tester).border! as Border;
+      expect(
+        border.top.color.a,
+        greaterThan(0),
+        reason: '테두리가 없으면 이 행이 무엇인지 알려주는 형태 단서가 사라진다',
+      );
+      expect(
+        tester.widget<Text>(find.text('개천절')).style?.color,
+        AppColors.inkRed,
+      );
+    });
+
+    testWidgets('다크: 옅은 붉은 틴트가 남는다', (tester) async {
+      AppColors.applyBrightness(Brightness.dark);
+      await pump(tester, DateTime(2026, 10, 3));
+
+      final alpha = decorationOf(tester).color?.a ?? 0;
+      expect(alpha, greaterThan(0), reason: '다크는 괜찮다는 확인을 받았다');
+      expect(alpha, lessThan(0.15), reason: '틴트지 채움이 아니다');
     });
   });
 }

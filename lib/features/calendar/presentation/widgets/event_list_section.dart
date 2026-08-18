@@ -108,8 +108,9 @@ class EventListSection extends ConsumerWidget {
           vertical: AppSizes.spacing12,
         ),
         decoration: BoxDecoration(
-          // 채움이 아니라 옅은 틴트 + 테두리 — 누를 수 없는 것은 조용해야 한다.
-          color: AppColors.inkRed.withValues(alpha: 0.07),
+          // 누를 수 없는 것은 조용해야 한다. **채움 여부는 팔레트가 정한다** —
+          // 라이트에서는 투명이다(흰 배경 위 7%가 분홍 띠로 읽혔다).
+          color: AppColors.calendarHolidayRowFill,
           borderRadius: BorderRadius.circular(AppSizes.radius12),
           border: Border.all(color: AppColors.inkRed.withValues(alpha: 0.25)),
         ),
