@@ -304,6 +304,22 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 스모크**: bundletool로 AAB를 에뮬레이터에 설치해 버스 카드가 실제 도착 정보를
 그리는지 확인한다 — TAGO 키가 release 빌드에 실제로 주입됐다는 유일한 증거다.
 
+#### 업로드가 중단됐을 때 — 에러 본문의 유무가 원인을 가른다
+
+`android beta`가 `fastlane finished with errors`로 끝났는데 **에러 문장이 한 줄도
+없으면 외부에서 죽은 것**이다(실측 2026-08-18: 업로드 시작 17초 뒤, `Called from
+Fastfile at line 313` + summary만 남고 메시지 없음). Play API가 거부하면
+`Google Api Error: …`처럼 **반드시 문장이 남는다** — 그 유무가 판별선이다.
+
+- **추측하지 말고 `check_play_key`로 트랙을 조회한다.** 위 사례에서 alpha는 여전히
+  149였다(도달 안 함).
+- **커밋 전에 죽으면 versionCode도 소비되지 않는다.** supply는 edit를 만들어 업로드한 뒤
+  **커밋**해야 반영되므로, 중단되면 편집이 버려지고 **같은 번호로 그대로 재시도**할 수 있다.
+  ⚠️ iOS와 반대다 — 거기서는 거부된 빌드도 번호를 먹는다(위 pubspec 절 참고).
+- 반복 kill되면 `nohup ./android/bin/fastlane.sh beta > out.txt 2>&1 & disown`으로 분리하고
+  pid 폴링으로 기다린다. **폴러가 죽어도 배포는 완주한다**(실측: 2차 시도에서 폴러만 죽고
+  업로드 43초에 성공). 관찰자와 작업자를 분리하는 것이 요점이다.
+
 ⚠️ **첫 업로드는 레인으로 할 수 없다.** Play API는 패키지가 앱에 바인딩되기
 전엔 `insert_edit`에서 404를 던진다. 이 앱은 이미 콘솔 수동 업로드로 그 벽을
 지났지만, **다음 앱을 낼 때 같은 벽을 다시 만난다** — 그때는 콘솔에서 최초
