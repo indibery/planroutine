@@ -4,6 +4,7 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_event.dart';
+import '../../domain/holiday_month_entries.dart';
 
 /// 캘린더 저장소 프로바이더
 final calendarRepositoryProvider = Provider<CalendarRepository>((ref) {
@@ -138,10 +139,16 @@ final monthEventsMapProvider =
       });
     });
 
-/// 현재 월의 이벤트를 날짜별로 그룹화하여 정렬된 리스트로 반환
+/// 현재 월의 이벤트를 날짜별로 그룹화하여 정렬된 리스트로 반환.
+///
+/// **공휴일 런 시작일을 빈 키로 합친다**(`mergeHolidayKeys`) — 일정이 하나도 없는
+/// 공휴일은 키가 없어 섹션 자체가 안 생기고, 그러면 공휴일 행을 그릴 자리가 없다.
 final monthEventsGroupedProvider =
     Provider<AsyncValue<List<MapEntry<String, List<CalendarEvent>>>>>((ref) {
+      final ym = ref.watch(
+        selectedDateProvider.select((d) => (d.year, d.month)),
+      );
       return ref.watch(monthEventsMapProvider).whenData((map) {
-        return map.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+        return mergeHolidayKeys(map, ym.$1, ym.$2);
       });
     });

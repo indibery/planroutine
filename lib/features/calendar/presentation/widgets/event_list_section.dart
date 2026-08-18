@@ -8,6 +8,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../../schedule/presentation/widgets/kind_badge.dart';
+import '../../../../core/utils/korean_holidays.dart';
 import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
@@ -45,6 +46,7 @@ class EventListSection extends ConsumerWidget {
         (a) => a.valueOrNull ?? CalendarTarget.none,
       ),
     );
+    final holiday = koreanHolidayRunAt(selectedDate);
     final saveLabel = target == CalendarTarget.device
         ? CalendarIntegrationStrings.swipeSaveDevice
         : CalendarStrings.swipeGoogleSave;
@@ -63,11 +65,83 @@ class EventListSection extends ConsumerWidget {
         children: [
           _buildDateHeader(context),
           const SizedBox(height: AppSizes.spacing8),
-          if (events.isEmpty)
+          if (holiday != null) _buildHolidayRow(holiday),
+          // 공휴일 행이 있으면 빈 상태 문구를 띄우지 않는다 — 그 날은 비어 있지 않다.
+          if (events.isEmpty && holiday == null)
             _buildEmptyState()
           else
             ...events.map((e) => _buildDismissibleEventTile(e, saveLabel)),
         ],
+      ),
+    );
+  }
+
+  /// 공휴일 행 — **수정할 수 없는 일정**이다.
+  ///
+  /// 캘린더에서 빨간 날은 보이는데 무슨 휴일인지 알 수 없었다(사용자 신고
+  /// 2026-08-18). 이름을 목록에 넣되 사용자 일정과 같은 취급은 하지 않는다 —
+  /// `Dismissible`로 감싸지 않고(스와이프로 확정·완료·삭제할 대상이 아니다)
+  /// 탭 콜백도 없다(편집할 것이 아니다).
+  ///
+  /// **`CalendarEvent`로 만들지 않는다.** 공휴일은 이벤트가 아니라 배경 사실이고,
+  /// id도 DB 행도 없다. 타입을 빌리면 스와이프·편집·완료 경로가 전부 이 행을
+  /// 대상으로 여기게 되고, 그걸 막는 분기를 그 경로마다 심어야 한다.
+  ///
+  /// 연휴는 첫날에만 뜬다 — [koreanHolidayRunAt]이 둘째 날부터 null을 주므로
+  /// 여기에는 조건문이 없다.
+  Widget _buildHolidayRow(HolidayRun run) {
+    final isRange = run.end.isAfter(run.start);
+    final range = isRange
+        ? '\u200e${run.start.month}.${run.start.day}~'
+              '${run.end.month}.${run.end.day}'
+        : null;
+    return Padding(
+      key: const Key('holiday_row'),
+      padding: const EdgeInsets.only(
+        left: AppSizes.spacing16,
+        right: AppSizes.spacing16,
+        bottom: AppSizes.spacing8,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing12,
+          vertical: AppSizes.spacing12,
+        ),
+        decoration: BoxDecoration(
+          // 채움이 아니라 옅은 틴트 + 테두리 — 누를 수 없는 것은 조용해야 한다.
+          color: AppColors.inkRed.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(AppSizes.radius12),
+          border: Border.all(color: AppColors.inkRed.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.flag_rounded, size: 16, color: AppColors.inkRed),
+            const SizedBox(width: AppSizes.spacing8),
+            Expanded(
+              child: Text(
+                run.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.inkRed,
+                ),
+              ),
+            ),
+            if (range != null)
+              Text(
+                range,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.inkRed.withValues(alpha: 0.8),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
