@@ -121,12 +121,26 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
+    // 표면 변환은 **한 번만** 한다.
+    //
+    // Android에서 두 번째 호출은 곧바로 `Surface already converted to an image`
+    // assert다(`_callback_io.dart:70`). iOS에서는 no-op이라 여섯 번 불러도 조용해서
+    // 이 결함이 오래 숨어 있었다 — 안드로이드 촬영을 처음 돌린 2026-08-26에 드러났다.
+    // (`2026-08-01-android-release-design.md`가 "이미 Android에서 돈다"고 적어둔 것은
+    //  틀렸다. 그때 실제로 돌려보지 않았다.)
+    var surfaceReady = false;
+    Future<void> prepareSurface() async {
+      if (surfaceReady) return;
+      await binding.convertFlutterSurfaceToImage();
+      surfaceReady = true;
+    }
+
     // 1. 오늘 탭 (기본 진입) — 스토어에서는 도장이 선명해야 하므로 '흐리게'를 끈다.
     await container
         .read(stampSettingsProvider.notifier)
         .setDimPreviousStamps(false);
     await tester.pumpAndSettle();
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     await tester.pumpAndSettle();
     await binding.takeScreenshot('1_today');
 
@@ -138,7 +152,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     await tester.pumpAndSettle();
     await binding.takeScreenshot('2_calendar');
 
@@ -149,7 +163,7 @@ void main() {
     );
     await tester.tap(scheduleTab.first);
     await tester.pumpAndSettle();
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     // convert 직후 한 프레임 더 돌린다 — IntegrationTestWidgetsFlutterBinding은
     // LiveTestWidgetsFlutterBinding이라 **마지막 테스트 포인터 위치에 라임색 조준선**을
     // 그린다. 이 pump가 없으면 그 프레임이 그대로 캡처돼 방금 누른 탭 아이콘 위에
@@ -164,7 +178,7 @@ void main() {
     );
     await tester.tap(settingsTab.first);
     await tester.pumpAndSettle();
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     await tester.pumpAndSettle();
     await binding.takeScreenshot('5_settings');
 
@@ -176,7 +190,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text(ImportStrings.edufineGuideTitle));
     await tester.pumpAndSettle();
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     await tester.pumpAndSettle();
     await binding.takeScreenshot('4_import');
 
@@ -217,7 +231,7 @@ void main() {
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 250));
     }
-    await binding.convertFlutterSurfaceToImage();
+    await prepareSurface();
     await tester.pump(const Duration(milliseconds: 250));
     await binding.takeScreenshot('6_bus');
 

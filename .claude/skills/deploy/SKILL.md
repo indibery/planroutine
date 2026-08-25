@@ -325,6 +325,35 @@ Fastfile at line 313` + summary만 남고 메시지 없음). Play API가 거부�
   pid 폴링으로 기다린다. **폴러가 죽어도 배포는 완주한다**(실측: 2차 시도에서 폴러만 죽고
   업로드 43초에 성공). 관찰자와 작업자를 분리하는 것이 요점이다.
 
+### Play 스크린샷 촬영 (2026-08-26 실측)
+
+```bash
+flutter emulators --launch Pixel_7
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshot_test.dart -d emulator-5554
+```
+
+산출물은 `docs/screenshots/*.png`(드라이버가 여기 쓴다) → 후처리해서
+`docs/screenshots/play/`에 둔다. iOS용 `appstore/{6.5,6.9}`와 **섞지 않는다**.
+
+세 가지를 후처리해야 Play가 받는다. 규격은 원천에서 확인한 값이다
+(support.google.com/googleplay/android-developer/answer/9866151).
+
+1. **비율 — 최대 변이 최소 변의 2배를 넘으면 안 된다.** Pixel 7 캡처는 1080×2337로
+   **2.16배라 그대로는 거부**된다. 세로를 자르면 헤더나 탭바가 날아가므로 **좌우를
+   앱 배경색으로 채운다**(권장 9:16까지 맞추면 프로모션 노출 대상이 된다).
+   가장자리 색을 샘플링해 쓰면(라이트 `#F6F8FB`) 테두리가 아니라 여백으로 읽힌다.
+2. **상단 136px가 회색 띠**(`184,186,188`)다 — 시스템 상태바 자리가 그렇게 캡처된다.
+   잘라낸다. 하단 내비게이션 바는 없다(탭바가 끝까지 온다).
+3. **알파 채널을 빼야 한다** — Play는 `24비트 PNG(알파 미포함)`를 요구하는데 캡처는
+   RGBA다. `convert('RGB')`.
+
+⚠️ **`convertFlutterSurfaceToImage()`는 한 번만 부른다.** 두 번째 호출은 Android에서
+`Surface already converted to an image` assert다. iOS에서는 no-op이라 여섯 번 불러도
+조용해서 이 결함이 오래 숨어 있었다 — `screenshot_test.dart`가 `prepareSurface()`로
+한 번만 부르게 잠근다. (`2026-08-01-android-release-design.md`가 "이미 Android에서
+돈다"고 적어둔 것은 **실제로 돌려보지 않은 판단**이었다.)
+
 ### 프로덕션 승격 (`production`)
 
 **재빌드하지 않는다.** 비공개 테스트에서 12명·14일을 통과한 그 바이너리를 그대로 올린다.
