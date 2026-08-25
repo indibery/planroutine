@@ -273,8 +273,13 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 | `build_aab` | 가드 → clean → release AAB 생성 (**업로드하지 않는다**) | 불필요 | – | clean |
 | `bootstrap` | `build_aab` + internal 트랙 draft 업로드(패키지명 확정용, 최초 1회만) | 필요 | `internal`(draft) | clean |
 | `beta` | 가드 → versionCode 계산 → `build_aab` → **비공개 테스트** 업로드 | 필요 | `Alpha`(비공개 테스트) | clean |
+| `production` | 비공개 테스트 빌드를 **프로덕션으로 승격**(재빌드 없음) | 필요 | `production` | **되돌릴 수 없음** |
 
 ```bash
+./android/bin/fastlane.sh production                    # 최신 alpha 빌드를 draft로 승격 (기본)
+./android/bin/fastlane.sh production code:151           # 승격할 versionCode 지정
+./android/bin/fastlane.sh production status:completed   # 실제 출시 (전체 사용자)
+./android/bin/fastlane.sh production rollout:0.1        # 10%부터 단계적 출시
 ./android/bin/fastlane.sh check_tago_key   # TAGO 키 확인 (빌드·업로드 없음)
 ./android/bin/fastlane.sh check_play_key   # Play 서비스 계정 + 트랙 4개 versionCode 확인
 ./android/bin/fastlane.sh build_aab        # release AAB만 생성 (업로드 없음)
@@ -319,6 +324,28 @@ Fastfile at line 313` + summary만 남고 메시지 없음). Play API가 거부�
 - 반복 kill되면 `nohup ./android/bin/fastlane.sh beta > out.txt 2>&1 & disown`으로 분리하고
   pid 폴링으로 기다린다. **폴러가 죽어도 배포는 완주한다**(실측: 2차 시도에서 폴러만 죽고
   업로드 43초에 성공). 관찰자와 작업자를 분리하는 것이 요점이다.
+
+### 프로덕션 승격 (`production`)
+
+**재빌드하지 않는다.** 비공개 테스트에서 12명·14일을 통과한 그 바이너리를 그대로 올린다.
+여기서 새로 빌드하면 **검증한 것과 다른 것을 출시**하게 된다 — 같은 소스라도 산출물이
+같다는 보장이 없고, 무엇보다 그 AAB로는 아무도 14일을 쓰지 않았다.
+
+- **기본은 `draft`다.** iOS `release`가 심사 제출을 하지 않는 것과 같은 규율 — 되돌릴 수
+  없는 바깥 작업은 마지막 한 걸음을 사람에게 남긴다. 레인이 끝나면 콘솔
+  `프로덕션 › 버전 검토`에서 **'출시 시작'을 사람이 누른다.**
+- 실제 출시는 `status:completed`를 **명시해야만** 한다. 단계적 출시는 `rollout:0.1`
+  (자동으로 `inProgress`가 된다 — Play는 rollout과 completed를 함께 받지 않는다).
+- **가드 A**: 승격할 versionCode가 `alpha` 트랙에 실제로 있어야 한다. 검증하지 않은 번호를
+  손으로 넘기는 사고를 막는다.
+- **가드 B**: 프로덕션에 이미 같거나 높은 versionCode가 있으면 중단한다(versionCode는 감소 불가).
+- 릴리즈 노트는 `beta`와 같은 파일을 쓴다(`<버전>-android.ko.txt` → 없으면 `<버전>.ko.txt`).
+  없어도 막지 않고 경고만 한다.
+- ⚠️ **프로덕션 액세스 권한이 먼저다.** 비공개 테스트 12명·14일을 채우고 콘솔에서
+  `프로덕션 액세스 신청`을 통과해야 이 트랙을 쓸 수 있다(공직플랜은 2026-08-25 승인).
+- ⚠️ **스토어 등록정보를 먼저 확인할 것.** 이 앱은 `versionCode 143`이 정부 정보 출처 링크
+  누락으로 거부된 적이 있다. 프로덕션은 심사가 더 빡빡하다 — `/store-listing`으로 훑는다.
+- 훅(`guard-bash.sh`)이 `beta`와 **같은 게이트**를 건다(analyze + 배포 가드, fail-closed).
 
 ⚠️ **첫 업로드는 레인으로 할 수 없다.** Play API는 패키지가 앱에 바인딩되기
 전엔 `insert_edit`에서 404를 던진다. 이 앱은 이미 콘솔 수동 업로드로 그 벽을

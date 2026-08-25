@@ -16,6 +16,7 @@ AAB_PATH = "../build/app/outputs/bundle/release/app-release.aab"   # cwd = andro
 # **그래서 비공개 테스트 트랙을 새로 만들지 않고 기본 제공 트랙을 쓴다** — 새로 만들면
 # identifier가 콘솔이 정하는 값이 되고, 그 값을 API로 열거하는 fastlane 액션이 없다.
 CLOSED_TRACK = "alpha"
+PRODUCTION_TRACK = "production"
 
 # versionCode를 계산할 때 훑는 트랙.
 #
@@ -153,6 +154,17 @@ def pubspec_version
   match = pubspec.match(/^version:\s*(\d+\.\d+\.\d+)\+(\d+)/)
   UI.user_error!("pubspec.yaml에서 version을 찾을 수 없습니다") unless match
   [match[1], match[2].to_i]
+end
+
+
+# 한 트랙의 versionCode 목록. `next_version_code`와 **같은 이유로** rescue 한다 —
+# 릴리즈가 한 번도 없는 트랙이 "404가 아니라 릴리즈 없는 200"으로 답하면
+# supply 안에서 NoMethodError가 난다.
+def track_codes(track)
+  (google_play_track_version_codes(package_name: APP_PACKAGE, track: track) || []).map(&:to_i)
+rescue StandardError => e
+  UI.important("트랙 #{track} 조회 실패 — 비어 있는 것으로 본다: #{e.class}")
+  []
 end
 
 # versionCode. **트랙 전수의 최대값 + 1**을 쓰고, pubspec의 `+N`을 하한으로 둔다.
@@ -323,5 +335,83 @@ platform :android do
     )
 
     UI.success("비공개 테스트 업로드 완료! versionCode #{new_code} (track: #{CLOSED_TRACK})")
+  end
+
+  # 프로덕션 승격 — **재빌드하지 않는다.**
+  #
+  # 비공개 테스트에서 12명·14일을 통과한 그 바이너리를 그대로 올린다. 여기서 새로
+  # 빌드하면 **검증한 것과 다른 것을 출시**하게 된다(같은 소스라도 산출물이 같다는
+  # 보장이 없고, 무엇보다 그 AAB로는 아무도 14일을 쓰지 않았다).
+  #
+  # **기본은 draft다.** iOS `release`가 심사 제출을 하지 않는 것과 같은 규율 —
+  # 되돌릴 수 없는 바깥 작업은 마지막 한 걸음을 사람에게 남긴다. 프로덕션 출시는
+  # 비공개 테스트와 달리 **수십억 명에게 열리고**, 내린 뒤에도 그 versionCode는
+  # 다시 못 쓴다.
+  #
+  #   ./android/bin/fastlane.sh production                      # 151을 draft로 (기본)
+  #   ./android/bin/fastlane.sh production code:151             # 승격할 빌드 지정
+  #   ./android/bin/fastlane.sh production status:completed     # 실제 출시(전체)
+  #   ./android/bin/fastlane.sh production rollout:0.1          # 10%부터 단계적 출시
+  desc "비공개 테스트 빌드를 프로덕션으로 승격 (기본 draft — 출시 버튼은 사람이 누른다)"
+  lane :production do |options|
+    assert_play_key
+
+    alpha_codes = track_codes(CLOSED_TRACK)
+    code = (options[:code] || alpha_codes.max).to_i
+
+    # ── 가드 A: 승격할 빌드가 실제로 비공개 테스트에 있어야 한다 ──
+    # 검증하지 않은 번호를 손으로 넘기는 사고를 막는다.
+    if alpha_codes.empty? || !alpha_codes.include?(code)
+      UI.user_error!(
+        "versionCode #{code}가 #{CLOSED_TRACK} 트랙에 없습니다 (있는 것: #{alpha_codes.inspect}). " \
+        "프로덕션에는 비공개 테스트를 거친 빌드만 올린다."
+      )
+    end
+
+    # ── 가드 B: versionCode는 감소할 수 없다 ──
+    prod_max = track_codes(PRODUCTION_TRACK).max
+    if prod_max && code <= prod_max
+      UI.user_error!(
+        "프로덕션에 이미 versionCode #{prod_max}가 있습니다 — #{code}는 올릴 수 없습니다. " \
+        "beta 레인으로 새 빌드를 올린 뒤 그것을 승격하세요."
+      )
+    end
+
+    # ── 상태 결정 ──
+    # rollout을 주면 단계적 출시(inProgress)다. Play는 rollout과 completed를 함께 못 받는다.
+    rollout = options[:rollout]&.to_s
+    status  = options[:status] || (rollout ? "inProgress" : "draft")
+    if rollout && status != "inProgress"
+      UI.user_error!("rollout은 status:inProgress에서만 씁니다 (지금 status:#{status}).")
+    end
+
+    metadata = stage_changelog(code)
+    UI.important("릴리즈 노트가 없습니다 — 프로덕션 첫 출시에는 적어두는 편이 낫습니다.") if metadata.nil?
+
+    upload_to_play_store(
+      package_name: APP_PACKAGE,
+      track: CLOSED_TRACK,                    # 출처
+      version_code: code,
+      track_promote_to: PRODUCTION_TRACK,     # 목적지
+      track_promote_release_status: status,
+      rollout: rollout,
+      metadata_path: metadata,
+      skip_upload_aab: true,                  # 승격이라 바이너리를 다시 올리지 않는다
+      skip_upload_apk: true,
+      skip_upload_metadata: true,             # 스토어 본문은 건드리지 않는다
+      skip_upload_changelogs: metadata.nil?,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+
+    case status
+    when "draft"
+      UI.success("프로덕션 초안 생성 완료 — versionCode #{code}")
+      UI.important("아직 출시되지 않았습니다. 콘솔 `프로덕션 › 버전 검토` 에서 '출시 시작'을 누르세요.")
+    when "inProgress"
+      UI.success("프로덕션 단계적 출시 시작 — versionCode #{code} (#{(rollout.to_f * 100).round}%)")
+    else
+      UI.success("프로덕션 출시 요청 완료 — versionCode #{code} (전체)")
+    end
   end
 end

@@ -57,6 +57,12 @@ run "[오차단] -m 이 플래그 설명"       0 "$H/guard-bash.sh" \
 run "[오차단] -m 이 bootstrap 언급"    0 "$H/guard-bash.sh" \
   "$(bash_json 'git commit -m "chore: fastlane.sh bootstrap 문서화"')"
 
+# 프로덕션 승격도 같은 게이트를 탄다. **게이트를 실제로 돌기 때문에 느리다(~15초).**
+# 라우팅만 소스로 확인하면 "case에 문자열이 있다"까지만 보이고, 그 아래 fail-closed가
+# 실제로 걸리는지는 모른다 — 이 리포에서 스캐너가 언급과 사용을 못 가른 사례가 넷이다.
+run "android production (게이트 통과)" 0 "$H/guard-bash.sh" \
+  "$(bash_json './android/bin/fastlane.sh production status:completed')"
+
 echo "-- protect-tests.sh --"
 run "test 2개 → 1개 (감소)"            2 "$H/protect-tests.sh" \
   "$(edit_json "$FIXTURE" "test('a', () {}); test('b', () {});" "test('a', () {});")"
