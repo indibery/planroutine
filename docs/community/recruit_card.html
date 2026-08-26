@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face{
+    font-family:'Pretendard';
+    src:url('PretendardVariable.ttf') format('truetype');
+    font-weight:100 900;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1350px}
+  body{
+    font-family:'Pretendard',sans-serif;
+    background:#F0EAD9;
+    color:#17253D;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* ── 종이 질감 ── */
+  .grain{
+    position:absolute;inset:0;pointer-events:none;z-index:8;
+    opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/></filter><rect width='260' height='260' filter='url(%23n)'/></svg>");
+  }
+  .stain{
+    position:absolute;inset:0;pointer-events:none;z-index:1;
+    background:
+      radial-gradient(700px 540px at 90% 4%,rgba(224,185,106,.18),transparent 64%),
+      radial-gradient(540px 500px at 2% 98%,rgba(23,37,61,.07),transparent 60%);
+  }
+  .frame{position:absolute;inset:48px;z-index:2;border:1.5px solid rgba(23,37,61,.30)}
+  .frame::after{content:'';position:absolute;inset:7px;border:.75px solid rgba(23,37,61,.17)}
+
+  /* ── 전체를 flex 기둥으로: 절대 위치 꼬리말이 본문을 덮지 않게 ── */
+  .page{
+    position:relative;z-index:4;height:100%;
+    padding:100px 104px 88px;
+    display:flex;flex-direction:column;
+  }
+
+  .meta{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:17.5px;letter-spacing:.14em;font-weight:600;
+    color:rgba(23,37,61,.52);
+    padding-bottom:15px;border-bottom:1px solid rgba(23,37,61,.22);
+  }
+  .meta .org{color:#8A7144;letter-spacing:.2em}
+
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center}
+
+  .eyebrow{font-size:20px;font-weight:700;letter-spacing:.44em;color:#8A7144}
+  h1{
+    font-family:'AppleMyungjo',serif;
+    font-size:90px;line-height:1.15;letter-spacing:-.02em;
+    margin-top:18px;font-weight:400;
+  }
+  h1 em{font-style:normal;position:relative;white-space:nowrap;z-index:1}
+  h1 em::after{
+    content:'';position:absolute;left:-4px;right:-4px;bottom:10px;height:15px;
+    background:rgba(224,185,106,.55);z-index:-1;
+  }
+  .lede{
+    margin-top:26px;font-size:25px;line-height:1.6;
+    color:rgba(23,37,61,.78);font-weight:500;max-width:600px;
+  }
+
+  .grid{
+    margin-top:46px;display:grid;grid-template-columns:repeat(3,1fr);
+    border:1.5px solid rgba(23,37,61,.30);
+  }
+  .cell{padding:22px 20px 26px;border-right:1px solid rgba(23,37,61,.20)}
+  .cell:last-child{border-right:none}
+  .cell .k{font-size:16px;letter-spacing:.2em;font-weight:700;color:rgba(23,37,61,.50)}
+  .cell .v{margin-top:11px;font-size:42px;font-weight:800;line-height:1;letter-spacing:-.02em}
+  .cell .u{font-size:20px;font-weight:600;margin-left:2px}
+  .cell .n{margin-top:9px;font-size:16.5px;line-height:1.48;color:rgba(23,37,61,.60);font-weight:500}
+
+  .clauses{margin-top:46px}
+  .clause{display:flex;gap:16px;align-items:flex-start;padding:19px 0}
+  .clause+.clause{border-top:1px dashed rgba(23,37,61,.22)}
+  .num{
+    flex:none;width:30px;height:30px;margin-top:2px;
+    border:1.5px solid #8A7144;color:#8A7144;
+    display:grid;place-items:center;font-size:16px;font-weight:800;
+  }
+  .clause p{font-size:24px;line-height:1.52;font-weight:500;max-width:640px}
+  .clause b{font-weight:800;box-shadow:inset 0 -10px 0 rgba(224,185,106,.48)}
+  .clause .warn{color:#A8442F;font-weight:700}
+
+  /* ── 도장: 여백이 실제로 비어 있는 우측 상단 ── */
+  .seal{
+    position:absolute;right:70px;top:322px;z-index:6;
+    width:168px;height:168px;border-radius:50%;
+    border:5.5px solid #B8340F;
+    display:grid;place-items:center;
+    transform:rotate(-12deg);opacity:.88;
+  }
+  .seal::before{content:'';position:absolute;inset:10px;border-radius:50%;border:2px solid #B8340F}
+  .seal span{
+    font-family:'AppleMyungjo',serif;color:#B8340F;
+    font-size:48px;line-height:1.04;text-align:center;letter-spacing:.05em;
+  }
+  .seal small{display:block;font-size:19px;letter-spacing:.3em;margin-top:7px}
+
+  .foot{
+    padding-top:24px;border-top:1.5px solid rgba(23,37,61,.30);
+    display:flex;justify-content:space-between;align-items:flex-end;gap:26px;
+  }
+  .foot .note{font-size:18.5px;line-height:1.55;color:rgba(23,37,61,.58);font-weight:500;max-width:540px}
+  .foot .note b{color:rgba(23,37,61,.84);font-weight:800}
+  .contact{text-align:right;flex:none}
+  .contact .lbl{font-size:15.5px;letter-spacing:.26em;color:#8A7144;font-weight:700}
+  .contact .mail{font-size:28px;font-weight:800;margin-top:7px;letter-spacing:-.01em}
+</style>
+</head>
+<body>
+  <div class="stain"></div>
+  <div class="frame"></div>
+
+  <div class="page">
+    <div class="meta">
+      <span class="org">공직플랜 · GONGJIKPLAN</span>
+      <span>안드로이드 비공개 테스트 · 2026</span>
+    </div>
+
+    <div class="body">
+      <div class="eyebrow">협조 요청</div>
+      <h1>안드로이드 테스터<br><em>16명</em>을 찾습니다</h1>
+
+      <p class="lede">
+        초등 교사의 반복되는 업무 사이클을<br>
+        작년 데이터로 세팅하는 앱입니다.
+      </p>
+
+      <div class="grid">
+        <div class="cell">
+          <div class="k">필요 인원</div>
+          <div class="v">16<span class="u">명</span></div>
+          <div class="n">구글 요건은 12명,<br>여유를 두었습니다</div>
+        </div>
+        <div class="cell">
+          <div class="k">참여 기간</div>
+          <div class="v">14<span class="u">일</span></div>
+          <div class="n">연속으로 유지해야<br>정식 출시가 됩니다</div>
+        </div>
+        <div class="cell">
+          <div class="k">하실 일</div>
+          <div class="v">설치<span class="u">뿐</span></div>
+          <div class="n">써보시면 좋고,<br>안 쓰셔도 됩니다</div>
+        </div>
+      </div>
+
+      <div class="clauses">
+        <div class="clause">
+          <div class="num">1</div>
+          <p>이메일 주소를 남겨 주시면 초대 링크를 보내드립니다.</p>
+        </div>
+        <div class="clause">
+          <div class="num">2</div>
+          <p><b>14일 동안 앱을 지우지 말아 주세요.</b><br>
+             중간에 취소하면 <span class="warn">그때까지의 기간이 초기화됩니다.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="note">
+        이 테스트 빌드는 <b>알림이 아직 오지 않습니다.</b><br>
+        일정 입력 · 캘린더 · 오늘 할 일 · 버스 도착은 정상 동작합니다.<br>
+        아이폰은 App Store에서 이미 받으실 수 있습니다.
+      </div>
+      <div class="contact">
+        <div class="lbl">참여 신청</div>
+        <div class="mail">bery97@gmail.com</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="seal"><span>모집<small>중</small></span></div>
+  <div class="grain"></div>
+</body>
+</html>

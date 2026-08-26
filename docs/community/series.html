@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공직플랜 사용법 시리즈 — 이미지</title>
+<style>
+  @font-face{font-family:'Pretendard';src:url('../../assets/fonts/PretendardVariable.ttf') format('truetype');font-weight:100 900}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#2b2b2b;font-family:'Pretendard',-apple-system,sans-serif}
+  .sheet{display:flex;flex-direction:column;align-items:flex-start}
+
+  /* ══ 필름 스틸 공통 (기존 stills.html 계승) ══ */
+  .still{width:1200px;height:675px;position:relative;overflow:hidden;background:#F2ECDD;color:#17253D}
+  .still.wide{height:420px}
+  .still::before,.still::after{content:'';position:absolute;top:0;bottom:0;width:26px;z-index:9;background:#17253D}
+  .still::before{left:0} .still::after{right:0}
+  .holes{position:absolute;top:0;bottom:0;width:26px;z-index:10;display:flex;flex-direction:column;
+    justify-content:space-around;align-items:center;padding:14px 0}
+  .holes.l{left:0} .holes.r{right:0}
+  .holes i{display:block;width:12px;height:17px;border-radius:2.5px;background:#F2ECDD;opacity:.9}
+  .slate{position:absolute;top:20px;left:56px;right:56px;z-index:7;display:flex;justify-content:space-between;
+    align-items:center;font-size:14px;font-weight:700;letter-spacing:.26em;color:rgba(23,37,61,.42)}
+  .slate .no{color:#B8340F;letter-spacing:.2em}
+  .sub{position:absolute;left:26px;right:26px;bottom:0;z-index:8;background:#17253D;padding:22px 44px;
+    display:flex;justify-content:space-between;align-items:center;gap:24px}
+  .sub p{color:#F2ECDD;font-size:29px;font-weight:600;letter-spacing:-.01em}
+  .sub p b{color:#E0B96A;font-weight:800}
+  .sub .tag{flex:none;font-size:14px;font-weight:700;letter-spacing:.22em;color:rgba(242,236,221,.5);
+    border:1px solid rgba(242,236,221,.28);padding:7px 13px}
+  .stage{position:absolute;left:26px;right:26px;top:58px;bottom:96px;z-index:5;display:flex;align-items:center;
+    justify-content:center;gap:56px;padding:0 54px}
+  .grain{position:absolute;inset:0;z-index:11;pointer-events:none;opacity:.06;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>")}
+  .vig{position:absolute;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 45%,transparent 52%,rgba(23,37,61,.13))}
+
+  /* ══ 실제 스크린샷을 담는 폰 프레임 ══ */
+  .shot{flex:none;border-radius:30px;box-shadow:0 26px 54px rgba(23,37,61,.26),0 0 0 8px #17253D;
+    overflow:hidden;background:#F6F8FB}
+  .shot img{display:block;width:100%}
+  .shot.h420{width:194px} .shot.h420 img{width:194px}
+  .shot.h460{width:213px} .shot.h460 img{width:213px}
+
+  /* 크롭 창 — 실제 스크린샷의 특정 부분만 확대해 보여준다 */
+  .crop{flex:none;overflow:hidden;border-radius:16px;background:#F6F8FB;
+    box-shadow:0 14px 34px rgba(23,37,61,.20),0 0 0 2px rgba(23,37,61,.14)}
+  .crop img{display:block}
+
+  /* 카피 */
+  .copy{flex:1;min-width:0}
+  .copy .eyebrow{font-size:17px;font-weight:800;color:#B8340F;letter-spacing:.06em;margin-bottom:12px}
+  .copy h2{font-size:46px;font-weight:800;line-height:1.2;letter-spacing:-.03em;margin-bottom:20px}
+  .copy p{font-size:21px;font-weight:500;line-height:1.62;color:rgba(23,37,61,.78)}
+  .copy p b{font-weight:800;color:#17253D}
+
+  /* ══ 단계 카드 ══ */
+  .steps{width:1200px;height:675px;position:relative;overflow:hidden;background:#F6F8FB;color:#17253D;
+    display:flex;align-items:center;gap:44px;padding:52px 60px}
+  .steps .head{position:absolute;top:34px;left:60px;right:60px;display:flex;justify-content:space-between;
+    align-items:baseline}
+  .steps .head .t{font-size:25px;font-weight:800;letter-spacing:-.02em}
+  .steps .head .m{font-size:14px;font-weight:700;letter-spacing:.2em;color:rgba(23,37,61,.36)}
+  .steps .list{flex:1;display:flex;flex-direction:column;gap:24px;margin-top:34px}
+  .step{display:flex;gap:17px;align-items:flex-start}
+  .step .n{flex:none;width:37px;height:37px;border-radius:50%;background:#17253D;color:#F2ECDD;
+    display:grid;place-items:center;font-size:18px;font-weight:800}
+  .step .n.gold{background:#E0B96A;color:#17253D}
+  .step .b h3{font-size:23px;font-weight:800;letter-spacing:-.02em;margin-bottom:5px}
+  .step .b p{font-size:17.5px;font-weight:500;line-height:1.55;color:rgba(23,37,61,.72)}
+  .step .b p b{font-weight:800;color:#B8340F}
+  .foot{position:absolute;bottom:30px;left:60px;right:60px;font-size:15.5px;font-weight:600;
+    color:rgba(23,37,61,.46);display:flex;justify-content:space-between}
+  .foot b{color:#17253D;font-weight:800}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<div class="still" id="s01_cover">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 01</span><span>01 · 개학 전 · 소파에서</span></div>
+  <div class="stage">
+    <div class="shot h420"><img src="../screenshots/appstore/6.5/3_input.png"></div>
+    <div class="copy">
+      <div class="eyebrow">월간 일정표</div>
+      <h2>사진 한 장으로<br>스무 줄을 옮긴다</h2>
+      <p>일정표를 찍어 AI에게 맡기고, 결과를 붙여넣습니다.<br><b>앱은 AI를 직접 부르지 않습니다</b> — 사진은 여러분이 쓰는<br>AI 앱에만 올라갑니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>타이핑 <b>0줄</b>로 2학기 일정 세팅</p><span class="tag">입력 · 사진 AI</span></div>
+  <div class="grain"></div>
+</div>
+
+<div class="steps" id="s01_steps">
+  <div class="head"><span class="t">사진으로 넣기 — 세 번의 탭</span><span class="m">STEP 01</span></div>
+  <div class="shot h460"><img src="../screenshots/appstore/6.5/3_input.png"></div>
+  <div class="list"><div class="step"><div class="n">1</div><div class="b"><h3>① 프롬프트 복사</h3><p>입력 탭에서 <b>행사 일정표</b>를 고르고 프롬프트를 복사합니다.</p></div></div><div class="step"><div class="n">2</div><div class="b"><h3>AI 앱에 붙여넣기</h3><p>쓰시는 AI 앱에 프롬프트와 <b>일정표 사진</b>을 함께 올립니다.</p></div></div><div class="step"><div class="n">3</div><div class="b"><h3>② 붙여넣기</h3><p>AI 결과를 복사해 돌아와 누르면 <b>검토 목록</b>에 올라옵니다.</p></div></div><div class="step"><div class="n gold">4</div><div class="b"><h3>밀어서 확정</h3><p>오른쪽으로 밀거나 아래 <b>일괄 확정</b>으로 한 번에 캘린더로.</p></div></div><div><div class="crop" style="width:430px;height:157px"><img src="../screenshots/appstore/6.5/3_input.png" style="width:430px;margin-top:-113px"></div><div class="foot" style="position:static;left:0;right:0;bottom:0;margin-top:10px">실제 화면 · 히어로</div></div></div>
+  <div class="foot"><span>가운데 단계는 앱 밖입니다 — 그래서 일정이 서버로 가지 않습니다</span><span>공직플랜</span></div>
+</div>
+
+<div class="still" id="s02_cover">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 02</span><span>02 · 밤 9시 · 소파에서</span></div>
+  <div class="stage">
+    <div class="shot h420"><img src="../screenshots/appstore/6.5/2_calendar.png"></div>
+    <div class="copy">
+      <div class="eyebrow">학교 일정</div>
+      <h2>밀어서<br>폰 캘린더로</h2>
+      <p>잠금화면 위젯이 읽는 건 <b>기기 캘린더</b>입니다.<br>오른쪽으로 밀면 그쪽으로 넘어갑니다 —<br>두 번 밀어도 두 개가 되지 않습니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>두 번 밀어도 <b>덮어쓰기</b></p><span class="tag">캘린더 · 내보내기</span></div>
+  <div class="grain"></div>
+</div>
+
+<div class="steps" id="s02_steps">
+  <div class="head"><span class="t">폰 캘린더로 밀어 보내기</span><span class="m">STEP 02</span></div>
+  <div class="shot h460"><img src="../screenshots/appstore/6.5/2_calendar.png"></div>
+  <div class="list"><div class="step"><div class="n">1</div><div class="b"><h3>캘린더 탭에서 날짜 선택</h3><p>그날 일정이 아래 목록에 뜹니다.</p></div></div><div class="step"><div class="n">2</div><div class="b"><h3>오른쪽으로 밀기</h3><p>기기 캘린더로 저장됩니다. 왼쪽으로 밀면 <b>완료</b>.</p></div></div><div class="step"><div class="n">3</div><div class="b"><h3>저장된 캘린더 이름 확인</h3><p>계정이 여럿이면 <b>어디로 갔는지</b>가 중요합니다.</p></div></div><div class="step"><div class="n gold">4</div><div class="b"><h3>필요한 것만 밀기</h3><p>전부 밀면 위젯이 시끄럽습니다 — 잊으면 안 되는 것만.</p></div></div></div>
+  <div class="foot"><span>아이폰은 iCloud 계정 캘린더 · 안드로이드는 기기(구글) 캘린더</span><span>공직플랜</span></div>
+</div>
+
+<div class="still" id="s03_cover">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 03</span><span>03 · 오후 2시 · 하나 끝내고</span></div>
+  <div class="stage">
+    <div class="shot h420"><img src="../screenshots/appstore/6.5/1_today.png"></div>
+    <div class="copy">
+      <div class="eyebrow">오늘 할 일</div>
+      <h2>도장 찍는<br>맛으로 일한다</h2>
+      <p>동그라미를 누르면 도장이 찍히고 위쪽 링이 차오릅니다.<br><b>완료해도 자리에서 밀려나지 않습니다</b> — 밀려나면<br>방금 찍은 도장이 화면 밖에서 재생됩니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>오늘 <b>2건</b> 찍었다. 링이 차오른다</p><span class="tag">오늘 · 완료 도장</span></div>
+  <div class="grain"></div>
+</div>
+
+<div class="steps" id="s03_steps">
+  <div class="head"><span class="t">도장과 결산 링</span><span class="m">STEP 03</span></div>
+  <div class="shot h460"><img src="../screenshots/appstore/6.5/1_today.png"></div>
+  <div class="list"><div class="step"><div class="n">1</div><div class="b"><h3>동그라미 탭</h3><p>그 자리에서 도장이 찍힙니다. 목록이 다시 정렬되지 않습니다.</p></div></div><div class="step"><div class="n">2</div><div class="b"><h3>링은 오늘 것만</h3><p>지난 항목을 섞으면 <b>100%에 도달할 수 없습니다</b>.</p></div></div><div class="step"><div class="n">3</div><div class="b"><h3>지난 일은 7일까지</h3><p>그 이상 쌓이면 '오늘'이 화면 밖으로 밀려납니다.</p></div></div><div class="step"><div class="n gold">4</div><div class="b"><h3>도장 모양 4종</h3><p>완료 · 결재 · <b>판다 · 도마뱀</b>. 설정에서 바꿉니다.</p></div></div><div><div class="crop" style="width:430px;height:103px"><img src="../screenshots/appstore/6.5/1_today.png" style="width:430px;margin-top:-378px"></div><div class="foot" style="position:static;left:0;right:0;bottom:0;margin-top:10px">실제 화면 · 찍힌 도장</div></div></div>
+  <div class="foot"><span>이미 찍은 도장은 흐리게 — 방금 찍은 것만 진하게 남습니다</span><span>공직플랜</span></div>
+</div>
+
+<div class="still" id="s04_cover">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 04</span><span>04 · 2월 말 · 교무실에서</span></div>
+  <div class="stage">
+    <div class="shot h420"><img src="../screenshots/appstore/6.5/4_import.png"></div>
+    <div class="copy">
+      <div class="eyebrow">작년 업무</div>
+      <h2>새 학기가<br>오기 전에</h2>
+      <p>생산문서등록대장 CSV를 넣으면 작년에 처리한 업무가<br><b>올해 날짜로</b> 들어옵니다. 확정한 것만 캘린더로.<br>이틀 걸리던 일이 출발점이었습니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>작년 업무가 <b>올해 일정</b>으로</p><span class="tag">입력 · 작년 CSV</span></div>
+  <div class="grain"></div>
+</div>
+
+<div class="steps" id="s04_steps">
+  <div class="head"><span class="t">에듀파인에서 CSV 받아 넣기</span><span class="m">STEP 04</span></div>
+  <div class="shot h460"><img src="../screenshots/appstore/6.5/4_import.png"></div>
+  <div class="list"><div class="step"><div class="n">1</div><div class="b"><h3>문서관리 → 문서함</h3><p><b>문서등록대장(다년도검색)</b>으로 들어갑니다.</p></div></div><div class="step"><div class="n">2</div><div class="b"><h3>기간·본인 이름으로 조회</h3><p>예: 2025-03-01 ~ 2026-02-28, 기안자에 본인.</p></div></div><div class="step"><div class="n">3</div><div class="b"><h3>CSV다운(과제정보추가)</h3><p>결과 표 상단 저장 메뉴에서 내려받습니다.</p></div></div><div class="step"><div class="n gold">4</div><div class="b"><h3>앱으로 공유</h3><p>받은 파일을 <b>공유 → 공직플랜</b>. 목록에 없으면 '기타'.</p></div></div><div><div class="crop" style="width:430px;height:50px"><img src="../screenshots/appstore/6.5/3_input.png" style="width:430px;margin-top:-274px"></div><div class="foot" style="position:static;left:0;right:0;bottom:0;margin-top:10px">실제 화면 · 진입점</div></div></div>
+  <div class="foot"><span>제목의 연도는 자동으로 안 고칩니다 — 칩을 눌러 한 해씩 밉니다</span><span>공직플랜</span></div>
+</div>
+
+<div class="still" id="s05_cover">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 05</span><span>05 · 아침 7시 42분 · 정류장</span></div>
+  <div class="stage">
+    <div class="shot h420"><img src="../screenshots/appstore/6.5/6_bus.png"></div>
+    <div class="copy">
+      <div class="eyebrow">출퇴근 버스</div>
+      <h2>나가기 전에<br>3분을 안다</h2>
+      <p>정류장 두 개만 등록하면 시간대에 따라 알아서 바뀝니다.<br><b>제 서버를 거치지 않습니다</b> — 공공데이터를<br>폰에서 직접 부릅니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>뛸까 말까를 <b>3분</b>이 정해준다</p><span class="tag">오늘 · 버스 도착</span></div>
+  <div class="grain"></div>
+</div>
+
+<div class="steps" id="s05_steps">
+  <div class="head"><span class="t">정류장 등록하고 방향 확인하기</span><span class="m">STEP 05</span></div>
+  <div class="shot h460"><img src="../screenshots/appstore/6.5/6_bus.png"></div>
+  <div class="list"><div class="step"><div class="n">1</div><div class="b"><h3>설정 › 버스 도착에서 켜기</h3><p><b>기본은 꺼져 있습니다.</b></p></div></div><div class="step"><div class="n">2</div><div class="b"><h3>정류장 두 개 등록</h3><p>집 근처 · 학교 근처. 시간대에 따라 자동 전환.</p></div></div><div class="step"><div class="n">3</div><div class="b"><h3>타는 노선만 남기기</h3><p>길 양쪽은 이름·번호가 같습니다 — <b>행선지</b>를 보세요.</p></div></div><div class="step"><div class="n gold">4</div><div class="b"><h3>오늘 탭 맨 위에서 확인</h3><p>접으면 조회를 멈춥니다. 막차 뒤에도 멈춥니다.</p></div></div></div>
+  <div class="foot"><span>서울 정류장은 노선 목록이 일부만 나옵니다 — 화면에서 알려드립니다</span><span>공직플랜</span></div>
+</div>
+
+<div class="still wide" id="recruit_banner">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">TESTER</span><span>ANDROID · 비공개 테스트</span></div>
+  <div class="stage" style="bottom:110px;justify-content:flex-start;padding:0 64px">
+    <div class="copy">
+      <div class="eyebrow">안드로이드 테스터를 찾습니다</div>
+      <h2 style="font-size:52px">구글이 <span style="color:#B8340F">12명 · 14일</span>을 요구합니다</h2>
+      <p style="font-size:22px">설치해 두고 <b>14일만 지우지 않으시면</b> 됩니다. 써보시면 좋고, 안 쓰셔도 괜찮습니다.<br>
+      참여는 <b>비밀댓글로 구글 계정</b>을 남겨 주세요 — 폰 Play 스토어에 로그인된 그 계정이어야 합니다.</p>
+    </div>
+  </div>
+  <div class="vig"></div>
+  <div class="sub"><p>비밀댓글이라 <b>다른 분에게 보이지 않습니다</b></p><span class="tag">아이폰은 App Store</span></div>
+  <div class="grain"></div>
+</div>
+</div>
+</body>
+</html>

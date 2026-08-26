@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face{
+    font-family:'Pretendard';
+    src:url('PretendardVariable.ttf') format('truetype');
+    font-weight:100 900;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#3a3a3a;font-family:'Pretendard',sans-serif;padding:40px;display:flex;flex-direction:column;gap:40px}
+
+  /* ══════ 필름 스틸 공통 ══════ */
+  .still{
+    width:1200px;height:675px;position:relative;overflow:hidden;
+    background:#F2ECDD;color:#17253D;
+  }
+  .still.wide{height:420px}
+
+  /* 스프로킷 홀 */
+  .still::before,.still::after{
+    content:'';position:absolute;top:0;bottom:0;width:26px;z-index:9;
+    background:#17253D;
+  }
+  .still::before{left:0}
+  .still::after{right:0}
+  .holes{position:absolute;top:0;bottom:0;width:26px;z-index:10;
+    display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:14px 0}
+  .holes.l{left:0} .holes.r{right:0}
+  .holes i{display:block;width:12px;height:17px;border-radius:2.5px;background:#F2ECDD;opacity:.9}
+
+  /* 필름 메타 (상단) */
+  .slate{
+    position:absolute;top:20px;left:56px;right:56px;z-index:7;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:14px;font-weight:700;letter-spacing:.26em;color:rgba(23,37,61,.42);
+  }
+  .slate .no{color:#B8340F;letter-spacing:.2em}
+
+  /* 자막 바 (하단 레터박스) */
+  .sub{
+    position:absolute;left:26px;right:26px;bottom:0;z-index:8;
+    background:#17253D;padding:22px 44px;
+    display:flex;justify-content:space-between;align-items:center;gap:24px;
+  }
+  .sub p{color:#F2ECDD;font-size:29px;font-weight:600;letter-spacing:-.01em}
+  .sub p b{color:#E0B96A;font-weight:800}
+  .sub .tag{
+    flex:none;font-size:14px;font-weight:700;letter-spacing:.22em;
+    color:rgba(242,236,221,.5);border:1px solid rgba(242,236,221,.28);
+    padding:7px 13px;
+  }
+
+  /* 무대 */
+  .stage{position:absolute;left:26px;right:26px;top:58px;bottom:96px;z-index:5;
+    display:flex;align-items:center;justify-content:center;padding:0 40px}
+  .grain{position:absolute;inset:0;z-index:11;pointer-events:none;opacity:.06;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>")}
+  .vig{position:absolute;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 45%,transparent 52%,rgba(23,37,61,.13))}
+
+  /* ══════ 폰 목업 ══════ */
+  .phone{
+    width:330px;background:#F7F9FC;border-radius:34px;padding:16px 14px;
+    box-shadow:0 26px 54px rgba(23,37,61,.24),0 0 0 9px #17253D;
+    flex:none;
+  }
+  .ph-top{display:flex;justify-content:center;margin-bottom:12px}
+  .ph-top i{width:74px;height:6px;border-radius:99px;background:rgba(23,37,61,.16)}
+
+  /* 버스 카드 */
+  .buscard{background:#fff;border-radius:17px;padding:16px 16px 18px;box-shadow:0 3px 12px rgba(23,37,61,.09)}
+  .bc-h{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800}
+  .bc-h .ico{font-size:19px}
+  .bc-h .arw{color:#B8960C;font-weight:900}
+  .bus-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(23,37,61,.09)}
+  .bus-row:first-of-type{border-top:none;margin-top:6px}
+  .bus-no{font-size:22px;font-weight:900;letter-spacing:-.02em}
+  .bus-dst{font-size:12.5px;color:rgba(23,37,61,.52);font-weight:600;margin-top:2px}
+  .bus-min{font-size:13px;font-weight:800;padding:6px 11px;border-radius:99px}
+  .m-near{background:#FDEAE7;color:#C0392B}
+  .m-soon{background:#FDF3E0;color:#9A7415}
+  .m-far{background:#E9F7EF;color:#1E8449}
+
+  /* 오늘 탭 (도장) */
+  .ring{width:64px;height:64px;border-radius:50%;flex:none;position:relative;
+    background:conic-gradient(#E0B96A 0turn 0.75turn,rgba(23,37,61,.10) 0.75turn 1turn)}
+  .ring::after{content:'2/3';position:absolute;inset:8px;border-radius:50%;background:#fff;
+    display:grid;place-items:center;font-size:16px;font-weight:800;color:#17253D}
+  .today-head{display:flex;align-items:center;gap:14px;background:#fff;border-radius:17px;
+    padding:14px 16px;box-shadow:0 3px 12px rgba(23,37,61,.09)}
+  .today-head .t1{font-size:12.5px;color:rgba(23,37,61,.55);font-weight:700}
+  .today-head .t2{font-size:16px;font-weight:800;margin-top:3px}
+  .task{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid rgba(23,37,61,.08)}
+  .chk{width:25px;height:25px;border-radius:50%;border:2px solid rgba(23,37,61,.26);flex:none}
+  .task .ttl{font-size:15px;font-weight:600;flex:1}
+  .task.done .ttl{color:rgba(23,37,61,.42)}
+  .stamp{
+    width:47px;height:47px;border-radius:50%;flex:none;position:relative;
+    border:3.4px solid #B8340F;display:grid;place-items:center;transform:rotate(-11deg);
+  }
+  .stamp::before{content:'';position:absolute;inset:4.5px;border-radius:50%;border:1.4px solid #B8340F}
+  .stamp span{font-size:14.5px;font-weight:900;color:#B8340F;letter-spacing:-.02em;line-height:1}
+  .stamp.pale{opacity:.34}
+
+  /* 캘린더 스와이프 */
+  .swipe-wrap{border-radius:14px;overflow:hidden;box-shadow:0 3px 12px rgba(23,37,61,.09)}
+  .swipe-bg{background:#1E8449;display:flex;align-items:center;padding:0 16px;height:78px;position:relative}
+  .swipe-bg .lbl{color:#fff;font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .swipe-card{position:absolute;left:112px;right:-112px;top:0;bottom:0;background:#fff;
+    display:flex;align-items:center;gap:10px;padding:0 15px;border-left:4px solid #4A6FA5}
+  .kb{font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:5px;background:rgba(74,111,165,.16);color:#3A5A87;flex:none}
+  .swipe-card .ttl{font-size:15px;font-weight:700}
+  .swipe-card .dt{font-size:11.5px;color:rgba(23,37,61,.5);font-weight:600;margin-top:2px}
+  .hand{position:absolute;right:-8px;top:52%;font-size:40px;z-index:3;filter:drop-shadow(0 4px 8px rgba(0,0,0,.28))}
+
+  /* 에듀파인 변환 */
+  .conv{display:flex;align-items:center;gap:32px}
+  .paper{
+    width:290px;background:#fff;border-radius:12px;padding:16px;
+    box-shadow:0 8px 22px rgba(23,37,61,.14);
+  }
+  .paper .ph{font-size:12px;font-weight:800;letter-spacing:.16em;color:#8A7144;
+    padding-bottom:9px;border-bottom:1.5px solid rgba(23,37,61,.22)}
+  .paper .row{display:flex;justify-content:space-between;gap:8px;padding:8.5px 0;
+    border-bottom:1px dotted rgba(23,37,61,.16);font-size:12.5px;font-weight:600}
+  .paper .row:last-child{border-bottom:none}
+  .paper .row .d{color:rgba(23,37,61,.45);flex:none;font-weight:700}
+  .paper.old{transform:rotate(-2deg)}
+  .paper.new{transform:rotate(1.5deg)}
+  .paper.new .ph{color:#1E8449}
+  .paper.new .row .d{color:#1E8449}
+  .bigarw{font-size:52px;color:#B8960C;font-weight:900;flex:none;text-align:center}
+  .arwbox{flex:none;text-align:center}
+  .arwchip{margin-top:6px;font-size:13px;font-weight:800;color:#8A7144;
+    border:1.4px solid rgba(184,150,12,.55);padding:5px 9px;white-space:nowrap}
+  .yr{background:rgba(224,185,106,.55);padding:1px 3px;border-radius:2px;font-weight:800}
+  .more{padding-top:9px;margin-top:2px;border-top:1px solid rgba(23,37,61,.14);
+    font-size:11.5px;font-weight:700;color:rgba(23,37,61,.4);text-align:right}
+
+  /* 캡션 (무대 우측 설명) */
+  .cap{max-width:372px}
+  .cap .k{font-size:15px;font-weight:800;letter-spacing:.2em;color:#B8340F}
+  .cap h3{font-size:41px;font-weight:800;line-height:1.24;margin-top:12px;letter-spacing:-.025em}
+  .cap p{font-size:19px;line-height:1.62;color:rgba(23,37,61,.7);font-weight:500;margin-top:14px}
+
+  /* ══════ 마감 배너 ══════ */
+  .banner{display:flex;align-items:center;justify-content:space-between;width:100%;gap:38px}
+  .banner .lft h2{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1.16}
+  .banner .lft h2 em{font-style:normal;color:#B8340F}
+  .banner .lft p{font-size:21px;margin-top:14px;color:rgba(23,37,61,.68);font-weight:600}
+  .chips{display:flex;gap:12px;margin-top:20px}
+  .chip{border:1.6px solid rgba(23,37,61,.3);padding:10px 16px;font-size:17px;font-weight:800}
+  .chip b{color:#B8340F}
+  .banner .rgt{flex:none;text-align:center}
+  .cmt{
+    width:196px;height:196px;border-radius:50%;border:5px solid #B8340F;
+    display:grid;place-items:center;transform:rotate(-9deg);opacity:.9;position:relative;
+  }
+  .cmt::before{content:'';position:absolute;inset:10px;border-radius:50%;border:2px solid #B8340F}
+  .cmt span{font-size:38px;font-weight:900;color:#B8340F;line-height:1.15;text-align:center;letter-spacing:-.02em}
+  .cmt small{display:block;font-size:17px;letter-spacing:.24em;margin-top:8px;font-weight:800}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ STILL 01 · 버스 ═══════════ -->
+<div class="still" id="s1">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 01</span><span>07:42 · 출근길</span></div>
+  <div class="stage">
+    <div class="phone">
+      <div class="ph-top"><i></i></div>
+      <div class="buscard">
+        <div class="bc-h"><span class="ico">🏠</span><span class="arw">→</span><span class="ico">🏫</span><span>출근</span></div>
+        <div class="bus-row">
+          <div><div class="bus-no">152번</div><div class="bus-dst">학교 앞 방면</div></div>
+          <div class="bus-min m-near">3분 후</div>
+        </div>
+        <div class="bus-row">
+          <div><div class="bus-no">202번</div><div class="bus-dst">학교 앞 방면</div></div>
+          <div class="bus-min m-soon">7분 후</div>
+        </div>
+        <div class="bus-row">
+          <div><div class="bus-no">500번</div><div class="bus-dst">돌아가는 길</div></div>
+          <div class="bus-min m-far">14분 후</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap" style="margin-left:48px">
+      <div class="k">아침</div>
+      <h3>일정 앱인데<br>버스가 먼저 뜬다</h3>
+      <p>정류장 두 개만 등록하면 끝.<br>
+         아침엔 학교 쪽, 저녁엔 집 쪽으로<br>알아서 바뀝니다.</p>
+    </div>
+  </div>
+  <div class="sub"><p>뛸까 말까를 <b>3분</b>이 정해준다</p><span class="tag">버스 도착</span></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+<!-- ═══════════ STILL 02 · 도장 ═══════════ -->
+<div class="still" id="s2">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 02</span><span>14:10 · 하나 끝냈다</span></div>
+  <div class="stage">
+    <div class="cap" style="margin-right:48px">
+      <div class="k">오후</div>
+      <h3>끝낸 일에<br>도장을 찍는다</h3>
+      <p>동그라미를 누르면 도장이 찍히고<br>
+         위쪽 링이 조금 차오릅니다.<br>별거 아닌데 은근히 중독됩니다.</p>
+    </div>
+    <div class="phone">
+      <div class="ph-top"><i></i></div>
+      <div class="today-head">
+        <div class="ring"></div>
+        <div><div class="t1">8월 3일 월요일</div><div class="t2">오늘 1건 남았어요</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="task done"><div class="chk" style="border-color:#B8960C;background:#F5E9C8"></div>
+          <div class="ttl">학교운영위원회 자료 제출</div><div class="stamp pale"><span>완료</span></div></div>
+        <div class="task done"><div class="chk" style="border-color:#B8960C;background:#F5E9C8"></div>
+          <div class="ttl">방과후 강사 계약 확인</div><div class="stamp"><span>완료</span></div></div>
+        <div class="task"><div class="chk"></div><div class="ttl">2학기 교과서 수량 점검</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="sub"><p>오늘 <b>2건</b> 찍었다. 링이 차오른다</p><span class="tag">오늘 · 완료 도장</span></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+<!-- ═══════════ STILL 03 · 캘린더 스와이프 ═══════════ -->
+<div class="still" id="s3">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 03</span><span>21:05 · 소파에서</span></div>
+  <div class="stage">
+    <div class="phone">
+      <div class="ph-top"><i></i></div>
+      <div style="font-size:13px;font-weight:800;color:rgba(23,37,61,.5);padding:2px 4px 10px">8월 26일 (수)</div>
+      <div class="swipe-wrap">
+        <div class="swipe-bg">
+          <div class="lbl">☁ 기기 저장</div>
+          <div class="swipe-card">
+            <span class="kb">행사</span>
+            <div><div class="ttl">2학기 개학식</div><div class="dt">08:40 · 강당</div></div>
+          </div>
+          <div class="hand">👈</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:0 4px;font-size:12.5px;color:rgba(23,37,61,.45);font-weight:600;line-height:1.5">
+        → 오른쪽으로 밀기 · 기기 캘린더로<br>← 왼쪽으로 밀기 · 완료
+      </div>
+    </div>
+    <div class="cap" style="margin-left:48px">
+      <div class="k">저녁</div>
+      <h3>밀어서<br>폰 캘린더로</h3>
+      <p>학교 일정을 오른쪽으로 밀면<br>
+         폰 기본 캘린더에도 뜹니다.<br>또 밀어도 덮어쓰기라 두 개가 안 돼요.</p>
+    </div>
+  </div>
+  <div class="sub"><p>밀면 <b>폰 캘린더</b>에도 뜬다</p><span class="tag">캘린더 · 내보내기</span></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+<!-- ═══════════ STILL 04 · 에듀파인 ═══════════ -->
+<div class="still" id="s4">
+  <div class="holes l"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="holes r"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">STILL 04</span><span>내년 3월 · 원래 주인공</span></div>
+  <div class="stage">
+    <div class="conv">
+      <div class="paper old">
+        <div class="ph">2025 생산문서등록대장</div>
+        <div class="row"><span>2025학년도 학사일정 계획</span><span class="d">03.04</span></div>
+        <div class="row"><span>교원 업무분장 조정 결과</span><span class="d">03.02</span></div>
+        <div class="row"><span>1차 학급편성 결과 제출</span><span class="d">03.05</span></div>
+        <div class="row"><span>학교교육과정 위원회</span><span class="d">03.11</span></div>
+        <div class="row"><span>학생 기초학력 진단</span><span class="d">03.18</span></div>
+        <div class="more">… 외 15건</div>
+      </div>
+      <div class="arwbox"><div class="bigarw">→</div><div class="arwchip">날짜는 올해로</div></div>
+      <div class="paper new">
+        <div class="ph">2026 내 캘린더</div>
+        <div class="row"><span><span class="yr">2026</span>학년도 학사일정 계획</span><span class="d">03.04</span></div>
+        <div class="row"><span>교원 업무분장 조정 결과</span><span class="d">03.02</span></div>
+        <div class="row"><span>1차 학급편성 결과 제출</span><span class="d">03.05</span></div>
+        <div class="row"><span>학교교육과정 위원회</span><span class="d">03.11</span></div>
+        <div class="row"><span>학생 기초학력 진단</span><span class="d">03.18</span></div>
+        <div class="more">… 외 15건</div>
+      </div>
+    </div>
+  </div>
+  <div class="sub"><p>작년 업무 <b>20건</b>이 올해 일정으로</p><span class="tag">에듀파인 CSV</span></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+<!-- ═══════════ STILL 05 · 마감 배너 ═══════════ -->
+<div class="still wide" id="s5">
+  <div class="holes l"><i></i><i></i><i></i><i></i></div>
+  <div class="holes r"><i></i><i></i><i></i><i></i></div>
+  <div class="slate"><span class="no">FIN</span><span>안드로이드 비공개 테스트</span></div>
+  <div class="stage" style="bottom:92px">
+    <div class="banner">
+      <div class="lft">
+        <h2>안드로이드 <em>테스터</em>를<br>찾습니다</h2>
+        <p>설치해 두고 14일만 지우지 않으시면 됩니다.</p>
+        <div class="chips">
+          <span class="chip"><b>16</b>명</span>
+          <span class="chip"><b>14</b>일 연속</span>
+          <span class="chip">알림은 아직 <b>안 됨</b></span>
+        </div>
+      </div>
+      <div class="rgt"><div class="cmt"><span>댓글로<small>신청</small></span></div></div>
+    </div>
+  </div>
+  <div class="sub"><p>구글이 <b>12명 · 14일</b>을 요구합니다</p><span class="tag">공직플랜</span></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+</body>
+</html>
