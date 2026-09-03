@@ -29,7 +29,8 @@ planroutine/
 │   │   │       ├── settings_strings.dart
 │   │   │       ├── today_strings.dart
 │   │   │       └── trash_strings.dart
-│   │   ├── theme/                      # app_theme, app_gradients, app_text_styles
+│   │   ├── theme/                      # app_theme, app_gradients, app_text_styles,
+│   │   │                               #   system_overlay_region(내비게이션 바 스타일 루트 리전)
 │   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
 │   │   ├── database/                   # DatabaseHelper (v8, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
@@ -47,8 +48,8 @@ planroutine/
 │   │   │       └── providers/                   # importStateProvider (importFromPath API)
 │   │   ├── schedule/                   # 입력 탭 (넣기 + 검토/확정)
 │   │   │   ├── data/                   # schedule_repository (soft-delete + purge, kind 필터)
-│   │   │   ├── domain/                 # schedule, entry_kind(task/event), filter_summary(순수 함수)
-│   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, FilterBar(상태/종류/카테고리)
+│   │   │   ├── domain/                 # schedule, entry_kind(task/event)
+│   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, ScheduleTile, KindBadge
 │   │   ├── calendar/                   # 자체 캘린더
 │   │   │   ├── data/                   # calendar_repository
 │   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt/kind)

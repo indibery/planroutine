@@ -4,7 +4,7 @@ import 'bus_settings.dart';
 /// 설정 탭에 남는 버스 요약 한 줄.
 ///
 /// 순수 함수로 둔다 — 이 리포가 요약 문구를 다루는 방식이다
-/// (`buildFilterSummary`·`buildBusCardView`·`buildTodayView`). 위젯 안에서
+/// (`buildBusCardView`·`buildTodayView`·`computeNotifications`). 위젯 안에서
 /// 조립하면 분기를 유닛 테스트로 고정할 수 없다.
 ///
 /// **켜짐 여부를 먼저 본다.** 꺼 둔 사용자의 설정에도 정류장은 남아 있으므로,

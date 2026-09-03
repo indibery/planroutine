@@ -54,7 +54,10 @@ class SettingsStrings {
       '공공데이터포털에서 제공받았습니다';
   // 내보내기
   static const exportTitle = 'CSV로 내보내기';
-  static const exportDescription = '올해 등록된 일정을 CSV 파일로 저장·공유합니다';
+  /// **연도를 주장하지 않는다.** 쿼리는 `status='confirmed'` 전부를 내보내고,
+  /// 확정 행은 자동 정리 대상이 아니라 해마다 쌓인다 — `올해`라고 적으면 매년 더
+  /// 틀려진다. 가드: `test/features/settings/export_scope_claim_test.dart`.
+  static const exportDescription = '확정된 일정 전체를 CSV 파일로 저장·공유합니다';
   static const exportEmpty = '내보낼 일정이 없습니다';
   static const exportFailed = '내보내기 중 오류가 발생했습니다';
   static const exportShareSubject = '공직플랜 일정';

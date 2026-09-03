@@ -297,25 +297,6 @@ void main() {
       expect(deleted.first.status, ScheduleStatus.pending);
     });
 
-    test('confirmAllPending(category:)는 그 카테고리의 pending만 확정', () async {
-      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
-      final id2 = await seedImportedSchedule(title: 'B', category: '일과운영관리');
-      final id3 = await seedImportedSchedule(title: 'C', category: '학생학적관리');
-      await repo.createFromImported(id1, DateTime(2026, 1, 1));
-      await repo.createFromImported(id2, DateTime(2026, 1, 2));
-      await repo.createFromImported(id3, DateTime(2026, 2, 1));
-
-      await repo.confirmAllPending(category: '일과운영관리');
-
-      final dailyOps = await repo.getSchedules(category: '일과운영관리');
-      expect(
-        dailyOps.every((s) => s.status == ScheduleStatus.confirmed),
-        isTrue,
-      );
-      final studentRec = await repo.getSchedules(category: '학생학적관리');
-      expect(studentRec.first.status, ScheduleStatus.pending);
-    });
-
     test('confirmAllPending(category: null)은 모든 pending 확정 (기존 동작)', () async {
       final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
       final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
@@ -349,17 +330,86 @@ void main() {
       expect(deleted.length, 2);
     });
 
-    test('deleteAllPending(category:)는 그 카테고리의 pending만 삭제', () async {
+    // ── 카테고리로 범위를 좁히는 인자는 없어졌다(2026-09-03) ──────────────
+    // 입력 탭의 카테고리 필터를 없애면서 `getSchedules`·`confirmAllPending`·
+    // `deleteAllPending`의 `category` 인자와 `getDistinctCategories`가 함께 죽었다.
+    // 아래 여섯 건이 그 자리를 대신한다 — 새 계약과, 지우지 않기로 한 것을 지킨다.
+
+    test('getSchedules(status: pending)은 카테고리를 가리지 않는다', () async {
       final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
       final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
       await repo.createFromImported(id1, DateTime(2026, 1, 1));
       await repo.createFromImported(id2, DateTime(2026, 2, 1));
 
-      await repo.deleteAllPending(category: '일과운영관리');
+      final pending = await repo.getSchedules(status: ScheduleStatus.pending);
+      expect(pending.map((s) => s.title), ['A', 'B']);
+    });
 
-      final active = await repo.getSchedules();
-      expect(active.length, 1);
-      expect(active.first.category, '학생학적관리');
+    test('confirmAllPending()은 카테고리와 무관하게 대기 전체를 확정한다', () async {
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+
+      expect(await repo.confirmAllPending(), 2);
+      expect(await repo.getSchedules(status: ScheduleStatus.pending), isEmpty);
+    });
+
+    test('deleteAllPending()은 카테고리와 무관하게 대기 전체를 삭제한다', () async {
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B', category: '학생학적관리');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+
+      expect(await repo.deleteAllPending(), 2);
+      expect(await repo.getSchedules(), isEmpty);
+      expect(await repo.getDeletedSchedules(), hasLength(2));
+    });
+
+    test('확정과 삭제는 같은 집합을 잡는다 — 범위 조립이 한 곳이다', () async {
+      // `_updateAllPending` 하나를 감싸므로 어긋날 수 없다. 예전에 한쪽에만
+      // 필터를 더해 갈렸던 것이 실제 버그였다.
+      final id1 = await seedImportedSchedule(title: 'A', category: '일과운영관리');
+      final id2 = await seedImportedSchedule(title: 'B');
+      await repo.createFromImported(id1, DateTime(2026, 1, 1));
+      await repo.createFromImported(id2, DateTime(2026, 2, 1));
+
+      final wouldDelete = await repo.deleteAllPending();
+      // 같은 시드로 다시 세워 확정 건수를 비교한다.
+      await repo.restoreSchedule(
+        (await repo.getDeletedSchedules()).first.id!,
+      );
+      await repo.restoreSchedule(
+        (await repo.getDeletedSchedules()).first.id!,
+      );
+      final wouldConfirm = await repo.confirmAllPending();
+
+      expect(wouldDelete, wouldConfirm);
+    });
+
+    test('확정해도 category 값은 컬럼에 남는다 — CSV 내보내기가 쓴다', () async {
+      final id = await seedImportedSchedule(title: 'A', category: '학생학적관리');
+      await repo.createFromImported(id, DateTime(2026, 1, 1));
+
+      await repo.confirmAllPending();
+
+      final confirmed = await repo.getSchedules(
+        status: ScheduleStatus.confirmed,
+      );
+      expect(confirmed.single.category, '학생학적관리');
+    });
+
+    test('확정 행은 deleted_at이 NULL이라 내보내기 조회에 걸린다', () async {
+      final id = await seedImportedSchedule(title: 'A');
+      await repo.createFromImported(id, DateTime(2026, 1, 1));
+
+      await repo.confirmAllPending();
+
+      final confirmed = await repo.getSchedules(
+        status: ScheduleStatus.confirmed,
+      );
+      expect(confirmed.single.deletedAt, isNull);
+      expect(await repo.getDeletedSchedules(), isEmpty);
     });
   });
 
@@ -382,66 +432,6 @@ void main() {
       final purged = await repo.purgeOlderThan(DateTime(2025, 6, 1));
       expect(purged, 1);
       expect(await repo.getDeletedSchedules(), isEmpty);
-    });
-  });
-
-  group('getDistinctCategories', () {
-    test('활성 일정의 카테고리만 빈도 내림차순으로 반환', () async {
-      final id1 = await seedImportedSchedule(title: 'A1', category: '일과운영관리');
-      final id2 = await seedImportedSchedule(title: 'A2', category: '일과운영관리');
-      final id3 = await seedImportedSchedule(title: 'A3', category: '일과운영관리');
-      final id4 = await seedImportedSchedule(title: 'B1', category: '학생학적관리');
-      final id5 = await seedImportedSchedule(
-        title: 'C1',
-        category: '교육과정계획수립운영',
-      );
-      final id6 = await seedImportedSchedule(
-        title: 'C2',
-        category: '교육과정계획수립운영',
-      );
-      await repo.createFromImported(id1, DateTime(2026, 1, 1));
-      await repo.createFromImported(id2, DateTime(2026, 1, 2));
-      await repo.createFromImported(id3, DateTime(2026, 1, 3));
-      await repo.createFromImported(id4, DateTime(2026, 2, 1));
-      await repo.createFromImported(id5, DateTime(2026, 3, 1));
-      await repo.createFromImported(id6, DateTime(2026, 3, 2));
-
-      final categories = await repo.getDistinctCategories();
-      expect(categories, ['일과운영관리', '교육과정계획수립운영', '학생학적관리']);
-    });
-
-    test('NULL/빈 문자열 카테고리는 제외', () async {
-      final database = await db.database;
-      final now = DateTime.now().toIso8601String();
-      await database.insert(DatabaseHelper.tableSchedules, {
-        'title': 'no-cat',
-        'scheduled_date': '2026-01-01',
-        'category': null,
-        'status': 'pending',
-        'created_at': now,
-        'updated_at': now,
-      });
-      await database.insert(DatabaseHelper.tableSchedules, {
-        'title': 'empty-cat',
-        'scheduled_date': '2026-01-02',
-        'category': '',
-        'status': 'pending',
-        'created_at': now,
-        'updated_at': now,
-      });
-      final id = await seedImportedSchedule(category: '학생학적관리');
-      await repo.createFromImported(id, DateTime(2026, 1, 3));
-
-      final categories = await repo.getDistinctCategories();
-      expect(categories, ['학생학적관리']);
-    });
-
-    test('soft-delete된 일정은 제외', () async {
-      final id = await seedImportedSchedule(category: '일과운영관리');
-      final sid = await repo.createFromImported(id, DateTime(2026, 1, 1));
-      await repo.deleteSchedule(sid);
-
-      expect(await repo.getDistinctCategories(), isEmpty);
     });
   });
 

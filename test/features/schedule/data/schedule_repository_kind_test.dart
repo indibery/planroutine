@@ -78,7 +78,9 @@ void main() {
       expect(await repo.getSchedules(status: ScheduleStatus.pending), isEmpty);
     });
 
-    test('카테고리와 종류를 함께 좁힐 수 있다', () async {
+    test('카테고리는 범위에 영향을 주지 않는다', () async {
+      // 입력 탭의 카테고리 필터를 없애면서 `category` 인자도 사라졌다
+      // (2026-09-03). 카테고리가 붙은 행사와 안 붙은 행사가 **함께** 확정돼야 한다.
       await repo.insertConfirmedOrPending(
         const Schedule(
           title: '체육대회 준비',
@@ -88,12 +90,13 @@ void main() {
         ),
       );
 
-      final changed = await repo.confirmAllPending(
-        category: '교육과정',
-        kind: EntryKind.event,
-      );
+      final changed = await repo.confirmAllPending(kind: EntryKind.event);
 
-      expect(changed, 1);
+      expect(
+        changed,
+        2,
+        reason: '카테고리 있는 체육대회 + 카테고리 없는 과학의 달 둘 다',
+      );
     });
   });
 
@@ -123,7 +126,7 @@ void main() {
       expect(await repo.getSchedules(status: ScheduleStatus.pending), isEmpty);
     });
 
-    test('카테고리와 종류를 함께 좁힐 수 있다', () async {
+    test('카테고리는 범위에 영향을 주지 않는다 (확정과 대칭)', () async {
       await repo.insertConfirmedOrPending(
         const Schedule(
           title: '체육대회 준비',
@@ -133,12 +136,14 @@ void main() {
         ),
       );
 
-      final deleted = await repo.deleteAllPending(
-        category: '교육과정',
-        kind: EntryKind.event,
-      );
+      final deleted = await repo.deleteAllPending(kind: EntryKind.event);
 
-      expect(deleted, 1, reason: '카테고리 없는 과학의 달 행사는 남아야 한다');
+      expect(
+        deleted,
+        2,
+        reason: '확정이 2건을 잡으면 삭제도 2건을 잡아야 한다 — '
+            '한쪽만 범위가 다르면 화면에 없던 항목이 지워진다',
+      );
     });
   });
 }

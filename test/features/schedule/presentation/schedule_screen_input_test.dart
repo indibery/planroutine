@@ -13,7 +13,6 @@ import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
-import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
 
 import '../../../helpers/test_database.dart';
 
@@ -57,27 +56,17 @@ void main() {
         child: const MaterialApp(home: ScheduleScreen()),
       ),
     );
-    bool chipHasCount() => find
-        .byWidgetPredicate(
-          (w) => w is Text && (w.data?.startsWith('검토 대기 ') ?? false),
-        )
-        .evaluate()
-        .isNotEmpty;
+    // 사라진 `검토 대기 N` 칩을 기다리면 100회를 헛돌다 그대로 통과한다 —
+    // 로딩이 끝났는지로 본다.
+    bool loading() =>
+        find.byType(CircularProgressIndicator).evaluate().isNotEmpty;
     await tester.runAsync(() async {
-      for (var i = 0; i < 100 && !chipHasCount(); i++) {
+      for (var i = 0; i < 100 && loading(); i++) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
         await tester.pump();
       }
     });
     await tester.pumpAndSettle();
-  }
-
-  /// 필터는 접힘이 기본 — 칩을 만지는 테스트는 먼저 펼친다.
-  Future<void> expandFilters(WidgetTester tester) async {
-    if (find.byKey(ScheduleFilterBar.chipRowsKey).evaluate().isEmpty) {
-      await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
-      await tester.pumpAndSettle();
-    }
   }
 
   group('입력이 주인공', () {
@@ -189,37 +178,38 @@ void main() {
     });
   });
 
-  group('종류 필터', () {
-    testWidgets('행사 칩을 누르면 업무가 빠진다', (tester) async {
+  /// 종류 칩으로 목록을 좁히던 그룹이 여기 있었다. 칩이 없어졌으므로
+  /// 대신 **두 종류가 한 목록에 함께 있다**는 것과 조작부가 둘뿐이라는 것을 지킨다.
+  group('한 목록에서 함께 검토한다', () {
+    testWidgets('업무와 행사가 같은 목록에 나란히 있다', (tester) async {
+      // 기본 600pt 화면에서는 히어로(약 210pt)와 안내 바에 밀려 두 번째 달
+      // 그룹이 뷰포트 밖으로 나간다 — 두 종류가 함께 있다는 것이 요지라 화면을
+      // 키워서 본다. 좁은 폭에서의 넘침은 `visual_check` 도구가 따로 훑는다.
+      tester.view.physicalSize = const Size(400 * 3, 1200 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
       await tester.runAsync(() async {
         await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
         await seed('과학의 달 행사', '2026-04-10', EntryKind.event);
       });
       await pumpScreen(tester);
-      await expandFilters(tester);
 
-      // 칩은 Key로 찾는다. 라벨은 대기 뷰에서만 건수가 붙고('행사 1') `행사`는
-      // 카테고리 칩 `학교행사`의 부분 문자열이라, 문구로 찾으면 이 테스트가
-      // 지키려는 종류 필터가 아니라 건수 포맷·카테고리 목록에 묶인다.
-      await tester.tap(find.byKey(ScheduleFilterBar.kindEventKey));
-      // 필터 변경 → 실제 DB 재조회. 로딩 스피너가 남은 채 pumpAndSettle하면
-      // fake-async가 DB future를 못 끝내 영원히 안 멎는다 → runAsync에서 대기.
-      await tester.runAsync(() async {
-        for (
-          var i = 0;
-          i < 100 &&
-              (find.text('과학의 달 행사').evaluate().isEmpty ||
-                  find.byType(CircularProgressIndicator).evaluate().isNotEmpty);
-          i++
-        ) {
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-          await tester.pump();
-        }
-      });
-      await tester.pump();
-
+      expect(find.text('학급편성 결과 제출'), findsOneWidget);
       expect(find.text('과학의 달 행사'), findsOneWidget);
-      expect(find.text('학급편성 결과 제출'), findsNothing);
+    });
+
+    testWidgets('목록 위 조작부는 일괄 삭제 pill 하나뿐이다', (tester) async {
+      await tester.runAsync(() async {
+        await seed('학급편성 결과 제출', '2026-03-02', EntryKind.task);
+      });
+      await pumpScreen(tester);
+
+      expect(find.text(ScheduleStrings.deletePending(1)), findsOneWidget);
+      // 상태·종류·카테고리 칩과 `필터` 토글이 모두 없다.
+      for (final gone in ['필터', '전체', '확정됨']) {
+        expect(find.text(gone), findsNothing, reason: '$gone 조작부는 없앴다');
+      }
     });
   });
 }

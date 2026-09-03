@@ -6,6 +6,44 @@ import '../constants/app_sizes.dart';
 class AppTheme {
   AppTheme._();
 
+  /// 시스템 바(상태바 · 내비게이션 바) 스타일 — **단일 출처**.
+  ///
+  /// `appBarTheme`(상태바 담당)과 `SystemOverlayRegion`(내비게이션 바 담당)이
+  /// 같은 값을 봐야 한다. 프레임워크는 위/아래를 따로 샘플링해 위에서 상태바
+  /// 속성을, 아래에서 내비게이션 바 속성을 가져간다(`view.dart:452`).
+  ///
+  /// **상태바 부분은 손대지 않는다** — Android 16 실측에서 양 테마 모두 정상이었다.
+  /// 기존 상수를 base로 두고 내비게이션 바 세 필드만 덮는다.
+  ///
+  /// 그 셋이 왜 다 필요한지:
+  /// - `systemNavigationBarIconBrightness` — `SystemUiOverlayStyle.dark`/`.light`는
+  ///   **양쪽 다** 흰 아이콘을 담고 있다. API 34까지는 검정 바가 실제로 칠해져
+  ///   맞았지만, API 35+는 `systemNavigationBarColor`를 무시하므로 흰 아이콘만
+  ///   남는다 → 라이트 탭바(흰색) 위에서 **대비 1.00:1**(실측).
+  /// - `systemNavigationBarContrastEnforced: false` — 3버튼 내비게이션에는 80%
+  ///   스크림이 기본으로 깔린다. 켜두면 이 영역이 탭바 색이 아니게 되고
+  ///   (실측 다크 `#D0D4DA`) 흰 아이콘이 1.49:1로 묻힌다.
+  /// - `systemNavigationBarColor: transparent` — API 35+는 무시하지만 minSdk 24라
+  ///   Android 7~14에서는 아직 칠해진다. 검정으로 두면 라이트의 어두운 아이콘이
+  ///   검정 바 위에 놓여 **구버전이 대신 깨진다**.
+  ///
+  /// 셋을 함께 두면 내비게이션 바 영역 = 탭바 색(`AppColors.surface`)이 되어
+  /// API 24~36이 한 규칙으로 통일된다. 가드는
+  /// `test/core/theme/system_overlay_style_test.dart`.
+  static SystemUiOverlayStyle systemOverlayStyle(Brightness brightness) {
+    final isLight = brightness == Brightness.light;
+    final base = isLight
+        ? SystemUiOverlayStyle.dark
+        : SystemUiOverlayStyle.light;
+    return base.copyWith(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+      systemNavigationBarIconBrightness: isLight
+          ? Brightness.dark
+          : Brightness.light,
+    );
+  }
+
   /// 현재 [AppColors] 팔레트 기준 ThemeData.
   /// app.dart가 `AppColors.applyBrightness(effective)` 직후 `of(effective)`를
   /// 호출하므로, 아래 AppColors getter들은 그 밝기의 팔레트 값을 반환한다.
@@ -32,9 +70,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.ink,
-        systemOverlayStyle: isLight
-            ? SystemUiOverlayStyle.dark
-            : SystemUiOverlayStyle.light,
+        systemOverlayStyle: systemOverlayStyle(brightness),
       ),
       cardTheme: CardThemeData(
         color: AppColors.glass,

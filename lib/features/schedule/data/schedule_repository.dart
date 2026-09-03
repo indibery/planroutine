@@ -123,10 +123,12 @@ class ScheduleRepository {
     return (created: created, skipped: skipped);
   }
 
-  /// 필터 조건으로 일정 목록 조회 (삭제되지 않은 것만)
+  /// 상태·종류로 일정 목록 조회 (삭제되지 않은 것만).
+  ///
+  /// **카테고리 인자는 없다**(2026-09-03). 입력 탭의 카테고리 필터를 없애면서
+  /// 유일한 호출부가 사라졌다 — 컬럼과 CSV 내보내기의 카테고리 값은 그대로다.
   Future<List<Schedule>> getSchedules({
     ScheduleStatus? status,
-    String? category,
     EntryKind? kind,
   }) async {
     final db = await _dbHelper.database;
@@ -136,10 +138,6 @@ class ScheduleRepository {
     if (status != null) {
       where.add('status = ?');
       whereArgs.add(status.value);
-    }
-    if (category != null) {
-      where.add('category = ?');
-      whereArgs.add(category);
     }
     if (kind != null) {
       where.add('kind = ?');
@@ -154,19 +152,6 @@ class ScheduleRepository {
     );
 
     return result.map(Schedule.fromMap).toList();
-  }
-
-  /// 활성 일정에서 사용 중인 카테고리를 빈도 내림차순으로 반환.
-  /// NULL/빈 문자열은 제외. 휴지통 항목은 제외.
-  Future<List<String>> getDistinctCategories() async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery(
-      'SELECT category, COUNT(*) AS cnt FROM ${DatabaseHelper.tableSchedules} '
-      "WHERE deleted_at IS NULL AND category IS NOT NULL AND category != '' "
-      'GROUP BY category '
-      'ORDER BY cnt DESC, category ASC',
-    );
-    return result.map((row) => row['category'] as String).toList();
   }
 
   /// 일정 상태 변경
@@ -291,48 +276,45 @@ class ScheduleRepository {
   }
 
   /// 검토 대기 상태 일정 일괄 확정.
-  /// [category]·[kind]가 null이면 전체, 값이 있으면 거기에 한정.
-  /// 입력 탭이 종류별로 나눠 확정하므로 [kind]가 필요하다.
-  Future<int> confirmAllPending({String? category, EntryKind? kind}) {
+  /// [kind]가 null이면 대기 전체, 값이 있으면 그 종류만 — 입력 탭이 종류별로
+  /// 나눠 확정한다.
+  Future<int> confirmAllPending({EntryKind? kind}) {
     return _updateAllPending(
       {
         'status': ScheduleStatus.confirmed.value,
         'updated_at': DateTime.now().toIso8601String(),
       },
-      category: category,
       kind: kind,
     );
   }
 
   /// 검토 대기 상태 일정 일괄 삭제(soft-delete → 휴지통).
-  /// [category]·[kind]가 null이면 전체, 값이 있으면 거기에 한정.
-  /// 확정된 일정(status=confirmed)은 건드리지 않는다. 반환: 삭제된 건수.
+  /// [kind]가 null이면 대기 전체. 확정된 일정(status=confirmed)은 건드리지 않는다.
+  /// 반환: 삭제된 건수.
   ///
-  /// [kind]는 [confirmAllPending]과의 **대칭**이다. 입력 탭은 종류로 좁힌 목록의
-  /// 건수로 삭제 pill을 그리므로, 여기서 종류를 무시하면 화면에 없던 항목까지 지운다.
-  Future<int> deleteAllPending({String? category, EntryKind? kind}) {
+  /// ⚠️ **[kind]를 넘기는 프로덕션 호출부는 없다**(입력 탭은 대기 전체로만 부른다).
+  /// 삭제 pill의 건수가 필터 없는 대기 전체 길이라, 여기에 [kind]를 넘기면
+  /// **화면의 수와 지워지는 수가 갈린다** — `행사 4건 삭제`를 눌러 21건이 사라진
+  /// 그 버그가 그대로 재현된다. 대칭 자체는 [_updateAllPending]이 구조로 보장하므로
+  /// 이 인자는 그 근거가 아니다. 지금은 대칭 가드가 두 경로를 같은 축으로 비교하기
+  /// 위해서만 쓴다 — 새 호출부를 만들려면 pill 건수부터 같이 좁혀야 한다.
+  Future<int> deleteAllPending({EntryKind? kind}) {
     return _updateAllPending(
       {'deleted_at': DateTime.now().toIso8601String()},
-      category: category,
       kind: kind,
     );
   }
 
   /// 위 둘의 공통 범위. 확정과 삭제가 **같은 항목 집합**을 잡는다는 보장을 산문이
   /// 아니라 코드로 둔다 — 한쪽에만 필터를 추가해 어긋났던 것이 이 버그였다.
-  /// 다음 필터(subCategory·기간)도 여기 한 곳만 고치면 양쪽에 동시에 걸린다.
+  /// 다음 범위 조건(기간 등)도 여기 한 곳만 고치면 양쪽에 동시에 걸린다.
   Future<int> _updateAllPending(
     Map<String, Object?> values, {
-    String? category,
     EntryKind? kind,
   }) async {
     final db = await _dbHelper.database;
     final where = <String>['status = ?', 'deleted_at IS NULL'];
     final whereArgs = <dynamic>[ScheduleStatus.pending.value];
-    if (category != null) {
-      where.add('category = ?');
-      whereArgs.add(category);
-    }
     if (kind != null) {
       where.add('kind = ?');
       whereArgs.add(kind.dbValue);

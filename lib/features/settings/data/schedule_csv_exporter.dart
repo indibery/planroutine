@@ -8,7 +8,7 @@ import '../../../core/database/database_helper.dart';
 import '../../../core/utils/csv_formula_guard.dart';
 import '../../schedule/domain/schedule.dart';
 
-/// 올해 확정 일정(`schedules`)을 자체 포맷 CSV로 내보낸다.
+/// 확정 일정(`schedules`) **전체**를 자체 포맷 CSV로 내보낸다.
 ///
 /// 컬럼: 제목, 날짜, 카테고리, 설명, 상태.
 /// 이 포맷은 플랜루틴 재임포트에 호환되도록 설계되어 있다.
@@ -21,6 +21,10 @@ class ScheduleCsvExporter {
   /// 내보낸 CSV 파일 경로 + 포함된 일정 수를 반환한다.
   ///
   /// 확정된(캘린더에 등록된) 일정만 포함한다. 검토 대기(pending) 상태는 제외.
+  ///
+  /// ⚠️ **연도로 좁히지 않는다.** 확정 행은 `purgeOlderThan`(`deleted_at IS NOT NULL`
+  /// 만 지운다)의 대상이 아니라 해마다 쌓이므로, 여기에 연도 필터를 넣거나 설정
+  /// 문구를 바꾸면 둘이 어긋난다 — `export_scope_claim_test.dart`가 양방향으로 묶는다.
   Future<({String filePath, int count})> exportActiveSchedules() async {
     final db = await _dbHelper.database;
     final rows = await db.query(

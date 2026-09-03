@@ -10,6 +10,7 @@ import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/system_overlay_region.dart';
 import 'features/import/presentation/providers/import_providers.dart';
 import 'features/settings/presentation/providers/theme_mode_provider.dart';
 import 'features/today/presentation/widgets/midnight_watcher.dart';
@@ -108,6 +109,15 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
         title: AppStrings.appName,
         theme: AppTheme.of(effective),
         routerConfig: _router,
+        // 내비게이션 바 스타일은 **여기서** 심는다. AppBar가 만드는 리전은
+        // 화면 위쪽에만 있어 상태바만 담당하고, 아래쪽이 비면 AppBar 하나가
+        // 내비게이션 바 색까지 정해 버린다(Android 15+에서 버튼이 안 보였던
+        // 원인). `builder` 자리여야 라우트와 그 위 시트·다이얼로그까지 덮는다.
+        builder: (context, child) =>
+            SystemOverlayRegion(
+              brightness: effective,
+              child: child ?? const SizedBox.shrink(),
+            ),
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,

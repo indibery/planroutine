@@ -123,7 +123,11 @@ const _dark = _Palette(
   onGold: Color(0xFF0A1628),
   ink: Color(0xFFF0EAD9),
   sub: Color(0xB3F0EAD9),
-  faint: Color(0x59F0EAD9),
+  // 60% — 35%(0x59)에서 올렸다. 탭바 미선택 라벨이 이 색인데 네이비와 섞여
+  // **2.76:1**이었다(Android 16 실측 2026-09-03). 알파 토큰은 배경이 진할수록
+  // 대비를 잃으므로 라이트와 같은 값으로 맞출 수 없다 — 저쪽은 색을 진하게 한다.
+  // 최악 배경은 `navySoft`(입력칸 채움)로 4.76:1. 가드: `faint_contrast_test.dart`.
+  faint: Color(0x99F0EAD9),
   line: Color(0x2DE0B96A),
   lineStrong: Color(0x59E0B96A),
   glass: Color(0x0FFFFFFF),
@@ -165,7 +169,10 @@ const _light = _Palette(
   onGold: Color(0xFF17253D), // 채움 위 네이비 텍스트 (goldFill 위 7:1+)
   ink: Color(0xFF17253D), // 네이비 잉크 본문
   sub: Color(0xFF48566E),
-  faint: Color(0xFF7E8696),
+  // `#7E8696`에서 진하게 했다 — 탭바 미선택 라벨이 흰 탭바 위에서 **3.66:1**
+  // 이었다. 최악 배경은 `navySoft`(입력칸 채움)로 4.59:1이고, `sub`(6.43:1)보다
+  // 옅어 위계는 유지된다. 가드: `faint_contrast_test.dart`.
+  faint: Color(0xFF646C7A),
   line: Color(0xFFE4E9F0), // 옅은 블루그레이 hairline
   lineStrong: Color(0xFFD4DBE6),
   glass: Color(0xFFFFFFFF), // 흰 카드 면 (배경보다 밝게 떠보임)

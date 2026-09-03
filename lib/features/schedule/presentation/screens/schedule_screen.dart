@@ -11,19 +11,24 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../import/presentation/widgets/photo_input_hero.dart';
 import '../../domain/entry_kind.dart';
-import '../../domain/filter_summary.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
-import '../widgets/category_label.dart';
 import '../widgets/schedule_edit_sheet.dart';
-import '../widgets/schedule_filter_bar.dart';
 import '../widgets/schedule_tile.dart';
 import '../widgets/slide_hint_bar.dart';
 
-/// 입력 탭 — 넣기가 주인공, 검토는 그 아래.
+/// 입력 탭 — 넣기가 주인공, **검토 대기**는 그 아래.
 ///
 /// 사용자가 자주 하는 동작은 검토가 아니라 **넣기**(월간 일정표 사진 → AI 변환)라서
 /// 히어로를 맨 위에 두고, 검토 영역은 대기가 있을 때만 아래에서 커진다.
+///
+/// **조작부는 둘뿐이다**(2026-09-03 단순화): 대기 일괄 삭제 pill 하나와 하단
+/// 종류별 일괄 확정 pill. 그 전에는 상태 칩·종류 칩·카테고리 칩·접히는 `필터`
+/// 토글에 진행도 바와 `확정됨 N건 보기` 링크까지 겹쳐, 무엇이 지금 목록을 정하는지
+/// 읽을 수 없다는 신고를 받았다.
+///
+/// 확정하면 캘린더로 넘어가고 이 목록에서 빠진다 — **행을 지우는 것이 아니다**
+/// (CSV 내보내기·`작년` 배지·중복 체크가 그 행을 본다).
 class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key});
 
@@ -36,6 +41,9 @@ class ScheduleScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final schedulesAsync = ref.watch(schedulesProvider);
+    // 한 번만 푼다 — 아래 두 헬퍼가 각자 `valueOrNull`을 다시 열면
+    // 로딩·오류 상태를 다루는 것처럼 보이는데, 실제로는 못 본다.
+    final pending = schedulesAsync.valueOrNull ?? const <Schedule>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -53,22 +61,17 @@ class ScheduleScreen extends ConsumerWidget {
           // 주 경로 = 사진 AI. 작년 업무 CSV는 히어로 안의 보조 한 줄.
           PhotoInputHero(onOpenCsvImport: () => context.push(AppRoutes.import)),
           const Divider(height: 1),
-          // 스와이프 안내는 스와이프할 목록이 있을 때만
-          if (schedulesAsync.valueOrNull?.isNotEmpty ?? false)
+          // 검토할 것이 있을 때만 안내와 일괄 삭제가 나온다.
+          // 목록이 곧 대기 목록이라 "비었다 = 검토할 것이 없다"가 된다.
+          if (pending.isNotEmpty) ...[
             const SlideHintBar(),
-          // 검토가 모두 끝난 완료 상태에선 필터할 게 없으므로 필터 줄을 숨긴다.
-          if (!_reviewComplete(ref)) ...[
-            // 진행도 바는 필터 요약 줄에 붙여야 '확정 N건'의 시각화로 읽힌다.
-            _buildProgressBar(ref),
-            ScheduleFilterBar(
-              trailing: _buildDeletePendingPill(context, ref, schedulesAsync),
-            ),
+            _buildDeletePendingRow(context, ref, pending),
             const Divider(height: 1),
           ],
           Expanded(
             child: schedulesAsync.when(
               data: (schedules) => schedules.isEmpty
-                  ? _buildEmptyState(ref)
+                  ? _buildEmptyState()
                   : _buildScheduleList(context, ref, schedules),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
@@ -89,7 +92,7 @@ class ScheduleScreen extends ConsumerWidget {
               ),
             ),
           ),
-          _buildBulkRegisterBar(context, ref, schedulesAsync),
+          _buildBulkRegisterBar(context, ref, pending),
         ],
       ),
     );
@@ -97,17 +100,17 @@ class ScheduleScreen extends ConsumerWidget {
 
   /// 종류별 일괄 확정 바 — `일괄 업무 확정 N건` / `일괄 행사 확정 N건`.
   ///
-  /// 현재 뷰(카테고리·종류 필터 반영)의 대기 건수 기준이고, 해당 종류의 대기가
-  /// 0이면 그 pill은 숨는다. 성격이 다른 것이 한 번에 섞여 확정되지 않게 나눴다.
+  /// 건수는 **목록의 종류별 대기 수**이고, 해당 종류가 0이면 그 pill은 숨는다.
+  /// 성격이 다른 것이 한 번에 섞여 확정되지 않게 나눴다.
+  ///
+  /// `status`로 다시 거르지 않는다 — 아래 삭제 pill과 같은 규칙이다. 목록이 항상
+  /// 대기이므로 재필터는 아무것도 걸러내지 못하면서 "확정도 이 목록에 들어올 수
+  /// 있다"는 잘못된 신호만 준다.
   Widget _buildBulkRegisterBar(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<List<Schedule>> schedulesAsync,
+    List<Schedule> pending,
   ) {
-    final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
-    final pending = list
-        .where((s) => s.status == ScheduleStatus.pending)
-        .toList();
     if (pending.isEmpty) return const SizedBox.shrink();
 
     final taskCount = pending.where((s) => s.kind == EntryKind.task).length;
@@ -162,93 +165,49 @@ class ScheduleScreen extends ConsumerWidget {
     );
   }
 
-  /// 확정 진행도 — 2px 바만 남긴다.
+  /// 대기 일괄 삭제 pill 한 줄.
   ///
-  /// `149 / 149 · 100% 완료` 텍스트는 필터 요약 줄의 `확정됨 149`와 같은 말이었다.
-  /// 같은 숫자를 두 번 말하느라 43px을 썼으므로 텍스트를 버리고 바만 남겼다.
-  Widget _buildProgressBar(WidgetRef ref) {
-    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
-    if (counts == null) return const SizedBox.shrink();
-    final total = counts.pending + counts.confirmed;
-    if (total == 0) return const SizedBox.shrink();
+  /// 필터 바가 사라지면서 이 pill이 얹혀 있던 `trailing` 자리가 없어져 자기 줄을
+  /// 갖는다. 목록 위 오른쪽에 조용히 둔다 — 주역은 아래 목록과 하단 확정 pill이다.
+  ///
+  /// 건수는 목록 길이 그대로다. 목록이 항상 대기라 `status`로 다시 거를 이유가 없고,
+  /// 거르면 "화면에 보이는 수"와 "지워지는 수"가 갈릴 여지만 생긴다.
+  ///
+  /// 호출부가 이미 비어 있지 않음을 확인하고 부르므로 0건 분기를 두지 않는다.
+  Widget _buildDeletePendingRow(
+    BuildContext context,
+    WidgetRef ref,
+    List<Schedule> pending,
+  ) {
+    final pendingCount = pending.length;
 
     return Padding(
-      // 좌우는 필터 줄과 같은 16 — 눈금이 어긋나면 장식처럼 보인다.
       padding: const EdgeInsets.fromLTRB(
         AppSizes.spacing16,
         AppSizes.spacing8,
         AppSizes.spacing16,
-        0,
+        AppSizes.spacing8,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-        child: Stack(
-          children: [
-            Container(height: 2, color: AppColors.navySoft),
-            FractionallySizedBox(
-              widthFactor: (counts.confirmed / total).clamp(0.0, 1.0),
-              child: Container(
-                height: 2,
-                decoration: BoxDecoration(gradient: AppGradients.progress),
-              ),
-            ),
-          ],
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: _DeleteAllPill(
+          label: ScheduleStrings.deletePending(pendingCount),
+          onPressed: () => _showBulkDeleteDialog(
+            context,
+            ref,
+            pendingCount: pendingCount,
+          ),
         ),
       ),
     );
   }
 
-  /// 검토 대기 일괄 삭제 pill — 필터 요약 줄 우측에 얹는다.
-  /// 건수는 현재 뷰(카테고리·종류 필터 반영) 기준. 대기가 없으면 아예 없다.
-  Widget? _buildDeletePendingPill(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<List<Schedule>> schedulesAsync,
-  ) {
-    final list = schedulesAsync.valueOrNull ?? const <Schedule>[];
-    final pendingCount = list
-        .where((s) => s.status == ScheduleStatus.pending)
-        .length;
-    if (pendingCount == 0) return null;
-    final category = ref.watch(scheduleCategoryFilterProvider);
-    final kind = ref.watch(scheduleKindFilterProvider);
-
-    return _DeleteAllPill(
-      label: ScheduleStrings.deletePending(pendingCount),
-      onPressed: () => _showBulkDeleteDialog(
-        context,
-        ref,
-        category: category,
-        kind: kind,
-        pendingCount: pendingCount,
-      ),
-    );
-  }
-
-  /// 검토 완료 상태 판정 — 대기 0 + 확정 있음 + 카테고리 필터 없음 + 대기 뷰.
-  /// body의 필터 줄 숨김과 _buildEmptyState의 완료 화면 분기가 같은 기준을 쓴다.
-  bool _reviewComplete(WidgetRef ref) {
-    final status = ref.watch(scheduleStatusFilterProvider);
-    final hasCategoryFilter = ref.watch(scheduleCategoryFilterProvider) != null;
-    final counts = ref.watch(scheduleCountsProvider).valueOrNull;
-    if (counts == null) return false;
-    return status == ScheduleStatus.pending &&
-        !hasCategoryFilter &&
-        counts.confirmed > 0 &&
-        counts.pending == 0;
-  }
-
-  Widget _buildEmptyState(WidgetRef ref) {
-    final status = ref.watch(scheduleStatusFilterProvider);
-    final hasCategoryFilter = ref.watch(scheduleCategoryFilterProvider) != null;
-    final confirmedCount =
-        ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
-
-    if (_reviewComplete(ref)) {
-      return _buildReviewDoneState(ref, confirmedCount);
-    }
-
-    final hasFilter = status == ScheduleStatus.confirmed || hasCategoryFilter;
+  /// 검토할 대기가 없을 때. **문구 하나뿐이다.**
+  ///
+  /// 예전에는 여기서 `확정 N건` 요약과 `확정됨 N건 보기` 링크를 띄웠다. 그 링크가
+  /// 확정 뷰로 가는 유일한 문이었는데, 그 뷰를 없앴으므로 문도 없앴다.
+  /// 다음 행동(넣기)은 위 히어로가 이미 맡고 있어 여기서 CTA를 다시 세우지 않는다.
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -256,63 +215,12 @@ class ScheduleScreen extends ConsumerWidget {
           Icon(Icons.event_note, size: 64, color: AppColors.faint),
           const SizedBox(height: AppSizes.spacing16),
           Text(
-            hasFilter ? ScheduleStrings.emptyFiltered : ScheduleStrings.empty,
+            ScheduleStrings.empty,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
               color: AppColors.sub,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 대기가 없을 때의 최소 요약 — `검토 대기 없음 · 확정 N건` + 보기 링크 한 줄.
-  ///
-  /// 검토는 검토할 때만 크게 나온다. 다음 행동(넣기)은 위 히어로가 이미 맡고 있어
-  /// 여기서 다시 CTA를 세우지 않는다.
-  Widget _buildReviewDoneState(WidgetRef ref, int confirmedCount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.pagePadding,
-        vertical: AppSizes.spacing12,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.check_circle, size: 16, color: AppColors.inkGreen),
-              const SizedBox(width: AppSizes.spacing8),
-              Expanded(
-                child: Text(
-                  ScheduleStrings.reviewIdle,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 13,
-                    color: AppColors.sub,
-                  ),
-                ),
-              ),
-              Text(
-                ScheduleStrings.confirmedTotal(confirmedCount),
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.sub,
-                ),
-              ),
-            ],
-          ),
-          TextButton(
-            onPressed: () =>
-                ref.read(scheduleStatusFilterProvider.notifier).state =
-                    ScheduleStatus.confirmed,
-            style: TextButton.styleFrom(foregroundColor: AppColors.sub),
-            child: Text(ScheduleStrings.viewConfirmed(confirmedCount)),
           ),
         ],
       ),
@@ -332,72 +240,16 @@ class ScheduleScreen extends ConsumerWidget {
 
     final sortedKeys = grouped.keys.toList()..sort();
 
-    // 대기 뷰 하단에 "확정 N건은 캘린더에 반영됨" 요약 — 확정분이 사라진 게
-    // 아니라 반영됐음을 상기. 탭하면 확정됨 뷰로 전환.
-    final confirmedCount =
-        ref.watch(scheduleCountsProvider).valueOrNull?.confirmed ?? 0;
-    final showDoneSummary =
-        ref.watch(scheduleStatusFilterProvider) == ScheduleStatus.pending &&
-        confirmedCount > 0;
-
+    // 목록 아래에 붙이던 초록 `확정 N건은 캘린더에 반영됨` 줄은 없앴다 —
+    // 그것도 확정 뷰로 가는 문이었고, 확정 건수를 아는 마지막 자리였다.
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: AppSizes.spacing16),
-      itemCount: sortedKeys.length + (showDoneSummary ? 1 : 0),
+      itemCount: sortedKeys.length,
       itemBuilder: (context, index) {
-        if (index == sortedKeys.length) {
-          return _buildDoneSummary(ref, confirmedCount);
-        }
         final monthKey = sortedKeys[index];
         final items = grouped[monthKey] ?? [];
         return _buildMonthGroup(context, ref, monthKey, items);
       },
-    );
-  }
-
-  /// 대기 목록 아래 초록 요약 한 줄 — 탭하면 확정됨 뷰로.
-  Widget _buildDoneSummary(WidgetRef ref, int confirmedCount) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.spacing16,
-        AppSizes.spacing8,
-        AppSizes.spacing16,
-        AppSizes.spacing4,
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radius12),
-        onTap: () => ref.read(scheduleStatusFilterProvider.notifier).state =
-            ScheduleStatus.confirmed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.spacing12,
-            vertical: AppSizes.spacing12,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.inkGreen.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(AppSizes.radius12),
-            border: Border.all(
-              color: AppColors.inkGreen.withValues(alpha: 0.25),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.check_circle, size: 16, color: AppColors.inkGreen),
-              const SizedBox(width: AppSizes.spacing8),
-              Expanded(
-                child: Text(
-                  ScheduleStrings.doneSummary(confirmedCount),
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 12,
-                    color: AppColors.sub,
-                  ),
-                ),
-              ),
-              Icon(Icons.chevron_right, size: 16, color: AppColors.faint),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -467,8 +319,8 @@ class ScheduleScreen extends ConsumerWidget {
     required EntryKind kind,
     required int pendingCount,
   }) async {
-    // 확정 범위의 종류는 필터가 아니라 눌린 pill에서 온다 — `buildScopeLabel`이
-    // 아니라 라벨 하나면 된다(표시 이름의 단일 출처는 `EntryKind.label`).
+    // 확정 범위의 종류는 눌린 pill에서 온다(표시 이름의 단일 출처는
+    // `EntryKind.label`). 삭제 쪽은 범위가 대기 전체라 스코프 문구가 아예 없다.
     final scope = kind.label;
     final confirmed = await ConfirmDialog.show(
       context: context,
@@ -481,33 +333,32 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   /// 남은 검토 대기를 한 번에 휴지통으로 (일괄 확정 대칭). soft-delete라 복구 가능.
-  /// 범위 문구와 쿼리가 같은 두 필터에서 나와야 하는 이유는
-  /// `ScheduleRepository.deleteAllPending` 참고.
+  ///
+  /// 범위를 좁히는 인자가 없다 — 필터가 없어졌으므로 대상은 언제나 대기 전체이고,
+  /// 그 수가 곧 pill에 적힌 수다. 문구와 쿼리가 갈릴 자리가 사라졌다.
   Future<void> _showBulkDeleteDialog(
     BuildContext context,
     WidgetRef ref, {
-    required String? category,
-    required EntryKind? kind,
     required int pendingCount,
   }) async {
-    final scope = buildScopeLabel(
-      kind: kind,
-      categoryLabel: shortenCategoryOrNull(category),
-    );
     final ok = await ConfirmDialog.show(
       context: context,
       title: ScheduleStrings.bulkDeleteTitle,
-      message: ScheduleStrings.bulkDeleteMessageFor(scope, pendingCount),
+      message: ScheduleStrings.bulkDeleteMessage(pendingCount),
       confirmLabel: ScheduleStrings.delete,
       confirmColor: AppColors.error,
     );
     if (!ok) return;
-    await ref.read(schedulesProvider.notifier).deleteAllPending();
+    // 스낵바는 **DB가 실제로 옮긴 수**를 말한다. 화면에서 센 `pendingCount`를
+    // 그대로 쓰면, pill의 범위와 쿼리의 범위가 갈려도 사용자에게 드러나지 않는다.
+    final moved = await ref
+        .read(schedulesProvider.notifier)
+        .deleteAllPending();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(content: Text(ScheduleStrings.bulkDeletedSnack(pendingCount))),
+        SnackBar(content: Text(ScheduleStrings.bulkDeletedSnack(moved))),
       );
   }
 
@@ -589,7 +440,7 @@ class _BulkConfirmPill extends StatelessWidget {
   }
 }
 
-/// 진행도 행의 소형 빨강 outline pill — '검토 대기 일괄 삭제' 액션(확정 pill 대칭).
+/// 목록 위 오른쪽의 소형 빨강 outline pill — '검토 대기 일괄 삭제'(확정 pill 대칭).
 class _DeleteAllPill extends StatelessWidget {
   const _DeleteAllPill({required this.label, required this.onPressed});
 

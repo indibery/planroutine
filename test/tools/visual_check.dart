@@ -72,7 +72,6 @@ import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/providers/schedule_providers.dart';
 import 'package:planroutine/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_edit_sheet.dart';
-import 'package:planroutine/features/schedule/presentation/widgets/schedule_filter_bar.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_tile.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/slide_hint_bar.dart';
 import 'package:planroutine/features/settings/presentation/widgets/bus_settings_tiles.dart';
@@ -913,7 +912,6 @@ void main() {
                 title: '확정된 $_longTitle',
                 date: '2026-03-1${i % 10}',
                 status: ScheduleStatus.confirmed,
-                category: '학교행사 및 자율활동 운영',
               ),
             );
           }
@@ -930,10 +928,10 @@ void main() {
           ),
         );
 
-        // DB future는 fake-async에서 끝나지 않는다 — 요약이 붙을 때까지 폴링한다
+        // DB future는 fake-async에서 끝나지 않는다 — 로딩이 끝날 때까지 폴링한다
         // (`schedule_screen_review_test.dart`와 같은 이유·같은 모양).
+        // 필터 요약을 기다리던 조건은 못 쓴다 — 필터 바가 없어졌다(2026-09-03).
         bool ready() =>
-            find.byKey(ScheduleFilterBar.summaryKey).evaluate().isNotEmpty &&
             find.byType(CircularProgressIndicator).evaluate().isEmpty;
         await tester.runAsync(() async {
           for (var i = 0; i < 200 && !ready(); i++) {
@@ -951,11 +949,7 @@ void main() {
           if (error != null) problems.add('${w.toInt()}pt · $label → $error');
         }
 
-        record('ScheduleScreen (필터 접힘)');
-
-        await tester.tap(find.byKey(ScheduleFilterBar.toggleKey));
-        await tester.pump();
-        record('ScheduleScreen (필터 펼침)');
+        record('ScheduleScreen (검토 대기 목록)');
 
         await probe(
           tester,
@@ -970,7 +964,7 @@ void main() {
         await probe(
           tester,
           w,
-          'ScheduleTile (확정·카테고리)',
+          'ScheduleTile (긴 제목·종류 배지)',
           Column(
             children: [
               ScheduleTile(
@@ -978,7 +972,6 @@ void main() {
                   title: _longTitle,
                   date: '2026-07-29',
                   status: ScheduleStatus.confirmed,
-                  category: '학교행사 및 자율활동 운영',
                 ),
                 onConfirm: () {},
                 onDelete: () {},
@@ -989,7 +982,6 @@ void main() {
                   title: _longTitle,
                   date: '2026-07-29',
                   kind: EntryKind.event,
-                  category: '교육과정 편성·운영',
                 ),
                 onConfirm: () {},
                 onDelete: () {},
@@ -1136,7 +1128,6 @@ void main() {
               _sweepSchedule(
                 title: '$_longTitle ${i + 1}',
                 date: '2026-07-0${i + 1}',
-                category: '학교행사 및 자율활동 운영',
               ),
             );
             await scheduleRepo.deleteSchedule(id);

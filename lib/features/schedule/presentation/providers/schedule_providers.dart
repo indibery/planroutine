@@ -10,82 +10,26 @@ final scheduleRepositoryProvider = Provider<ScheduleRepository>((ref) {
   return ScheduleRepository();
 });
 
-/// 일정 상태 필터. 기본 = 검토 대기 — 확정된 일정은 기본 리스트에서 빠지고
-/// '확정됨' 칩으로만 본다(검토 탭의 주인공은 아직 결정 안 된 일정).
-final scheduleStatusFilterProvider = StateProvider<ScheduleStatus?>((ref) {
-  return ScheduleStatus.pending;
-});
-
-/// 종류 필터. null = 전체 — 업무와 행사를 한 목록에서 같이 검토하는 게 기본.
-final scheduleKindFilterProvider = StateProvider<EntryKind?>((ref) => null);
-
-/// 상태 칩 건수(`pending`/`confirmed`)는 **전역**(카테고리·종류 무관) — 진행도 바와
-/// 확정 요약이 쓰고, 다른 상태로 넘어갈지 판단하려면 거기 몇 건이 있는지 보여야 한다.
-/// schedulesProvider 변경(확정/삭제/등록)에 반응해 갱신.
+/// 검토 대기 목록.
 ///
-/// 반면 종류별 대기(`pendingTask`/`pendingEvent`)는 **카테고리 필터를 반영**한다.
-/// 이 둘은 종류 칩 라벨로만 쓰이는데, 칩이 약속한 건수와 눌렀을 때 나오는 목록이
-/// 다르면(`행사 4`를 눌렀는데 빈 화면) 칩이 거짓말을 한 게 된다.
-/// 종류 필터 자체는 반영하지 않는다 — 지금 안 보는 종류가 몇 건인지 알아야 넘어간다.
-final scheduleCountsProvider =
-    FutureProvider<
-      ({int pending, int confirmed, int pendingTask, int pendingEvent})
-    >((ref) async {
-      await ref.watch(schedulesProvider.future);
-      final repository = ref.watch(scheduleRepositoryProvider);
-      final category = ref.watch(scheduleCategoryFilterProvider);
-      final pending = await repository.getSchedules(
-        status: ScheduleStatus.pending,
-      );
-      final confirmed = await repository.getSchedules(
-        status: ScheduleStatus.confirmed,
-      );
-      // 리포지토리의 `if (category != null)`과 같은 규칙이어야 한다 — 건수와 쿼리가
-      // "카테고리 없음"을 다르게 해석하면 칩이 약속한 수와 실제 대상이 갈린다.
-      final inCategory = category == null
-          ? pending
-          : pending.where((s) => s.category == category).toList();
-      return (
-        pending: pending.length,
-        confirmed: confirmed.length,
-        pendingTask: inCategory.where((s) => s.kind == EntryKind.task).length,
-        pendingEvent: inCategory.where((s) => s.kind == EntryKind.event).length,
-      );
-    });
-
-/// 일정 카테고리 필터
-final scheduleCategoryFilterProvider = StateProvider<String?>((ref) {
-  return null; // null = 전체
-});
-
-/// 필터 적용된 일정 목록
+/// **상태·종류·카테고리 필터는 없다**(2026-09-03 단순화). 이 목록은 항상 검토
+/// 대기이고, 확정하면 캘린더로 넘어가 여기서 빠진다. 확정된 일정을 이 탭에서
+/// 다시 볼 방법은 두지 않았다 — 조작부가 넷이던 시절 "무엇이 지금 목록을
+/// 정하는지" 읽을 수 없다는 신고가 있었다.
+///
+/// ⚠️ 목록에서 빠지는 것과 행이 지워지는 것은 다르다. `schedules` 행은 남는다 —
+/// CSV 내보내기·`작년` 배지·중복 체크가 그 행을 본다.
 final schedulesProvider =
     AsyncNotifierProvider<SchedulesNotifier, List<Schedule>>(
       SchedulesNotifier.new,
     );
 
-/// 현재 활성 일정에서 사용 중인 카테고리 목록 (빈도순).
-/// schedulesProvider 변경에 반응해 갱신된다.
-final availableCategoriesProvider = FutureProvider<List<String>>((ref) async {
-  // schedulesProvider invalidate 시 같이 갱신되도록 의존
-  await ref.watch(schedulesProvider.future);
-  final repository = ref.watch(scheduleRepositoryProvider);
-  return repository.getDistinctCategories();
-});
-
 /// 일정 목록 관리 Notifier
 class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
   @override
   Future<List<Schedule>> build() async {
-    final status = ref.watch(scheduleStatusFilterProvider);
-    final category = ref.watch(scheduleCategoryFilterProvider);
-    final kind = ref.watch(scheduleKindFilterProvider);
     final repository = ref.watch(scheduleRepositoryProvider);
-    return repository.getSchedules(
-      status: status,
-      category: category,
-      kind: kind,
-    );
+    return repository.getSchedules(status: ScheduleStatus.pending);
   }
 
   /// 일정 상태 변경 (확정 시 캘린더 이벤트 자동 생성)
@@ -136,20 +80,17 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
   }
 
   /// 검토 대기 일정 일괄 확정 (캘린더 이벤트 일괄 생성).
-  /// 카테고리 필터가 켜져 있으면 그 카테고리만 대상.
   /// [kind]를 주면 그 종류만 — 입력 탭이 종류별로 나눠 확정한다.
   Future<void> confirmAllPending({EntryKind? kind}) async {
     final repository = ref.read(scheduleRepositoryProvider);
-    final category = ref.read(scheduleCategoryFilterProvider);
 
     // 확정 전에 대상 pending 일정 ID를 미리 조회
     final pendingSchedules = await repository.getSchedules(
       status: ScheduleStatus.pending,
-      category: category,
       kind: kind,
     );
 
-    await repository.confirmAllPending(category: category, kind: kind);
+    await repository.confirmAllPending(kind: kind);
 
     // 각 확정된 일정에 대해 캘린더 이벤트 생성
     final calendarRepo = ref.read(calendarRepositoryProvider);
@@ -164,15 +105,19 @@ class SchedulesNotifier extends AsyncNotifier<List<Schedule>> {
     ref.invalidateSelf();
   }
 
-  /// 검토 대기 일정 일괄 삭제(휴지통). 카테고리·종류 필터가 켜져 있으면 거기에 한정.
-  /// 확정본은 건드리지 않으며 캘린더 이벤트에도 영향 없음.
-  /// 두 필터를 모두 봐야 하는 이유는 `ScheduleRepository.deleteAllPending` 참고.
-  Future<void> deleteAllPending() async {
+  /// 검토 대기 일정 일괄 삭제(휴지통) — **대기 전체**.
+  /// 필터가 없어졌으므로 범위를 좁힐 인자도 없다. 확정본은 건드리지 않으며
+  /// 캘린더 이벤트에도 영향이 없다.
+  ///
+  /// **실제로 옮긴 건수를 돌려준다.** 버리면 안 된다 — 스낵바가 화면에서 센 수를
+  /// 말하고 쿼리가 다른 범위를 잡으면, 그 어긋남이 런타임에도 드러나지 않는다.
+  /// `행사 4건 삭제`를 눌러 21건이 사라졌는데 스낵바는 `4건을 옮겼어요`라 말한
+  /// 그 버그가 정확히 이 모양이었다.
+  Future<int> deleteAllPending() async {
     final repository = ref.read(scheduleRepositoryProvider);
-    final category = ref.read(scheduleCategoryFilterProvider);
-    final kind = ref.read(scheduleKindFilterProvider);
-    await repository.deleteAllPending(category: category, kind: kind);
+    final moved = await repository.deleteAllPending();
     ref.invalidateSelf();
+    return moved;
   }
 
   /// 전체 일정 삭제 (테스트용)

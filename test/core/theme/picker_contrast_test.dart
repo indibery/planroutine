@@ -10,33 +10,13 @@
 // 이 앱의 규칙은 이미 `골드 채움 = goldFill + onGold`다. 직접 그리는 곳은 지키는데
 // Material 컴포넌트만 `primary`를 거쳐 우회하고 있었다.
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/theme/app_theme.dart';
 
-double _lin(int c) {
-  final s = c / 255.0;
-  return s <= 0.04045
-      ? s / 12.92
-      : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
-}
-
-double _luminance(Color c) {
-  int ch(double v) => (v * 255).round();
-  return 0.2126 * _lin(ch(c.r)) +
-      0.7152 * _lin(ch(c.g)) +
-      0.0722 * _lin(ch(c.b));
-}
-
-/// WCAG 대비비.
-double contrast(Color a, Color b) {
-  final la = _luminance(a), lb = _luminance(b);
-  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
-}
+import '../../helpers/contrast.dart';
 
 void main() {
   group('날짜·시각 선택 대비', () {
@@ -54,7 +34,7 @@ void main() {
         )!;
 
         expect(
-          contrast(fill, text),
+          contrastRatio(text, fill),
           greaterThanOrEqualTo(4.5),
           reason:
               '선택 채움 위 글씨가 안 읽힌다 — `primary`(텍스트용 딥골드)를 '
@@ -83,7 +63,7 @@ void main() {
 
         expect(todayFill, AppColors.goldFill);
         expect(
-          contrast(todayFill, todayText),
+          contrastRatio(todayText, todayFill),
           greaterThanOrEqualTo(4.5),
           reason: '오늘 셀이 선택되면 글씨가 채움과 같은 골드가 된다',
         );

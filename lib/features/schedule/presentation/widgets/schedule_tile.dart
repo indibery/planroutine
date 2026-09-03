@@ -6,7 +6,6 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../domain/schedule.dart';
-import 'category_label.dart';
 import 'kind_badge.dart';
 
 /// 일정 항목 카드
@@ -129,10 +128,6 @@ class ScheduleTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (schedule.category != null) ...[
-                  const SizedBox(width: AppSizes.spacing8),
-                  _buildCategoryBadge(schedule.category ?? ''),
-                ],
               ],
             ),
           ),
@@ -181,28 +176,6 @@ class ScheduleTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryBadge(String category) {
-    final color = categoryColor(category);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spacing8,
-        vertical: AppSizes.spacing4,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppSizes.radius8),
-      ),
-      child: Text(
-        shortenCategory(category),
-        style: TextStyle(
-          fontSize: 11,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
       ),
     );
   }
