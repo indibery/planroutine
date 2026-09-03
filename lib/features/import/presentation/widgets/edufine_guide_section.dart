@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -10,7 +12,19 @@ import '../../../../core/constants/app_strings.dart';
 ///   ① CSV 다운받기 (번호 4단계 + 스크린샷)
 ///   ② 아이폰으로 가져오기 (A 공유시트 / B 파일 앱 — 둘 중 택1)
 class EdufineGuideSection extends StatelessWidget {
-  const EdufineGuideSection({super.key});
+  const EdufineGuideSection({super.key, this.isAndroid});
+
+  /// 테스트용 주입점. null이면 실제 기기를 본다.
+  ///
+  /// ⚠️ **`defaultTargetPlatform`을 쓰지 않는다.** 그것은 `flutter test`에서
+  /// **항상 `android`로 강제**되므로(`_platform_io.dart`의 assert 블록), 그걸로
+  /// 분기하면 macOS에서 도는 위젯 테스트 전체에 안드로이드 안내가 나타난다.
+  /// `Platform.isAndroid`는 위젯 테스트로 직접 밟을 수 없어 주입점을 둔다
+  /// (리포 규칙: 새 플랫폼 분기 UI는 기본값이 `Platform.isAndroid`인 주입점을
+  /// 갖는다). 가드: `test/features/import/edufine_guide_platform_test.dart`.
+  final bool? isAndroid;
+
+  bool get _android => isAndroid ?? Platform.isAndroid;
 
   @override
   Widget build(BuildContext context) {
@@ -50,29 +64,50 @@ class EdufineGuideSection extends StatelessWidget {
                 color: AppColors.ink,
               ),
             ),
-            children: const [
-              _SectionHeader(title: ImportStrings.edufineGuideSection1Title),
-              SizedBox(height: AppSizes.spacing8),
-              _GuideImage(),
-              SizedBox(height: AppSizes.spacing12),
-              _NumberedSteps(steps: ImportStrings.edufineGuideSection1Steps),
-
-              SizedBox(height: AppSizes.spacing20),
-              _SectionHeader(title: ImportStrings.edufineGuideSection2Title),
-              SizedBox(height: AppSizes.spacing4),
-              _HintText(text: ImportStrings.edufineGuideSection2Hint),
-
-              SizedBox(height: AppSizes.spacing12),
-              _MethodBlock(
-                title: ImportStrings.edufineGuideMethodATitle,
-                steps: ImportStrings.edufineGuideMethodASteps,
-                tip: ImportStrings.edufineGuideMethodATip,
+            children: [
+              // ① 은 플랫폼과 무관하다 — 에듀파인은 업무용 PC 웹이다.
+              const _SectionHeader(
+                title: ImportStrings.edufineGuideSection1Title,
+              ),
+              const SizedBox(height: AppSizes.spacing4),
+              const _HintText(text: ImportStrings.edufineGuideSection1Hint),
+              const SizedBox(height: AppSizes.spacing8),
+              const _GuideImage(),
+              const SizedBox(height: AppSizes.spacing12),
+              const _NumberedSteps(
+                steps: ImportStrings.edufineGuideSection1Steps,
               ),
 
-              SizedBox(height: AppSizes.spacing12),
+              const SizedBox(height: AppSizes.spacing20),
+              // ② 만 갈린다. 뼈대(A = 앱 밖에서 / B = 앱에서 고르기)는 같게 둔다.
+              _SectionHeader(
+                title: _android
+                    ? ImportStrings.edufineGuideSection2TitleAndroid
+                    : ImportStrings.edufineGuideSection2Title,
+              ),
+              const SizedBox(height: AppSizes.spacing4),
+              const _HintText(text: ImportStrings.edufineGuideSection2Hint),
+
+              const SizedBox(height: AppSizes.spacing12),
               _MethodBlock(
-                title: ImportStrings.edufineGuideMethodBTitle,
-                steps: ImportStrings.edufineGuideMethodBSteps,
+                title: _android
+                    ? ImportStrings.edufineGuideMethodATitleAndroid
+                    : ImportStrings.edufineGuideMethodATitle,
+                steps: _android
+                    ? ImportStrings.edufineGuideMethodAStepsAndroid
+                    : ImportStrings.edufineGuideMethodASteps,
+                // 안드로이드는 팁이 없다 — 공유를 언급하지 않으므로 변명할 것도 없다.
+                tip: _android ? null : ImportStrings.edufineGuideMethodATip,
+              ),
+
+              const SizedBox(height: AppSizes.spacing12),
+              _MethodBlock(
+                title: _android
+                    ? ImportStrings.edufineGuideMethodBTitleAndroid
+                    : ImportStrings.edufineGuideMethodBTitle,
+                steps: _android
+                    ? ImportStrings.edufineGuideMethodBStepsAndroid
+                    : ImportStrings.edufineGuideMethodBSteps,
               ),
             ],
           ),

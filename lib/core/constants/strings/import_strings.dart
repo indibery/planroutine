@@ -103,8 +103,12 @@ class ImportStrings {
   // 에듀파인에서 CSV 받고 가져오는 방법 가이드 (Import Initial 뷰 내 접힘 섹션)
   static const edufineGuideTitle = '에듀파인에서 CSV로 일정 받고 공직플랜에 적용하는 방법';
 
-  // ── 1단: CSV 다운받기 ─────────────────────────────────
+  // ── 1단: CSV 다운받기 (플랫폼 무관 — 에듀파인은 PC 웹이다) ────
   static const edufineGuideSection1Title = '① CSV 다운받기';
+
+  /// **PC에서 받아 폰으로 옮기는 구조**임을 먼저 말한다. 이 줄이 없으면
+  /// "폰에서 에듀파인에 들어가야 하나"로 읽힌다.
+  static const edufineGuideSection1Hint = '에듀파인은 업무용 PC에서 접속합니다. PC에서 내려받아 폰으로 옮기는 순서예요.';
   static const edufineGuideSection1Steps = <String>[
     '문서관리 → 문서함 → 문서등록대장(다년도검색)',
     '등록 일자 범위 지정 (예: 2024-03-01 ~ 2025-02-28)',
@@ -112,7 +116,14 @@ class ImportStrings {
     '"조회" → 결과 표 상단 저장 메뉴 → "CSV다운(과제정보추가)"',
   ];
 
-  // ── 2단: 아이폰으로 가져오기 (A/B 중 택1) ─────────────
+  // ── 2단: 폰으로 가져오기 — **기기별로 자기 것만 보인다** ─────
+  //
+  // 뼈대를 양쪽 같게 둔다: A = 앱 밖에서 보내기 / B = 앱에서 고르기.
+  // 그래야 한쪽을 보고 다른 쪽을 설명할 수 있다(동료 교사 안내용).
+  //
+  // ⚠️ **권장 방법이 뒤바뀐다.** 아이폰은 공유시트(A), 안드로이드는 열기(A)다.
+  // 매니페스트 필터 폭이 반대이기 때문 — 열기(`ACTION_VIEW`)는 `text/plain`·
+  // `octet-stream`·와일드카드까지 받고, 공유(`ACTION_SEND`)는 CSV mime 셋만 받는다.
   static const edufineGuideSection2Title = '② 아이폰으로 가져오기';
   static const edufineGuideSection2Hint = '아래 둘 중 편한 방법을 선택하세요.';
 
@@ -129,5 +140,29 @@ class ImportStrings {
   static const edufineGuideMethodBSteps = <String>[
     'iCloud/AirDrop/메일 첨부 등으로 CSV를 아이폰 파일 앱에 저장',
     '위 "파일 선택" 버튼 탭 → 파일 앱에서 CSV 선택',
+  ];
+
+  // ── 2단: 안드로이드 (2026-09-04) ──────────────────────
+  //
+  // ⚠️ **공유를 언급하지 않는다.** 공유 필터는 보내는 앱이 CSV mime을 정확히
+  // 써야만 동작해서, 카카오톡처럼 일반 텍스트로 보내는 앱에서는 목록에 뜨지
+  // 않는다. 안내에 넣으면 "안 뜨는 경우"를 함께 설명해야 하고 그 경고가 안내문
+  // 절반을 먹는다 — **적지 않은 경로는 변명할 것도 없고, 적은 경로(열기)는
+  // 와일드카드까지 받아 항상 동작한다**(사용자 결정 2026-09-04).
+  //
+  // ⚠️ 파일 앱 이름을 특정하지 않는다 — 삼성은 `내 파일`, Pixel은 `파일`이다.
+  static const edufineGuideSection2TitleAndroid = '② 안드로이드로 가져오기';
+
+  static const edufineGuideMethodATitleAndroid = 'A. 파일을 열어서 보내기 (권장)';
+  static const edufineGuideMethodAStepsAndroid = <String>[
+    '카카오톡 "나와의 채팅" 또는 이메일로 CSV 파일 전송',
+    '받은 파일을 탭 → 앱 선택 창에서 "공직플랜" 선택',
+    '앱 선택 창이 안 뜨면 파일을 길게 눌러 "다른 앱으로 열기"',
+  ];
+
+  static const edufineGuideMethodBTitleAndroid = 'B. 파일에 저장해 "파일 선택"으로';
+  static const edufineGuideMethodBStepsAndroid = <String>[
+    'CSV를 폰의 파일 앱에 저장',
+    '위 "파일 선택" 버튼 탭 → 저장한 CSV 선택',
   ];
 }

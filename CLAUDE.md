@@ -685,7 +685,29 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
 - 탭 시 `/import`로 push (ShellRoute 내부라 탭바 유지).
 - **등록이 끝나면 자동으로 입력 탭으로 돌아간다.** `ImportScreen`이 `importStateProvider`를 listen해 `ImportRegistered`가 되면 `reset()` → `pop()`(공유시트로 곧바로 열려 pop할 스택이 없으면 `go(/schedule)`) → 스낵바로 건수 안내. 등록 완료 화면에는 할 일이 없다 — 대기 건수는 입력 탭의 `검토 대기 N`이 이미 말해주고, 다음 행동은 그 목록에서 확정하는 것이다. 그래서 `ImportRegistered` 뷰는 그리지 않는다(`SizedBox.shrink`).
 - `ImportScreen`의 AppBar 바로 아래에 `ImportSteps` 스테퍼가 sticky로 고정돼, Initial/Loading/Success/Registered 모든 상태에서 현재 단계가 보인다.
-- Initial 뷰에 `EdufineGuideSection` 접힘 안내 (① CSV 다운받기: 번호 4단계 + annotation 스크린샷 / ② 아이폰으로 가져오기: A. 공유시트 / B. 파일 앱 택1 + "더 보기" 팁 박스).
+- Initial 뷰에 `EdufineGuideSection` 접힘 안내. **①은 공통, ②는 기기별로 갈린다**(2026-09-04).
+  - ① CSV 다운받기 — 번호 4단계 + annotation 스크린샷. 에듀파인은 **업무용 PC 웹**이라
+    플랫폼과 무관하고, 그 사실을 힌트 한 줄로 먼저 말한다("PC에서 내려받아 폰으로 옮기는
+    순서"). 없으면 "폰에서 에듀파인에 들어가야 하나"로 읽힌다.
+  - ② 아이폰 — A. 공유시트(권장) / B. 파일 앱 + `더 보기` 팁 박스.
+  - ② 안드로이드 — A. **열기**(권장) / B. 파일 앱. **뼈대를 아이폰과 같게 둔다**
+    (A = 앱 밖에서 보내기 / B = 앱에서 고르기) — 그래야 한쪽을 보고 동료에게 다른 쪽을
+    설명할 수 있다.
+  - ⚠️ **권장 방법이 플랫폼마다 뒤바뀐다.** 매니페스트 필터 폭이 반대라서다 —
+    열기(`ACTION_VIEW`)는 `text/plain`·`octet-stream`·와일드카드까지 받고,
+    공유(`ACTION_SEND`)는 CSV mime 셋만 받는다.
+  - ⚠️ **안드로이드 안내는 공유를 아예 언급하지 않는다**(사용자 결정 2026-09-04).
+    언급하면 "카카오톡처럼 일반 텍스트로 보내는 앱에서는 목록에 안 뜬다"를 함께 설명해야
+    하고 그 경고가 안내문 절반을 먹는다. **적지 않은 경로는 변명할 것도 없고, 적은
+    경로(열기)는 와일드카드까지 받아 항상 동작한다.** 잃는 것은 습관적으로 공유를 눌러
+    막힌 사람에게 답을 주지 못하는 것이다.
+  - 파일 앱 이름을 특정하지 않는다 — 삼성은 `내 파일`, Pixel은 `파일`이라 `폰의 파일 앱`으로 쓴다.
+  - 분기는 `EdufineGuideSection({bool? isAndroid})` 주입점을 통한다(기본값 `Platform.isAndroid`).
+    `defaultTargetPlatform`은 `flutter test`에서 **항상 `android`로 강제**돼 못 쓴다.
+    가드: `test/features/import/edufine_guide_platform_test.dart` 5건 — 각 기기에서 자기
+    안내만 보이는지, 안드로이드에 `공유`가 없는지, ①이 공통인지, 뼈대가 같은지.
+    ⚠️ 가드가 한 테스트에서 두 번 pump할 때는 **`key`를 줘야 한다** — 없으면
+    `ExpansionTile`의 State가 재사용돼 두 번째 탭이 오히려 **접는다**(실측).
 
 ### iOS 공유시트 통합 (외부 앱에서 공직플랜으로 열기)
 - 카카오톡/메일/파일 앱에서 CSV 파일 공유 → 공유 목록에 "공직플랜" 노출 → 탭하면 Import 화면으로 자동 이동 + 즉시 파싱. 사용자가 "파일 선택" 탭 불필요.
