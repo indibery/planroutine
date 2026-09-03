@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_sizes.dart';
+import '../../../shared/bulk_bar_snack.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../schedule/presentation/providers/schedule_providers.dart';
 import '../data/ai_schedule_parser.dart';
@@ -26,7 +26,7 @@ Future<void> copyAiPhotoPrompt(
     ClipboardData(text: buildAiPhotoPrompt(DateTime.now(), kind: kind)),
   );
   if (!context.mounted) return;
-  _showFlowSnack(context, ImportStrings.aiPromptCopiedFor(kind));
+  showBulkBarSnack(context, ImportStrings.aiPromptCopiedFor(kind));
 }
 
 /// ② 클립보드의 AI 응답을 파싱해 **곧바로 검토 대기로 등록한다.**
@@ -51,7 +51,7 @@ Future<void> pasteAiSchedulesAndRegister(
     // **못 뽑은 것과 못 읽은 것을 구분한다.** 형식 오류만 있었다면 AI는 답을
     // 줬는데 우리가 못 받은 것이고, 사용자가 할 일이 다르다 — 다시 복사할
     // 게 아니라 AI에 다시 요청해야 한다.
-    _showFlowSnack(
+    showBulkBarSnack(
       context,
       parsed.invalidCount > 0
           ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
@@ -86,7 +86,7 @@ Future<void> pasteAiSchedulesAndRegister(
   );
   ref.invalidate(schedulesProvider);
   if (!context.mounted) return;
-  _showFlowSnack(
+  showBulkBarSnack(
     context,
     ImportStrings.aiRegisterSummary(
       kind,
@@ -99,28 +99,3 @@ Future<void> pasteAiSchedulesAndRegister(
   );
 }
 
-/// 이 흐름의 스낵바는 **일괄등록 바 위로 띄운다.**
-///
-/// 기본값(`SnackBarBehavior.fixed`)은 화면 맨 아래에 앉는데, 입력 탭에서는 그
-/// 자리가 정확히 일괄등록 pill이라 4초 동안 확정을 누를 수 없다(사용자 신고
-/// 2026-08-14). 시트를 없앤 뒤로는 이 한 줄이 "붙여넣기가 됐다"는 유일한 신호라
-/// 띄우지 않는 선택지가 없어, 자리를 비켜주는 쪽으로 푼다.
-///
-/// 전역 `snackBarTheme`으로 올리지 않는다 — 이 앱의 다른 스낵바 스무 곳의 모양이
-/// 함께 바뀐다.
-void _showFlowSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(
-          AppSizes.spacing8,
-          0,
-          AppSizes.spacing8,
-          AppSizes.bulkRegisterBarHeight,
-        ),
-      ),
-    );
-}

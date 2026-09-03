@@ -8,6 +8,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_gradients.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/bulk_bar_snack.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../import/presentation/widgets/photo_input_hero.dart';
 import '../../domain/entry_kind.dart';
@@ -293,17 +294,16 @@ class ScheduleScreen extends ConsumerWidget {
               if (schedule.id case final id?) {
                 final notifier = ref.read(schedulesProvider.notifier);
                 notifier.deleteSchedule(id);
-                ScaffoldMessenger.of(context)
-                  ..clearSnackBars()
-                  ..showSnackBar(
-                    SnackBar(
-                      content: const Text(ScheduleStrings.deletedSnack),
-                      action: SnackBarAction(
-                        label: ScheduleStrings.undoAction,
-                        onPressed: () => notifier.restoreSchedule(id),
-                      ),
-                    ),
-                  );
+                // pill 위로 띄운다. 가려지면 `되돌리기`를 **누를 수 없다** —
+                // 안 보이는 것보다 나쁘다.
+                showBulkBarSnack(
+                  context,
+                  ScheduleStrings.deletedSnack,
+                  action: SnackBarAction(
+                    label: ScheduleStrings.undoAction,
+                    onPressed: () => notifier.restoreSchedule(id),
+                  ),
+                );
               }
             },
             onTap: () => ScheduleEditSheet.show(context, schedule),
@@ -355,11 +355,7 @@ class ScheduleScreen extends ConsumerWidget {
         .read(schedulesProvider.notifier)
         .deleteAllPending();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(content: Text(ScheduleStrings.bulkDeletedSnack(moved))),
-      );
+    showBulkBarSnack(context, ScheduleStrings.bulkDeletedSnack(moved));
   }
 
   String _extractMonthKey(String dateStr) {

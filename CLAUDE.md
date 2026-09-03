@@ -462,9 +462,28 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
   - **잃은 것은 시트의 취소 버튼이다.** 잘못 붙여넣으면 되돌릴 기회 없이 목록에 들어온다 — 대신 ← 스와이프나 `대기 N건 삭제`로 걷어내고 둘 다 soft-delete라, 값은 휴지통을 거치는 한 걸음뿐이다.
   - `created`가 0이어도 **조용히 지나가지 않는다.** 전부 중복이면 목록이 그대로라, 문구가 없으면 버튼이 눌린 건지 알 수 없다.
   - `insertConfirmedOrPending`이 한 번 더 걸러낸 `skipped`를 중복 건수에 **합쳐서** 말한다. 빼면 우리 키 검사를 통과한 중복이 조용히 사라진다.
-- **결과 스낵바는 `SnackBarBehavior.floating` + 아래 `AppSizes.bulkRegisterBarHeight` 여백으로 띄운다.** 기본값(`fixed`)이 앉는 자리가 정확히 하단 일괄등록 pill이라, 4초 동안 확정을 누를 수 없었다(사용자 신고 2026-08-14). 시트를 없앤 뒤로는 이 한 줄이 "붙여넣기가 됐다"는 **유일한 신호**라 안 띄우는 선택지가 없어, 자리를 비켜주는 쪽으로 풀었다.
-  - 전역 `snackBarTheme`으로 올리지 않는다 — 이 앱의 다른 스낵바 스무 곳의 모양이 함께 바뀐다.
-  - 바 높이는 `AppSizes.bulkRegisterPillHeight`에서 **파생**된다. 스낵바 쪽에 숫자를 따로 박으면 pill 높이를 바꿀 때 조용히 어긋난다 — 가드가 `photo_input_hero_test.dart`에서 `margin.bottom ≥ 바 높이`를 검사한다.
+- **입력 탭 스낵바는 전부 `showBulkBarSnack`(`lib/shared/bulk_bar_snack.dart`)을 쓴다.**
+  `SnackBarBehavior.floating` + 아래 `AppSizes.bulkRegisterBarHeight` 여백. 기본값(`fixed`)이
+  앉는 자리가 정확히 하단 일괄 확정 pill이라 4초 동안 확정을 누를 수 없다(사용자 신고
+  2026-08-14, **2026-09-03 재신고**).
+  - ⚠️ **재신고는 회귀가 아니었다.** 첫 수정이 같은 코드를 `ai_photo_flow.dart`의 **private
+    함수로 가둬** 다른 호출부가 쓸 수 없었고, 두 곳이 맨 `SnackBar`를 만든 채 남아 있었다 —
+    CSV 등록 완료(신고된 것)와 **← 스와이프 삭제 되돌리기**(더 나쁘다: `되돌리기`가 가려지면
+    되돌릴 방법 자체가 없다). 가드도 `photo_input_hero_test.dart` 하나뿐이라 AI 경로만 봤다.
+    **고친 것은 두 번째 호출부가 아니라 "재사용 불가"라는 구조다.**
+  - `showBulkBarSnackWith(messenger, …)` 변종이 있다 — `/import`는 `pop()`으로 사라지면서
+    스낵바를 띄우므로 닫기 **전에** messenger를 붙잡아 둬야 한다.
+  - 전역 `snackBarTheme`으로 올리지 않는다 — 다른 스낵바 스무 곳의 모양이 함께 바뀐다.
+  - 여백은 `AppSizes.bulkRegisterPillHeight`에서 **파생**된다. 숫자를 스낵바 쪽에 따로 박으면
+    pill 높이를 바꿀 때 조용히 어긋난다.
+  - 가드는 **두 층**이다: `test/shared/bulk_bar_snack_test.dart`(헬퍼 값 + 액션 탭 가능 +
+    호출부가 맨 `SnackBar`를 안 만드는지) · `schedule_screen_review_test.dart`(실제 화면에서
+    **겹치지 않는지** + 스낵바가 떠 있는 동안 **확정이 눌리는지**).
+  - ⚠️ **`find.byType(SnackBar)`의 rect를 재면 안 된다.** 그건 margin을 포함한 레이아웃
+    영역이라 floating이어도 화면 맨 아래까지 뻗는다(실측 `LTRB(0,736,390,844)`). 보이는 면은
+    그 안의 첫 `Material`(`LTRB(8,736,382,784)`)이다. 바깥 상자를 재면 **정상인 코드를 버그로
+    오진한다** — 실제로 이 가드를 쓰다가 한 번 오진했다. 날짜 선택 대비 가드가 "Material이
+    칠하는 짝이 아닌 짝"을 쟀던 것과 같은 부류다.
 - 하단 종류별 일괄 확정 바 — `일괄 업무 확정 N건` / `일괄 행사 확정 N건`. 건수는 **목록**의 종류별 대기 수이고 0이면 그 pill은 숨는다.
   - 라벨은 `ScheduleStrings.bulkConfirm(kind.label, n)`으로 **조립**한다 — `업무`/`행사`를 여기 다시 박으면 다음 용어 변경 때 배지만 따라가고 pill만 옛 이름으로 남는다(직전 main이 그 상태였다: `kindEvent`는 `학교일정`, pill은 `일괄 일정 등록`).
   - **낱말은 `확정`이다**(2026-08-14). 한동안 이 pill만 `등록`이었는데, 그 pill이 여는 다이얼로그는 제목·본문·버튼이 전부 `확정`이라 **버튼과 그 버튼이 여는 창이 어긋나 있었다.** 게다가 `등록`은 가져오기 스낵바에서 **검토 대기로 넣기**를 가리켜, 한 낱말이 파이프라인의 두 단계(넣기·확정)를 동시에 졌다. 가드는 `schedule_screen_input_test.dart`가 pill 라벨이 `ScheduleStrings.confirm`을 담고 `등록`을 안 담는지 본다.

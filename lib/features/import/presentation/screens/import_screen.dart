@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/bulk_bar_snack.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -41,15 +42,11 @@ class ImportScreen extends ConsumerWidget {
         // 공유시트로 곧바로 열린 경우엔 pop할 스택이 없다.
         context.go(AppRoutes.schedule);
       }
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              ImportStrings.registeredSnack(next.created, next.skipped),
-            ),
-          ),
-        );
+      // 일괄 확정 pill 위로 띄운다 — 기본값은 그 pill 자리에 앉는다.
+      showBulkBarSnackWith(
+        messenger,
+        ImportStrings.registeredSnack(next.created, next.skipped),
+      );
     });
 
     return Scaffold(

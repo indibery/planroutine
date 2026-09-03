@@ -297,6 +297,69 @@ void main() {
       );
     });
 
+    testWidgets('스낵바가 하단 일괄 확정 pill을 가리지 않는다', (tester) async {
+      // 사용자 신고 2026-08-14, **2026-09-03 재신고**. 값(behavior·margin)이 아니라
+      // **두 사각형이 겹치는지**를 잰다 — 신고된 증상이 "가린다"이기 때문이다.
+      //
+      // 여기 걸리는 스낵바는 ← 스와이프 삭제의 `되돌리기`다. 가려지면 되돌릴
+      // 방법 자체가 없어져, 단순히 안 보이는 것보다 나쁘다.
+      tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.runAsync(() async {
+        await seed('지울 업무', '2026-03-02', ScheduleStatus.pending);
+        await seed('남을 업무', '2026-03-03', ScheduleStatus.pending);
+      });
+      await pumpScreen(tester);
+
+      // ← 스와이프로 삭제 → 되돌리기 스낵바가 뜬다.
+      await tester.drag(find.text('지울 업무'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget, reason: '스낵바가 떠야 이 가드가 의미가 있다');
+      // ⚠️ **`find.byType(SnackBar)`를 재면 안 된다.** 그건 margin을 포함한
+      // 레이아웃 영역이라 floating이어도 화면 맨 아래까지 뻗는다
+      // (실측 `LTRB(0, 736, 390, 844)`). 실제로 보이는 면은 그 안의 첫 `Material`
+      // 이다(`LTRB(8, 736, 382, 784)`). 바깥 상자를 재면 정상인 코드를 버그로
+      // 오진한다 — 날짜 선택 대비 가드가 "칠하는 짝이 아닌 짝"을 쟀던 것과 같다.
+      final snackRect = tester.getRect(
+        find
+            .descendant(
+              of: find.byType(SnackBar),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      final pillRect = tester.getRect(
+        find.byKey(ScheduleScreen.bulkRegisterTaskKey),
+      );
+
+      expect(
+        snackRect.overlaps(pillRect),
+        isFalse,
+        reason:
+            '스낵바($snackRect)가 일괄 확정 pill($pillRect)과 겹친다 — '
+            '스낵바가 떠 있는 4초 동안 확정을 누를 수 없다',
+      );
+
+      // 기하만으로는 부족하다 — 겹치지 않아도 히트테스트가 막히면 못 누른다.
+      // 사용자가 신고한 그대로 **스낵바가 떠 있는 동안 확정을 눌러 본다.**
+      await tester.tap(find.byKey(ScheduleScreen.bulkRegisterTaskKey));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(ScheduleStrings.bulkConfirmTitle),
+        findsOneWidget,
+        reason: '스낵바가 떠 있는 동안에도 일괄 확정이 눌려야 한다',
+      );
+      await tester.tap(find.widgetWithText(TextButton, AppStrings.cancel));
+      await tester.pumpAndSettle();
+
+      // 되돌리기 액션 자체가 눌리는지는 `test/shared/bulk_bar_snack_test.dart`가
+      // 지킨다 — 여기서 이어 누르면 다이얼로그를 여닫는 사이 스낵바가 만료돼
+      // 시간 의존 테스트가 된다. 이 테스트는 신고된 증상(확정을 못 누른다)에 붙는다.
+    });
+
     testWidgets('삭제 pill의 건수가 실제로 지워지는 범위와 같다', (tester) async {
       // **종류를 섞어** 심는다. 섞지 않으면 pill이 종류로 좁혀도 건수가 같아
       // 어긋남이 드러나지 않는다 — 그래서 기존 삭제 테스트 둘이 이 회귀를
