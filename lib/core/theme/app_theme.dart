@@ -62,6 +62,16 @@ class AppTheme {
         onSecondary: AppColors.navy,
         onSurface: AppColors.ink,
         onError: isLight ? Colors.white : AppColors.navy,
+        // 스낵바 **액션 글자**가 이 색이다(M3 `_SnackbarDefaultsM3`). 주지 않으면
+        // Flutter가 `onPrimary`로 폴백하는데, 라이트에서 그건 `navy`(#17253D)이고
+        // 스낵바 배경(`inverseSurface` → `onSurface` → `ink`)도 **같은 #17253D**라
+        // `실행취소`가 통째로 사라졌다(시뮬 실측 1.00:1, 2026-09-04). 다크는
+        // `ink`가 크림이라 우연히 맞아 **라이트로만 보이는** 결함이었다.
+        //
+        // 스낵바 배경은 테마마다 반전되므로(라이트 네이비 / 다크 크림) 액션도
+        // 방향이 갈린다 — 라이트는 밝은 골드(8.37:1), 다크는 폴백과 같은
+        // 네이비(11.65:1)를 명시해 폴백 의존을 끊는다.
+        inversePrimary: isLight ? AppColors.goldFill : AppColors.navy,
       ),
       scaffoldBackgroundColor: AppColors.background,
       appBarTheme: AppBarTheme(
