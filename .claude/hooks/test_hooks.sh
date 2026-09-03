@@ -44,6 +44,7 @@ run "--no-verify 플래그"               2 "$H/guard-bash.sh" "$(bash_json 'git
 run "git push --force"                2 "$H/guard-bash.sh" "$(bash_json 'git push --force origin main')"
 run "git push -f"                     2 "$H/guard-bash.sh" "$(bash_json 'git push -f')"
 run "평범한 git push"                 0 "$H/guard-bash.sh" "$(bash_json 'git push origin main')"
+run "internal 업로드는 게이트를 탄다"   0 "$H/guard-bash.sh" "$(bash_json './android/bin/fastlane.sh internal')"
 run "rm -rf test/"                    2 "$H/guard-bash.sh" "$(bash_json 'rm -rf test/features/bus')"
 run "rm -rf build (정상 절차)"         0 "$H/guard-bash.sh" "$(bash_json 'rm -rf build ios/Pods ios/Podfile.lock')"
 run "rm -rf ~"                        2 "$H/guard-bash.sh" "$(bash_json 'rm -rf ~')"

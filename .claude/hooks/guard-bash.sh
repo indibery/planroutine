@@ -86,6 +86,9 @@ EOF
 # 넓히려면 아래 case에 *"ios/bin/fastlane.sh beta"* 를 더한다.
 case "$scan" in
   *"android/bin/fastlane.sh beta"*) ;;
+  # internal도 Play에 실제로 올라가고 versionCode를 **영구히 소비한다**(감소 불가).
+  # 심사로 가지 않는다는 것만 다르고, 되돌릴 수 없는 성질은 같다.
+  *"android/bin/fastlane.sh internal"*) ;;
   # 프로덕션 승격은 beta보다 더 되돌리기 어렵다 — 같은 게이트를 건다.
   # 기본이 draft라 레인 자체가 한 걸음 남기지만, `status:completed`가 붙으면
   # 그대로 수십억 명에게 열린다.

@@ -308,6 +308,49 @@ platform :android do
     UI.success("확정용 업로드 완료 (internal·draft, versionCode #{code}) — 패키지명이 확정됐다")
   end
 
+  # 내부 테스트 — **실기기 확인용**이다. iOS의 TestFlight 자리에 대응한다.
+  #
+  # `beta`(비공개 테스트/Alpha)와 갈리는 이유: beta는 `release_status: "completed"`라
+  # 업로드 즉시 Play 심사로 들어가고 되돌릴 수 없다. "탭 글씨가 보이나" 같은 확인을
+  # 그 도구로 하면 심사를 매번 소모한다. internal 트랙은 테스터에게 바로 간다.
+  #
+  # `bootstrap`과 갈리는 지점은 `release_status` 하나다 — bootstrap은 `draft`라
+  # 테스터에게 가지 않는다(패키지명 확정 전용이고 훅이 차단한다).
+  #
+  # ⚠️ **14일 요건은 하루도 세지 않는다.** internal은 비공개 테스트 트랙이 아니다.
+  #    테스터에게 실제로 보낼 빌드는 여전히 `beta`로 올린다.
+  #
+  # ⚠️ **versionCode를 영구히 소비한다.** Play는 앱 단위로 유일성을 요구해 트랙별
+  #    번호 공간이 없다. `VERSION_SCAN_TRACKS`에 internal이 이미 있어 다음 `beta`가
+  #    그보다 큰 값을 받는다 — iOS 빌드번호와 맞춰 두던 하한이 그만큼 앞서간다.
+  desc "내부 테스트 트랙에 올린다 — 실기기 확인용, 심사 대기 없음"
+  lane :internal do
+    # 값싼 가드 셋을 clean 앞에 모은다(`beta`와 같은 순서).
+    assert_play_key
+    key = tago_key
+    assert_release_keystore
+    UI.message("TAGO 키: #{key.length}자 확인")
+
+    new_code = next_version_code
+    build_aab(code: new_code)
+    metadata = stage_changelog(new_code)
+
+    upload_to_play_store(
+      package_name: APP_PACKAGE,
+      track: "internal",
+      aab: AAB_PATH,
+      release_status: "completed",   # draft면 테스터에게 가지 않는다(bootstrap의 교훈)
+      metadata_path: metadata,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: metadata.nil?,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+
+    UI.success("내부 테스트 업로드 완료! versionCode #{new_code} (track: internal)")
+    UI.important("⚠️ 14일 비공개 테스트 요건은 세지 않는다 — 그건 beta 레인이다.")
+  end
+
   desc "비공개 테스트 트랙에 새 빌드 업로드"
   lane :beta do
     # ── 값싼 가드 셋을 clean 앞에 모은다 ──

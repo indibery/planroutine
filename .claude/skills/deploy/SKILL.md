@@ -272,6 +272,7 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 | `check_play_key` | 서비스 계정 JSON + client_email 검증 + 트랙 4개 versionCode 조회 | 필요 | – | 없음 |
 | `build_aab` | 가드 → clean → release AAB 생성 (**업로드하지 않는다**) | 불필요 | – | clean |
 | `bootstrap` | `build_aab` + internal 트랙 draft 업로드(패키지명 확정용, 최초 1회만) | 필요 | `internal`(draft) | clean |
+| `internal` | 가드 → versionCode 계산 → `build_aab` → **내부 테스트** 업로드 | 필요 | `internal` | clean |
 | `beta` | 가드 → versionCode 계산 → `build_aab` → **비공개 테스트** 업로드 | 필요 | `Alpha`(비공개 테스트) | clean |
 | `production` | 비공개 테스트 빌드를 **프로덕션으로 승격**(재빌드 없음) | 필요 | `production` | **되돌릴 수 없음** |
 
@@ -284,13 +285,31 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 ./android/bin/fastlane.sh check_play_key   # Play 서비스 계정 + 트랙 4개 versionCode 확인
 ./android/bin/fastlane.sh build_aab        # release AAB만 생성 (업로드 없음)
 ./android/bin/fastlane.sh bootstrap        # 패키지명 확정용 첫 업로드 (internal·draft, 최초 1회만)
+./android/bin/fastlane.sh internal         # 내부 테스트 업로드 (실기기 확인용, 심사 없음)
 ./android/bin/fastlane.sh beta             # 비공개 테스트(Alpha) 업로드
 ```
 
-⚠️ **`track: internal`은 `bootstrap` 전용이다.** internal은 비공개 테스트 14일
-요건을 **하루도 세지 않는다**. 테스터에게 실제로 보낼 빌드는 반드시 `beta`(트랙
-`Alpha` = Play 콘솔의 "비공개 테스트")로 올린다. **콘솔에서 트랙 이름을 육안
-확인**할 것 — `테스트 및 출시 › 비공개 테스트`이지 "내부 테스트"가 아니다.
+⚠️ **internal 트랙은 14일 요건을 하루도 세지 않는다.** 테스터에게 실제로 보낼
+빌드는 반드시 `beta`(트랙 `Alpha` = Play 콘솔의 "비공개 테스트")로 올린다.
+**콘솔에서 트랙 이름을 육안 확인**할 것 — `테스트 및 출시 › 비공개 테스트`이지
+"내부 테스트"가 아니다.
+
+internal 트랙을 쓰는 레인이 **둘**이고 갈리는 지점은 `release_status` 하나다:
+
+| 레인 | `release_status` | 테스터에게 가나 | 쓰임 |
+|---|---|---|---|
+| `bootstrap` | `draft` | ✗ | 패키지명 확정용 1회성 — **훅이 차단한다**(소진됨) |
+| `internal` | `completed` | ✓ | **실기기 확인용**. iOS `beta`(TestFlight) 자리에 대응 |
+
+`internal`은 심사를 기다리지 않아 "탭 글씨가 보이나" 같은 확인을 반복해도 심사를
+소모하지 않는다. 대신 **versionCode를 영구히 소비하고**(Play는 앱 단위로 유일성을
+요구해 트랙별 번호 공간이 없다), `VERSION_SCAN_TRACKS`에 internal이 있어 다음
+`beta`가 그보다 큰 값을 받는다 — iOS 빌드번호와 맞춰 두던 하한이 그만큼 앞서간다.
+
+⚠️ **iOS와 동시에 돌리지 않는다.** `build_aab`의 `reset_android_caches`가
+`flutter clean`을 돌려 **`build/`와 `.dart_tool/`을 통째로 지운다**. iOS 레인도 같은
+`build/`에 ipa를 만들므로, 병행하면 한쪽이 조용히 깨진다. **iOS 먼저, Android 나중**
+순서로 돌린다(지우는 쪽이 뒤에 온다).
 
 **`reset_android_caches`가 매 빌드 필수다** — `build_aab`가 자동 실행한다. 근거는
 실측 둘:

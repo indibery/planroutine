@@ -1102,6 +1102,15 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
   `TestFlight 최신 + 1`로 둔다. 계산식·정렬 마모·거부된 빌드가 번호를 먹는 함정은 런북.
 - **Android `beta`는 업로드 즉시 Play 심사로 들어간다**(`release_status: "completed"`).
   트랙 `internal`은 비공개 테스트 14일 요건을 **하루도 세지 않는다** — 착각하면 되돌릴 수 없다.
+- **실기기 확인은 `internal` 레인이다**(iOS `beta`=TestFlight 자리). 심사를 기다리지 않아
+  반복해도 심사를 소모하지 않는다. 대가는 **versionCode를 영구히 소비**하는 것 —
+  Play는 앱 단위로 유일성을 요구해 트랙별 번호 공간이 없고, `VERSION_SCAN_TRACKS`에
+  internal이 있어 다음 `beta`가 그보다 큰 값을 받는다. 즉 **위 "하한을 TestFlight 최신
+  + 1로 둔다"는 정렬이 internal 확인 횟수만큼 앞서간다.**
+- ⚠️ **iOS와 Android 레인을 동시에 돌리지 않는다.** Android `build_aab`의
+  `reset_android_caches`가 `flutter clean`으로 **`build/`와 `.dart_tool/`을 통째로 지운다**.
+  iOS도 같은 `build/`에 ipa를 만들어, 병행하면 한쪽이 조용히 깨진다.
+  **iOS 먼저, Android 나중** — 지우는 쪽을 뒤에 둔다.
 - **수동 `flutter build ipa`로는 배포하지 않는다.** `--dart-define-from-file`이 없어 **TAGO 키가
   빠진 IPA**가 나오는데, release 레인의 가드 넷 어디도 키를 보지 않아 **버스 기능이 조용히 죽은
   빌드가 심사에 오른다**. 캐시만 비우고 **다시 `beta` 레인으로** 빌드한다.
