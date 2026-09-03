@@ -40,7 +40,7 @@ post_json()  { jq -n --arg f "$1" '{tool_name:"Edit",tool_input:{file_path:$f}}'
 echo "-- guard-bash.sh --"
 run "평범한 명령"                     0 "$H/guard-bash.sh" "$(bash_json 'ls -la')"
 run "bootstrap (정당한 사용 0)"        2 "$H/guard-bash.sh" "$(bash_json './android/bin/fastlane.sh bootstrap')"
-run "커밋 훅 건너뛰기 플래그"          2 "$H/guard-bash.sh" "$(bash_json 'git commit --no-verify -m x')"
+run "--no-verify 플래그"               2 "$H/guard-bash.sh" "$(bash_json 'git commit --no-verify -m x')"
 run "git push --force"                2 "$H/guard-bash.sh" "$(bash_json 'git push --force origin main')"
 run "git push -f"                     2 "$H/guard-bash.sh" "$(bash_json 'git push -f')"
 run "평범한 git push"                 0 "$H/guard-bash.sh" "$(bash_json 'git push origin main')"

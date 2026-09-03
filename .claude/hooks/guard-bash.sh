@@ -44,7 +44,7 @@ case "$scan" in
          "비공개 테스트 업로드는 ./android/bin/fastlane.sh beta 입니다."
     ;;
   *"--no-verify"*)
-    deny "차단: --no-verify는 커밋 훅을 건너뜁니다(전역 규칙: 사전 확인 대상)." \
+    deny "차단: --no-verify는 전역 규칙상 사전 확인 대상입니다." \
          "정말 필요하면 사용자가 직접 실행하세요 — 프롬프트에 ! 프리픽스를 붙이면 이 세션에서 바로 돕니다."
     ;;
 esac

@@ -1147,13 +1147,18 @@ dart run flutter_launcher_icons              # 각 iOS 사이즈 재생성
 | `protect-tests.sh` | PreToolUse(Edit\|Write) | 테스트 **선언 개수 감소** 차단 |
 | `analyze-edited.sh` | PostToolUse(Edit\|Write) | 편집한 `.dart` 하나만 `dart analyze` |
 
+⚠️ **이 리포에는 git 훅이 없다**(`.git/hooks/`에 샘플뿐, 실측 2026-09-03). 그래서
+`--no-verify`를 막는 근거는 "커밋 훅을 건너뛴다"가 **아니고**, 전역 규칙상 사전 확인
+대상이라는 것 하나다(차단 자체는 유효하다 — 근거만 낡아 있었다). `git commit`·`git push`에
+자동으로 붙는 것은 아무것도 없다 — `simplify`·`verifier`·`code-review`는 **부를 때만** 돈다.
+
 **종료 코드가 곧 정책이다**: `0` 통과(stdout은 디버그 로그로만 간다 — 아무도 못 본다) /
 `2` 차단(stderr **전문**이 Claude에게) / **그 밖은 비차단 경고**(실행은 계속되고
 transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 줄로 쓴다).
 
 ### deny는 "위험한가"가 아니라 "정당한 사용이 0인가"로 정한다
 
-- **`bootstrap`·force push·커밋 훅 건너뛰기·`test|integration_test|lib`를 지우는 `rm`**
+- **`bootstrap`·force push·`--no-verify`·`test|integration_test|lib`를 지우는 `rm`**
   → 무조건 차단. 정당한 사용이 없거나(패키지명은 확정됐다) 사용자가 직접 하면 된다.
 - **`rm -rf build ios/Pods`는 막지 않는다** — 이 리포의 정상 절차(수동 캐시 리셋)다.
 - **`android beta`는 막지 않는다.** 정당한 사용이 있는 명령을 매번 막으면 마찰이 쌓이고,
