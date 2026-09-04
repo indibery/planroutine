@@ -72,9 +72,14 @@ void main() {
       expect(find.text('등록했어요'), findsOneWidget);
     });
 
-    testWidgets('되돌리기 액션을 달아도 자리를 지킨다', (tester) async {
-      // ③ 스와이프 삭제 경로. 가려지면 `되돌리기` 버튼 자체를 누를 수 없어
-      // 단순히 안 보이는 것보다 나쁘다.
+    testWidgets('액션을 달아도 자리를 지키고, 그 액션이 눌린다', (tester) async {
+      // ⚠️ **지금 이 헬퍼에 액션을 넘기는 제품 호출부는 없다.** ③의 실행취소는
+      // 2026-09-04에 걷어냈다 — 다른 삭제 경로에 없어 입력 탭만 예외였기 때문이다
+      // (`schedule_screen_review_test.dart`의 부재 가드가 그 결정을 지킨다).
+      //
+      // 그래도 파라미터와 이 가드는 남긴다. 헬퍼는 범용 API이고, 액션 있는
+      // 스낵바를 입력 탭에 다시 두게 되면 **가려지는 순간 그 액션은 못 누르는
+      // 버튼**이 된다 — 그때 이 가드가 이미 서 있다.
       var undone = false;
       await _pumpAndShow(
         tester,
@@ -104,9 +109,7 @@ void main() {
     });
   });
 
-  testWidgets('messenger 변종도 같은 자리를 지킨다 — /import가 pop 전에 쓴다', (
-    tester,
-  ) async {
+  testWidgets('messenger 변종도 같은 자리를 지킨다 — /import가 pop 전에 쓴다', (tester) async {
     late ScaffoldMessengerState messenger;
     await tester.pumpWidget(
       MaterialApp(

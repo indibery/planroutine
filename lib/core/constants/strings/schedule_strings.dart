@@ -48,15 +48,16 @@ class ScheduleStrings {
   // 일괄 삭제 pill (확정 대칭) — 남은 검토 대기를 한 번에 휴지통으로
   static String deletePending(int count) => '대기 $count건 삭제';
   static const bulkDeleteTitle = '검토 대기 삭제';
+
   /// 범위 문구가 없다 — 필터를 없앤 뒤 대상은 언제나 대기 전체다.
   static String bulkDeleteMessage(int count) =>
       '검토 대기 $count건을 휴지통으로 보냅니다.\n'
       '30일 후 자동 삭제되며, 그 전엔 설정 > 휴지통에서 복구할 수 있어요.';
   static String bulkDeletedSnack(int count) => '$count건을 휴지통으로 옮겼어요';
 
-  // 스와이프 삭제 Undo
+  // 스와이프 삭제 알림. **실행취소 액션은 없다** — 다른 삭제 경로에 없어
+  // 여기만 예외였다(2026-09-04). 되돌리기는 휴지통이 맡는다.
   static const deletedSnack = '일정을 삭제했어요';
-  static const undoAction = '실행취소';
 
   // 수정 시트
   static const editTitle = '일정 수정';

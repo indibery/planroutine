@@ -193,11 +193,8 @@ class ScheduleScreen extends ConsumerWidget {
         alignment: Alignment.centerRight,
         child: _DeleteAllPill(
           label: ScheduleStrings.deletePending(pendingCount),
-          onPressed: () => _showBulkDeleteDialog(
-            context,
-            ref,
-            pendingCount: pendingCount,
-          ),
+          onPressed: () =>
+              _showBulkDeleteDialog(context, ref, pendingCount: pendingCount),
         ),
       ),
     );
@@ -292,18 +289,14 @@ class ScheduleScreen extends ConsumerWidget {
             },
             onDelete: () {
               if (schedule.id case final id?) {
-                final notifier = ref.read(schedulesProvider.notifier);
-                notifier.deleteSchedule(id);
-                // pill 위로 띄운다. 가려지면 `되돌리기`를 **누를 수 없다** —
-                // 안 보이는 것보다 나쁘다.
-                showBulkBarSnack(
-                  context,
-                  ScheduleStrings.deletedSnack,
-                  action: SnackBarAction(
-                    label: ScheduleStrings.undoAction,
-                    onPressed: () => notifier.restoreSchedule(id),
-                  ),
-                );
+                ref.read(schedulesProvider.notifier).deleteSchedule(id);
+                // **실행취소를 달지 않는다.** 앱의 다른 삭제 경로에 없어서 여기만
+                // 예외였고, 그 비일관이 불편으로 신고됐다(2026-09-04). 되돌리는
+                // 길은 휴지통 하나로 모은다 — soft-delete라 값은 남아 있다.
+                //
+                // 알림은 pill 위로 띄운다(`showBulkBarSnack`). 액션이 없어도
+                // 가리면 4초 동안 확정을 누를 수 없다.
+                showBulkBarSnack(context, ScheduleStrings.deletedSnack);
               }
             },
             onTap: () => ScheduleEditSheet.show(context, schedule),
@@ -351,9 +344,7 @@ class ScheduleScreen extends ConsumerWidget {
     if (!ok) return;
     // 스낵바는 **DB가 실제로 옮긴 수**를 말한다. 화면에서 센 `pendingCount`를
     // 그대로 쓰면, pill의 범위와 쿼리의 범위가 갈려도 사용자에게 드러나지 않는다.
-    final moved = await ref
-        .read(schedulesProvider.notifier)
-        .deleteAllPending();
+    final moved = await ref.read(schedulesProvider.notifier).deleteAllPending();
     if (!context.mounted) return;
     showBulkBarSnack(context, ScheduleStrings.bulkDeletedSnack(moved));
   }

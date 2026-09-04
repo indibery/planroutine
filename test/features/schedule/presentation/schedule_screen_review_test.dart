@@ -317,7 +317,11 @@ void main() {
       await tester.drag(find.text('지울 업무'), const Offset(-500, 0));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SnackBar), findsOneWidget, reason: '스낵바가 떠야 이 가드가 의미가 있다');
+      expect(
+        find.byType(SnackBar),
+        findsOneWidget,
+        reason: '스낵바가 떠야 이 가드가 의미가 있다',
+      );
       // ⚠️ **`find.byType(SnackBar)`를 재면 안 된다.** 그건 margin을 포함한
       // 레이아웃 영역이라 floating이어도 화면 맨 아래까지 뻗는다
       // (실측 `LTRB(0, 736, 390, 844)`). 실제로 보이는 면은 그 안의 첫 `Material`
@@ -355,9 +359,42 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, AppStrings.cancel));
       await tester.pumpAndSettle();
 
-      // 되돌리기 액션 자체가 눌리는지는 `test/shared/bulk_bar_snack_test.dart`가
-      // 지킨다 — 여기서 이어 누르면 다이얼로그를 여닫는 사이 스낵바가 만료돼
-      // 시간 의존 테스트가 된다. 이 테스트는 신고된 증상(확정을 못 누른다)에 붙는다.
+      // 액션 달린 스낵바가 자리를 지키는지는 `test/shared/bulk_bar_snack_test.dart`가
+      // 헬퍼 단위로 지킨다 — 여기서 이어 누르면 다이얼로그를 여닫는 사이 스낵바가
+      // 만료돼 시간 의존 테스트가 된다. 이 테스트는 신고된 증상(확정을 못 누른다)에 붙는다.
+    });
+
+    testWidgets('← 스와이프 삭제 스낵바에 실행취소를 달지 않는다', (tester) async {
+      // **앱의 다른 삭제 경로에는 실행취소가 없다** — 캘린더 이벤트 삭제도,
+      // 일괄 `대기 N건 삭제`도 그렇다. 입력 탭의 행 삭제만 예외였고, 그
+      // 비일관이 불편으로 신고됐다(사용자 결정 2026-09-04).
+      // 되돌리는 길은 **휴지통 하나로 모은다** — soft-delete라 값은 남아 있다.
+      //
+      // ⚠️ 앱에 남는 `SnackBarAction`은 캘린더의 `설정 열기`(권한 거부) 하나다.
+      // 그건 삭제 되돌리기가 아니라 **막힌 길을 여는 안내**라 성격이 다르다 —
+      // 이 규칙이 그것까지 걷어내라는 뜻은 아니다.
+      await tester.runAsync(() async {
+        await seed('지울 업무', '2026-03-02', ScheduleStatus.pending);
+      });
+      await pumpScreen(tester);
+
+      await tester.drag(find.text('지울 업무'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      // 알림 자체는 남긴다 — 지워졌다는 사실은 말해야 한다.
+      expect(
+        find.byType(SnackBar),
+        findsOneWidget,
+        reason: '삭제 알림이 떠야 이 가드가 의미가 있다',
+      );
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.byType(SnackBarAction),
+        ),
+        findsNothing,
+        reason: '삭제 스낵바에 액션이 붙어 있다 — 다른 삭제 경로에는 없어 일관성이 깨진다',
+      );
     });
 
     testWidgets('삭제 pill의 건수가 실제로 지워지는 범위와 같다', (tester) async {

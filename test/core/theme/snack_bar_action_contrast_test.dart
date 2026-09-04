@@ -1,10 +1,6 @@
 // 스낵바의 **액션 글자가 읽혀야 한다** — 양 테마 AA(4.5:1).
 //
-// 입력 탭의 ← 스와이프 삭제는 `실행취소` 액션이 달린 스낵바를 띄운다. 그 액션이
-// 안 보이면 **되돌릴 방법 자체가 없다** — 스낵바를 pill 위로 올린 것도 그것을
-// 누를 수 있게 하려는 것이었다(`shared/bulk_bar_snack.dart` 참고).
-//
-// 시뮬레이터 실측(iPhone 17 / iOS 26.5, 2026-09-04): 라이트에서 `실행취소`가
+// 시뮬레이터 실측(iPhone 17 / iOS 26.5, 2026-09-04): 라이트에서 스낵바 액션이
 // **통째로 사라졌다**. 접근성 트리에는 Button이 있는데 그 자리 픽셀이 전부
 // 스낵바 배경색 하나였다 — 대비 **1.00:1**.
 //
@@ -17,6 +13,12 @@
 // **다크에서는 안 드러난다** — 거기서는 `ink`(크림)와 `navy`가 다르다. 날짜 선택
 // 대비·공휴일 행 채움과 같은 부류로, **이 계열 결함은 라이트로 봐야 보인다.**
 //
+// ⚠️ **발견 경로와 남은 사용처가 다르다.** 처음 눈에 띈 것은 입력 탭 삭제의
+// `실행취소`였는데, 그 액션은 같은 날 걷어냈다(다른 삭제 경로에 없어 입력 탭만
+// 예외였다). 지금 앱에 남은 `SnackBarAction`은 **캘린더의 `설정에서 켜기`**
+// (기기 캘린더 권한 거부) 하나이고, 같은 색을 쓰므로 같은 결함을 안고 있었다 —
+// 즉 이 가드는 사라진 기능의 잔재가 아니라 **살아 있는 경로**를 지킨다.
+//
 // ⚠️ **토큰만 비교하면 안 된다.** 날짜 선택 가드가 두 번 통과했는데 화면은
 // 깨져 있었던 적이 있다 — Material이 실제로 칠하는 짝이 아닌 짝을 쟀기 때문이다.
 // 그래서 여기서는 스낵바를 **실제로 띄워** 렌더된 글자 색과 그 아래 `Material`이
@@ -26,14 +28,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:planroutine/core/constants/app_colors.dart';
+import 'package:planroutine/core/constants/strings/calendar_integration_strings.dart';
 import 'package:planroutine/core/theme/app_theme.dart';
-import 'package:planroutine/shared/bulk_bar_snack.dart';
 
 import '../../helpers/contrast.dart';
 
-const _actionLabel = '실행취소';
+const _actionLabel = CalendarIntegrationStrings.openSettings;
 
-/// 실제 경로(`showBulkBarSnack`)로 액션 달린 스낵바를 띄운다.
+/// 살아 있는 경로와 **같은 형태**로 띄운다 — 캘린더 권한 스낵바는 헬퍼를 거치지
+/// 않고 맨 `SnackBar`를 만든다(그 스낵바는 입력 탭 pill과 무관하다).
 Future<void> _pumpSnackWithAction(
   WidgetTester tester,
   Brightness brightness,
@@ -46,10 +49,11 @@ Future<void> _pumpSnackWithAction(
         body: Builder(
           builder: (context) => Center(
             child: ElevatedButton(
-              onPressed: () => showBulkBarSnack(
-                context,
-                '일정을 삭제했어요',
-                action: SnackBarAction(label: _actionLabel, onPressed: () {}),
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('기기 캘린더 권한이 필요합니다'),
+                  action: SnackBarAction(label: _actionLabel, onPressed: () {}),
+                ),
               ),
               child: const Text('띄우기'),
             ),
@@ -94,7 +98,7 @@ void main() {
     for (final brightness in Brightness.values) {
       final themeName = brightness == Brightness.light ? '라이트' : '다크';
 
-      testWidgets('$themeName — 실행취소 글자가 배경과 AA(4.5:1)', (tester) async {
+      testWidgets('$themeName — 액션 글자가 배경과 AA(4.5:1)', (tester) async {
         await _pumpSnackWithAction(tester, brightness);
 
         final fg = _renderedActionColor(tester);
@@ -107,7 +111,7 @@ void main() {
           reason:
               '$themeName에서 `$_actionLabel`이 스낵바 배경과 '
               '${ratio.toStringAsFixed(2)}:1 이다. 이 액션이 안 보이면 '
-              '삭제를 되돌릴 방법이 없다',
+              '권한을 켜러 갈 길이 사라진다',
         );
       });
 
