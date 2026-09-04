@@ -258,17 +258,42 @@ void main() {
       }
     });
 
-    testWidgets('대기가 없으면 빈 상태 문구 하나만', (tester) async {
+    testWidgets('대기가 없으면 빈 상태 문구와 힌트 두 줄', (tester) async {
       await tester.runAsync(() async {
         await seed('확정된 업무', '2026-03-03', ScheduleStatus.confirmed);
       });
       await pumpScreen(tester);
 
       expect(find.text(ScheduleStrings.empty), findsOneWidget);
+      // **힌트 줄이 필수다.** 대기가 0이면 하단 확정 pill도 스와이프 안내 바도
+      // 안 뜨므로 이 두 줄이 화면의 전부다 — 여기가 무엇을 담는 자리인지 말하지
+      // 않으면 새 사용자는 빈 칸만 본다(사용자 신고 2026-09-04, 실기기).
+      // 다른 빈 상태(오늘 탭·버스 카드)도 모두 상태 + 다음 행동 두 줄이다.
+      expect(
+        find.text(ScheduleStrings.emptyHint),
+        findsOneWidget,
+        reason: '빈 상태에 다음 행동을 알려주는 힌트가 없다',
+      );
       // 넣기 CTA를 여기 다시 세우지 않는다 — 히어로가 바로 위에 있다.
       // (`ScheduleStrings.goImport`로 검사하던 단정은 지웠다. 그 문자열을
       //  렌더하는 곳이 없어 `findsNothing`이 **반증 불가**했다.)
       expect(find.byType(TextButton), findsNothing);
+    });
+
+    test('빈 상태 문구는 확정본이 쌓여도 거짓이 되지 않는다', () {
+      // ⚠️ `등록된 일정이 없습니다`로 되돌리면 안 된다. 이 목록은 대기 전용이라
+      // 캘린더에 확정본이 수십 건 있어도 빈다 — 그 문장은 그때 거짓이 된다
+      // (2026-09-03에 그 이유로 바꿨다).
+      //
+      // `검토`가 빈 화면에서 처음 만나는 낱말이라는 지적이 있었지만(2026-09-04
+      // 실기기 신고) **유지하기로 했다**(사용자 결정) — 힌트 줄이 다음 행동을
+      // 알려주므로 넣어보면 목록이 차고, 그때 확정 pill과 스와이프 안내가
+      // 나타나 낱말이 화면에서 설명된다. 그래서 여기서 `검토`를 금지하지 않는다.
+      expect(
+        ScheduleStrings.empty,
+        isNot(contains('등록된')),
+        reason: '확정본이 쌓이면 거짓이 되는 문장이다',
+      );
     });
 
     testWidgets('AppBar에는 가져오기 아이콘을 두지 않는다 (히어로 보조 링크로 대체)', (tester) async {

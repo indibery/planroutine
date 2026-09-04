@@ -205,22 +205,39 @@ class ScheduleScreen extends ConsumerWidget {
   /// 예전에는 여기서 `확정 N건` 요약과 `확정됨 N건 보기` 링크를 띄웠다. 그 링크가
   /// 확정 뷰로 가는 유일한 문이었는데, 그 뷰를 없앴으므로 문도 없앴다.
   /// 다음 행동(넣기)은 위 히어로가 이미 맡고 있어 여기서 CTA를 다시 세우지 않는다.
+  /// 대기가 0이면 하단 확정 pill도 스와이프 안내 바도 안 뜬다 — **이 블록이 화면의
+  /// 전부**라 상태와 다음 행동을 함께 말한다(오늘 탭·버스 카드와 같은 두 줄 문법).
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.event_note, size: 64, color: AppColors.faint),
-          const SizedBox(height: AppSizes.spacing16),
-          Text(
-            ScheduleStrings.empty,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: AppColors.sub,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.event_note, size: 64, color: AppColors.faint),
+            const SizedBox(height: AppSizes.spacing16),
+            Text(
+              ScheduleStrings.empty,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.sub,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSizes.spacing4),
+            Text(
+              ScheduleStrings.emptyHint,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                color: AppColors.faint,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
