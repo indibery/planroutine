@@ -4,10 +4,18 @@ import '../../../calendar/domain/calendar_event.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
+import '../../domain/trash_filter.dart';
 
 /// 휴지통 항목 묶음 (일정 + 캘린더 이벤트).
+///
+/// 생성자가 [visibleTrashSchedules]로 **스스로 거른다** — 캘린더 이벤트와 짝인
+/// 원본 일정은 목록에 넣지 않는다. 호출부에서 거르게 두면 다음 호출부가 그것을
+/// 빠뜨려 휴지통에 같은 항목이 두 줄로 돌아온다.
 class TrashSnapshot {
-  const TrashSnapshot({required this.schedules, required this.events});
+  TrashSnapshot({
+    required List<Schedule> schedules,
+    required this.events,
+  }) : schedules = visibleTrashSchedules(schedules, events);
 
   final List<Schedule> schedules;
   final List<CalendarEvent> events;

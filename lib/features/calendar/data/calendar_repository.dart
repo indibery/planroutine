@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../../../core/database/database_helper.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../schedule/domain/entry_kind.dart';
@@ -33,15 +35,26 @@ class CalendarRepository {
     );
   }
 
-  /// 이벤트 soft-delete (휴지통으로 이동)
+  /// 이벤트 soft-delete (휴지통으로 이동).
+  ///
+  /// 연결된 원본 일정(`schedules`) 행도 **함께** 내려보낸다. 원본을 남겨두면
+  /// 중복 판정(`title + scheduled_date`, `deleted_at IS NULL` 기준)이 그 행에
+  /// 걸려 **캘린더에서 지운 행사를 다시 넣을 수 없다** — 사용자에게는 캘린더가
+  /// 비어 있는데 "이미 있다"며 조용히 스킵되는 것으로 보인다(실기기 신고
+  /// 2026-09-11). 원본은 작년 일정을 참조하기 위한 내부 기록일 뿐이므로
+  /// 화면에 보이는 캘린더가 기준이 된다.
   Future<int> deleteEvent(int id) async {
     final db = await _dbHelper.database;
-    return db.update(
-      DatabaseHelper.tableCalendarEvents,
-      {'deleted_at': DateTime.now().toIso8601String()},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final now = DateTime.now().toIso8601String();
+    return db.transaction((txn) async {
+      await _applyToLinkedSchedule(txn, id, {'deleted_at': now});
+      return txn.update(
+        DatabaseHelper.tableCalendarEvents,
+        {'deleted_at': now},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   /// 이벤트 완료 표시 (completed_at에 현재 시각 기록)
@@ -88,24 +101,69 @@ class CalendarRepository {
   Future<int> updateDeviceEventId(int id, String deviceEventId) =>
       _updateExternalEventId(id, 'device_event_id', deviceEventId);
 
-  /// 이벤트 복구
+  /// 이벤트 복구 — 함께 내려갔던 원본 일정도 같이 되살린다([deleteEvent]의 역).
   Future<int> restoreEvent(int id) async {
     final db = await _dbHelper.database;
-    return db.update(
-      DatabaseHelper.tableCalendarEvents,
-      {'deleted_at': null},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return db.transaction((txn) async {
+      await _applyToLinkedSchedule(txn, id, {'deleted_at': null});
+      return txn.update(
+        DatabaseHelper.tableCalendarEvents,
+        {'deleted_at': null},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
-  /// 이벤트 영구 삭제 (DB row 제거)
+  /// 이벤트 영구 삭제 (DB row 제거) — 원본 일정 행도 함께 지운다.
+  ///
+  /// 짝만 지우면 휴지통 목록에서 숨겨져 있던 원본이 **고아가 되어 다시 나타난다**
+  /// (`visibleTrashSchedules`가 삭제된 이벤트를 기준으로 숨기기 때문).
   Future<int> permanentDeleteEvent(int id) async {
     final db = await _dbHelper.database;
-    return db.delete(
+    return db.transaction((txn) async {
+      final scheduleId = await _linkedScheduleId(txn, id);
+      if (scheduleId != null) {
+        await txn.delete(
+          DatabaseHelper.tableSchedules,
+          where: 'id = ?',
+          whereArgs: [scheduleId],
+        );
+      }
+      return txn.delete(
+        DatabaseHelper.tableCalendarEvents,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+  }
+
+  /// [eventId]에 연결된 원본 일정의 id. 손입력 이벤트는 `schedule_id`가 없어 null.
+  Future<int?> _linkedScheduleId(DatabaseExecutor txn, int eventId) async {
+    final rows = await txn.query(
       DatabaseHelper.tableCalendarEvents,
+      columns: ['schedule_id'],
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [eventId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['schedule_id'] as int?;
+  }
+
+  /// 연결된 원본 일정이 있으면 [values]를 그 행에 적용한다.
+  Future<void> _applyToLinkedSchedule(
+    DatabaseExecutor txn,
+    int eventId,
+    Map<String, Object?> values,
+  ) async {
+    final scheduleId = await _linkedScheduleId(txn, eventId);
+    if (scheduleId == null) return;
+    await txn.update(
+      DatabaseHelper.tableSchedules,
+      values,
+      where: 'id = ?',
+      whereArgs: [scheduleId],
     );
   }
 
