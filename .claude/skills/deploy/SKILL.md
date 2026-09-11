@@ -48,6 +48,14 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 > `7FF7798F-1FC4-4DBF-80D8-FB8DD2611663`). iPad는 share 팝오버 등 iPad 고유 케이스를
 > 볼 때만 보조로.
 
+> **[필수] 검증이 끝나면 시뮬레이터·에뮬레이터를 끄고 레인을 시작한다** —
+> `xcrun simctl shutdown all`(안드로이드는 에뮬레이터 창을 닫는다). 바로 위 런타임 확인이
+> **필수**라서 이 리포에서는 **검증과 배포가 곧바로 이어지는 것이 기본 흐름**이고, 그래서
+> "시뮬레이터를 켜둔 채 배포"가 예외가 아니라 기본값이 된다. 그 상태로 레인을 돌리면
+> **메모리 부족으로 레인이 외부에서 kill된다** — 실측 2026-09-11: iPhone 17을 띄워 둔 채
+> `android internal`을 돌려 supply 업로드 도중 죽었고, 시뮬레이터를 끄고 재시도하니
+> **19초**에 끝났다. 죽었을 때의 판별과 복구는 아래 「배포 검증 함정」 참고.
+
 **버전/빌드번호:**
 - build number는 Fastfile이 `latest_testflight_build_number + 1`로 자동 계산.
 - **versionString(X.Y.Z)**: beta/release 레인이 시작 시 `assert_version_bumped`로
@@ -245,6 +253,9 @@ beta의 IPA 파일명이 한글(`공직플랜.ipa`)이라 Fastfile은 `Dir.entri
   `nohup ./ios/bin/fastlane.sh beta > out.txt 2>&1 & disown`으로 하니스와 분리해 띄우고
   pid 폴링(`kill -0`)으로 종료를 감지한다. 폴러가 죽어도 배포는 계속된다.
   (v85: 2연속 kill → nohup 3차 시도 성공.)
+  - ⚠️ **분리하기 전에 시뮬레이터부터 끈다.** kill의 흔한 원인이 켜져 있는 시뮬레이터인데
+    (위 게이트 절), **nohup은 메모리를 돌려주지 않는다** — 하니스에서 떼어낼 뿐이라
+    원인이 남아 있으면 분리한 채로 또 죽을 수 있다.
 - **업로드 성공 ≠ 즉시 노출 — 처리에 40~60분** — `skip_waiting_for_build_processing: true`라
   "Successfully uploaded"는 ASC 전달 완료까지만 의미. 이후 비동기 처리로 TestFlight/`check_builds`
   목록에 뜨기까지 **최근 실측 40~60분**. 방금 올린 빌드가 `check_builds`에 안 보여도 **실패로
@@ -359,6 +370,9 @@ Fastfile at line 313` + summary만 남고 메시지 없음). Play API가 거부�
 - 반복 kill되면 `nohup ./android/bin/fastlane.sh beta > out.txt 2>&1 & disown`으로 분리하고
   pid 폴링으로 기다린다. **폴러가 죽어도 배포는 완주한다**(실측: 2차 시도에서 폴러만 죽고
   업로드 43초에 성공). 관찰자와 작업자를 분리하는 것이 요점이다.
+- **먼저 시뮬레이터를 껐는지 본다.** 에러 문장 없이 죽는 사례의 원인이 대개 이것이다
+  (실측 2026-09-11: `internal` 레인이 iPhone 17 시뮬레이터를 켜둔 채 supply 업로드 중
+  죽었다 → 종료 후 재시도 19초 성공). 순서는 **끄기 → 재시도 → 그래도 죽으면 nohup**이다.
 
 ### Play 스크린샷 촬영 (2026-08-26 실측)
 
