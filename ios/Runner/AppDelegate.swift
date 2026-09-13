@@ -55,5 +55,32 @@ import UIKit
         }
       }
     }
+
+    // 단축어(App Intents)가 Dart를 부를 통로를 잡아 둔다.
+    //
+    // **이 자리여야 한다** — `didFinishLaunchingWithOptions` 시점에는
+    // `window?.rootViewController`가 아직 nil이고(실측), registrar가 주는
+    // messenger는 플러그인 등록 직후부터 유효하다.
+    if #available(iOS 16.0, *) {
+      let intentRegistrar = engineBridge.pluginRegistry.registrar(
+        forPlugin: "PlanRoutineIntents")
+      if let intentMessenger = intentRegistrar?.messenger() {
+        PlanRoutineBridge.messenger = intentMessenger
+        let intentChannel = FlutterMethodChannel(
+          name: PlanRoutineChannel.name,
+          binaryMessenger: intentMessenger
+        )
+        intentChannel.setMethodCallHandler { call, result in
+          // Dart가 핸들러 등록을 마쳤다는 신호. 이것을 받기 전에는
+          // 인텐트가 기다린다 — 기동과 인텐트 실행의 순서가 보장되지 않는다.
+          if call.method == PlanRoutineChannel.ready {
+            PlanRoutineBridge.markReady()
+            result(nil)
+          } else {
+            result(FlutterMethodNotImplemented)
+          }
+        }
+      }
+    }
   }
 }
