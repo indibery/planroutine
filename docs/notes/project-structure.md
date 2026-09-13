@@ -16,11 +16,16 @@ planroutine/
 │   ├── main.dart                       # 시작 시 휴지통 purge + 알림 init/sync + onboarding 체크
 │   ├── app.dart                        # GoRouter 보관 + planroutine/shared_file 채널 listener
 │   ├── core/
+│   │   ├── app_intents/                # 단축어(App Intents) ↔ Dart 다리
+│   │   │   ├── app_intents_contract.dart  # 채널·메서드·인자 이름 (Swift와 공유하는 유일한 이중화)
+│   │   │   ├── app_intents_handler.dart   # 위임만 한다 — 업무 규칙 없음
+│   │   │   └── app_intents_bridge.dart    # main()에서 채널 등록 + ready 신호
 │   │   ├── constants/
 │   │   │   ├── app_strings.dart        # 공통 상수 + barrel export
 │   │   │   ├── app_colors.dart
 │   │   │   ├── app_sizes.dart
 │   │   │   └── strings/                # 도메인별 Strings 클래스
+│   │   │       ├── app_intents_strings.dart  # 단축어 결과·시리 대사 문구
 │   │   │       ├── calendar_strings.dart
 │   │   │       ├── google_strings.dart
 │   │   │       ├── import_strings.dart
@@ -37,6 +42,7 @@ planroutine/
 │   ├── features/
 │   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
 │   │   │   ├── data/                   # csv_parser, import_repository, ai_schedule_parser/register
+│   │   │   │                           #   · ai_schedule_intake(UI 없는 등록 — 히어로·단축어 공용)
 │   │   │   ├── domain/                 # imported_schedule
 │   │   │   └── presentation/
 │   │   │       ├── ai_photo_flow.dart          # 프롬프트 복사 / 붙여넣기→바로 검토 대기 등록 (히어로 전용)
@@ -52,7 +58,7 @@ planroutine/
 │   │   │   └── presentation/           # ScheduleScreen, SlideHintBar, EditSheet, ScheduleTile, KindBadge
 │   │   ├── calendar/                   # 자체 캘린더
 │   │   │   ├── data/                   # calendar_repository
-│   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt/kind)
+│   │   │   ├── domain/                 # calendar_event (deletedAt/completedAt/kind) · schedule_digest(단축어용 요약, 순수)
 │   │   │   └── presentation/           # CalendarScreen, EventEditDialog, ListSection
 │   │   ├── trash/                      # 휴지통
 │   │   │   └── presentation/           # TrashScreen + snapshot
@@ -131,7 +137,9 @@ planroutine/
 │   ├── Runner/
 │   │   ├── Info.plist                  # GIDClientID, REVERSED_CLIENT_ID, CFBundleDocumentTypes(CSV)
 │   │   ├── AppDelegate.swift           # application(_:open:options:) → planroutine/shared_file 채널
-│   │   └── SceneDelegate.swift         # scene URL → AppDelegate 포워딩
+│   │   ├── SceneDelegate.swift         # scene URL → AppDelegate 포워딩
+│   │   └── AppIntents/
+│   │       └── PlanRoutineIntents.swift  # 인텐트 둘 + AppShortcutsProvider (openAppWhenRun 안 씀)
 │   ├── fastlane/Fastfile               # beta/release 레인 (IPA glob: Dir.entries)
 │   ├── Gemfile (+ Gemfile.lock)        # fastlane + cocoapods 동일 Ruby 환경
 │   └── bin/fastlane.sh                 # Homebrew Ruby 경로 주입 wrapper

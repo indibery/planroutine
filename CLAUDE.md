@@ -23,6 +23,10 @@
    시점을 겨냥해 적응**하고(`min(300초, 1차+30초)`), 접거나 백그라운드면 중단, 막차 뒤에도
    중단. 화면은 1초마다 다시 그려 점이 흐른다. 공공데이터를 기기에서 직접 부르고
    **자체 서버가 없다**.
+12. **아이폰 단축어 연계(App Intents)** — `일정 등록`과 `일정 조회` 둘을 단축어·시리에
+   노출한다. **둘 다 앱이 화면에 뜨지 않는다** — 시스템이 앱을 백그라운드로만 띄운다.
+   등록은 AI 앱 답변 텍스트를 그대로 받아 기존 파서로 검토 대기에 넣고, 조회는 기간을
+   골라 일정 목록을 텍스트로 돌려준다. iOS 전용(16.0+).
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -45,7 +49,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1097** 유닛/위젯 + 19 E2E (실측 2026-09-11. 직전 표기 `1070`은 2026-09-03 값인데 그 뒤 커밋들이 갱신하지 않아 **이미 낡아 있었다** — 이번에 연쇄 삭제 가드 10건을 더하기 전 값이 1087이다. ⚠️ 이 숫자를 지키는 가드가 없어 네 번 낡았다) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1129** 유닛/위젯 + 19 E2E (실측 2026-09-13, 단축어 가드 32건을 더한 값. 직전 표기 `1097`은 2026-09-11 값이다. ⚠️ 이 숫자를 지키는 가드가 없어 **다섯 번** 낡았다 — README는 더 심해서 `1003`에 멈춰 있었다) |
 
 ## 프로젝트 구조
 
@@ -56,6 +60,7 @@ Feature-first. **파일별 한 줄 설명이 붙은 상세 트리는 `docs/notes
 lib/
 ├── main.dart · app.dart   # 시작 시 purge·알림 sync·onboarding / GoRouter + 공유파일 채널
 ├── core/                  # constants(strings·colors·sizes) · theme · router · database · utils
+│                          #   · app_intents(단축어 채널 계약·핸들러·브리지)
 ├── features/              # 아래 표
 └── shared/widgets/        # main_shell · floating_tab_bar · gold_fab · brand_logo ·
                            #   gold_gradient_button · section_header · confirm_dialog
@@ -75,7 +80,7 @@ lib/
 각 feature는 `data/` · `domain/` · `presentation/`으로 나뉘고 **빈 레이어는 만들지 않는다**
 (`trash/`는 `presentation/`만 있다).
 
-- `ios/` — `Runner/`(Info.plist·AppDelegate·SceneDelegate) · `fastlane/` · `bin/fastlane.sh`
+- `ios/` — `Runner/`(Info.plist·AppDelegate·SceneDelegate·**`AppIntents/`**) · `fastlane/` · `bin/fastlane.sh`
 - `android/` — `app/`(build.gradle.kts·proguard-rules.pro·`res/raw/keep.xml`) · `fastlane/` · `bin/fastlane.sh`
 - `assets/` — `icon/` · `images/` · `fonts/`(Pretendard) · `data/sample/`(합성 CSV, 실데이터 금지)
 - `docs/` — `notes/` · `release_notes/` · 스토어 문안 · `superpowers/specs/`
@@ -799,6 +804,53 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
     ⚠️ 가드가 한 테스트에서 두 번 pump할 때는 **`key`를 줘야 한다** — 없으면
     `ExpansionTile`의 State가 재사용돼 두 번째 탭이 오히려 **접는다**(실측).
 
+### 아이폰 단축어 연계 (App Intents) — 앱을 열지 않는다
+
+**인텐트를 앱 타깃에 직접 둔다.** 패키지(`app_intents`·`flutter_app_intents`)를 쓰지 않는다.
+
+- **초기 진단이 틀렸던 지점**: flutter/flutter#152799("App Intents에서 Dart 실행")가 열려
+  있어 "Flutter라서 안 된다"고 판단했는데, 그 이슈는 **App Extension**(위젯 등) 이야기다.
+  **인텐트를 앱 타깃에 두면 시스템이 앱 프로세스를 백그라운드로 띄운다** — 실측에서
+  `processName: Runner`, 앱 샌드박스 Documents, `didFinishLaunchingWithOptions` 호출,
+  MethodChannel 왕복까지 전부 확인했다.
+- 그래서 **App Group도, DB 이전도, 스키마 이중화도 필요 없다.** 두 패키지가
+  `openAppWhenRun = true`를 박은 것은 플랫폼 제약이 아니라 패키지의 선택이었다 —
+  명시하지 않으면 빌드 산출물(`Metadata.appintents/extract.actionsdata`)에
+  `"openAppWhenRun":false`로 기록된다.
+
+**Swift는 채널 호출만 진다.** 파싱·중복 판정·삽입은 전부 기존 Dart가 한다.
+`intakeAiScheduleText`(입력 탭 히어로와 **공용**) · `buildScheduleDigest`(순수 함수).
+Swift에는 테이블도 컬럼도 SQL도 없고, 가드가 그것을 검사한다.
+
+- ⚠️ **채널 배선 자리는 `didInitializeImplicitFlutterEngine`이다.** 이 앱의 `AppDelegate`는
+  `FlutterImplicitEngineDelegate`를 구현하므로 기존 `planroutine/shared_file`과 같은 자리이고,
+  `didFinishLaunchingWithOptions` 시점에는 `window?.rootViewController`가 **아직 nil이다**(실측).
+- ⚠️ **Dart 준비를 기다리는 장치가 급소다.** 기동과 인텐트 실행의 도달 순서가 보장되지
+  않는다(실측에서는 Dart가 1초 빨랐으나 1회 관측이다). Dart가 `ready`를 보내고 Swift가
+  **50ms 폴링으로 최대 5초** 기다린다. `withCheckedContinuation`을 타임아웃과 경쟁시키면
+  타임아웃이 이겼을 때 깨어나지 못한 continuation이 남으므로 쓰지 않는다.
+- 넘기면 **실패를 말한다.** 조용히 빈 결과를 주지 않는다 — 사용자가 "등록됐다"고 믿는 것이
+  가장 나쁜 결과다.
+- 등록 후 **`schedulesProvider`만 무효화한다.** 등록은 `schedules`에만 넣고 캘린더 이벤트는
+  확정 시점에 생기므로 `eventsRevisionProvider`를 올릴 이유가 없다. 앱이 떠 있는 채로
+  단축어를 쓰면 같은 프로세스의 상태를 만지는 것이라, 이것을 빼면 목록이 그대로여서
+  사용자에게는 실패로 보인다.
+- **엔티티(`AppEntity`)를 만들지 않는다.** 조회를 인텐트로 두면 앱을 열지 않으면서 Dart가
+  답하므로, 엔티티가 주는 캐시 응답의 이점이 필요 없고 캐시 동기화라는 두 번째 진실
+  공급원만 남는다.
+- **iOS 배포 타깃이 13.0 → 16.0으로 올라갔다**(App Intents 최소 버전, 사용자 승인).
+  되돌릴 수 없다. `test/deploy/ios_deployment_target_test.dart`가 값을 고정한다.
+- 가드는 `test/core/app_intents/app_intents_wiring_test.dart` 6건 — 채널 이름 양방향 일치 ·
+  `openAppWhenRun` 부재 · 앱 타깃 등록(pbxproj) · Swift에 스키마 지식 부재.
+  - ⚠️ **가드는 주석을 걷어낸 코드만 본다.** `openAppWhenRun`을 쓰지 말라고 **설명하는
+    주석**이 금지어 검사에 걸려 정상인 코드가 실패했다 — 이 저장소가 다섯 번째로 밟은
+    "스캐너는 언급과 사용을 구별하지 못한다" 함정이다.
+  - ⚠️ 테이블 이름 `schedules`는 금지어에 넣지 않는다. 메서드 이름 `registerSchedules`와
+    대소문자만 달라 오탐과 헛통과가 함께 가능하다.
+- ⚠️ **시뮬레이터에서는 ad-hoc 서명으로 실행이 거부된다**(`Unable to get teamId`).
+  개발 인증서로 재서명해야 단축어가 동작한다. 설계·실험 기록은
+  `docs/superpowers/specs/2026-09-13-ios-app-intents-design.md`.
+
 ### iOS 공유시트 통합 (외부 앱에서 공직플랜으로 열기)
 - 카카오톡/메일/파일 앱에서 CSV 파일 공유 → 공유 목록에 "공직플랜" 노출 → 탭하면 Import 화면으로 자동 이동 + 즉시 파싱. 사용자가 "파일 선택" 탭 불필요.
 - `Info.plist`의 `CFBundleDocumentTypes` + `LSSupportsOpeningDocumentsInPlace`로 CSV UTI(`public.comma-separated-values-text` 등) 수신 선언. Share Extension은 불필요.
@@ -846,7 +898,7 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
    --grant-read-uri-permission`이 실제 공유와 같은 조건이다.
 
 ### 문자열 구조
-- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings).
+- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings·AppIntentsStrings).
 - 공통 문자열(appName·tab*·cancel·save·retry·loading·error·compareYearFormat·categoryDailyOps)만 `AppStrings`에 잔류.
 - `app_strings.dart`가 각 domain strings를 barrel export하므로 호출부는 이 파일 하나만 import 하면 된다.
 
@@ -1345,7 +1397,7 @@ transcript에 stderr **첫 줄만** 뜬다 — 그래서 경고 문구는 한 �
 ### `beta` 게이트가 보는 것과 보지 않는 것
 
 `flutter analyze` + **배포 가드 테스트만**(`test/deploy` + `data_source_credit_test`).
-실측 warm 10.2초. 전체 1097건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
+실측 warm 10.2초. 전체 1129건은 배포 리듬을 해쳐 뺐다 — **기능 회귀는 이 게이트가 잡지
 않는다**(의도된 한계). 릴리즈 노트가 없으면 **경고만** 한다: 레인이 의도적으로 막지 않는
 지점이라(M1 껍데기 업로드를 문구 작성에 걸리게 하지 않으려고) 훅이 그 설계를 뒤집지 않는다.
 
