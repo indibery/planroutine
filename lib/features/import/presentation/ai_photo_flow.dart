@@ -6,7 +6,7 @@ import '../../../shared/bulk_bar_snack.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../schedule/presentation/providers/schedule_providers.dart';
 import '../data/ai_schedule_parser.dart';
-import '../data/ai_schedule_register.dart';
+import '../data/ai_schedule_intake.dart';
 import '../../schedule/domain/entry_kind.dart';
 
 /// 사진 → AI → 붙여넣기 왕복 흐름의 두 동작.
@@ -45,57 +45,32 @@ Future<void> pasteAiSchedulesAndRegister(
   EntryKind kind = EntryKind.event,
 }) async {
   final data = await Clipboard.getData(Clipboard.kTextPlain);
-  final parsed = parseAiScheduleJson(data?.text ?? '');
+  final text = data?.text ?? '';
+  final repository = ref.read(scheduleRepositoryProvider);
+  final result = await intakeAiScheduleText(repository, text, kind: kind);
   if (!context.mounted) return;
-  if (parsed.items.isEmpty) {
+
+  if (result.created == 0 && result.dup == 0) {
     // **못 뽑은 것과 못 읽은 것을 구분한다.** 형식 오류만 있었다면 AI는 답을
     // 줬는데 우리가 못 받은 것이고, 사용자가 할 일이 다르다 — 다시 복사할
     // 게 아니라 AI에 다시 요청해야 한다.
     showBulkBarSnack(
       context,
-      parsed.invalidCount > 0
-          ? ImportStrings.aiParseAllInvalid(parsed.invalidCount)
+      result.invalid > 0
+          ? ImportStrings.aiParseAllInvalid(result.invalid)
           : ImportStrings.aiParseEmptyFor(kind),
     );
     return;
   }
 
-  // 기존 활성 일정(title+date)과 대조해 중복은 넣지 않는다.
-  final repository = ref.read(scheduleRepositoryProvider);
-  final existing = await repository.getSchedules();
-  final existingKeys = existing
-      .map((s) => '${s.title}|${s.scheduledDate}')
-      .toSet();
-  final seen = <String>{};
-  final fresh = <AiScheduleItem>[];
-  var dupCount = 0;
-  for (final item in parsed.items) {
-    final key = '${item.title}|${item.date}';
-    if (existingKeys.contains(key) || !seen.add(key)) {
-      dupCount++;
-    } else {
-      fresh.add(item);
-    }
-  }
-
-  final result = await registerAiSchedules(
-    repository,
-    fresh,
-    // ①에서 복사한 프롬프트와 **같은 종류**로 저장한다.
-    kind: kind,
-  );
   ref.invalidate(schedulesProvider);
-  if (!context.mounted) return;
   showBulkBarSnack(
     context,
     ImportStrings.aiRegisterSummary(
       kind,
       created: result.created,
-      // `insertConfirmedOrPending`이 한 번 더 걸러낸 건수(`skipped`)를 합친다.
-      // 빼면 우리 키 검사를 통과한 중복이 조용히 사라진다.
-      dup: dupCount + result.skipped,
-      skipped: parsed.invalidCount,
+      dup: result.dup,
+      skipped: result.invalid,
     ),
   );
 }
-
