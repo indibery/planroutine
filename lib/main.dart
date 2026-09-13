@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'core/app_intents/app_intents_bridge.dart';
 import 'core/dev/screenshot_seed.dart';
 import 'features/notifications/presentation/providers/notification_providers.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
@@ -15,6 +16,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final container = ProviderContainer();
+
+  // 단축어(App Intents) 채널을 **가장 먼저** 붙인다. 앱이 백그라운드로 떠서
+  // 인텐트를 처리하는 경로에서는 아래 초기화들이 끝나기 전에 호출이 도착할 수 있다.
+  if (AppIntentsBridge.isSupportedPlatform) {
+    try {
+      await AppIntentsBridge.attach(container);
+    } catch (_) {}
+  }
 
   // 30일 이상 경과한 휴지통 항목을 앱 시작 시 1회 영구 삭제한다.
   // 실패해도 앱 기동은 차단하지 않음.
