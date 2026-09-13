@@ -1134,6 +1134,11 @@ enum PlanRoutineBridge {
 
   /// Dart 준비를 기다린다. 이미 준비됐으면 즉시 통과한다.
   ///
+  /// ⚠️ **정정(구현 중 확인)**: 아래 `withTaskGroup` 판본은 쓰지 않는다. 타임아웃이
+  /// 먼저 끝나면 `waiters`에 남은 continuation이 깨어나지 못해 누수된다
+  /// (`withCheckedContinuation`은 취소를 인식하지 못하고 `cancelAll()`도 깨우지 않는다).
+  /// 실제 구현은 50ms 폴링이다 — `ios/Runner/AppIntents/PlanRoutineIntents.swift` 참고.
+  ///
   /// **상한은 5초다.** 실측에서 기동부터 Dart 준비까지 약 1초였고, 인텐트가
   /// 시스템에서 받는 시간이 약 30초이므로 그 안에 넉넉히 든다.
   static func waitUntilReady(timeout: TimeInterval = 5) async -> Bool {
@@ -1312,7 +1317,10 @@ struct PlanRoutineShortcuts: AppShortcutsProvider {
 
 - [ ] **Step 2: `AppDelegate`에서 messenger를 넘기고 `ready`를 받는다**
 
-`ios/Runner/AppDelegate.swift`의 `didFinishLaunchingWithOptions`에서 `GeneratedPluginRegistrant.register(with: self)` 다음에 넣는다.
+⚠️ **정정(구현 중 확인)**: 이 앱의 `AppDelegate`는 `FlutterImplicitEngineDelegate`를 구현하므로
+`didFinishLaunchingWithOptions`가 아니라 **`didInitializeImplicitFlutterEngine`** 안에 넣는다.
+기존 `planroutine/shared_file` 채널과 같은 자리이고, registrar도
+`engineBridge.pluginRegistry.registrar(forPlugin:)`로 얻는다.
 
 ```swift
     // 단축어(App Intents)가 Dart를 부를 통로를 잡아 둔다.
