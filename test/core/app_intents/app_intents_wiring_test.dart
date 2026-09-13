@@ -124,6 +124,20 @@ void main() {
       }
     });
 
+    test('시리 문구마다 앱 이름이 들어 있다', () {
+      // **애플의 제약이다** — 앱 이름이 빠진 문구는 컴파일도 안 되고, 사용자가
+      // 앱 이름 없이 말하면 시리가 자기 캘린더 명령으로 해석한다(실기기 확인).
+      // 문구를 늘릴 때 하나라도 빠뜨리면 그것만 조용히 죽는다.
+      final src = _swiftCodeOnly();
+      final phrases = RegExp(r'"\\\(\.applicationName\)[^"]*"').allMatches(src);
+
+      expect(
+        phrases.length,
+        greaterThanOrEqualTo(6),
+        reason: '문구가 너무 적다. 애플 권장은 액션당 3~5개다',
+      );
+    });
+
     test('종류 값이 EntryKind의 DB 값과 같다', () {
       // Swift가 넘기는 rawValue가 Dart의 `EntryKind.fromValue`와 맞아야 한다.
       // 어긋나면 폴백(업무)으로 조용히 떨어져 행사가 오늘 탭에 뜬다.

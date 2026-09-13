@@ -173,16 +173,35 @@ struct QuerySchedulesIntent: AppIntent {
 
 @available(iOS 16.0, *)
 struct PlanRoutineShortcuts: AppShortcutsProvider {
+  /// ⚠️ **모든 문구에 앱 이름(`applicationName`)이 들어가야 한다.** 애플의 제약이고
+  /// 빠지면 컴파일조차 안 된다. 그래서 사용자가 "일정 보기"라고만 말하면 시리는
+  /// 그것을 **자기 캘린더 명령으로 해석한다** — 앱에서 바꿀 수 없다.
+  ///
+  /// 문구를 여럿 두는 이유는 사람이 한 가지로만 말하지 않기 때문이다(애플 권장 3~5개).
+  /// 하나만 두면 그 표현을 정확히 맞혀야 한다.
+  ///
+  /// ⚠️ **문구는 정적 리터럴이어야 한다** — 문자열을 만들어 넣을 수 없다.
+  @AppShortcutsBuilder
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: QuerySchedulesIntent(),
-      phrases: ["\(.applicationName) 일정 보기"],
+      phrases: [
+        "\(.applicationName) 일정 보기",
+        "\(.applicationName) 일정 알려줘",
+        "\(.applicationName) 일정 확인",
+        "\(.applicationName)에서 일정 보기",
+      ],
       shortTitle: "일정 조회",
       systemImageName: "calendar"
     )
     AppShortcut(
       intent: RegisterSchedulesIntent(),
-      phrases: ["\(.applicationName)에 일정 등록"],
+      phrases: [
+        "\(.applicationName)에 일정 등록",
+        "\(.applicationName)에 일정 추가",
+        "\(.applicationName)에 일정 넣기",
+        "\(.applicationName) 일정 등록",
+      ],
       shortTitle: "일정 등록",
       systemImageName: "square.and.pencil"
     )

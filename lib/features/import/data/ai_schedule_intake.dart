@@ -1,5 +1,6 @@
 import '../../schedule/data/schedule_repository.dart';
 import '../../schedule/domain/entry_kind.dart';
+import '../../schedule/domain/schedule.dart';
 import 'ai_schedule_parser.dart';
 import 'ai_schedule_register.dart';
 
@@ -15,14 +16,20 @@ import 'ai_schedule_register.dart';
 ///     같은 텍스트 안의 중복도 여기 포함한다.
 ///   - `invalid` 파서가 형식 오류로 버린 건수. **AI에 다시 요청해야 하는 경우**라
 ///     `dup`과 섞으면 사용자가 할 일을 알 수 없다.
-Future<({int created, int dup, int invalid})> intakeAiScheduleText(
+///   - `ids` 실제로 삽입된 일정의 id. 확정으로 넣은 호출부가 이것으로 캘린더
+///     이벤트를 만든다. 중복으로 스킵된 것은 들어가지 않는다.
+///
+/// [status]의 기본값은 검토 대기다 — **화면 경로(히어로)의 동작을 바꾸지 않는다.**
+Future<({int created, int dup, int invalid, List<int> ids})>
+intakeAiScheduleText(
   ScheduleRepository repository,
   String text, {
   EntryKind kind = EntryKind.event,
+  ScheduleStatus status = ScheduleStatus.pending,
 }) async {
   final parsed = parseAiScheduleJson(text);
   if (parsed.items.isEmpty) {
-    return (created: 0, dup: 0, invalid: parsed.invalidCount);
+    return (created: 0, dup: 0, invalid: parsed.invalidCount, ids: const <int>[]);
   }
 
   // 기존 활성 일정(title+date)과 대조해 중복은 넣지 않는다.
@@ -42,7 +49,12 @@ Future<({int created, int dup, int invalid})> intakeAiScheduleText(
     }
   }
 
-  final result = await registerAiSchedules(repository, fresh, kind: kind);
+  final result = await registerAiSchedules(
+    repository,
+    fresh,
+    kind: kind,
+    status: status,
+  );
 
   return (
     created: result.created,
@@ -50,5 +62,6 @@ Future<({int created, int dup, int invalid})> intakeAiScheduleText(
     // 빼면 우리 키 검사를 통과한 중복이 조용히 사라진다.
     dup: dupCount + result.skipped,
     invalid: parsed.invalidCount,
+    ids: result.ids,
   );
 }

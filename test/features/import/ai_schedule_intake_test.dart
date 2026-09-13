@@ -9,6 +9,7 @@ import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/import/data/ai_schedule_intake.dart';
 import 'package:planroutine/features/schedule/data/schedule_repository.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
+import 'package:planroutine/features/schedule/domain/schedule.dart';
 
 import '../../helpers/test_database.dart';
 
@@ -93,5 +94,46 @@ void main() {
 
     final saved = await repo.getSchedules();
     expect(saved.every((s) => s.kind == EntryKind.task), isTrue);
+  });
+
+  group('상태를 고를 수 있다 — 단축어는 검토를 건너뛴다', () {
+    test('기본은 검토 대기다 — 화면 경로(히어로)의 동작을 바꾸지 않는다', () async {
+      await intakeAiScheduleText(repo, twoItems);
+
+      final saved = await repo.getSchedules();
+      expect(saved.every((s) => s.status == ScheduleStatus.pending), isTrue);
+    });
+
+    test('confirmed를 주면 확정으로 저장한다', () async {
+      await intakeAiScheduleText(
+        repo,
+        twoItems,
+        status: ScheduleStatus.confirmed,
+      );
+
+      final saved = await repo.getSchedules();
+      expect(saved, hasLength(2));
+      expect(saved.every((s) => s.status == ScheduleStatus.confirmed), isTrue);
+    });
+
+    test('넣은 일정의 id를 돌려준다 — 호출부가 캘린더 이벤트를 만들 수 있어야 한다', () async {
+      final result = await intakeAiScheduleText(
+        repo,
+        twoItems,
+        status: ScheduleStatus.confirmed,
+      );
+
+      expect(result.ids, hasLength(2));
+      final saved = await repo.getSchedules();
+      expect(result.ids.toSet(), saved.map((s) => s.id).toSet());
+    });
+
+    test('중복으로 걸러진 것은 id에 들어가지 않는다', () async {
+      await intakeAiScheduleText(repo, twoItems);
+      final second = await intakeAiScheduleText(repo, twoItems);
+
+      expect(second.created, 0);
+      expect(second.ids, isEmpty, reason: '넣지 않은 것의 id가 새면 없는 이벤트를 만든다');
+    });
   });
 }
