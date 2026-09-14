@@ -118,6 +118,54 @@ void main() {
       );
     });
 
+    test('법령 링크는 포털 루트가 아니라 개별 규정 페이지다', () {
+      // Play가 프로덕션 156을 거부했다(2026-09-15): `제공된 출처가 불충분함`.
+      // 규정을 인용했는데 링크가 law.go.kr 첫 화면이면 심사관에게는 출처가 아니다.
+      // ⚠️ 한글 경로(`/법령/…`)도 안 된다 — 콘솔이 ASCII 부분까지만 링크를 걸어
+      // 다시 루트에 떨어진다. 법제처가 프레임에 쓰는 `lsInfoP.do?lsiSeq=` ASCII 주소를 쓴다.
+      for (final (store, path) in _docs.entries.map((e) => (e.key, e.value))) {
+        final law = _urlsIn(
+          _sourceSection(path),
+        ).where((u) => u.contains('law.go.kr')).toList();
+
+        expect(law, isNotEmpty, reason: '$store 설명에 법령 링크가 없다');
+        for (final u in law) {
+          expect(
+            u,
+            matches(RegExp(r'^https://www\.law\.go\.kr/.+lsiSeq=\d+')),
+            reason:
+                '$store 설명의 법령 링크가 개별 규정 페이지가 아니다: $u — '
+                '루트나 한글 경로면 심사관이 규정을 못 본다',
+          );
+        }
+      }
+    });
+
+    test('에듀파인이 출처로 명시되고, 같은 항목에 접속하지 않는다는 문장이 있다', () {
+      // 같은 거부(156)의 핵심이다. 기능 설명에 "에듀파인 생산문서등록대장"이 나오는데
+      // 출처 절에 URL이 없으면 심사관은 "이름은 있는데 출처가 빠진 정보"로 읽는다.
+      // 심사 기준은 접속 여부가 아니라 **앱이 표시하는 정보의 출처**다.
+      // 예전 규칙("링크하면 연동으로 오해받으니 빼라")은 이 거부로 뒤집혔다 — 오해는
+      // URL 바로 아래 "접속하지 않는다" 문장으로 막는다. 둘이 한 항목에 있어야 한다.
+      for (final (store, path) in _docs.entries.map((e) => (e.key, e.value))) {
+        final section = _sourceSection(path);
+        final idx = section.indexOf('에듀파인');
+
+        expect(idx, greaterThanOrEqualTo(0), reason: '$store 출처 절에 에듀파인 항목이 없다');
+        final item = section.substring(idx, (idx + 400).clamp(0, section.length));
+        expect(
+          item,
+          matches(RegExp(r'https://www\.keris\.or\.kr/\S+')),
+          reason: '$store 에듀파인 항목에 운영기관(KERIS) URL이 없다',
+        );
+        expect(
+          item,
+          contains('접속하지 않'),
+          reason: '$store 에듀파인 항목에 "접속하지 않는다" 문장이 없다 — 연동 오해를 막는 절이다',
+        );
+      }
+    });
+
     test('호출하는 기관이 두 문서의 출처 절에 적혀 있다', () {
       final src = busApiClientSource();
 
