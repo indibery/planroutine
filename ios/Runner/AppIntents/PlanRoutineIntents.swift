@@ -119,7 +119,14 @@ struct RegisterSchedulesIntent: AppIntent {
   static var title: LocalizedStringResource = "일정 등록"
   static var description = IntentDescription("AI가 뽑은 일정 텍스트를 검토 목록에 넣습니다")
 
-  @Parameter(title: "일정 텍스트")
+  /// ⚠️ **필수 파라미터가 시리 경로의 급소다.** 문구에 값이 없으면 시리가 물어봐야
+  /// 하는데, 물어볼 말이 없으면 인텐트를 포기하고 **비슷한 시스템 명령(캘린더)으로
+  /// 샌다**(실기기 신고 2026-09-13: 조회는 앱을 찾는데 등록만 기기 캘린더로 갔다).
+  /// 조회 인텐트는 기간에 기본값이 있어 이 문제가 없다.
+  @Parameter(
+    title: "일정 텍스트",
+    requestValueDialog: "어떤 일정을 넣을까요? AI가 만든 목록을 붙여넣으셔도 됩니다"
+  )
   var text: String
 
   @Parameter(title: "종류", default: .event)
@@ -196,11 +203,14 @@ struct PlanRoutineShortcuts: AppShortcutsProvider {
     )
     AppShortcut(
       intent: RegisterSchedulesIntent(),
+      // ⚠️ **뒤의 둘은 `일정`이라는 낱말을 뺐다.** 시리가 우리 문구를 매칭하지 못하면
+      // 남은 단서인 `일정`으로 시스템 캘린더를 고르는 것으로 보인다 — 이 둘이 되고
+      // 앞의 둘이 안 되면 낱말이 원인이고, 넷 다 되면 로컬라이제이션이 원인이었다.
       phrases: [
         "\(.applicationName)에 일정 등록",
         "\(.applicationName)에 일정 추가",
-        "\(.applicationName)에 일정 넣기",
-        "\(.applicationName) 일정 등록",
+        "\(.applicationName)에 추가",
+        "\(.applicationName)에 넣어줘",
       ],
       shortTitle: "일정 등록",
       systemImageName: "square.and.pencil"
