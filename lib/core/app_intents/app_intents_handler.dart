@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/calendar/domain/schedule_digest.dart';
 import '../../features/calendar/presentation/providers/calendar_providers.dart';
+import '../../core/utils/date_utils.dart';
 import '../../features/import/data/ai_schedule_intake.dart';
+import '../../features/import/data/ai_schedule_parser.dart';
+import '../../features/import/data/ai_schedule_register.dart';
 import '../../features/schedule/domain/entry_kind.dart';
 import '../../features/schedule/domain/schedule.dart';
 import '../../features/schedule/presentation/providers/schedule_providers.dart';
@@ -29,6 +32,8 @@ class AppIntentsHandler {
         return _register(args);
       case AppIntentsContract.methodQuery:
         return _query(args);
+      case AppIntentsContract.methodAdd:
+        return _add(args);
       default:
         throw MissingPluginException('알 수 없는 App Intents 메서드: ${call.method}');
     }
@@ -58,22 +63,7 @@ class AppIntentsHandler {
       status: ScheduleStatus.confirmed,
     );
 
-    // 확정은 두 걸음이다 — 상태를 바꾸는 것과 캘린더 이벤트를 만드는 것.
-    // 화면 경로(`SchedulesNotifier`)도 같은 둘을 하고, 여기가 세 번째 호출부다.
-    final calendarRepository = _container.read(calendarRepositoryProvider);
-    for (final id in result.ids) {
-      await calendarRepository.createFromSchedule(id);
-    }
-
-    // 앱이 떠 있는 상태에서 단축어를 쓰면 **같은 프로세스의 상태를 만지는 것**이라,
-    // 이것을 빼면 화면이 그대로여서 사용자에게는 실패로 보인다.
-    _container.invalidate(schedulesProvider);
-    if (result.ids.isNotEmpty) {
-      _container.invalidate(monthEventsByYearMonthProvider);
-      _container.invalidate(selectedMonthEventsProvider);
-      // 오늘 탭이 watch하는 신호. 업무를 넣으면 그 화면도 바뀌어야 한다.
-      _container.read(eventsRevisionProvider.notifier).state++;
-    }
+    await _publishToCalendar(result.ids);
 
     if (result.created == 0 && result.dup == 0 && result.invalid > 0) {
       return ImportStrings.aiParseAllInvalid(result.invalid);
@@ -84,6 +74,60 @@ class AppIntentsHandler {
       dup: result.dup,
       invalid: result.invalid,
     );
+  }
+
+  /// 음성용. 제목과 날짜를 따로 받아 한 건을 확정으로 넣는다.
+  ///
+  /// [_register]와 달리 JSON을 거치지 않는다 — 시리가 `Date` 파라미터를 알아서
+  /// 풀어 주므로 Dart는 `YYYY-MM-DD` 하나만 받으면 된다. 삽입·중복 판정은
+  /// [registerAiSchedules]를 그대로 쓴다(항목 하나짜리 목록).
+  Future<String> _add(Map<String, Object?> args) async {
+    final title = (args[AppIntentsContract.argTitle] as String? ?? '').trim();
+    final rawDate = args[AppIntentsContract.argDate] as String?;
+    final parsedDate = rawDate == null ? null : DateTime.tryParse(rawDate);
+    if (title.isEmpty || parsedDate == null) {
+      // 조용히 빈 결과를 주지 않는다 — 시리 경로에서는 이 문구가 유일한 피드백이다.
+      return AppIntentsStrings.addInvalid;
+    }
+    final kind = args.containsKey(AppIntentsContract.argKind)
+        ? EntryKind.fromValue(args[AppIntentsContract.argKind] as String?)
+        : EntryKind.event;
+    // 시각이 붙어 와도 날짜만 취한다 — 이벤트는 날짜 단위다.
+    final date = formatDate(parsedDate);
+
+    final result = await registerAiSchedules(
+      _container.read(scheduleRepositoryProvider),
+      [AiScheduleItem(title: title, date: date, description: null)],
+      kind: kind,
+      status: ScheduleStatus.confirmed,
+    );
+    await _publishToCalendar(result.ids);
+
+    return result.created > 0
+        ? AppIntentsStrings.addDone(kind.label, title, date)
+        : AppIntentsStrings.addDuplicate(title);
+  }
+
+  /// 확정의 두 번째 걸음 — 캘린더 이벤트를 만들고 화면에 알린다.
+  ///
+  /// 화면 경로(`SchedulesNotifier`)도 같은 일을 하고, 단축어의 두 등록 경로가
+  /// 여기로 모인다. 등록 경로가 늘 때 이 둘 중 하나를 빠뜨리면 데이터는 들어갔는데
+  /// 캘린더에 없거나, 캘린더에는 있는데 화면이 그대로인 상태가 된다.
+  Future<void> _publishToCalendar(List<int> scheduleIds) async {
+    final calendarRepository = _container.read(calendarRepositoryProvider);
+    for (final id in scheduleIds) {
+      await calendarRepository.createFromSchedule(id);
+    }
+
+    // 앱이 떠 있는 상태에서 단축어를 쓰면 **같은 프로세스의 상태를 만지는 것**이라,
+    // 이것을 빼면 화면이 그대로여서 사용자에게는 실패로 보인다.
+    _container.invalidate(schedulesProvider);
+    if (scheduleIds.isNotEmpty) {
+      _container.invalidate(monthEventsByYearMonthProvider);
+      _container.invalidate(selectedMonthEventsProvider);
+      // 오늘 탭이 watch하는 신호. 업무를 넣으면 그 화면도 바뀌어야 한다.
+      _container.read(eventsRevisionProvider.notifier).state++;
+    }
   }
 
   Future<String> _query(Map<String, Object?> args) async {

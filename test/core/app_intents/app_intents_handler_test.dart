@@ -11,6 +11,7 @@ import 'package:planroutine/core/app_intents/app_intents_handler.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/calendar/data/calendar_repository.dart';
+import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/calendar/presentation/providers/calendar_providers.dart';
 import 'package:planroutine/features/schedule/data/schedule_repository.dart';
 import 'package:planroutine/features/schedule/domain/entry_kind.dart';
@@ -223,6 +224,89 @@ void main() {
           .read(calendarRepositoryProvider)
           .getEventsByDateRange(DateTime(2026, 10, 1), DateTime(2026, 12, 31));
       expect(events, hasLength(2), reason: '같은 텍스트를 두 번 넣어도 2건이어야 한다');
+    });
+  });
+
+  group('음성용 추가 — 제목과 날짜를 따로 받는다', () {
+    // 시리로는 JSON을 말할 수 없다. 시리가 "제목?" "언제?"를 따로 묻고 날짜는
+    // Date 타입으로 알아서 풀어 주므로, Dart는 YYYY-MM-DD 문자열 하나만 받는다.
+
+    Future<Object?> add({
+      String? title = '교직원 회의',
+      String? date = '2026-10-15',
+      String? kind,
+    }) => handler.handle(
+      MethodCall(AppIntentsContract.methodAdd, {
+        AppIntentsContract.argTitle: ?title,
+        AppIntentsContract.argDate: ?date,
+        AppIntentsContract.argKind: ?kind,
+      }),
+    );
+
+    Future<List<CalendarEvent>> octoberEvents() => container
+        .read(calendarRepositoryProvider)
+        .getEventsByDateRange(DateTime(2026, 10, 1), DateTime(2026, 10, 31));
+
+    test('확정으로 넣고 캘린더 이벤트를 만든다', () async {
+      final reply = await add() as String;
+
+      final events = await octoberEvents();
+      expect(events, hasLength(1));
+      expect(events.single.title, '교직원 회의');
+      expect(events.single.eventDate, '2026-10-15');
+      expect(reply, contains('교직원 회의'));
+      expect(reply, contains('캘린더'));
+    });
+
+    test('검토 목록에는 남지 않는다', () async {
+      await add();
+
+      final pending = await container
+          .read(scheduleRepositoryProvider)
+          .getSchedules(status: ScheduleStatus.pending);
+      expect(pending, isEmpty);
+    });
+
+    test('종류를 승계한다 — 업무로 넣으면 오늘 탭 대상이 된다', () async {
+      await add(kind: 'task');
+
+      final events = await octoberEvents();
+      expect(events.single.kind, EntryKind.task);
+    });
+
+    test('kind가 없으면 행사다', () async {
+      await add();
+
+      expect((await octoberEvents()).single.kind, EntryKind.event);
+    });
+
+    test('같은 제목·날짜는 중복으로 막고 그렇게 말한다', () async {
+      await add();
+      final reply = await add() as String;
+
+      expect(await octoberEvents(), hasLength(1));
+      expect(reply, contains('이미'));
+    });
+
+    test('제목이 비면 넣지 않고 다시 말해달라고 한다', () async {
+      final reply = await add(title: '   ') as String;
+
+      expect(await octoberEvents(), isEmpty);
+      expect(reply, contains('다시'));
+    });
+
+    test('날짜가 깨지면 넣지 않는다', () async {
+      final reply = await add(date: '내일') as String;
+
+      expect(await octoberEvents(), isEmpty);
+      expect(reply, contains('다시'));
+    });
+
+    test('시각이 붙은 ISO 날짜도 날짜만 취한다', () async {
+      // Swift가 Date를 보내면서 시각을 실어도 이벤트는 날짜 단위다.
+      await add(date: '2026-10-15T09:30:00');
+
+      expect((await octoberEvents()).single.eventDate, '2026-10-15');
     });
   });
 }

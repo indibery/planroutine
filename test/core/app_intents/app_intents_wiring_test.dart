@@ -41,6 +41,9 @@ void main() {
         '텍스트 인자': AppIntentsContract.argText,
         '종류 인자': AppIntentsContract.argKind,
         '기간 인자': AppIntentsContract.argRange,
+        '음성 추가 메서드': AppIntentsContract.methodAdd,
+        '제목 인자': AppIntentsContract.argTitle,
+        '날짜 인자': AppIntentsContract.argDate,
       };
 
       for (final entry in shared.entries) {
@@ -135,6 +138,27 @@ void main() {
         phrases.length,
         greaterThanOrEqualTo(6),
         reason: '문구가 너무 적다. 애플 권장은 액션당 3~5개다',
+      );
+    });
+
+    test('음성 추가 문구에는 `일정`이 없다 — 캘린더 앱이 소유한 낱말이다', () {
+      // 실기기(2026-09-14): `공직플랜에 일정 등록`은 앱 이름을 붙여도 기기 캘린더로
+      // 갔다. 이름을 묻고 날짜를 묻는 두 단계 흐름은 캘린더의 것이었다 — 우리 인텐트는
+      // 그때 파라미터가 하나라 두 번째 질문을 할 수 없었다.
+      final src = _swiftCodeOnly();
+      final addBlock = src.substring(
+        src.indexOf('intent: AddScheduleIntent()'),
+        src.indexOf('intent: RegisterSchedulesIntent()'),
+      );
+      expect(
+        addBlock,
+        isNot(contains('일정')),
+        reason: '음성 추가 문구가 `일정`을 쓰면 시리가 캘린더 앱으로 보낸다',
+      );
+      expect(
+        addBlock,
+        contains(r'\(\.$kind)'),
+        reason: '업무·행사 낱말 자리(kind)가 문구에 있어야 도메인이 잡힌다',
       );
     });
 

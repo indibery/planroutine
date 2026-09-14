@@ -32,6 +32,14 @@ abstract final class AppIntentsStrings {
     if (invalid > 0) '형식이 어긋난 $invalid건 제외',
   ].join(' · ');
 
+  /// 음성용 `일정 추가` 결과. 한 건이므로 건수 대신 제목을 말한다.
+  static String addDone(String kindLabel, String title, String date) =>
+      '$date에 $kindLabel \'$title\'을(를) 캘린더에 넣었어요';
+
+  static String addDuplicate(String title) => '\'$title\'은(는) 그 날짜에 이미 있어요';
+
+  static const addInvalid = '제목이나 날짜를 알아듣지 못했어요. 다시 말씀해 주세요';
+
   /// Dart가 준비되기 전에 인텐트가 도착했을 때. **조용히 빈 결과를 주지 않는다** —
   /// 사용자가 "등록됐다"고 믿는 것이 가장 나쁜 결과다.
   static const notReady = '앱이 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요';

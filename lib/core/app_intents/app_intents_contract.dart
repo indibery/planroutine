@@ -13,6 +13,10 @@ abstract final class AppIntentsContract {
   static const methodRegister = 'registerSchedules';
   static const methodQuery = 'querySchedules';
 
+  /// 음성용 — 제목과 날짜를 따로 받는다. [methodRegister]는 AI가 만든 JSON을
+  /// 받는 것이라 시리로는 부를 수 없다(JSON을 말할 수는 없다).
+  static const methodAdd = 'addSchedule';
+
   /// Dart → Swift. 핸들러 등록이 끝났음을 알린다.
   /// **이 신호가 없으면 Swift는 인텐트를 처리하지 않고 기다린다** —
   /// 앱이 꺼진 상태에서 기동과 인텐트 실행의 순서가 보장되지 않기 때문이다.
@@ -21,4 +25,8 @@ abstract final class AppIntentsContract {
   static const argText = 'text';
   static const argKind = 'kind';
   static const argRange = 'range';
+  static const argTitle = 'title';
+
+  /// `YYYY-MM-DD`. Swift가 기기 시간대 기준으로 만들어 보낸다.
+  static const argDate = 'date';
 }

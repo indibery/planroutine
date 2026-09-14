@@ -11,10 +11,13 @@ enum PlanRoutineChannel {
   static let name = "planroutine/app_intents"
   static let register = "registerSchedules"
   static let query = "querySchedules"
+  static let add = "addSchedule"
   static let ready = "ready"
   static let argText = "text"
   static let argKind = "kind"
   static let argRange = "range"
+  static let argTitle = "title"
+  static let argDate = "date"
 }
 
 // MARK: - Dart 다리
@@ -151,6 +154,56 @@ struct RegisterSchedulesIntent: AppIntent {
   }
 }
 
+/// 음성용. 제목과 날짜를 **따로** 받는다.
+///
+/// [RegisterSchedulesIntent]는 AI가 만든 JSON을 받는 것이라 시리로는 부를 수 없다 —
+/// JSON을 말할 수는 없다. 이쪽은 시리가 "제목?" "언제?"를 차례로 묻고, 날짜는
+/// `Date` 타입이라 "내일"·"다음 주 월요일"을 시리가 알아서 풀어 준다.
+///
+/// ⚠️ **문구에 `일정`을 쓰지 않는다.** 한국어 시리에서 `일정 등록`·`일정 추가`는
+/// 캘린더 앱이 소유한 명령이라 앱 이름을 붙여도 캘린더가 이긴다(실기기 2026-09-14:
+/// 이름을 묻고 날짜를 묻고 기기 캘린더에 넣었다 — 우리 인텐트는 파라미터가
+/// 하나라 두 번째 질문을 할 수 없으므로 그 흐름 자체가 캘린더의 것이었다).
+/// 반대로 `추가`·`넣어줘`만 남기면 일기 앱이 가져간다. 이 앱의 자기 용어인
+/// **업무·행사**는 두 시스템 앱 어느 쪽도 잡고 있지 않다.
+@available(iOS 16.0, *)
+struct AddScheduleIntent: AppIntent {
+  static var title: LocalizedStringResource = "업무·행사 추가"
+  static var description = IntentDescription("제목과 날짜를 말하면 캘린더에 바로 넣습니다")
+
+  @Parameter(title: "제목", requestValueDialog: "무엇을 넣을까요?")
+  var title: String
+
+  @Parameter(title: "날짜", requestValueDialog: "언제인가요?")
+  var date: Date
+
+  @Parameter(title: "종류", default: .event)
+  var kind: ScheduleKindOption
+
+  static var parameterSummary: some ParameterSummary {
+    Summary("\(\.$date)에 \(\.$title)을(를) \(\.$kind)(으)로 추가")
+  }
+
+  func perform() async throws -> some IntentResult & ProvidesDialog {
+    guard await PlanRoutineBridge.waitUntilReady() else {
+      return .result(dialog: "앱이 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요")
+    }
+    // 기기 시간대 기준 날짜만 보낸다. Dart는 YYYY-MM-DD 문자열로 비교한다.
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "yyyy-MM-dd"
+    let reply = await PlanRoutineBridge.call(
+      PlanRoutineChannel.add,
+      arguments: [
+        PlanRoutineChannel.argTitle: title,
+        PlanRoutineChannel.argDate: formatter.string(from: date),
+        PlanRoutineChannel.argKind: kind.rawValue,
+      ]
+    )
+    return .result(dialog: IntentDialog(stringLiteral: reply ?? "넣지 못했어요"))
+  }
+}
+
 /// 기간을 받아 일정 목록을 텍스트로 돌려준다.
 @available(iOS 16.0, *)
 struct QuerySchedulesIntent: AppIntent {
@@ -181,11 +234,15 @@ struct QuerySchedulesIntent: AppIntent {
 @available(iOS 16.0, *)
 struct PlanRoutineShortcuts: AppShortcutsProvider {
   /// ⚠️ **모든 문구에 앱 이름(`applicationName`)이 들어가야 한다.** 애플의 제약이고
-  /// 빠지면 컴파일조차 안 된다. 그래서 사용자가 "일정 보기"라고만 말하면 시리는
-  /// 그것을 **자기 캘린더 명령으로 해석한다** — 앱에서 바꿀 수 없다.
+  /// 빠지면 컴파일조차 안 된다.
   ///
-  /// 문구를 여럿 두는 이유는 사람이 한 가지로만 말하지 않기 때문이다(애플 권장 3~5개).
-  /// 하나만 두면 그 표현을 정확히 맞혀야 한다.
+  /// **시리는 문구를 글자로 맞추지 않고 뜻으로 해석하며, 앱 이름보다 동작 명사를
+  /// 더 무겁게 본다.** 그래서 낱말 선택이 라우팅을 정한다(실기기 2026-09-14):
+  ///   - `일정 등록`·`일정 추가` → 캘린더 앱이 소유. 앱 이름을 붙여도 그쪽으로 간다
+  ///   - `추가`·`넣어줘`만 → 일기 앱이 가져간다
+  ///   - `일정 보기` → 우리에게 온다(캘린더가 강하게 잡지 않는 표현)
+  /// 등록 쪽은 이 앱의 자기 용어 **업무·행사**를 쓴다. `\(\.$kind)`가 그 낱말 자리이고
+  /// 시리가 들은 낱말로 종류까지 채운다.
   ///
   /// ⚠️ **문구는 정적 리터럴이어야 한다** — 문자열을 만들어 넣을 수 없다.
   @AppShortcutsBuilder
@@ -202,17 +259,22 @@ struct PlanRoutineShortcuts: AppShortcutsProvider {
       systemImageName: "calendar"
     )
     AppShortcut(
-      intent: RegisterSchedulesIntent(),
-      // ⚠️ **뒤의 둘은 `일정`이라는 낱말을 뺐다.** 시리가 우리 문구를 매칭하지 못하면
-      // 남은 단서인 `일정`으로 시스템 캘린더를 고르는 것으로 보인다 — 이 둘이 되고
-      // 앞의 둘이 안 되면 낱말이 원인이고, 넷 다 되면 로컬라이제이션이 원인이었다.
+      intent: AddScheduleIntent(),
       phrases: [
-        "\(.applicationName)에 일정 등록",
-        "\(.applicationName)에 일정 추가",
-        "\(.applicationName)에 추가",
-        "\(.applicationName)에 넣어줘",
+        "\(.applicationName)에 \(\.$kind) 추가",
+        "\(.applicationName)에 \(\.$kind) 등록",
+        "\(.applicationName) \(\.$kind) 추가",
+        "\(.applicationName)에 \(\.$kind) 넣어줘",
       ],
-      shortTitle: "일정 등록",
+      shortTitle: "업무·행사 추가",
+      systemImageName: "plus.circle"
+    )
+    // AI 목록(JSON) 등록은 음성으로 부를 일이 없다 — 단축어 앱에서 공유 시트 입력을
+    // 이어 붙일 때 쓴다. 타일에는 남기되 실수로 말할 일 없는 문구 하나만 둔다.
+    AppShortcut(
+      intent: RegisterSchedulesIntent(),
+      phrases: ["\(.applicationName)에 AI 목록 등록"],
+      shortTitle: "AI 목록 등록",
       systemImageName: "square.and.pencil"
     )
   }
