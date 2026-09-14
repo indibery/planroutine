@@ -18,7 +18,7 @@
 | **내보내기** | 확정된 일정을 UTF-8 BOM CSV로 공유 |
 | **캘린더 연동** | Google 캘린더 / 기기 캘린더로 단방향 이벤트 저장(중복 방지) |
 | **로컬 알림** | 이번 주(월요일)·당일 아침 08:00 알림 |
-| **아이폰 단축어(App Intents)** | `일정 등록`·`일정 조회`를 단축어·시리에 노출. **둘 다 앱이 화면에 뜨지 않는다** — AI 앱 답변을 그대로 넘기면 **캘린더에 바로** 들어가고, 기간을 골라 일정 목록을 텍스트로 받는다. iOS 16.0+ |
+| **아이폰 단축어(App Intents)** | `일정 조회`·`업무·행사 추가`(음성)·`AI 목록 등록`(단축어 앱용)을 노출. **둘 다 앱이 화면에 뜨지 않는다** — AI 앱 답변을 그대로 넘기면 **캘린더에 바로** 들어가고, 기간을 골라 일정 목록을 텍스트로 받는다. iOS 16.0+ |
 | **화면 테마** | 시스템/밝게/어둡게 — 다크(네이비+골드) / 라이트(쿨 미스트 화이트) |
 
 ## 기술 스택
@@ -29,7 +29,7 @@
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
 - **google_sign_in + googleapis**(Google Calendar) · **flutter_local_notifications + timezone**
 - **App Intents**(Swift, 앱 타깃 직접 구현 — 패키지 없음) — iOS 배포 타깃 **16.0**
-- 테스트: flutter_test(유닛/위젯 **1142**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
+- 테스트: flutter_test(유닛/위젯 **1151**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
 
 ## 시작하기
 
