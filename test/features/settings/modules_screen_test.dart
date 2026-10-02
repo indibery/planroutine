@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,7 +119,7 @@ void main() {
 
   testWidgets('탭이 6개면 꺼진 탭형 스위치가 비활성이고 안내가 뜬다', (tester) async {
     await _pump(tester, installed: ['t1', 't2']);
-    final sw = tester.widget<Switch>(
+    final sw = tester.widget<SwitchListTile>(
       find.byKey(ModulesScreen.switchKey('t3')),
     );
     expect(sw.onChanged, isNull);
@@ -126,13 +127,13 @@ void main() {
     // 켜져 있는 탭형과 카드형은 계속 누를 수 있다
     expect(
       tester
-          .widget<Switch>(find.byKey(ModulesScreen.switchKey('t1')))
+          .widget<SwitchListTile>(find.byKey(ModulesScreen.switchKey('t1')))
           .onChanged,
       isNotNull,
     );
     expect(
       tester
-          .widget<Switch>(
+          .widget<SwitchListTile>(
             find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
           )
           .onChanged,
@@ -176,67 +177,82 @@ void main() {
     expect(ids.last, ModuleIds.settings);
   });
 
-  testWidgets('꺼진 기능 행에는 ›가 없고 눌러도 상세로 가지 않는다', (tester) async {
+  testWidgets('꺼진 기능에는 상세 설정 줄이 없고, 행을 누르면 켜진다', (tester) async {
     await _pumpRouted(tester);
-    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsNothing);
-    await tester.tap(find.byKey(ModulesScreen.rowKey(ModuleIds.bus)));
+    expect(find.byKey(ModulesScreen.settingsKey(ModuleIds.bus)), findsNothing);
+    // 행 전체가 스위치다 — 이름을 눌러도 켜진다(앱의 다른 스위치 행과 같다)
+    await tester.tap(find.text(BusStrings.moduleName));
     await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
+          )
+          .value,
+      isTrue,
+    );
     expect(find.text('버스상세'), findsNothing);
   });
 
-  testWidgets('켜면 ›가 생기고 부제가 기능의 요약으로 바뀐다', (tester) async {
+  testWidgets('켜면 아래에 상세 설정 줄이 생기고 기능의 요약을 보인다', (tester) async {
     await _pumpRouted(tester);
     expect(find.text(BusStrings.summaryNoStop), findsNothing);
     await tester.tap(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)));
     await tester.pumpAndSettle();
-    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsOneWidget);
+    final settings = find.byKey(ModulesScreen.settingsKey(ModuleIds.bus));
+    expect(settings, findsOneWidget);
     // 정류장이 없으니 다음 행동을 알린다 — 화면은 옮기지 않는다
-    expect(find.text(BusStrings.summaryNoStop), findsOneWidget);
+    expect(
+      find.descendant(of: settings, matching: find.text(BusStrings.summaryNoStop)),
+      findsOneWidget,
+    );
     expect(find.text('버스상세'), findsNothing);
+    // 기능 행 바로 아래에 붙는다 — 두 버튼이 위아래로 떨어진다
+    final row = tester.getRect(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)));
+    expect(tester.getRect(settings).top, greaterThanOrEqualTo(row.bottom));
   });
 
-  testWidgets('켜진 행을 누르면 상세 설정 화면으로 간다', (tester) async {
+  testWidgets('상세 설정 줄을 누르면 상세 화면으로 간다', (tester) async {
     await _pumpRouted(tester, installed: [ModuleIds.bus]);
-    await tester.tap(find.byKey(ModulesScreen.rowKey(ModuleIds.bus)));
+    await tester.tap(find.byKey(ModulesScreen.settingsKey(ModuleIds.bus)));
     await tester.pumpAndSettle();
     expect(find.text('버스상세'), findsOneWidget);
   });
 
-  testWidgets('스위치를 눌러도 상세로 가지 않는다 — 스위치는 켜고 끄기만 한다', (tester) async {
+  testWidgets('기능 행을 눌러도 상세로 가지 않는다 — 켜고 끄기만 한다', (tester) async {
     await _pumpRouted(tester, installed: [ModuleIds.bus]);
     await tester.tap(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)));
     await tester.pumpAndSettle();
     expect(find.text('버스상세'), findsNothing);
-    // 그리고 실제로 꺼졌다 — ›도 함께 사라진다
+    // 그리고 실제로 꺼졌다 — 상세 설정 줄도 함께 사라진다
     expect(
       tester
-          .widget<Switch>(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)))
+          .widget<SwitchListTile>(
+            find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
+          )
           .value,
       isFalse,
     );
-    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsNothing);
+    expect(find.byKey(ModulesScreen.settingsKey(ModuleIds.bus)), findsNothing);
   });
 
-  testWidgets('상세 설정이 없는 기능은 켜도 ›가 없고 눌러도 이동하지 않는다', (tester) async {
+  testWidgets('상세 설정이 없는 기능은 켜도 상세 설정 줄이 없다', (tester) async {
     // t1은 settingsRoute가 없는 테스트용 탭형 기능이다
     await _pumpRouted(tester, installed: ['t1']);
+    expect(find.byKey(ModulesScreen.settingsKey('t1')), findsNothing);
     expect(find.byKey(ModulesScreen.chevronKey('t1')), findsNothing);
-    await tester.tap(find.byKey(ModulesScreen.rowKey('t1')));
-    await tester.pumpAndSettle();
-    expect(find.byType(ModulesScreen), findsOneWidget);
   });
 
-  testWidgets('스위치가 기능 이름으로 읽힌다 — 행과 스위치가 갈려도 무엇을 켜는지 안다', (
-    tester,
-  ) async {
-    // SwitchListTile은 행 전체를 한 노드로 묶어 이름과 스위치를 함께 읽혔다. 행과
-    // 스위치를 가르면 스위치만 따로 포커스되므로 이름을 스위치에 직접 붙여야 한다.
+  testWidgets('스위치가 기능 이름과 함께 읽힌다 — 무엇을 켜는지 안다', (tester) async {
+    // 행 전체를 한 노드로 묶는 SwitchListTile이라 이름·설명·스위치가 함께 읽힌다.
     final handle = tester.ensureSemantics();
     await _pump(tester);
-    expect(
-      tester.getSemantics(find.byKey(ModulesScreen.switchKey(ModuleIds.bus))),
-      isSemantics(label: BusStrings.moduleName, hasToggledState: true),
+    final node = tester.getSemantics(
+      find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
     );
+    expect(node.label, contains(BusStrings.moduleName));
+    // 스위치의 켜짐 상태가 같은 노드에 묶여 있다 — 이름과 상태를 한 번에 읽는다.
+    expect(node.getSemanticsData().flagsCollection.isToggled, isNot(Tristate.none));
     handle.dispose();
   });
 

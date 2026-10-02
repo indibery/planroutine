@@ -86,7 +86,7 @@ void main() {
         await tester.tap(finder);
         await tester.pumpAndSettle();
 
-        final sw = tester.widget<Switch>(finder);
+        final sw = tester.widget<SwitchListTile>(finder);
         final theme = Theme.of(tester.element(finder));
         const selected = {WidgetState.selected};
 
@@ -117,7 +117,7 @@ void main() {
       final finder = find.byKey(ModulesScreen.switchKey(ModuleIds.bus));
       await tester.tap(finder);
       await tester.pumpAndSettle();
-      expect(tester.widget<Switch>(finder).value, isTrue);
+      expect(tester.widget<SwitchListTile>(finder).value, isTrue);
     });
   });
 

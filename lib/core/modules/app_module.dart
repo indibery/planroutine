@@ -66,9 +66,9 @@ class AppModule {
   /// (`settings_tab_module_rows_test.dart`가 지킨다).
   final String? settingsRoute;
 
-  /// 켜진 행의 부제 — 기능이 스스로 상태를 요약한다(예: 정류장 2곳). null이면
-  /// [description]을 쓴다. 위젯으로 두는 이유는 [card]와 같다: 기능 관리 화면이
-  /// 각 기능의 내부 상태를 몰라도 된다.
+  /// 켜진 기능 아래 `상세 설정` 줄의 오른쪽 요약 — 기능이 스스로 상태를 말한다
+  /// (예: 정류장 2곳). null이면 요약 없이 `›`만 둔다. 위젯으로 두는 이유는 [card]와
+  /// 같다: 기능 관리 화면이 각 기능의 내부 상태를 몰라도 된다.
   final Widget? settingsSummary;
 }
 

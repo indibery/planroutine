@@ -36,6 +36,10 @@ class AppSizes {
 
   // ── 디자인 시스템 토큰 ───────────────────────────────────
   static const pagePadding = 20.0;
+
+  /// 기능 관리의 `상세 설정` 줄 들여쓰기 — 위 기능 행의 제목 글자 시작점에 맞춘다.
+  /// ListTile 기본 여백 16 + 아이콘 24 + 아이콘·제목 간격 16.
+  static const moduleSettingsIndent = 56.0;
   static const cardPadding = 16.0;
   static const cardGap = 8.0;
   static const sectionGap = 24.0;

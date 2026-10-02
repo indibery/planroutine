@@ -29,6 +29,8 @@ class SettingsStrings {
   static const modulesEmpty = '아직 추가할 수 있는 기능이 없어요';
   static const placementTab = '탭';
   static const placementTodayCard = '오늘 카드';
+  /// 켜진 기능 아래 붙는 상세 화면 입구. 기능 이름을 다시 적지 않는다 — 바로 위 행이 말한다.
+  static const moduleSettings = '상세 설정';
   static String modulesTabCount(int n, int max) => '$n/$max';
   static String modulesTabsFull(int max) => '탭이 가득 찼어요 ($max/$max)';
   static String modulesSummary(int n) => n == 0 ? '추가한 기능 없음' : '$n개 사용 중';
