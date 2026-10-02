@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/bus/presentation/widgets/bus_card_host.dart';
+import '../../features/bus/presentation/widgets/bus_module_summary.dart';
 import '../constants/app_strings.dart';
 import '../router/app_router.dart';
 import 'app_module.dart';
@@ -82,5 +83,6 @@ const moduleCatalog = <AppModule>[
     placement: ModulePlacement.todayCard,
     card: BusCardHost(),
     settingsRoute: AppRoutes.busSettings,
+    settingsSummary: BusModuleSummary(),
   ),
 ];

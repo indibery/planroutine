@@ -8,7 +8,6 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/app_info_list_tile.dart';
-import '../widgets/bus_summary_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
 import '../widgets/export_list_tile.dart';
 import '../widgets/modules_list_tile.dart';
@@ -72,7 +71,6 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSection(child: ThemeModeTile()),
           const SettingsSection(child: ModulesListTile()),
           const SettingsSection(child: StampSettingsTiles()),
-          const SettingsSection(child: BusSummaryListTile()),
           const SettingsSection(child: ExportListTile()),
           if (AppFeatures.googleCalendarEnabled)
             const CalendarIntegrationSection(),

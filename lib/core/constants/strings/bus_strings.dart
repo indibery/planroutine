@@ -29,14 +29,13 @@ class BusStrings {
   static const rangeOverlap = '출근과 퇴근 시간대가 겹칩니다';
   static const rangeInverted = '시작이 종료보다 빠르게 두세요';
 
-  // ── 설정 탭 요약 한 줄 ─────────────────────────────────────
-  /// 설정 탭에서 버스 섹션이 차지하던 여섯 줄을 대신하는 한 줄.
+  // ── 기능 관리 행 요약 ─────────────────────────────────────
+  /// 켜진 버스 행의 부제. 켜짐·꺼짐은 바로 옆 스위치가 말하므로 여기 적지 않는다.
   ///
   /// **정류장 이름을 넣지 않는다.** `우방아파트→중앙공원`은 320pt에서 넘친다.
   /// 이름은 상세 화면 안에서 본다.
-  static const summaryOff = '꺼짐';
-  static const summaryNoStop = '켜짐 · 정류장 없음';
-  static String summaryStops(int n) => '켜짐 · $n곳';
+  static const summaryNoStop = '정류장을 등록해 주세요';
+  static String summaryStops(int n) => '정류장 $n곳';
 
   // ── 카드 ───────────────────────────────────────────────────
   /// 카드 제목줄의 방향 표시 — **이모지와 글자를 나눠 둔다.**

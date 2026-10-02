@@ -9,7 +9,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/modules/installed_modules_provider.dart';
 import '../../../../core/router/app_router.dart';
 
-/// 설정 탭의 `기능 관리` 한 줄. 모양은 `BusSummaryListTile`과 같다
+/// 설정 탭의 `기능 관리` 한 줄. 모양은 `TrashListTile`과 같다
 /// (아이콘 + 제목 + 현재 상태 + chevron).
 class ModulesListTile extends ConsumerWidget {
   const ModulesListTile({super.key});
