@@ -44,9 +44,14 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 > 존재만 보고 탭 동작을 안 봐서 놓침. [[feedback-simulator-before-deploy]])
 >
 > **디바이스: iPhone 시뮬레이터 기준** — 공직플랜은 iPhone 전용 감각의 앱. 이미 부팅된
-> iPad가 있어도 그걸로 때우지 말고 **iPhone 시뮬로 검증**한다(예: iPhone 17
-> `7FF7798F-1FC4-4DBF-80D8-FB8DD2611663`). iPad는 share 팝오버 등 iPad 고유 케이스를
-> 볼 때만 보조로.
+> iPad가 있어도 그걸로 때우지 말고 **iPhone 시뮬로 검증**한다(예: iPhone 17 / iOS 27.0
+> `832373BE-F5D2-4FDE-BCF7-65A9D8CD6592`. iOS 26.5 런타임은 2026-10-02 용량 정리로
+> 삭제됐다). iPad는 share 팝오버 등 iPad 고유 케이스를 볼 때만 보조로.
+>
+> ⚠️ **iOS 27에서는 mobile MCP가 UI를 못 읽는다**(에이전트 0.0.33이 `timed out
+> waiting for WebDriverAgent`로 멈춘다, 2026-10-02 실측). UI 트리·탭은 **xcodebuild
+> MCP**(`snapshot_ui`·`tap`)로 한다 — 재부팅 직후에는 홈 화면이 다 올라올 때까지
+> `Timed out creating the simulator remote automation session`이 나올 수 있다.
 
 > **[필수] 검증이 끝나면 시뮬레이터·에뮬레이터를 끄고 레인을 시작한다** —
 > `xcrun simctl shutdown all`(안드로이드는 에뮬레이터 창을 닫는다). 바로 위 런타임 확인이
