@@ -2,13 +2,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/modules/app_module.dart';
 import 'package:planroutine/core/modules/installed_modules_provider.dart';
 import 'package:planroutine/core/modules/module_catalog.dart';
 import 'package:planroutine/core/modules/module_rules.dart';
+import 'package:planroutine/core/router/app_router.dart';
 import 'package:planroutine/features/settings/presentation/screens/modules_screen.dart';
-import 'package:planroutine/features/settings/presentation/widgets/bus_settings_tiles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/module_prefs.dart';
@@ -62,6 +63,35 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
+/// 행을 눌렀을 때의 이동을 보려고 라우터를 단다. 상세 화면 자리에는 표식만 둔다.
+Future<void> _pumpRouted(
+  WidgetTester tester, {
+  List<String> installed = const [],
+}) async {
+  SharedPreferences.setMockInitialValues(modulePrefs(installed: installed));
+  tester.view.physicalSize = const Size(390, 1400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(path: '/', builder: (_, _) => const ModulesScreen()),
+      GoRoute(
+        path: AppRoutes.busSettings,
+        builder: (_, _) => const Scaffold(body: Text('버스상세')),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [moduleCatalogProvider.overrideWithValue(_catalog)],
+      child: MaterialApp.router(routerConfig: router),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 Rect _rect(WidgetTester tester, String id) =>
     tester.getRect(find.byKey(ModulesScreen.switchKey(id)));
 
@@ -88,7 +118,7 @@ void main() {
 
   testWidgets('탭이 6개면 꺼진 탭형 스위치가 비활성이고 안내가 뜬다', (tester) async {
     await _pump(tester, installed: ['t1', 't2']);
-    final sw = tester.widget<SwitchListTile>(
+    final sw = tester.widget<Switch>(
       find.byKey(ModulesScreen.switchKey('t3')),
     );
     expect(sw.onChanged, isNull);
@@ -96,13 +126,13 @@ void main() {
     // 켜져 있는 탭형과 카드형은 계속 누를 수 있다
     expect(
       tester
-          .widget<SwitchListTile>(find.byKey(ModulesScreen.switchKey('t1')))
+          .widget<Switch>(find.byKey(ModulesScreen.switchKey('t1')))
           .onChanged,
       isNotNull,
     );
     expect(
       tester
-          .widget<SwitchListTile>(
+          .widget<Switch>(
             find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
           )
           .onChanged,
@@ -146,26 +176,63 @@ void main() {
     expect(ids.last, ModuleIds.settings);
   });
 
-  testWidgets('버스 상세 스위치와 기능 관리 스위치가 같은 값을 본다', (tester) async {
-    await _pump(
-      tester,
-      extra: const SizedBox(height: 600, child: BusSettingsTiles()),
-    );
-    await tester.tap(find.byKey(BusSettingsTiles.switchKey));
+  testWidgets('꺼진 기능 행에는 ›가 없고 눌러도 상세로 가지 않는다', (tester) async {
+    await _pumpRouted(tester);
+    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsNothing);
+    await tester.tap(find.byKey(ModulesScreen.rowKey(ModuleIds.bus)));
     await tester.pumpAndSettle();
+    expect(find.text('버스상세'), findsNothing);
+  });
+
+  testWidgets('켜면 ›가 생기고 부제가 기능의 요약으로 바뀐다', (tester) async {
+    await _pumpRouted(tester);
+    expect(find.text(BusStrings.summaryNoStop), findsNothing);
+    await tester.tap(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsOneWidget);
+    // 정류장이 없으니 다음 행동을 알린다 — 화면은 옮기지 않는다
+    expect(find.text(BusStrings.summaryNoStop), findsOneWidget);
+    expect(find.text('버스상세'), findsNothing);
+  });
+
+  testWidgets('켜진 행을 누르면 상세 설정 화면으로 간다', (tester) async {
+    await _pumpRouted(tester, installed: [ModuleIds.bus]);
+    await tester.tap(find.byKey(ModulesScreen.rowKey(ModuleIds.bus)));
+    await tester.pumpAndSettle();
+    expect(find.text('버스상세'), findsOneWidget);
+  });
+
+  testWidgets('스위치를 눌러도 상세로 가지 않는다 — 스위치는 켜고 끄기만 한다', (tester) async {
+    await _pumpRouted(tester, installed: [ModuleIds.bus]);
+    await tester.tap(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)));
+    await tester.pumpAndSettle();
+    expect(find.text('버스상세'), findsNothing);
+    // 그리고 실제로 꺼졌다 — ›도 함께 사라진다
     expect(
       tester
-          .widget<SwitchListTile>(
-            find.byKey(ModulesScreen.switchKey(ModuleIds.bus)),
-          )
+          .widget<Switch>(find.byKey(ModulesScreen.switchKey(ModuleIds.bus)))
           .value,
-      isTrue,
+      isFalse,
     );
+    expect(find.byKey(ModulesScreen.chevronKey(ModuleIds.bus)), findsNothing);
+  });
+
+  testWidgets('상세 설정이 없는 기능은 켜도 ›가 없고 눌러도 이동하지 않는다', (tester) async {
+    // t1은 settingsRoute가 없는 테스트용 탭형 기능이다
+    await _pumpRouted(tester, installed: ['t1']);
+    expect(find.byKey(ModulesScreen.chevronKey('t1')), findsNothing);
+    await tester.tap(find.byKey(ModulesScreen.rowKey('t1')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ModulesScreen), findsOneWidget);
   });
 
   for (final width in [320.0, 390.0, 430.0]) {
     testWidgets('${width.toInt()}pt에서 넘치지 않는다', (tester) async {
-      await _pump(tester, installed: ['t1', 't2'], width: width);
+      await _pump(
+        tester,
+        installed: ['t1', 't2', ModuleIds.bus],
+        width: width,
+      );
       expect(tester.takeException(), isNull);
     });
   }
