@@ -22,6 +22,17 @@ class SettingsStrings {
   static const themeLight = '밝게';
   static const themeDark = '어둡게';
 
+  // 기능 관리
+  static const modulesTitle = '기능 관리';
+  static const modulesMyTabs = '내 탭';
+  static const modulesFeatures = '기능';
+  static const modulesEmpty = '아직 추가할 수 있는 기능이 없어요';
+  static const placementTab = '탭';
+  static const placementTodayCard = '오늘 카드';
+  static String modulesTabCount(int n, int max) => '$n/$max';
+  static String modulesTabsFull(int max) => '탭이 가득 찼어요 ($max/$max)';
+  static String modulesSummary(int n) => n == 0 ? '추가한 기능 없음' : '$n개 사용 중';
+
   // 섹션 헤더
   static const exportSection = '현재 일정 내보내기';
   static const trashSection = '휴지통';

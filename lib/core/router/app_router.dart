@@ -7,6 +7,7 @@ import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
 import '../../features/settings/presentation/screens/bus_settings_screen.dart';
+import '../../features/settings/presentation/screens/modules_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/today/presentation/screens/today_screen.dart';
 import '../../features/trash/presentation/screens/trash_screen.dart';
@@ -99,6 +100,12 @@ GoRouter createRouter({
           path: AppRoutes.import,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: ImportScreen()),
+        ),
+        // 설정 탭에서 push. Shell 안에 둬야 탭바가 남는다.
+        GoRoute(
+          path: AppRoutes.modules,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ModulesScreen()),
         ),
         // 설정 탭에서 push. `/bus/stops`와 같은 Shell에 둬야
         // `설정 › 버스 도착 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.

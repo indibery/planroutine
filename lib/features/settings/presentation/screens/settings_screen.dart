@@ -11,6 +11,7 @@ import '../widgets/app_info_list_tile.dart';
 import '../widgets/bus_summary_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
 import '../widgets/export_list_tile.dart';
+import '../widgets/modules_list_tile.dart';
 import '../widgets/calendar_integration_section.dart';
 import '../widgets/notification_settings_tiles.dart';
 import '../widgets/privacy_policy_list_tile.dart';
@@ -69,6 +70,7 @@ class SettingsScreen extends ConsumerWidget {
           // `30일 후 자동 영구 삭제` 같은, 이 화면에서만 볼 수 있는 규칙이
           // 함께 사라진다. 묶임은 `Divider`가 그대로 맡는다.
           const SettingsSection(child: ThemeModeTile()),
+          const SettingsSection(child: ModulesListTile()),
           const SettingsSection(child: StampSettingsTiles()),
           const SettingsSection(child: BusSummaryListTile()),
           const SettingsSection(child: ExportListTile()),
