@@ -39,5 +39,14 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Xcode 27은 배포 타깃 15.0 미만을 오류로 거부한다. 플러그인 Pods는 자기 podspec
+    # 값(9.0~13.0)을 들고 오므로 앱 하한(위 platform)보다 낮은 것만 올린다.
+    # 숫자를 바꿀 때는 platform 선언과 함께 바꾼다(ios_deployment_target_test가 묶는다).
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 16.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      end
+    end
   end
 end

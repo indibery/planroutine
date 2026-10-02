@@ -52,7 +52,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1211** 유닛/위젯 + 19 E2E (실측 2026-10-02, 기능 모듈 58건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1212** 유닛/위젯 + 19 E2E (실측 2026-10-02, 기능 모듈 58건 + Podfile 가드 1건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -1443,6 +1443,10 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
   `reset_android_caches`가 `flutter clean`으로 **`build/`와 `.dart_tool/`을 통째로 지운다**.
   iOS도 같은 `build/`에 ipa를 만들어, 병행하면 한쪽이 조용히 깨진다.
   **iOS 먼저, Android 나중** — 지우는 쪽을 뒤에 둔다.
+- **Xcode 27은 배포 타깃 15.0 미만을 오류로 거부한다**(2026-10-02). 플러그인 Pods는 자기
+  podspec 값(9.0~13.0)을 들고 와서, Pods를 새로 설치하면 빌드가 깨졌다. `ios/Podfile`의
+  `post_install`이 앱 하한(16.0)보다 낮은 Pods 타깃만 올린다. 그 숫자는 `platform` 선언과
+  같아야 하고 `ios_deployment_target_test.dart`가 셋을 묶는다.
 - **수동 `flutter build ipa`로는 배포하지 않는다.** `--dart-define-from-file`이 없어 **TAGO 키가
   빠진 IPA**가 나오는데, release 레인의 가드 넷 어디도 키를 보지 않아 **버스 기능이 조용히 죽은
   빌드가 심사에 오른다**. 캐시만 비우고 **다시 `beta` 레인으로** 빌드한다.
