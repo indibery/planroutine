@@ -10,7 +10,7 @@ import '../../features/settings/presentation/screens/bus_settings_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/today/presentation/screens/today_screen.dart';
 import '../../features/trash/presentation/screens/trash_screen.dart';
-import '../../shared/widgets/main_shell.dart';
+import '../modules/module_shell.dart';
 
 /// 라우트 경로 상수
 class AppRoutes {
@@ -25,6 +25,7 @@ class AppRoutes {
   static const import = '/import';
   static const busStops = '/bus/stops';
   static const busSettings = '/bus/settings';
+  static const modules = '/modules';
 }
 
 /// 외부 앱이 CSV로 앱을 열었을 때 Flutter가 초기 라우트로 넘기는 URL인지.
@@ -67,7 +68,7 @@ GoRouter createRouter({
       builder: (context, state) => const OnboardingScreen(),
     ),
     ShellRoute(
-      builder: (context, state, child) => MainShell(child: child),
+      builder: (context, state, child) => ModuleShell(child: child),
       routes: [
         GoRoute(
           path: AppRoutes.today,

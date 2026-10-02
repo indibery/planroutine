@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/modules/app_module.dart';
+import 'package:planroutine/core/modules/module_catalog.dart';
 import 'package:planroutine/core/router/app_router.dart';
 import 'package:planroutine/shared/widgets/main_shell.dart';
 
@@ -52,6 +55,38 @@ void main() {
   group('탭 하이라이트 — 모르는 곳', () {
     test('매핑에 없으면 오늘로 폴백한다', () {
       expect(MainShell.indexForLocation('/nope'), _today);
+    });
+  });
+
+  group('탭 하이라이트 — 탭 목록이 바뀔 때', () {
+    const extra = ModuleTab(
+      route: '/timetable',
+      icon: Icons.grid_view_outlined,
+      activeIcon: Icons.grid_view,
+      label: '시간표',
+    );
+
+    test('순서가 바뀌면 인덱스도 따라간다', () {
+      const tabs = [calendarTab, todayTab, scheduleTab, settingsTab];
+      expect(MainShell.indexForLocation(AppRoutes.today, tabs: tabs), 1);
+    });
+
+    test('선택 기능 탭도 자기 자신을 켠다', () {
+      const tabs = [todayTab, calendarTab, scheduleTab, extra, settingsTab];
+      expect(MainShell.indexForLocation('/timetable', tabs: tabs), 3);
+      expect(MainShell.indexForLocation(AppRoutes.trash, tabs: tabs), 4);
+    });
+
+    test('push 라우트의 주인 탭이 목록에 없으면 -1이 아니라 설정을 켠다', () {
+      // 지금은 주인이 전부 고정 탭이라 일어나지 않지만, 선택 기능 탭이 push
+      // 라우트를 갖는 순간 생긴다. -1이면 어느 탭도 켜지지 않는다.
+      const tabs = [todayTab, calendarTab, settingsTab];
+      final i = MainShell.indexForLocation(AppRoutes.import, tabs: tabs);
+      expect(i, tabs.indexOf(settingsTab));
+    });
+
+    test('기능 관리 화면은 설정을 켠다', () {
+      expect(MainShell.indexForLocation(AppRoutes.modules), _settings);
     });
   });
 }
