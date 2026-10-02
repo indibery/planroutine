@@ -8,13 +8,9 @@ class BusStrings {
   static const styleText = '간단히';
   static const styleAxis = '시간 축';
 
-  // ── 설정 섹션 ──────────────────────────────────────────────
-  static const section = '버스 도착';
+  // ── 상세 화면 ──────────────────────────────────────────────
   static const sectionDescription = '오늘 탭 맨 위에 출퇴근 버스 도착시간을 보여줍니다';
 
-  static const showTitle = '표시';
-  static const showSubtitleOn = '지정한 시간대에만 펼쳐집니다';
-  static const showSubtitleOff = '꺼져 있어 오늘 탭이 지금과 같습니다';
   static const slotDeparture = '출발지';
   static const slotDepartureHint = '집 근처에서 타는 정류장';
   static const slotArrival = '도착지';

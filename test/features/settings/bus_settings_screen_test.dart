@@ -17,11 +17,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('화면이 설정 타일을 담는다', (tester) async {
+  testWidgets('화면이 설정 타일을 담고 켜짐 스위치는 없다', (tester) async {
     await pump(tester);
 
     expect(find.byType(BusSettingsTiles), findsOneWidget);
-    expect(find.byKey(BusSettingsTiles.switchKey), findsOneWidget);
+    expect(find.byType(Switch), findsNothing);
   });
 
   testWidgets('섹션 부제였던 기능 설명이 화면 안에 남아 있다', (tester) async {
@@ -32,13 +32,13 @@ void main() {
     expect(find.text(BusStrings.sectionDescription), findsOneWidget);
   });
 
-  testWidgets('제목이 버스 도착이다', (tester) async {
+  testWidgets('제목이 기능 이름(출퇴근 버스)이다 — 기능 관리 행과 같은 이름', (tester) async {
     await pump(tester);
 
     expect(
       find.descendant(
         of: find.byType(AppBar),
-        matching: find.text(BusStrings.section),
+        matching: find.text(BusStrings.moduleName),
       ),
       findsOneWidget,
     );

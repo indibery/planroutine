@@ -830,7 +830,7 @@ void main() {
           w,
           'BusSettingsTiles (긴 정류장)',
           const SettingsSection(
-            title: BusStrings.section,
+            title: BusStrings.moduleName,
             subtitle: BusStrings.sectionDescription,
             child: BusSettingsTiles(),
           ),

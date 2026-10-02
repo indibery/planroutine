@@ -6,14 +6,14 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../widgets/bus_settings_tiles.dart';
 
-/// `설정 › 버스 도착` 상세 화면.
+/// `기능 관리 › 출퇴근 버스` 상세 화면. 버스가 켜져 있을 때만 들어온다.
 ///
 /// **시트가 아니라 화면인 이유**: 이 안에서 정류장 검색(`/bus/stops`, 풀스크린)과
 /// `showTimePicker`를 다시 띄운다. 시트 위에 풀스크린을 push하면 시트가 가려진 채
 /// 뒤에 남고 돌아올 때 다시 나타난다. 화면이면 `설정 › 버스 도착 › 정류장 검색`으로
 /// 쌓이고 뒤로가기 한 번씩이 순서대로 맞는다.
 ///
-/// **[BusSettingsTiles]를 옮기지 않고 감싸기만 한다** — 그 위젯의 테스트 9건이
+/// **[BusSettingsTiles]를 옮기지 않고 감싸기만 한다** — 그 위젯의 테스트가
 /// 그대로 남는다.
 ///
 /// 이 화면은 `features/bus/`가 아니라 여기 산다. 위젯이 이미 settings 아래 있어
@@ -25,7 +25,7 @@ class BusSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(BusStrings.section, style: AppTextStyles.heading),
+        title: Text(BusStrings.moduleName, style: AppTextStyles.heading),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),

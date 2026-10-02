@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/modules/app_module.dart';
-import '../../../../core/modules/installed_modules_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../bus/domain/bus_card_style.dart';
 import '../../../bus/domain/bus_settings.dart';
@@ -14,14 +12,13 @@ import '../../../bus/domain/commute_direction.dart';
 import '../../../bus/domain/time_range.dart';
 import '../../../bus/presentation/providers/bus_providers.dart';
 
-/// `설정 > 버스 도착` 섹션 본문.
+/// `기능 관리 › 출퇴근 버스` 상세 화면의 본문 — 정류장·카드 모양·시간대.
 ///
-/// 스위치가 꺼져 있으면 나머지 줄을 감춘다 — 기본이 꺼짐이라 이 기능을 쓰지 않는
-/// 사용자에게 설정 탭도 지금과 거의 같게 보인다.
+/// **켜짐 스위치가 없다**(2026-10-03 설계). 이 화면은 버스가 켜져 있을 때만
+/// 기능 관리 행의 `›`로 들어오므로, 켜고 끄는 곳은 그 행의 스위치 하나다.
 class BusSettingsTiles extends ConsumerWidget {
   const BusSettingsTiles({super.key});
 
-  static const switchKey = Key('bus_show_switch');
   static const departureKey = Key('bus_slot_departure');
   static const arrivalKey = Key('bus_slot_arrival');
   static const styleKey = Key('bus_style_row');
@@ -31,76 +28,51 @@ class BusSettingsTiles extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // **로딩 중에도 기본값으로 그린다.** null에 `SizedBox.shrink()`를 돌려주면
-    // `SharedPreferences.getInstance()`를 기다리는 한 프레임 동안 제목·부제·Divider만
-    // 있고 스위치가 없는 빈 섹션이 보인다 — 같은 화면의 도장·알림·테마 섹션은
-    // 전부 defaults로 즉시 그리므로 이 섹션 하나만 깜빡인다. 등록부가 로딩
-    // 중이면 `moduleInstalledProvider`가 false라 아래 감춤 로직도 그대로 맞다.
+    // `SharedPreferences.getInstance()`를 기다리는 한 프레임 동안 빈 화면이 보인다 —
+    // 같은 앱의 도장·알림·테마 섹션은 전부 defaults로 즉시 그린다.
     final settings =
         ref.watch(busSettingsProvider).valueOrNull ?? BusSettings.defaults;
-    // 켜짐은 등록부가 주인이다 — `기능 관리` 화면의 스위치와 같은 값을 본다.
-    final installed = ref.watch(moduleInstalledProvider(ModuleIds.bus));
 
     final notifier = ref.read(busSettingsProvider.notifier);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // **썸 색을 지정하지 않는다.** `app_theme`의 `switchTheme`이 ON 썸을 navy,
-        // 트랙을 gold로 잡아 대비를 맞춰 뒀다. 여기서 `activeThumbColor`를 주면
-        // Flutter의 해상 순서(위젯 > 테마)가 그 navy를 밀어내는데, 다크에서는
-        // `goldFill`과 `gold`가 같은 값(#E0B96A)이라 **ON이 썸 없는 단색 골드 알약**이
-        // 된다(M3 스위치는 selected 그림자·외곽선이 없어 형태 단서도 0이다).
-        // 같은 ListView의 형제 스위치(도장·알림)는 지정하지 않아 정상으로 보였다 —
-        // 기능 전체를 켜는 유일한 관문만 다르게 보이던 셈이다.
-        SwitchListTile(
-          key: switchKey,
-          value: installed,
-          onChanged: (v) => ref
-              .read(installedModulesProvider.notifier)
-              .setEnabled(ModuleIds.bus, v),
-          title: Text(BusStrings.showTitle, style: _titleStyle),
-          subtitle: Text(
-            installed ? BusStrings.showSubtitleOn : BusStrings.showSubtitleOff,
-            style: _subStyle,
-          ),
+        _slotTile(
+          context,
+          key: departureKey,
+          title: BusStrings.slotDeparture,
+          hint: BusStrings.slotDepartureHint,
+          value: settings.departure?.nodeNm,
+          direction: CommuteDirection.toWork,
         ),
-        if (installed) ...[
-          _slotTile(
-            context,
-            key: departureKey,
-            title: BusStrings.slotDeparture,
-            hint: BusStrings.slotDepartureHint,
-            value: settings.departure?.nodeNm,
-            direction: CommuteDirection.toWork,
-          ),
-          _slotTile(
-            context,
-            key: arrivalKey,
-            title: BusStrings.slotArrival,
-            hint: BusStrings.slotArrivalHint,
-            value: settings.arrival?.nodeNm,
-            direction: CommuteDirection.toHome,
-          ),
-          _styleRow(settings, notifier),
-          _rangeTile(
-            context,
-            key: rangeToWorkKey,
-            title: BusStrings.rangeToWork,
-            hint: BusStrings.rangeHintToWork,
-            range: settings.toWorkRange,
-            direction: CommuteDirection.toWork,
-            notifier: notifier,
-          ),
-          _rangeTile(
-            context,
-            key: rangeToHomeKey,
-            title: BusStrings.rangeToHome,
-            hint: BusStrings.rangeHintToHome,
-            range: settings.toHomeRange,
-            direction: CommuteDirection.toHome,
-            notifier: notifier,
-          ),
-        ],
+        _slotTile(
+          context,
+          key: arrivalKey,
+          title: BusStrings.slotArrival,
+          hint: BusStrings.slotArrivalHint,
+          value: settings.arrival?.nodeNm,
+          direction: CommuteDirection.toHome,
+        ),
+        _styleRow(settings, notifier),
+        _rangeTile(
+          context,
+          key: rangeToWorkKey,
+          title: BusStrings.rangeToWork,
+          hint: BusStrings.rangeHintToWork,
+          range: settings.toWorkRange,
+          direction: CommuteDirection.toWork,
+          notifier: notifier,
+        ),
+        _rangeTile(
+          context,
+          key: rangeToHomeKey,
+          title: BusStrings.rangeToHome,
+          hint: BusStrings.rangeHintToHome,
+          range: settings.toHomeRange,
+          direction: CommuteDirection.toHome,
+          notifier: notifier,
+        ),
       ],
     );
   }
