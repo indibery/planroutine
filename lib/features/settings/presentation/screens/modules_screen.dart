@@ -170,10 +170,15 @@ class ModulesScreen extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Switch(
-            key: switchKey(m.id),
-            value: installed,
-            onChanged: blocked ? null : onChanged,
+          // 스크린리더용 이름. `SwitchListTile`은 행 전체를 한 노드로 묶어 이름을 함께
+          // 읽혔는데, 행과 스위치를 가르면 스위치만 따로 포커스되어 "스위치, 끔"만 남는다.
+          Semantics(
+            label: m.name,
+            child: Switch(
+              key: switchKey(m.id),
+              value: installed,
+              onChanged: blocked ? null : onChanged,
+            ),
           ),
           // 상세가 있는 기능은 꺼져 있어도 › 자리를 비워 둔다. 켤 때 ›가 새로 생기면
           // Row가 넓어져 **방금 누른 스위치가 손가락 아래에서 왼쪽으로 밀린다**.

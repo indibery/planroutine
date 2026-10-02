@@ -107,8 +107,8 @@ GoRouter createRouter({
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: ModulesScreen()),
         ),
-        // 설정 탭에서 push. `/bus/stops`와 같은 Shell에 둬야
-        // `설정 › 버스 도착 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.
+        // 기능 관리에서 push. `/bus/stops`와 같은 Shell에 둬야
+        // `설정 › 기능 관리 › 출퇴근 버스 › 정류장 검색`이 순서대로 쌓이고 탭바가 남는다.
         GoRoute(
           path: AppRoutes.busSettings,
           pageBuilder: (context, state) =>

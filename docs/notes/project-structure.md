@@ -85,7 +85,6 @@ planroutine/
 │   │   │       │   ├── stamp_settings_tiles.dart   # 도장 모양 한 줄 + 흐리게
 │   │   │       │   ├── stamp_style_sheet.dart      # 도장 모양 2열 그리드 시트
 │   │   │       │   ├── bus_settings_tiles.dart     # 버스 설정 본문 (화면이 감싼다)
-│   │   │       │   ├── bus_summary_list_tile.dart  # 설정 탭 버스 요약 한 줄
 │   │   │       │   ├── modules_list_tile.dart      # 설정 탭 기능 관리 한 줄 (사용 중 N개)
 │   │   │       │   ├── trash_list_tile.dart
 │   │   │       │   ├── reset_list_tile.dart
@@ -128,6 +127,7 @@ planroutine/
 │   │   │       ├── screens/bus_stop_search_screen.dart  # 이름 검색(주) + 지역 모드(보조)
 │   │   │       └── widgets/
 │   │   │           ├── bus_card_host.dart              # 폴링·수명·시간대 판정
+│   │   │           ├── bus_module_summary.dart         # 기능 관리의 켜진 버스 행 부제(정류장 N곳)
 │   │   │           ├── bus_arrival_card.dart           # 제목줄 + 접힘 토글
 │   │   │           ├── bus_body_text.dart · bus_body_axis.dart  # 모양 2종
 │   │   │           ├── bus_stop_confirm_sheet.dart     # 등록 직전 방향 확인

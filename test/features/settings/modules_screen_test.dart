@@ -226,6 +226,20 @@ void main() {
     expect(find.byType(ModulesScreen), findsOneWidget);
   });
 
+  testWidgets('스위치가 기능 이름으로 읽힌다 — 행과 스위치가 갈려도 무엇을 켜는지 안다', (
+    tester,
+  ) async {
+    // SwitchListTile은 행 전체를 한 노드로 묶어 이름과 스위치를 함께 읽혔다. 행과
+    // 스위치를 가르면 스위치만 따로 포커스되므로 이름을 스위치에 직접 붙여야 한다.
+    final handle = tester.ensureSemantics();
+    await _pump(tester);
+    expect(
+      tester.getSemantics(find.byKey(ModulesScreen.switchKey(ModuleIds.bus))),
+      isSemantics(label: BusStrings.moduleName, hasToggledState: true),
+    );
+    handle.dispose();
+  });
+
   for (final width in [320.0, 390.0, 430.0]) {
     testWidgets('${width.toInt()}pt에서 넘치지 않는다', (tester) async {
       await _pump(
