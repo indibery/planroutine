@@ -97,7 +97,8 @@ AppModule(
   읽어 넘긴다. 그래서 `MainShell`은 계속 feature를 모른다.
 - `indexForLocation(location, {tabs})`의 `tabs` 기본값은 지금의 4탭이다 — 기존 테스트
   (`main_shell_tab_index_test.dart`)의 호출이 그대로 동작한다.
-- `_pushOwner`의 주인 탭이 목록에 없으면 -1을 그대로 쓰지 않고 안전한 값을 돌려준다.
+- `_pushOwner`의 주인 탭이 목록에 없으면 -1을 그대로 쓰지 않고 **설정 탭의 인덱스**를 돌려준다.
+  설정은 항상 있고 push 화면의 대부분이 설정 소속이라 가장 덜 어긋난다.
   지금은 주인이 전부 고정 탭이라 일어나지 않지만, 선택 기능 탭이 push 라우트를 가지면 생긴다.
 
 ### 라우트
