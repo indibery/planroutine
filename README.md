@@ -24,12 +24,12 @@
 ## 기술 스택
 
 - **Flutter 3.44.8** (Dart 3.12.2) — iOS 배포 중(App Store, TestFlight `v144`), Android는 Play 비공개 테스트(`versionCode 143`)
-- **Riverpod**(상태) · **GoRouter**(4탭 Shell + push) · **sqflite**(로컬 DB v8)
+- **Riverpod**(상태) · **GoRouter**(고정 4탭 + 선택 탭 Shell + push) · **sqflite**(로컬 DB v8)
 - **Freezed + json_serializable**(불변 모델)
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
 - **google_sign_in + googleapis**(Google Calendar) · **flutter_local_notifications + timezone**
 - **App Intents**(Swift, 앱 타깃 직접 구현 — 패키지 없음) — iOS 배포 타깃 **16.0**
-- 테스트: flutter_test(유닛/위젯 **1151**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
+- 테스트: flutter_test(유닛/위젯 **1211**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
 
 ## 시작하기
 
@@ -41,13 +41,13 @@ flutter run
 
 ## 앱 구조
 
-하단 4탭 (초기 라우트 `/today`):
+하단 고정 4탭 + 선택 탭(최대 6, `설정 › 기능 관리`에서 켜고 순서를 바꾼다. 설정은 항상 맨 끝). 초기 라우트 `/today`:
 
 ```
 오늘 | 캘린더 | 입력 | 설정
 ```
 
-`/trash`·`/import`는 Shell 안에서 push로 열린다(탭바 유지).
+`/trash`·`/import`·`/modules`(기능 관리)는 Shell 안에서 push로 열린다(탭바 유지).
 
 ### 데이터 흐름
 
