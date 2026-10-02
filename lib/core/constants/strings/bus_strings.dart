@@ -11,6 +11,10 @@ class BusStrings {
   // ── 설정 섹션 ──────────────────────────────────────────────
   static const section = '버스 도착';
   static const sectionDescription = '오늘 탭 맨 위에 출퇴근 버스 도착시간을 보여줍니다';
+
+  // 기능 관리
+  static const moduleName = '출퇴근 버스';
+  static const moduleDescription = '오늘 탭 맨 위에 버스 도착 시간을 보여줘요';
   static const showTitle = '표시';
   static const showSubtitleOn = '지정한 시간대에만 펼쳐집니다';
   static const showSubtitleOff = '꺼져 있어 오늘 탭이 지금과 같습니다';

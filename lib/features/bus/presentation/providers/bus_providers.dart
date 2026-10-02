@@ -10,7 +10,8 @@ import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
 import '../../domain/time_range.dart';
 
-const _prefsKey = 'bus_settings_v1';
+/// 버스 설정 저장 키. 등록부 이전(`migrateLegacyModuleIds`)이 이 키를 읽는다.
+const busSettingsPrefsKey = 'bus_settings_v1';
 
 /// TAGO 클라이언트 — **`autoDispose`가 아니다.**
 ///
@@ -28,7 +29,7 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
   @override
   Future<BusSettings> build() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
+    final raw = prefs.getString(busSettingsPrefsKey);
     if (raw == null) return BusSettings.defaults;
     BusSettings loaded;
     try {
@@ -59,7 +60,7 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
       toHomeRange: BusSettings.defaults.toHomeRange,
     );
     // `_save`를 쓰지 않는다 — build 중에는 state를 대입할 수 없다(반환값이 곧 state).
-    await prefs.setString(_prefsKey, jsonEncode(repaired.toJson()));
+    await prefs.setString(busSettingsPrefsKey, jsonEncode(repaired.toJson()));
     return repaired;
   }
 
@@ -106,6 +107,6 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
   Future<void> _save(BusSettings next) async {
     state = AsyncData(next);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKey, jsonEncode(next.toJson()));
+    await prefs.setString(busSettingsPrefsKey, jsonEncode(next.toJson()));
   }
 }
