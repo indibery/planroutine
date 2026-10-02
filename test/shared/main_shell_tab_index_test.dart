@@ -5,7 +5,7 @@ import 'package:planroutine/core/modules/module_catalog.dart';
 import 'package:planroutine/core/router/app_router.dart';
 import 'package:planroutine/shared/widgets/main_shell.dart';
 
-/// 탭 순서 — `MainShell._tabs`와 같다.
+/// 탭 순서 — `defaultTabs`와 같다.
 const _today = 0;
 const _calendar = 1;
 const _schedule = 2;

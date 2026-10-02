@@ -64,6 +64,7 @@ lib/
 ├── main.dart · app.dart   # 시작 시 purge·알림 sync·onboarding / GoRouter + 공유파일 채널
 ├── core/                  # constants(strings·colors·sizes) · theme · router · database · utils
 │                          #   · app_intents(단축어 채널 계약·핸들러·브리지)
+│                          #   · modules(기능 등록부 — 카탈로그·설치 상태·탭/카드 셸)
 ├── features/              # 아래 표
 └── shared/widgets/        # main_shell · floating_tab_bar · gold_fab · brand_logo ·
                            #   gold_gradient_button · section_header · confirm_dialog
@@ -1252,7 +1253,7 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
   반대로 둘 다 없으면 시트가 통과 도장이 되므로 그때는 막는다.
 
 ### 탭바
-- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 4탭 = **오늘 / 캘린더 / 입력 / 설정**. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
+- `shared/widgets/floating_tab_bar.dart`(이름은 과거 플로팅 디자인의 잔재) — 실제로는 화면 폭을 꽉 채운 불투명 바(배경 = 테마 surface색: 다크 navyMid / 라이트 흰색) + 상단 1px 골드 라인. 탭은 고정 4개(**오늘 / 캘린더 / 입력 / 설정**)에 등록부가 정한 선택 탭을 더해 최대 6개이고, 순서는 사용자가 바꾸되 설정은 항상 맨 끝이다. `extendBody: false`라 리스트가 탭바 뒤로 비치지 않고 FAB도 Scaffold가 자동으로 바 위에 올려준다.
 - 배경색은 `Theme.of(context).colorScheme.surface`를 참조한다 — ShellRoute 탭바는 라우트 전환에 유지(리빌드 안 됨)돼, Theme 의존이 없으면 테마 전환 시 이전 색이 남는다.
 
 ### 화면 테마 (다크/라이트)

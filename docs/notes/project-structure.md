@@ -34,9 +34,16 @@ planroutine/
 │   │   │       ├── settings_strings.dart
 │   │   │       ├── today_strings.dart
 │   │   │       └── trash_strings.dart
+│   │   ├── modules/                    # 기능 등록부 (고정 4탭 + 선택 탭/카드)
+│   │   │   ├── app_module.dart                 # AppModule 모델 (id·배치·탭 화면/오늘 카드)
+│   │   │   ├── module_rules.dart               # 순수 규칙 — 탭 상한 6·설정 맨 끝·이전
+│   │   │   ├── module_catalog.dart             # moduleCatalog + defaultTabs
+│   │   │   ├── installed_modules_provider.dart # installed_modules_v1 저장·해석
+│   │   │   ├── module_shell.dart               # ShellRoute 셸 — 등록부로 탭바 구성
+│   │   │   └── installed_today_cards.dart      # 오늘 탭 맨 위 설치된 카드들
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles,
 │   │   │                               #   system_overlay_region(내비게이션 바 스타일 루트 리전)
-│   │   ├── router/                     # GoRouter (4탭 + /trash, /import 푸시)
+│   │   ├── router/                     # GoRouter (고정 4탭 + 선택 탭, /trash·/import·/modules 등 푸시)
 │   │   ├── database/                   # DatabaseHelper (v8, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
@@ -67,7 +74,8 @@ planroutine/
 │   │   │   └── presentation/
 │   │   │       ├── screens/
 │   │   │       │   ├── settings_screen.dart        # 얇은 조합
-│   │   │       │   └── bus_settings_screen.dart    # /bus/settings — BusSettingsTiles를 감싼다
+│   │   │       │   ├── bus_settings_screen.dart    # /bus/settings — BusSettingsTiles를 감싼다
+│   │   │       │   └── modules_screen.dart         # /modules — 기능 켜기·끄기·순서
 │   │   │       ├── widgets/
 │   │   │       │   ├── settings_section.dart       # 헤더+본문+Divider wrapper
 │   │   │       │   ├── theme_mode_tile.dart        # 시스템/밝게/어둡게 세그먼트
@@ -78,6 +86,7 @@ planroutine/
 │   │   │       │   ├── stamp_style_sheet.dart      # 도장 모양 2열 그리드 시트
 │   │   │       │   ├── bus_settings_tiles.dart     # 버스 설정 본문 (화면이 감싼다)
 │   │   │       │   ├── bus_summary_list_tile.dart  # 설정 탭 버스 요약 한 줄
+│   │   │       │   ├── modules_list_tile.dart      # 설정 탭 기능 관리 한 줄 (사용 중 N개)
 │   │   │       │   ├── trash_list_tile.dart
 │   │   │       │   ├── reset_list_tile.dart
 │   │   │       │   ├── privacy_policy_list_tile.dart   # 법적 표시 — 탭 가능한 별 섹션

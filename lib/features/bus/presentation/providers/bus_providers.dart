@@ -53,8 +53,13 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
     // 그래서 막다른 길을 화면에서 설명하는(경고 문구·스낵바) 대신 **없애는** 쪽이
     // 값싸다.
     //
-    // **시간대 두 개만** 되돌린다 — 스위치·슬롯·모양·override는 멀쩡하고, 함께
+    // **시간대 두 개만** 되돌린다 — 슬롯·모양·override는 멀쩡하고, 함께
     // 날리면 정류장을 다시 등록하게 만든다.
+    //
+    // ⚠️ 이 저장은 `bus_settings_v1`을 옛 `enabled` 키 없이 다시 쓴다. 등록부 이전
+    // (`installedModulesProvider.build` → `migrateLegacyModuleIds`)보다 먼저 돌면 예전의
+    // 켜짐 상태를 잃는다. 지금은 `ModuleShell`이 등록부를 먼저 watch해 안전하다
+    // (CLAUDE.md `### 기능 모듈 (등록부)`).
     final repaired = loaded.copyWith(
       toWorkRange: BusSettings.defaults.toWorkRange,
       toHomeRange: BusSettings.defaults.toHomeRange,

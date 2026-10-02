@@ -23,14 +23,14 @@ const busMoveInterval = Duration(seconds: 1);
 
 /// 오늘 탭 최상단에 카드를 얹는 호스트.
 ///
-/// **요청이 나가는 조건 여섯 개를 이 한곳에서 판정한다**(스펙 §6). 조건을 여러 곳에
+/// **요청이 나가는 조건 다섯 개를 이 한곳에서 판정한다**(스펙 §6). 조건을 여러 곳에
 /// 흩어 놓으면 촉발 지점을 추가할 때 한쪽을 빠뜨려 새는 구멍이 생긴다.
 ///
-/// 1) 표시 ON  2) 그 방향 슬롯 있음  3) 펼침  4) 이 위젯이 마운트됨
-/// 5) 포그라운드  6) 캐시 미스([BusApiClient]가 판정)
+/// 1) 그 방향 슬롯 있음  2) 펼침  3) 이 위젯이 마운트됨
+/// 4) 포그라운드  5) 캐시 미스([BusApiClient]가 판정)
 ///
-/// 켜짐 여부는 보지 않는다 — 올라와 있다는 것이 곧 켜짐이다(InstalledTodayCards).
-/// 그래서 1)과 4)는 같은 조건이다.
+/// 켜짐 여부는 이 위젯이 보지 않는다 — 설치 여부는 InstalledTodayCards가 정하고,
+/// 올라와 있다는 것이 곧 켜짐이다.
 class BusCardHost extends ConsumerStatefulWidget {
   const BusCardHost({super.key, this.clock});
 
