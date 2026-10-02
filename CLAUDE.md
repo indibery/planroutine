@@ -27,6 +27,9 @@
    노출한다. **둘 다 앱이 화면에 뜨지 않는다** — 시스템이 앱을 백그라운드로만 띄운다.
    등록은 AI 앱 답변 텍스트를 그대로 받아 기존 파서로 검토 대기에 넣고, 조회는 기간을
    골라 일정 목록을 텍스트로 돌려준다. iOS 전용(16.0+).
+13. **기능 관리** — 고정 4탭 + 스위치로 켜는 선택 기능(탭 / 오늘 카드). 탭은 최대 6개이고
+   설정은 항상 맨 끝이다. 고정 탭은 숨길 수 없지만 순서는 바꿀 수 있다(`설정 › 기능 관리`).
+   첫 선택 기능은 출퇴근 버스 카드다.
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -37,19 +40,19 @@
 |--------|------|------|
 | 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 Play 비공개 테스트 진행 중 — **알림은 M2-①로 배선 완료**(2026-08-08, 에뮬레이터 실측). CSV 공유 목록 노출은 아직 M2. ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 4탭 (오늘/캘린더/입력/설정) + push(/trash, /import, /bus/settings, /bus/stops). 초기 라우트 `/today` |
+| 라우팅 | GoRouter | ShellRoute 고정 4탭(오늘/캘린더/입력/설정) + 선택 탭(최대 6, 등록부가 정한다) + push(/trash, /import, /modules, /bus/settings, /bus/stops). 초기 라우트 `/today` |
 | 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
 | 공유 | share_plus, path_provider | 임시 디렉토리 + 공유시트 |
 | 앱 정보 | package_info_plus | 설정 탭 버전 표시 |
-| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장, 버스 설정 |
+| 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장, 버스 설정, 기능 설치·탭 순서(`installed_modules_v1`) |
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API. **iOS 전용** — 안드로이드는 선택지를 감춘다 |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1151** 유닛/위젯 + 19 E2E (실측 2026-09-13, 단축어 가드 54건을 더한 값. 직전 표기 `1097`은 2026-09-11 값이다. ⚠️ 이 숫자를 지키는 가드가 없어 **다섯 번** 낡았다 — README는 더 심해서 `1003`에 멈춰 있었다) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1209** 유닛/위젯 + 19 E2E (실측 2026-10-02, 기능 모듈 56건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -747,12 +750,12 @@ flutter/flutter#182661이 엔진에서 고쳤고 3.44.8에 들어 있다. 3.44.8
 - `settings_screen.dart`는 100줄 미만의 얇은 조합. 각 섹션 UI는 `widgets/*_list_tile.dart`에 분리.
 - `SettingsSection` wrapper가 헤더(title+subtitle) + 본문 + Divider 3종 세트를 1줄로 묶는다.
 - 확인 다이얼로그는 `shared/widgets/confirm_dialog.dart`의 `ConfirmDialog.show()` 공통 사용.
-- **섹션 10개**(캘린더 연동은 flag가 켜졌을 때만이라 실효 9~10): 화면 · 완료 도장 ·
+- **섹션 11개**(캘린더 연동은 flag가 켜졌을 때만이라 실효 10~11): 화면 · **기능 관리** · 완료 도장 ·
   버스 도착 · 내보내기 · 캘린더 연동(flag) · 알림 · 휴지통 · 데이터 관리 ·
   **개인정보처리방침** · 앱 정보(+출처 표시).
   - 개인정보처리방침은 **탭 가능한 별 섹션**이다(Play User Data 정책상 법적 표시) —
     앱 정보 `Column`은 정보성이고 탭이 없어 거기 섞지 않는다.
-  - ⚠️ `SettingsSection(`을 세면 **9개만 나온다** — `CalendarIntegrationSection`은 그
+  - ⚠️ `SettingsSection(`을 세면 **10개만 나온다** — `CalendarIntegrationSection`은 그
     wrapper 밖에서 자기 자신이 섹션이다. 개수를 셀 때 이것을 빠뜨리기 쉽다.
 - **깊은 설정은 화면 밖으로 뺀다.** 섹션이 열 개·행이 열아홉 개가 되자(스크롤 세 화면 반)
   무거운 둘만 빼서 12행으로 줄였다 — 도장 모양은 시트, 버스는 상세 화면.
@@ -964,6 +967,51 @@ Swift에는 테이블도 컬럼도 SQL도 없고, 가드가 그것을 검사한�
 - `BrandLogo`(shared/widgets)는 `LogoHybrid` 디자인(수첩 바디 + 달력 그리드). 120×120 viewBox를 `size.width/120` 스케일로 환산.
 - 캘린더 AppBar leading(size 28) + 온보딩(size 80)에서 사용.
 - iOS 홈 아이콘은 `test/tools/gen_app_icon.dart`가 navy 배경 + 90% LogoHybrid를 1024×1024 PNG로 렌더해 `assets/icon/app_icon.png`에 덮어쓰고, `flutter_launcher_icons`가 각 사이즈를 재생성.
+
+### 기능 모듈 (등록부)
+
+탭 목록은 상수가 아니라 **등록부**(`lib/core/modules/module_catalog.dart`의 `moduleCatalog`)가
+정한다. 새 기능은 등록부에 항목 하나를 더하는 것으로 들어온다. 설계는
+`docs/superpowers/specs/2026-10-02-feature-modules-design.md`, 계획은 같은 날짜의 `plans/`.
+
+- **켜짐 여부의 주인은 `installedModulesProvider` 하나다**(`installed_modules_v1`, id 목록 JSON).
+  화면은 저장값이 아니라 순수 함수 `resolveModules`가 정리한 결과만 본다 — 고정 탭을 채우고,
+  설정을 맨 끝에 두고, 모르는 id·중복을 버리고, 탭이 6개를 넘으면 뒤쪽 선택 탭부터 자른다.
+  손상된 저장값이면 기본 4탭으로 떨어진다.
+- **상한은 notifier도 검사한다**(`setEnabled`가 false를 돌려준다). 화면이 스위치를 막는 것만으로는
+  다른 호출부가 생겼을 때 7번째 탭이 저장된다.
+- **기능 id는 저장값이다.** 한번 배포한 id는 바꾸거나 지우지 않는다 — `resolveModules`가 모르는
+  id를 조용히 버려서, 켜 둔 사용자의 설정이 오류 없이 꺼진다. `*Strings`에 두지 않는 이유도
+  같다(Android 알림 채널 id와 같은 부류). 가드는 `test/core/modules/module_catalog_test.dart`의
+  배포 id 목록이다 — 지우려면 이유를 함께 적는다.
+- **탭형 기능의 라우트는 설치 여부와 무관하게 라우터에 항상 등록한다.** 빼면 끈 사용자에게는
+  문제가 없다가 켜는 순간 Page Not Found가 된다. 같은 가드가 지킨다.
+- **이전은 키 유무로 한 번만 한다.** `installed_modules_v1`이 없을 때만 `bus_settings_v1`의 옛
+  `enabled`를 읽어 버스를 설치한다(`migrateLegacyModuleIds`). 판정 기준이 "키가 있는가" 하나라,
+  버스를 끈 뒤 옛 `enabled: true`가 남아 있어도 다시 이전하지 않는다.
+  - **`BusSettings.enabled`는 은퇴했다.** 필드·`toJson`·`fromJson`에서 모두 빠졌고, 옛 값을 읽는
+    곳은 `migrateLegacyModuleIds` 하나뿐이다. 은퇴 가드가 `toJson`에 `enabled`가 없음을 본다.
+  - ⚠️ **이전의 안전은 암묵적 순서에 기대고 있다.** 버스 설정이 이전보다 먼저 저장되면(지금은
+    겹친 시간대를 복구할 때뿐이다) `enabled` 없는 JSON이 옛 값을 덮어 켜짐이 사라진다. 지금은
+    모든 화면을 감싸는 `ModuleShell`이 등록부를 먼저 watch해 그 창이 열리지 않는다.
+    **`main.dart`에서 버스 provider를 미리 읽게 되면 창이 열린다.**
+  - 실측(iPhone 17 / iOS 27.0, 2026-10-02): 옛 빌드에서 버스를 켜 둔 상태로 새 빌드를 덮어
+    설치하자 `installed_modules_v1 = [today, calendar, schedule, settings, bus]`가 저장되고 오늘
+    탭에 버스 카드가 그대로 떴다.
+- **카드형 기능의 설치 여부는 `InstalledTodayCards`만 본다.** `BusCardHost`는 올라와 있다는 것이
+  곧 켜짐이다 — 호스트 안에서 비동기 provider를 하나 더 기다리면 `listenManual` 촉발 순서에
+  경합이 생긴다. "꺼져 있고 정류장이 남아도 요청 0" 가드는 `InstalledTodayCards`를 띄워 겨눈다.
+- **버스 상세 화면의 스위치는 남겼다** — 대신 등록부를 읽고 쓴다. 그래서 `기능 관리`의 스위치와
+  같은 값을 본다(가드가 있다).
+- ⚠️ **설정 탭의 `버스 도착` 행은 꺼져 있어도 보인다**(예외). 스위치가 상세 화면에도 있어서,
+  거기서 끄고 뒤로 가는 순간 행이 사라지면 "어디 갔지?"가 된다. **"기능별 설정은 켜져 있을
+  때만 보인다"는 규칙은 앞으로 만들 기능부터 적용한다.**
+- `기능 관리` 화면의 `기능` 목록은 켜짐과 무관하게 등록부 순서다. 끄더라도 기능의 데이터는
+  지우지 않으므로 확인 다이얼로그가 없다. ⚠️ 탭형 기능을 켜면 위 `내 탭`에 줄이 하나 늘어
+  아래 목록 전체가 한 줄 내려간다 — "자리가 그대로"는 카드형에만 정확하다.
+- ⚠️ **push 화면에서 테마를 바꾸면 설정 탭으로 돌아간다**(테마 변경 = 전체 재생성). 테마
+  선택이 설정 탭에 있어 사용자가 이 상황을 만들 수는 없다. 통합 테스트에서 테마를 바꿀 때는
+  설정 탭에서 바꾸고 다시 들어갈 것.
 
 ### 출퇴근 버스 도착 카드
 
