@@ -8,9 +8,13 @@ import 'bus_settings.dart';
 /// 조립하면 분기를 유닛 테스트로 고정할 수 없다.
 ///
 /// **켜짐 여부를 먼저 본다.** 꺼 둔 사용자의 설정에도 정류장은 남아 있으므로,
-/// 정류장 수를 먼저 보면 꺼진 기능이 켜진 것처럼 읽힌다.
-String buildBusSettingsSummary(BusSettings settings) {
-  if (!settings.enabled) return BusStrings.summaryOff;
+/// 정류장 수를 먼저 보면 꺼진 기능이 켜진 것처럼 읽힌다. 켜짐은 등록부가
+/// 정하므로 인자로 받는다.
+String buildBusSettingsSummary(
+  BusSettings settings, {
+  required bool installed,
+}) {
+  if (!installed) return BusStrings.summaryOff;
 
   var count = 0;
   if (settings.departure != null) count++;

@@ -47,7 +47,6 @@ void main() {
   // 않는다"는 두 가지다 — 둘 다 순수 함수 테스트로는 닿지 않는다.
   testWidgets('1초가 지나면 조회 없이 점이 왼쪽으로 간다', (tester) async {
     final settings = BusSettings.defaults.copyWith(
-      enabled: true,
       departure: _stop,
       style: BusCardStyle.axis,
     );
@@ -104,7 +103,6 @@ void main() {
     // **양쪽을 다 본다** — 늦게만 검사하면 30초 고정으로 되돌려도 통과한다
     // (190초를 밀면 어차피 발화하므로).
     final settings = BusSettings.defaults.copyWith(
-      enabled: true,
       departure: _stop,
       style: BusCardStyle.axis,
     );
@@ -148,7 +146,6 @@ void main() {
 
   testWidgets('백그라운드로 내려가면 이동 틱도 멈춘다', (tester) async {
     final settings = BusSettings.defaults.copyWith(
-      enabled: true,
       departure: _stop,
       style: BusCardStyle.axis,
     );

@@ -9,6 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/constants/app_colors.dart';
+import 'package:planroutine/core/modules/app_module.dart';
+import 'package:planroutine/core/modules/installed_today_cards.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_poll_interval.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
@@ -18,6 +20,8 @@ import 'package:planroutine/features/bus/presentation/providers/bus_providers.da
 import 'package:planroutine/features/bus/presentation/widgets/bus_arrival_card.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_card_host.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/module_prefs.dart';
 
 /// 픽스처(`arrivals_suwoncityhall_6routes`)의 최속 노선이 160초라
 /// `busPollIntervalFor`가 돌려주는 간격 = min(300초, 160+30) = 190초.
@@ -88,23 +92,52 @@ Future<int> _pumpHost(
   return count;
 }
 
+/// 오늘 탭의 카드 자리를 띄운다 — 버스 설치 여부가 실제로 갈리는 곳.
+Future<int> _pumpTodayCards(
+  WidgetTester tester, {
+  required DateTime now,
+  required BusSettings settings,
+  required bool installed,
+}) async {
+  SharedPreferences.setMockInitialValues(
+    modulePrefs(installed: [if (installed) ModuleIds.bus], bus: settings),
+  );
+  var count = 0;
+  final client = BusApiClient(
+    client: MockClient((_) async {
+      count++;
+      return _json(_body());
+    }),
+    serviceKey: 'TESTKEY',
+    clock: () => now,
+  );
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [busApiClientProvider.overrideWithValue(client)],
+      child: const MaterialApp(home: Scaffold(body: InstalledTodayCards())),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return count;
+}
+
 void main() {
   // 기본 시간대: 출근 07:00–08:30 / 퇴근 16:00–18:00.
   final inRange = DateTime(2026, 7, 28, 7, 32);
   final outOfRange = DateTime(2026, 7, 28, 10, 20);
 
   final onWithStop = BusSettings.defaults.copyWith(
-    enabled: true,
     departure: _stop,
     arrival: _stop,
   );
 
   group('가드 — 조건이 하나라도 거짓이면 요청 0회', () {
-    testWidgets('스위치가 꺼져 있으면 카드가 없고 요청도 0이다', (tester) async {
-      final n = await _pumpHost(
+    testWidgets('버스를 켜지 않았으면 카드가 없고 요청도 0이다', (tester) async {
+      final n = await _pumpTodayCards(
         tester,
         now: inRange,
         settings: BusSettings.defaults,
+        installed: false,
       );
       expect(find.byType(BusArrivalCard), findsNothing);
       expect(n, 0);
@@ -114,22 +147,21 @@ void main() {
       final n = await _pumpHost(
         tester,
         now: inRange,
-        settings: BusSettings.defaults.copyWith(enabled: true),
+        settings: BusSettings.defaults,
       );
       expect(find.text(BusStrings.emptyNoStop), findsOneWidget);
       expect(n, 0);
     });
 
     testWidgets('꺼져 있고 슬롯이 남아 있어도 요청은 0이다 — 켜본 뒤 끈 사용자', (tester) async {
-      // 위의 `스위치가 꺼져 있으면…`은 `BusSettings.defaults`를 넘겨 **슬롯도 없다** —
-      // 그래서 `shouldPoll`에서 `settings.enabled &&`를 통째로 지워도 `stop == null`이
-      // 대신 false를 만들어 통과한다. 프로덕션의 가장 흔한 OFF 상태는 슬롯이 남아
-      // 있는 이 조합이고(켜서 정류장을 등록한 뒤 끈 사용자), 그때 그 절이 사라지면
-      // 화면에 카드가 1픽셀도 없는데 30초마다 TAGO를 두드린다.
-      final n = await _pumpHost(
+      // 프로덕션의 가장 흔한 OFF 상태는 슬롯이 남아 있는 이 조합이다(켜서 정류장을
+      // 등록한 뒤 끈 사용자). 끄더라도 데이터를 지우지 않으므로 정류장은 그대로 남고,
+      // 그때 카드가 마운트되면 화면에 1픽셀도 없는데 TAGO를 두드린다.
+      final n = await _pumpTodayCards(
         tester,
         now: inRange,
-        settings: onWithStop.copyWith(enabled: false),
+        settings: onWithStop,
+        installed: false,
       );
       expect(find.byType(BusArrivalCard), findsNothing);
       expect(n, 0);

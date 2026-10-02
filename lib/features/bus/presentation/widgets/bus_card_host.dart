@@ -28,6 +28,9 @@ const busMoveInterval = Duration(seconds: 1);
 ///
 /// 1) 표시 ON  2) 그 방향 슬롯 있음  3) 펼침  4) 이 위젯이 마운트됨
 /// 5) 포그라운드  6) 캐시 미스([BusApiClient]가 판정)
+///
+/// 켜짐 여부는 보지 않는다 — 올라와 있다는 것이 곧 켜짐이다(InstalledTodayCards).
+/// 그래서 1)과 4)는 같은 조건이다.
 class BusCardHost extends ConsumerStatefulWidget {
   const BusCardHost({super.key, this.clock});
 
@@ -210,7 +213,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     final display = _display(settings);
     final stop = settings.stopFor(display.direction);
 
-    final shouldPoll = settings.enabled && stop != null && display.expanded;
+    final shouldPoll = stop != null && display.expanded;
     if (!shouldPoll) {
       _timer?.cancel();
       _timer = null;
@@ -296,14 +299,12 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     });
   }
 
-  /// 조회·이동 틱이 함께 쓰는 조건. 셋 중 하나라도 어긋나면 둘 다 멈춘다.
+  /// 조회·이동 틱이 함께 쓰는 조건. 둘 중 하나라도 어긋나면 둘 다 멈춘다.
   bool _shouldPoll() {
     final settings = ref.read(busSettingsProvider).valueOrNull;
     if (settings == null) return false;
     final display = _display(settings);
-    return settings.enabled &&
-        settings.stopFor(display.direction) != null &&
-        display.expanded;
+    return settings.stopFor(display.direction) != null && display.expanded;
   }
 
   /// 화면이 그리는 것과 **같은** view. `build`와 `_tick`이 각자 조립하면 간격이
@@ -360,7 +361,7 @@ class _BusCardHostState extends ConsumerState<BusCardHost>
     // TAGO 요청이 2건 나간다(30초 캐시는 **완료된** 응답만 담아 비행 중인 첫
     // 요청이 두 번째를 흡수하지 못한다).
     final settings = ref.watch(busSettingsProvider).valueOrNull;
-    if (settings == null || !settings.enabled) return const SizedBox.shrink();
+    if (settings == null) return const SizedBox.shrink();
 
     final display = _display(settings);
     final stop = settings.stopFor(display.direction);

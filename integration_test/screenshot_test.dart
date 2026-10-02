@@ -24,6 +24,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:planroutine/app.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
+import 'package:planroutine/core/modules/app_module.dart';
+import 'package:planroutine/core/modules/installed_modules_provider.dart';
 import 'package:planroutine/core/dev/screenshot_seed.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
@@ -225,7 +227,10 @@ void main() {
     await bus.setStop(CommuteDirection.toWork, _screenshotStop);
     // 시간 축 — 배차 간격이 공간으로 보여 스토어에서 기능이 한눈에 읽힌다.
     await bus.setStyle(BusCardStyle.axis);
-    await bus.setEnabled(true);
+    // 켜짐은 등록부가 주인이다 — 버스 기능을 설치하면 오늘 탭에 카드가 올라온다.
+    await container
+        .read(installedModulesProvider.notifier)
+        .setEnabled(ModuleIds.bus, true);
 
     // `pumpAndSettle`을 쓰지 않는다(위 주석). 조회 1회 + 카드 렌더가 끝날 만큼만 돌린다.
     for (var i = 0; i < 12; i++) {
@@ -236,7 +241,10 @@ void main() {
     await binding.takeScreenshot('6_bus');
 
     // 타이머를 끊어 둔다 — 켜진 채로 테스트가 끝나면 이동 틱이 teardown까지 남는다.
-    await bus.setEnabled(false);
+    // 버스 기능을 내리면 카드가 내려가며 호스트의 타이머도 함께 정리된다.
+    await container
+        .read(installedModulesProvider.notifier)
+        .setEnabled(ModuleIds.bus, false);
     await tester.pump(const Duration(milliseconds: 250));
   });
 }

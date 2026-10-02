@@ -66,9 +66,6 @@ class BusSettingsNotifier extends AsyncNotifier<BusSettings> {
 
   BusSettings get _current => state.valueOrNull ?? BusSettings.defaults;
 
-  Future<void> setEnabled(bool value) =>
-      _save(_current.copyWith(enabled: value));
-
   Future<void> setStyle(BusCardStyle style) =>
       _save(_current.copyWith(style: style));
 

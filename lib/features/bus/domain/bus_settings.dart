@@ -7,9 +7,10 @@ import 'time_range.dart';
 ///
 /// DB 변경 없이 이 클래스 하나에 담는다. 기기를 바꾸면 사라진다 — 이 앱의
 /// 일정·이벤트도 이미 로컬 전용이라 정류장만 클라우드에 두면 오히려 어긋난다.
+///
+/// 켜짐 여부는 여기 없다 — 기능 등록부(`installedModulesProvider`)가 주인이다.
 class BusSettings {
   const BusSettings({
-    this.enabled = false,
     this.departure,
     this.arrival,
     this.style = BusCardStyle.text,
@@ -18,9 +19,6 @@ class BusSettings {
     this.overrideAt,
     this.overrideExpanded = false,
   });
-
-  /// 오늘 탭에 카드를 그리는지. **기본 꺼짐** — 켜지 않은 사용자의 화면은 안 바뀐다.
-  final bool enabled;
 
   /// 출근 방향에서 볼 정류장(집 근처).
   final BusStop? departure;
@@ -62,7 +60,6 @@ class BusSettings {
   /// 바로 그 형태다(`kind`·`googleEventId`를 그렇게 잃었다). 필드를 추가할 때
   /// 고쳐야 할 곳을 이 메서드 하나로 모아 둔다.
   BusSettings copyWith({
-    bool? enabled,
     BusStop? departure,
     BusStop? arrival,
     BusCardStyle? style,
@@ -73,7 +70,6 @@ class BusSettings {
     bool clearOverride = false,
   }) {
     return BusSettings(
-      enabled: enabled ?? this.enabled,
       departure: departure ?? this.departure,
       arrival: arrival ?? this.arrival,
       style: style ?? this.style,
@@ -90,7 +86,6 @@ class BusSettings {
   BusSettings clearOverride() => copyWith(clearOverride: true);
 
   Map<String, dynamic> toJson() => {
-    'enabled': enabled,
     'departure': departure?.toJson(),
     'arrival': arrival?.toJson(),
     'style': style.name,
@@ -102,7 +97,6 @@ class BusSettings {
 
   factory BusSettings.fromJson(Map<String, dynamic> json) {
     return BusSettings(
-      enabled: json['enabled'] as bool? ?? false,
       departure: _stop(json['departure']),
       arrival: _stop(json['arrival']),
       style: BusCardStyle.fromName(json['style'] as String?),

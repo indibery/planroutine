@@ -39,6 +39,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/constants/app_sizes.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/modules/installed_modules_provider.dart';
 import 'package:planroutine/core/theme/app_theme.dart';
 import 'package:planroutine/core/utils/date_utils.dart';
 import 'package:planroutine/features/bus/data/bus_api_client.dart';
@@ -807,7 +808,6 @@ void main() {
 
         // 정류장 이름이 긴 채로 켜져 있는 상태 — 실사용의 최악.
         const busPrefs = BusSettings(
-          enabled: true,
           departure: BusStop(
             nodeId: 'GGB201000156',
             nodeNm: _longStop,
@@ -823,6 +823,7 @@ void main() {
         );
         SharedPreferences.setMockInitialValues({
           'bus_settings_v1': jsonEncode(busPrefs.toJson()),
+          installedModulesPrefsKey: '["bus"]',
         });
         await probe(
           tester,

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/modules/app_module.dart';
+import '../../../../core/modules/installed_modules_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../bus/domain/bus_settings.dart';
 import '../../../bus/domain/bus_settings_summary.dart';
@@ -27,6 +29,7 @@ class BusSummaryListTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings =
         ref.watch(busSettingsProvider).valueOrNull ?? BusSettings.defaults;
+    final installed = ref.watch(moduleInstalledProvider(ModuleIds.bus));
 
     return ListTile(
       key: tileKey,
@@ -36,7 +39,7 @@ class BusSummaryListTile extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            buildBusSettingsSummary(settings),
+            buildBusSettingsSummary(settings, installed: installed),
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,

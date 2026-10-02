@@ -16,33 +16,37 @@ void main() {
   group('buildBusSettingsSummary', () {
     test('꺼져 있으면 꺼짐', () {
       expect(
-        buildBusSettingsSummary(BusSettings.defaults),
+        buildBusSettingsSummary(BusSettings.defaults, installed: false),
         BusStrings.summaryOff,
       );
     });
 
     test('켜져 있고 정류장이 없으면 그 사실을 말한다', () {
       expect(
-        buildBusSettingsSummary(BusSettings.defaults.copyWith(enabled: true)),
+        buildBusSettingsSummary(BusSettings.defaults, installed: true),
         BusStrings.summaryNoStop,
       );
     });
 
     test('한 곳만 등록하면 1곳', () {
       final settings = BusSettings.defaults.copyWith(
-        enabled: true,
         departure: _stop('우방아파트'),
       );
-      expect(buildBusSettingsSummary(settings), BusStrings.summaryStops(1));
+      expect(
+        buildBusSettingsSummary(settings, installed: true),
+        BusStrings.summaryStops(1),
+      );
     });
 
     test('두 곳을 등록하면 2곳', () {
       final settings = BusSettings.defaults.copyWith(
-        enabled: true,
         departure: _stop('우방아파트'),
         arrival: _stop('중앙공원'),
       );
-      expect(buildBusSettingsSummary(settings), BusStrings.summaryStops(2));
+      expect(
+        buildBusSettingsSummary(settings, installed: true),
+        BusStrings.summaryStops(2),
+      );
     });
 
     test('꺼져 있으면 정류장이 있어도 꺼짐이다', () {
@@ -51,7 +55,10 @@ void main() {
         departure: _stop('우방아파트'),
         arrival: _stop('중앙공원'),
       );
-      expect(buildBusSettingsSummary(settings), BusStrings.summaryOff);
+      expect(
+        buildBusSettingsSummary(settings, installed: false),
+        BusStrings.summaryOff,
+      );
     });
   });
 }

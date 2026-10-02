@@ -14,8 +14,7 @@ const _stop = BusStop(
 
 void main() {
   group('기본값 — 조용한 쪽이 기본이다', () {
-    test('표시는 꺼져 있고 모양은 간단히다', () {
-      expect(BusSettings.defaults.enabled, isFalse);
+    test('모양은 간단히다', () {
       expect(BusSettings.defaults.style, BusCardStyle.text);
     });
 
@@ -53,7 +52,6 @@ void main() {
   group('직렬화', () {
     test('전부 채운 값이 왕복한다', () {
       final s = BusSettings.defaults.copyWith(
-        enabled: true,
         departure: _stop.copyWith(routeIds: {'A'}),
         arrival: _stop,
         style: BusCardStyle.axis,
@@ -61,7 +59,6 @@ void main() {
         overrideExpanded: true,
       );
       final back = BusSettings.fromJson(s.toJson());
-      expect(back.enabled, isTrue);
       expect(back.departure?.routeIds, {'A'});
       expect(back.style, BusCardStyle.axis);
       expect(back.overrideAt, DateTime(2026, 7, 28, 8, 35));
@@ -70,10 +67,15 @@ void main() {
 
     test('빈 맵이면 기본값으로 읽힌다', () {
       final back = BusSettings.fromJson(const {});
-      expect(back.enabled, isFalse);
       expect(back.style, BusCardStyle.text);
       expect(back.departure, isNull);
       expect(back.toWorkRange.label, '07:00 – 08:30');
+    });
+
+    test('toJson은 enabled를 쓰지 않는다 — 켜짐의 주인은 등록부다', () {
+      // 남겨 두면 누군가 다시 이 값으로 분기를 짠다. 옛 값은
+      // migrateLegacyModuleIds만 원본 JSON에서 읽는다.
+      expect(BusSettings.defaults.toJson().containsKey('enabled'), isFalse);
     });
 
     test('모르는 모양 이름이면 기본 모양으로 폴백한다', () {
@@ -97,7 +99,6 @@ void main() {
     // 경로만 쓰지만, 되살아나면 이 테스트가 먼저 깨진다.
     test('clearOverride는 override 밖의 값을 하나도 잃지 않는다', () {
       final s = BusSettings.defaults.copyWith(
-        enabled: true,
         departure: _stop,
         arrival: _stop.copyWith(routeIds: {'A'}),
         style: BusCardStyle.axis,
@@ -108,7 +109,6 @@ void main() {
       );
 
       final cleared = s.clearOverride();
-      expect(cleared.enabled, isTrue);
       expect(cleared.departure?.nodeId, 'GGB201000156');
       expect(cleared.arrival?.routeIds, {'A'});
       expect(cleared.style, BusCardStyle.axis);

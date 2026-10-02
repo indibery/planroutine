@@ -28,10 +28,9 @@ void main() {
     return (container, container.read(busSettingsProvider.notifier));
   }
 
-  test('처음에는 기본값이다 — 꺼져 있고 모양은 간단히', () async {
+  test('처음에는 기본값이다 — 모양은 간단히', () async {
     final (container, _) = await boot();
     final s = container.read(busSettingsProvider).requireValue;
-    expect(s.enabled, isFalse);
     expect(s.style, BusCardStyle.text);
   });
 
@@ -47,13 +46,11 @@ void main() {
 
   test('저장한 값이 새 컨테이너에서도 읽힌다', () async {
     final (_, notifier) = await boot();
-    await notifier.setEnabled(true);
     await notifier.setStyle(BusCardStyle.axis);
 
     final fresh = ProviderContainer();
     addTearDown(fresh.dispose);
     final s = await fresh.read(busSettingsProvider.future);
-    expect(s.enabled, isTrue);
     expect(s.style, BusCardStyle.axis);
   });
 
@@ -102,7 +99,6 @@ void main() {
     // 편집·향후 스키마 변경). 그냥 들고 있으면 `resolveBusDisplay`가 override를
     // 읽기도 전에 접힘을 반환해 카드가 영구히 접히고 제목줄 탭이 no-op가 된다.
     final broken = BusSettings.defaults.copyWith(
-      enabled: true,
       departure: _stop,
       arrival: _stop,
       style: BusCardStyle.axis,
@@ -123,7 +119,6 @@ void main() {
 
     // **시간대 두 개만** 되돌린다. 여기서 하나라도 날아가면 정류장을 다시 등록해야
     // 하는데, 사용자는 자기가 무엇을 잘못했는지도 모른다.
-    expect(s.enabled, isTrue);
     expect(s.departure?.nodeId, _stop.nodeId);
     expect(s.arrival?.nodeId, _stop.nodeId);
     expect(s.style, BusCardStyle.axis);
@@ -143,6 +138,6 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final s = await container.read(busSettingsProvider.future);
-    expect(s.enabled, isFalse);
+    expect(s.style, BusSettings.defaults.style);
   });
 }

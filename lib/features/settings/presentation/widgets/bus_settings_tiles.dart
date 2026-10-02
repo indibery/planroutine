@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/modules/app_module.dart';
+import '../../../../core/modules/installed_modules_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../bus/domain/bus_card_style.dart';
 import '../../../bus/domain/bus_settings.dart';
@@ -31,10 +33,12 @@ class BusSettingsTiles extends ConsumerWidget {
     // **로딩 중에도 기본값으로 그린다.** null에 `SizedBox.shrink()`를 돌려주면
     // `SharedPreferences.getInstance()`를 기다리는 한 프레임 동안 제목·부제·Divider만
     // 있고 스위치가 없는 빈 섹션이 보인다 — 같은 화면의 도장·알림·테마 섹션은
-    // 전부 defaults로 즉시 그리므로 이 섹션 하나만 깜빡인다. 기본값이 `enabled:
-    // false`라 아래 감춤 로직도 그대로 맞다.
+    // 전부 defaults로 즉시 그리므로 이 섹션 하나만 깜빡인다. 등록부가 로딩
+    // 중이면 `moduleInstalledProvider`가 false라 아래 감춤 로직도 그대로 맞다.
     final settings =
         ref.watch(busSettingsProvider).valueOrNull ?? BusSettings.defaults;
+    // 켜짐은 등록부가 주인이다 — `기능 관리` 화면의 스위치와 같은 값을 본다.
+    final installed = ref.watch(moduleInstalledProvider(ModuleIds.bus));
 
     final notifier = ref.read(busSettingsProvider.notifier);
 
@@ -50,17 +54,17 @@ class BusSettingsTiles extends ConsumerWidget {
         // 기능 전체를 켜는 유일한 관문만 다르게 보이던 셈이다.
         SwitchListTile(
           key: switchKey,
-          value: settings.enabled,
-          onChanged: notifier.setEnabled,
+          value: installed,
+          onChanged: (v) => ref
+              .read(installedModulesProvider.notifier)
+              .setEnabled(ModuleIds.bus, v),
           title: Text(BusStrings.showTitle, style: _titleStyle),
           subtitle: Text(
-            settings.enabled
-                ? BusStrings.showSubtitleOn
-                : BusStrings.showSubtitleOff,
+            installed ? BusStrings.showSubtitleOn : BusStrings.showSubtitleOff,
             style: _subStyle,
           ),
         ),
-        if (settings.enabled) ...[
+        if (installed) ...[
           _slotTile(
             context,
             key: departureKey,

@@ -1,14 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/modules/app_module.dart';
 import 'package:planroutine/features/bus/domain/bus_settings.dart';
 import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/settings/presentation/widgets/bus_settings_tiles.dart';
+
+import '../../helpers/module_prefs.dart';
 
 /// 실측 정류장 이름. 서울·경기에는 이만큼 긴 이름이 실재한다
 /// (실기기 신고 2026-07-30 — 이 이름이 화면을 깨뜨렸다).
@@ -23,13 +24,12 @@ Future<void> _pump(
   double width,
 ) async {
   final settings = BusSettings.defaults.copyWith(
-    enabled: true,
     departure: _stop('장미아파트'),
     arrival: _stop(arrivalName),
   );
-  SharedPreferences.setMockInitialValues({
-    'bus_settings_v1': jsonEncode(settings.toJson()),
-  });
+  SharedPreferences.setMockInitialValues(
+    modulePrefs(installed: [ModuleIds.bus], bus: settings),
+  );
 
   await tester.pumpWidget(
     ProviderScope(
