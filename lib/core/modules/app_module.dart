@@ -42,6 +42,8 @@ class AppModule {
     this.fixed = false,
     this.tab,
     this.card,
+    this.settingsRoute,
+    this.settingsSummary,
   });
 
   final String id;
@@ -58,6 +60,16 @@ class AppModule {
 
   /// [placement]가 todayCard일 때만 있다. 오늘 탭 맨 위에 놓인다.
   final Widget? card;
+
+  /// 상세 설정 화면 경로. **켜져 있을 때만** `기능 관리`의 이 행에서 `›`로 들어간다.
+  /// null이면 상세가 없다. 설정 탭에는 이 경로로 가는 행을 두지 않는다
+  /// (`settings_tab_module_rows_test.dart`가 지킨다).
+  final String? settingsRoute;
+
+  /// 켜진 행의 부제 — 기능이 스스로 상태를 요약한다(예: 정류장 2곳). null이면
+  /// [description]을 쓴다. 위젯으로 두는 이유는 [card]와 같다: 기능 관리 화면이
+  /// 각 기능의 내부 상태를 몰라도 된다.
+  final Widget? settingsSummary;
 }
 
 /// [resolveModules]가 정리한 결과. 화면은 저장값이 아니라 이것만 본다.

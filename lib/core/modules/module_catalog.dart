@@ -81,5 +81,6 @@ const moduleCatalog = <AppModule>[
     icon: Icons.directions_bus_outlined,
     placement: ModulePlacement.todayCard,
     card: BusCardHost(),
+    settingsRoute: AppRoutes.busSettings,
   ),
 ];

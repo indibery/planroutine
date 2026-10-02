@@ -18,10 +18,7 @@ const _shippedIds = [
 ];
 
 List<String> _paths(List<RouteBase> routes) => [
-  for (final r in routes) ...[
-    if (r is GoRoute) r.path,
-    ..._paths(r.routes),
-  ],
+  for (final r in routes) ...[if (r is GoRoute) r.path, ..._paths(r.routes)],
 ];
 
 void main() {
@@ -38,10 +35,12 @@ void main() {
   });
 
   test('고정 기능은 정확히 오늘·캘린더·입력·설정이다', () {
-    expect(
-      moduleCatalog.where((m) => m.fixed).map((m) => m.id).toSet(),
-      {ModuleIds.today, ModuleIds.calendar, ModuleIds.schedule, ModuleIds.settings},
-    );
+    expect(moduleCatalog.where((m) => m.fixed).map((m) => m.id).toSet(), {
+      ModuleIds.today,
+      ModuleIds.calendar,
+      ModuleIds.schedule,
+      ModuleIds.settings,
+    });
   });
 
   test('자리와 그 자리의 재료가 짝이 맞는다', () {
@@ -53,11 +52,42 @@ void main() {
   });
 
   test('탭형 기능의 라우트는 설치 여부와 무관하게 라우터에 있다', () {
-    final paths = _paths(createRouter(onboardingDone: true).configuration.routes);
+    final paths = _paths(
+      createRouter(onboardingDone: true).configuration.routes,
+    );
     for (final m in moduleCatalog) {
       final route = m.tab?.route;
       if (route == null) continue;
-      expect(paths, contains(route), reason: '${m.id}의 라우트가 없으면 Page Not Found');
+      expect(
+        paths,
+        contains(route),
+        reason: '${m.id}의 라우트가 없으면 Page Not Found',
+      );
+    }
+  });
+
+  test('상세 설정 경로는 설치 여부와 무관하게 라우터에 있다', () {
+    final paths = _paths(
+      createRouter(onboardingDone: true).configuration.routes,
+    );
+    final routes = [
+      for (final m in moduleCatalog) ?m.settingsRoute,
+    ];
+    // 버스가 상세를 가지므로 비면 안 된다 — 비면 아래 루프가 아무것도 검사하지 않는다.
+    expect(routes, isNotEmpty);
+    for (final route in routes) {
+      expect(
+        paths,
+        contains(route),
+        reason: '$route가 없으면 ›를 눌렀을 때 Page Not Found',
+      );
+    }
+  });
+
+  test('고정 기능은 상세 경로를 갖지 않는다 — 고정 탭의 설정은 설정 탭에 있다', () {
+    for (final m in moduleCatalog.where((m) => m.fixed)) {
+      expect(m.settingsRoute, isNull, reason: m.id);
+      expect(m.settingsSummary, isNull, reason: m.id);
     }
   });
 
