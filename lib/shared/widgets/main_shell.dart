@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/modules/app_module.dart';
-import '../../core/modules/module_catalog.dart';
+import '../../core/modules/fixed_tabs.dart';
 import '../../core/router/app_router.dart';
 import 'floating_tab_bar.dart';
 

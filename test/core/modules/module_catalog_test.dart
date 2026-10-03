@@ -10,6 +10,7 @@ import 'package:planroutine/core/router/app_router.dart';
 /// id는 사용자 기기의 저장값이다. 이름을 바꾸거나 지우면 그 기능을 켜 둔
 /// 사용자의 설정이 오류도 없이 꺼진다(`resolveModules`가 모르는 id를 버린다).
 const _shippedIds = [
+  ModuleIds.memo,
   ModuleIds.today,
   ModuleIds.calendar,
   ModuleIds.schedule,
@@ -95,5 +96,13 @@ void main() {
     for (final m in moduleCatalog.where((m) => !m.fixed)) {
       expect(m.description, isNotEmpty, reason: m.id);
     }
+  });
+
+  test('포스트잇은 탭형 선택 기능이고 상세 설정이 없다', () {
+    final memo = moduleCatalog.firstWhere((m) => m.id == ModuleIds.memo);
+    expect(memo.placement, ModulePlacement.tab);
+    expect(memo.fixed, isFalse);
+    expect(memo.tab?.route, AppRoutes.memo);
+    expect(memo.settingsRoute, isNull);
   });
 }

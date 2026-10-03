@@ -169,11 +169,11 @@ void main() {
       installedModulesPrefsKey: '[]',
     }));
 
-    test('아래로 옮기면 onReorder 규약대로 한 칸 당겨 넣는다', () async {
+    test('onReorderItem 규약 — newIndex는 이미 보정된 자리다', () async {
       final c = _container();
       await c.read(installedModulesProvider.future);
-      // 오늘(0)을 입력(2) 뒤로: ReorderableListView는 newIndex=3을 준다
-      await c.read(installedModulesProvider.notifier).reorderTabs(0, 3);
+      // 오늘(0)을 입력(2) 뒤로: onReorderItem은 보정된 2를 준다
+      await c.read(installedModulesProvider.notifier).reorderTabs(0, 2);
       expect(
         c.read(installedModulesProvider).requireValue.tabs.map((m) => m.id),
         ['calendar', 'schedule', 'today', 'settings'],

@@ -29,8 +29,9 @@ AppModule _tabModule(String id) => AppModule(
   ),
 );
 
+// 실제 포스트잇 항목은 뺀다 — 이 화면 테스트의 탭형 선택 기능은 아래 t1~t3뿐이다.
 final _catalog = [
-  ...moduleCatalog,
+  ...moduleCatalog.where((m) => m.id != ModuleIds.memo),
   _tabModule('t1'),
   _tabModule('t2'),
   _tabModule('t3'),

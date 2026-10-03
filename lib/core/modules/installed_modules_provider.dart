@@ -68,16 +68,15 @@ class InstalledModulesNotifier extends AsyncNotifier<ResolvedModules> {
     return true;
   }
 
-  /// 설정을 뺀 탭 목록에서 순서를 바꾼다. `ReorderableListView.onReorder` 규약이라
-  /// 아래로 옮길 때 [newIndex]가 한 칸 크게 온다.
+  /// 설정을 뺀 탭 목록에서 순서를 바꾼다. `onReorderItem` 규약 — [newIndex]는
+  /// 이미 보정된 자리다.
   Future<void> reorderTabs(int oldIndex, int newIndex) async {
     final current = await future;
     final movable = [
       for (final m in current.tabs)
         if (m.id != ModuleIds.settings) m.id,
     ];
-    final target = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    movable.insert(target, movable.removeAt(oldIndex));
+    movable.insert(newIndex, movable.removeAt(oldIndex));
     await _save(
       resolveModules(_catalog, [
         ...movable,

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/bus/domain/commute_direction.dart';
 import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
@@ -21,6 +22,7 @@ class AppRoutes {
   static const today = '/today';
   static const calendar = '/calendar';
   static const schedule = '/schedule';
+  static const memo = '/memo';
   static const settings = '/settings';
   static const trash = '/trash';
   static const import = '/import';
@@ -85,6 +87,12 @@ GoRouter createRouter({
           path: AppRoutes.schedule,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: ScheduleScreen()),
+        ),
+        // 선택 탭 — 설치 여부와 무관하게 늘 등록한다(꺼져 있으면 탭바에 없을 뿐).
+        GoRoute(
+          path: AppRoutes.memo,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: MemoBoardScreen()),
         ),
         GoRoute(
           path: AppRoutes.settings,
