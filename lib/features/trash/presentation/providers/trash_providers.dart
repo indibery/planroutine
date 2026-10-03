@@ -6,9 +6,10 @@ import '../../../memo/domain/memo.dart';
 import '../../../memo/presentation/providers/memo_providers.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
+import '../../domain/trash_entries.dart';
 import '../../domain/trash_filter.dart';
 
-/// 휴지통 항목 묶음 (일정 + 캘린더 이벤트).
+/// 휴지통 항목 묶음 (일정 + 캘린더 이벤트 + 쪽지).
 ///
 /// 생성자가 [visibleTrashSchedules]로 **스스로 거른다** — 캘린더 이벤트와 짝인
 /// 원본 일정은 목록에 넣지 않는다. 호출부에서 거르게 두면 다음 호출부가 그것을
@@ -23,6 +24,13 @@ class TrashSnapshot {
   final List<Schedule> schedules;
   final List<CalendarEvent> events;
   final List<Memo> memos;
+
+  /// 화면이 그리는 한 목록 — 종류와 상관없이 최근에 지운 것부터.
+  late final List<TrashEntry> entries = mergeTrashEntries(
+    schedules: schedules,
+    events: events,
+    memos: memos,
+  );
 
   int get total => schedules.length + events.length + memos.length;
   bool get isEmpty => total == 0;
