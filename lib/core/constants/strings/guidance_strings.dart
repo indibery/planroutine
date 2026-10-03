@@ -193,4 +193,33 @@ class GuidanceStrings {
   static String unattachedRecording(int n) => '붙이지 못한 녹음 $n개';
   static const retryAttach = '다시 붙이기';
   static const attachFailedKept = '녹음은 보관했어요. 아래 다시 붙이기를 눌러 주세요.';
+
+  // 명단 관리
+  static String studentsHeader(int n) => '학생 · $n명';
+  static const othersHeader = '보호자 · 교직원 · 기타';
+  static String archivedHeader(int n) => '보관된 사람 · $n명';
+  static String recordCount(int n) => '기록 $n';
+  static const pasteTitle = '여러 명 붙여넣기';
+  static const pasteHint = '한 줄에 한 명씩. 앞의 번호는 지워집니다.';
+  static String pastePreview(int n) => '$n명을 학생으로 넣습니다';
+  static const pasteConfirm = '넣기';
+  static String pasteDone(int n) => '$n명을 넣었어요';
+  static const personAddTitle = '사람 추가';
+  static const personEditTitle = '사람 고치기';
+  static const personName = '이름';
+  static const personMemo = '소속·관계';
+  static const archive = '보관';
+  static const unarchive = '되살리기';
+  static const archiveNote = '보관해도 옛 기록의 이름은 그대로 남습니다.';
+  static const actionFailed = '처리하지 못했어요. 다시 눌러 주세요.';
+
+  // 삭제한 기록
+  static const trashIntro =
+      '자동으로 지워지지 않습니다. 영구 삭제하면 모든 판과 녹음·사진이 함께 지워지고 되돌릴 수 없습니다.';
+  static const trashEmpty = '삭제한 기록이 없습니다';
+  static String deletedAt(String when) => '삭제 $when';
+  static const restore = '되살리기';
+  static const purge = '영구 삭제';
+  static const purgeTitle = '영구 삭제할까요?';
+  static const purgeMessage = '이 기록의 모든 판과 첨부 파일이 지워집니다. 되돌릴 수 없습니다.';
 }

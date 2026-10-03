@@ -115,7 +115,8 @@ List<Participant> collectParticipants(List<GuidanceRecord> records) {
   return out;
 }
 
-final _leadingNumber = RegExp(r'^\d+\s*[.)\t]?\s*');
+// 번호 뒤에 구분자(`.`·`)`·탭·공백)가 있을 때만 번호로 본다 — `1반 김하늘`의 `1`은 이름의 일부다.
+final _leadingNumber = RegExp(r'^\d+(?:\s*[.)]\s*|\t\s*|\s+)');
 
 /// 명단 붙여넣기 — 줄마다 한 명. 앞의 번호(`1.`·`2\t`·`10)`)·빈 줄·중복을 걷어낸다.
 List<String> parseRosterPaste(String raw) {

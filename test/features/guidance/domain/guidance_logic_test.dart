@@ -149,6 +149,11 @@ void main() {
     expect(parseRosterPaste(raw), ['김하늘', '이도윤', '최민서', '박서준']);
   });
 
+  test('parseRosterPaste — 번호 뒤 구분자가 없으면 이름의 일부로 둔다', () {
+    expect(parseRosterPaste('1반 김하늘'), ['1반 김하늘']);
+    expect(parseRosterPaste('3 박서준\n7\t최민서'), ['박서준', '최민서']);
+  });
+
   test('countRecordsByPerson — 명단 사람만 센다', () {
     const kim = Participant(personId: 7, name: '김하늘');
     final got = countRecordsByPerson([

@@ -8,6 +8,8 @@ import '../../features/guidance/presentation/screens/guidance_detail_screen.dart
 import '../../features/guidance/presentation/screens/guidance_edit_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_history_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
+import '../../features/guidance/presentation/screens/guidance_people_screen.dart';
+import '../../features/guidance/presentation/screens/guidance_trash_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -144,6 +146,14 @@ GoRouter createRouter({
                       ),
                     ),
                   ],
+                ),
+                GoRoute(
+                  path: 'people',
+                  builder: (context, state) => const GuidancePeopleScreen(),
+                ),
+                GoRoute(
+                  path: 'trash',
+                  builder: (context, state) => const GuidanceTrashScreen(),
                 ),
               ],
             ),
