@@ -36,7 +36,9 @@ class AttachmentTile extends ConsumerStatefulWidget {
   ConsumerState<AttachmentTile> createState() => _AttachmentTileState();
 }
 
-class _AttachmentTileState extends ConsumerState<AttachmentTile> {
+/// 앱이 resumed가 아니게 되면(떠남·잠김·시스템 창 — 가드 여부와 무관) 재생을 멈춘다.
+/// 잠금 덮개가 화면을 가려도 소리는 계속 나기 때문이다.
+class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBindingObserver {
   AudioPlayback? _player;
   StreamSubscription<bool>? _sub;
   var _playing = false;
@@ -46,7 +48,17 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _locate();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed || !_playing) return;
+    final player = _player;
+    if (player == null) return;
+    setState(() => _playing = false);
+    unawaited(player.pause().catchError((Object _) {}));
   }
 
   @override
@@ -64,6 +76,7 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _releasePlayer();
     super.dispose();
   }

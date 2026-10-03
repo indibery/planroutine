@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
+import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
@@ -65,6 +66,24 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pumpAndSettle();
     // 기본 문구에도 `지도 기록`이 들어 있으므로 경고 줄만의 낱말로 찾는다
+    expect(find.textContaining('건과 첨부'), findsNothing);
+    await tester.runAsync(db.close);
+  });
+
+  testWidgets('지도 기록이 0건이어도 명단이 있으면 명단이 지워진다고 말한다', (tester) async {
+    final db = freshDatabaseHelper();
+    await tester.runAsync(() => GuidancePeopleRepository(dbHelper: db).addNames(['김하늘', '이도윤']));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [guidanceRepositoryProvider.overrideWithValue(GuidanceRepository(dbHelper: db))],
+        child: const MaterialApp(home: Scaffold(body: ResetListTile())),
+      ),
+    );
+    await tester.tap(find.byType(ListTile));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(GuidanceStrings.resetPeopleWarning(2)), findsOneWidget);
+    // 기록 경고 줄은 0건이라 없다
     expect(find.textContaining('건과 첨부'), findsNothing);
     await tester.runAsync(db.close);
   });

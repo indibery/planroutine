@@ -38,10 +38,15 @@ class ResetListTile extends ConsumerWidget {
     // 지도 기록은 되돌릴 수 없는 근거 자료다 — 지워진다는 사실을 건수로 따로 말한다.
     final counts = await ref.read(guidanceRepositoryProvider).counts();
     if (!context.mounted) return;
-    final message = counts.records == 0
+    // 기록이 0건이어도 명단은 지워진다 — 명단 줄은 따로 말한다.
+    final warnings = [
+      if (counts.records > 0)
+        GuidanceStrings.resetWarning(counts.records, counts.attachments),
+      if (counts.people > 0) GuidanceStrings.resetPeopleWarning(counts.people),
+    ];
+    final message = warnings.isEmpty
         ? SettingsStrings.resetAllConfirmMessage
-        : '${SettingsStrings.resetAllConfirmMessage}\n\n'
-              '${GuidanceStrings.resetWarning(counts.records, counts.attachments)}';
+        : '${SettingsStrings.resetAllConfirmMessage}\n\n${warnings.join('\n')}';
     final confirmed = await ConfirmDialog.show(
       context: context,
       title: SettingsStrings.resetAllConfirmTitle,

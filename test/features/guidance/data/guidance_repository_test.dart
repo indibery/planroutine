@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/database/database_helper.dart';
+import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
@@ -114,5 +115,41 @@ void main() {
     final c = await repo.counts();
     expect(c.records, 1);
     expect(c.attachments, 1);
+  });
+
+  test('counts는 명단(보관한 사람 포함)도 센다 — 기록이 0건이어도 초기화가 명단을 지운다', () async {
+    final people = GuidancePeopleRepository(dbHelper: db);
+    await people.addNames(['김하늘', '이도윤']);
+    final p = await people.add(const GuidancePerson(name: '최민서', role: PersonRole.guardian));
+    await people.archive(p.id ?? -1);
+    final c = await repo.counts();
+    expect(c.records, 0);
+    expect(c.people, 3);
+  });
+
+  test('다시 삭제해도 처음 삭제한 시각을 덮어쓰지 않는다', () async {
+    final id = await repo.create(const GuidanceContent(title: 'a'));
+    await repo.softDelete(id);
+    final first = (await repo.getDeleted()).single.deletedAt;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    await repo.softDelete(id);
+    expect((await repo.getDeleted()).single.deletedAt, first);
+  });
+
+  test('다시 빼도 처음 뺀 시각을 덮어쓰지 않는다', () async {
+    final id = await repo.create(const GuidanceContent(title: 'a'));
+    final a = await repo.addAttachment(_att(id, 'a.m4a'));
+    await repo.removeAttachment(a.id ?? -1);
+    final first = (await repo.getAttachments(id)).single.removedAt;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    await repo.removeAttachment(a.id ?? -1);
+    expect((await repo.getAttachments(id)).single.removedAt, first);
+  });
+
+  test('되살리기는 삭제 시각을 지운다(softDelete의 조건이 되살리기를 막지 않는다)', () async {
+    final id = await repo.create(const GuidanceContent(title: 'a'));
+    await repo.softDelete(id);
+    await repo.restore(id);
+    expect((await repo.getActive()).single.id, id);
   });
 }

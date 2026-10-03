@@ -112,13 +112,20 @@ class GuidanceRepository {
     return rows.map(GuidanceRevision.fromMap).toList();
   }
 
-  Future<void> softDelete(int id) => _setDeleted(id, DateTime.now().toIso8601String());
-
-  Future<void> restore(int id) => _setDeleted(id, null);
-
-  Future<void> _setDeleted(int id, String? at) async {
+  /// 이미 삭제한 기록이면 처음 삭제한 시각을 덮어쓰지 않는다.
+  Future<void> softDelete(int id) async {
     final db = await _dbHelper.database;
-    await db.update(_records, {'deleted_at': at}, where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      _records,
+      {'deleted_at': DateTime.now().toIso8601String()},
+      where: 'id = ? AND deleted_at IS NULL',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> restore(int id) async {
+    final db = await _dbHelper.database;
+    await db.update(_records, {'deleted_at': null}, where: 'id = ?', whereArgs: [id]);
   }
 
   /// 사용자가 `삭제한 기록`에서 직접 지울 때만. 판 테이블 DELETE는 **여기 한 곳뿐**이다.
@@ -146,12 +153,13 @@ class GuidanceRepository {
   }
 
   /// 첨부에서 빼기 — 행과 파일은 남기고 시각만 찍는다(이력에 보인다).
+  /// 이미 뺀 첨부면 처음 뺀 시각을 덮어쓰지 않는다.
   Future<void> removeAttachment(int attachmentId) async {
     final db = await _dbHelper.database;
     await db.update(
       _attachments,
       {'removed_at': DateTime.now().toIso8601String()},
-      where: 'id = ?',
+      where: 'id = ? AND removed_at IS NULL',
       whereArgs: [attachmentId],
     );
   }
@@ -167,10 +175,16 @@ class GuidanceRepository {
     return rows.map(GuidanceAttachment.fromMap).toList();
   }
 
-  Future<({int records, int attachments})> counts() async {
+  /// 전체 초기화 확인 창용. 명단(보관한 사람 포함)도 초기화가 지우므로 함께 센다.
+  Future<({int records, int attachments, int people})> counts() async {
     final db = await _dbHelper.database;
     final r = await db.rawQuery('SELECT COUNT(*) AS c FROM $_records');
     final a = await db.rawQuery('SELECT COUNT(*) AS c FROM $_attachments');
-    return (records: r.first['c'] as int, attachments: a.first['c'] as int);
+    final p = await db.rawQuery('SELECT COUNT(*) AS c FROM ${DatabaseHelper.tableGuidancePeople}');
+    return (
+      records: r.first['c'] as int,
+      attachments: a.first['c'] as int,
+      people: p.first['c'] as int,
+    );
   }
 }

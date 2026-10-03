@@ -212,4 +212,32 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text(GuidanceStrings.attachmentMissing), findsOneWidget);
   });
+
+  testWidgets('앱을 떠나거나 잠기면(resumed가 아니면) 재생을 멈춘다', (tester) async {
+    await pump(tester, audio);
+    await tapPlay(tester, 1);
+    expect(find.byIcon(Icons.pause), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(players.single.pauses, 1);
+    expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+    // 이미 멈췄으니 이어지는 단계에서 또 멈추지 않는다.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    expect(players.single.pauses, 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(players.single.played, hasLength(1), reason: '돌아와도 저절로 다시 재생하지 않는다');
+  });
+
+  testWidgets('재생 중이 아니면 생명주기에 반응하지 않는다', (tester) async {
+    await pump(tester, audio);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(players, isEmpty, reason: '재생기를 만들지도 않는다');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
 }
