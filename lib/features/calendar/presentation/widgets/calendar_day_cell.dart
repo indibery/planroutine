@@ -17,6 +17,7 @@ class CalendarDayCell extends StatelessWidget {
     required this.onTap,
     this.isHoliday = false,
     this.events = const [],
+    this.hasMemo = false,
   });
 
   final int day;
@@ -30,6 +31,11 @@ class CalendarDayCell extends StatelessWidget {
   final bool isHoliday;
   final VoidCallback onTap;
   final List<CalendarEvent> events;
+
+  /// 그 날 날짜 붙은 포스트잇이 있다 — 일정 점(원)과 모양으로 갈리는 네모 점.
+  final bool hasMemo;
+
+  static const memoMarkerKey = Key('calendar_memo_marker');
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +52,10 @@ class CalendarDayCell extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [_buildDayNumber(), if (events.isNotEmpty) _buildMarkers()],
+          children: [
+            _buildDayNumber(),
+            if (events.isNotEmpty || hasMemo) _buildMarkers(),
+          ],
         ),
       ),
     );
@@ -99,7 +108,7 @@ class CalendarDayCell extends StatelessWidget {
     if (hasImportant) {
       // dot 슬롯(약 5px)과 같은 레이아웃 높이를 보고하되, OverflowBox로 별만
       // 크게 그려 셀 높이(34px)를 넘기지 않게 한다.
-      return SizedBox(
+      final star = SizedBox(
         height: 5,
         child: OverflowBox(
           minHeight: 0,
@@ -114,8 +123,26 @@ class CalendarDayCell extends StatelessWidget {
           ),
         ),
       );
+      if (!hasMemo) return star;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [star, _buildMemoMarker()],
+      );
     }
     return _buildEventDots();
+  }
+
+  /// 포스트잇 네모 점. 색은 보조 — 골드는 오늘·중요, 파랑은 이벤트·토요일이 이미 쓴다.
+  Widget _buildMemoMarker() {
+    return Container(
+      key: memoMarkerKey,
+      width: 4,
+      height: 4,
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      color: isCurrentMonth
+          ? AppColors.sub
+          : AppColors.sub.withValues(alpha: 0.3),
+    );
   }
 
   Widget _buildEventDots() {
@@ -124,25 +151,30 @@ class CalendarDayCell extends StatelessWidget {
       padding: const EdgeInsets.only(top: 1),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(dotCount, (index) {
-          final event = events[index];
-          // 완료된 이벤트는 작고 회색 톤의 점으로 표시해 "지나간 일정" 느낌 전달
-          // (색상 피커 제거 후 미완료 점은 공통 액센트로 통일 — 저장된 color 무시)
-          final isDone = event.isCompleted;
-          final baseColor = isDone ? AppColors.textHint : AppColors.eventAccent;
-          final size = isDone ? 3.0 : 4.0;
-          return Container(
-            width: size,
-            height: size,
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-            decoration: BoxDecoration(
-              color: isCurrentMonth
-                  ? baseColor
-                  : baseColor.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-          );
-        }),
+        children: [
+          ...List.generate(dotCount, (index) {
+            final event = events[index];
+            // 완료된 이벤트는 작고 회색 톤의 점으로 표시해 "지나간 일정" 느낌 전달
+            // (색상 피커 제거 후 미완료 점은 공통 액센트로 통일 — 저장된 color 무시)
+            final isDone = event.isCompleted;
+            final baseColor = isDone
+                ? AppColors.textHint
+                : AppColors.eventAccent;
+            final size = isDone ? 3.0 : 4.0;
+            return Container(
+              width: size,
+              height: size,
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                color: isCurrentMonth
+                    ? baseColor
+                    : baseColor.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+            );
+          }),
+          if (hasMemo) _buildMemoMarker(),
+        ],
       ),
     );
   }

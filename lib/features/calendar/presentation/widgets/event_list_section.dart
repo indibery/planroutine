@@ -9,6 +9,8 @@ import '../../../../shared/widgets/dismissible_background.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
 import '../../../schedule/presentation/widgets/kind_badge.dart';
 import '../../../../core/utils/korean_holidays.dart';
+import '../../../memo/domain/memo.dart';
+import '../../../memo/presentation/widgets/memo_calendar_card.dart';
 import '../../domain/calendar_event.dart';
 
 /// 선택된 날짜의 이벤트 목록 섹션.
@@ -26,10 +28,16 @@ class EventListSection extends ConsumerWidget {
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
     this.highlight = false,
+    this.memos = const [],
+    this.onMemoTap,
   });
 
   /// 날짜 점프 도착 지점 강조 플래시. 켜졌다 꺼지며 골드 배경이 서서히 사라진다.
   final bool highlight;
+
+  /// 그 날 붙은 포스트잇 — 일정 뒤에 쪽지 색 카드로. 스와이프 없음.
+  final List<Memo> memos;
+  final ValueChanged<Memo>? onMemoTap;
 
   final DateTime selectedDate;
   final List<CalendarEvent> events;
@@ -67,10 +75,16 @@ class EventListSection extends ConsumerWidget {
           const SizedBox(height: AppSizes.spacing8),
           if (holiday != null) _buildHolidayRow(holiday),
           // 공휴일 행이 있으면 빈 상태 문구를 띄우지 않는다 — 그 날은 비어 있지 않다.
-          if (events.isEmpty && holiday == null)
+          if (events.isEmpty && holiday == null && memos.isEmpty)
             _buildEmptyState()
           else
             ...events.map((e) => _buildDismissibleEventTile(e, saveLabel)),
+          ...memos.map(
+            (m) => MemoCalendarCard(
+              memo: m,
+              onTap: onMemoTap == null ? null : () => onMemoTap?.call(m),
+            ),
+          ),
         ],
       ),
     );
