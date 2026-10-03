@@ -51,6 +51,9 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
   late DateTime? _date = widget.memo.memoDate;
   EntryKind _kind = EntryKind.task;
 
+  /// DB 왕복 중 두 번째 탭을 막는다 — 일정이 둘 생기는 것을 방지.
+  bool _busy = false;
+
   @override
   void dispose() {
     _text.dispose();
@@ -70,14 +73,16 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
   }
 
   Future<void> _save() async {
-    if (_text.text.trim().isEmpty) return;
+    if (_busy || _text.text.trim().isEmpty) return;
+    _busy = true;
     await ref.read(memosProvider.notifier).save(_edited);
     if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _remove() async {
     final id = widget.memo.id;
-    if (id == null) return;
+    if (_busy || id == null) return;
+    _busy = true;
     final messenger = ScaffoldMessenger.maybeOf(context);
     await ref.read(memosProvider.notifier).remove(id);
     if (mounted) Navigator.of(context).pop();
@@ -86,7 +91,8 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
 
   /// 날짜가 없으면 오늘. 고친 글이 있으면 고친 글로 등록한다.
   Future<void> _toEvent() async {
-    if (_text.text.trim().isEmpty) return;
+    if (_busy || _text.text.trim().isEmpty) return;
+    _busy = true;
     final messenger = ScaffoldMessenger.maybeOf(context);
     await ref
         .read(memosProvider.notifier)

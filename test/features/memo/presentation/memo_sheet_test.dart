@@ -135,6 +135,24 @@ void main() {
     expect((await tester.runAsync(() => repo.getActive()))?.single.memoDate, isNull);
   });
 
+  testWidgets('일정으로 등록을 연달아 두 번 눌러도 일정은 하나만 생긴다', (tester) async {
+    final m = await tester.runAsync(() async {
+      final x = await repo.add('두 번 누름');
+      await repo.update(x.copyWith(memoDate: DateTime(2026, 10, 17)));
+      return (await repo.getActive()).single;
+    });
+    await open(tester, m ?? const Memo(text: ''));
+    await tester.ensureVisible(find.byKey(MemoSheet.toEventKey));
+    await tester.tap(find.byKey(MemoSheet.toEventKey));
+    await tester.pump();
+    await tester.tap(find.byKey(MemoSheet.toEventKey), warnIfMissed: false);
+    await settleDb(tester);
+    final events = await tester.runAsync(
+      () => CalendarRepository(dbHelper: db).getEventsByMonth(2026, 10),
+    );
+    expect(events, hasLength(1));
+  });
+
   testWidgets('키보드 인셋이 음수여도 터지지 않는다', (tester) async {
     tester.view.viewInsets = const FakeViewPadding(bottom: -10);
     addTearDown(tester.view.reset);
