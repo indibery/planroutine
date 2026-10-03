@@ -116,5 +116,7 @@
 	<string>일정을 iOS 캘린더 앱에 저장하기 위해 캘린더 접근 권한이 필요합니다.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>일정을 iOS 캘린더 앱에 저장하기 위해 캘린더 접근 권한이 필요합니다.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>지도 기록의 잠금을 풀 때 Face ID를 사용합니다.</string>
 </dict>
 </plist>

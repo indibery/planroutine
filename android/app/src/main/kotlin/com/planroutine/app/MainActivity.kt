@@ -3,7 +3,8 @@ package com.planroutine.app
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
-import io.flutter.embedding.android.FlutterActivity
+import android.view.WindowManager
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -25,8 +26,12 @@ import java.io.File
  * ⚠️ **이 주석에 와일드카드 mime을 문자 그대로 적지 말 것.** 별표+슬래시가 블록 주석을
  * 그 자리에서 닫아 버려 파일 전체가 syntax error가 된다(실측 2026-08-14: 처음 그렇게 적어
  * `Expecting a top level declaration` 열 줄을 받았다). 매니페스트에서는 그대로 써도 된다.
+ *
+ * `FlutterFragmentActivity`인 이유: 지도 기록 잠금(`local_auth`)이 생체 인증 창을 띄우려면
+ * FragmentActivity가 필요하다. 부모를 바꿔도 공유 채널 동작은 같다 — 에뮬레이터에서
+ * cold-start·running 공유를 다시 태워 확인했다(Task 10).
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private var channel: MethodChannel? = null
 
     /**
@@ -50,6 +55,22 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // 지도 기록 탭이 보이는 동안 최근 앱 화면·스크린샷에 내용이 찍히지 않게 한다.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURE_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setSecure" -> {
+                        if (call.arguments == true) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
 
         // cold-start: 액티비티를 띄운 인텐트가 이미 손에 있다.
         handleIntent(intent)
@@ -106,5 +127,8 @@ class MainActivity : FlutterActivity() {
     private companion object {
         /** iOS `AppDelegate`와 같은 이름이어야 한다. 가드가 양방향으로 대조한다. */
         const val CHANNEL = "planroutine/shared_file"
+
+        /** Dart `PlatformSecureWindow.channel`과 같아야 한다. */
+        const val SECURE_CHANNEL = "planroutine/secure_window"
     }
 }

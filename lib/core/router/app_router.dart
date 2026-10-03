@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/bus/domain/commute_direction.dart';
 import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/guidance/presentation/lock/guidance_lock_gate.dart';
 import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
@@ -103,9 +104,9 @@ GoRouter createRouter({
               const NoTransitionPage(child: MemoBoardScreen()),
         ),
         // 지도 기록(선택 탭). 탭의 모든 화면이 이 **중첩 셸** 아래에 있다 — 다른 탭으로
-        // `go`하면 셸이 dispose되어 잠금 상태가 함께 사라진다(Task 5가 builder를 잠금 게이트로 바꾼다).
+        // `go`하면 셸이 dispose되어 잠금 상태가 함께 사라진다.
         ShellRoute(
-          builder: (context, state, child) => child,
+          builder: (context, state, child) => GuidanceLockGate(child: child),
           routes: [
             GoRoute(
               path: AppRoutes.guidance,

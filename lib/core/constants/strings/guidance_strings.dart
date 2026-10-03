@@ -67,4 +67,14 @@ class GuidanceStrings {
       '학교 단계의 생활지도·교육활동 침해를 남기는 곳입니다. 교육청으로 이관된 뒤의 조사는 전담조사관이 맡습니다.';
   static const noMatch = '조건에 맞는 기록이 없습니다';
   static String revisedTimes(int n) => '수정 $n회';
+
+  // 잠금
+  static const unlockReason = '지도 기록을 열려면 본인 확인이 필요합니다';
+  static const lockedTitle = '지도 기록은 잠겨 있어요';
+  static const lockedBody = '다른 탭으로 옮기거나 앱을 떠나면 다시 잠깁니다.';
+  static const unlock = '잠금 해제';
+  static const noCredentialsTitle = '기기 암호가 설정되어 있지 않아요';
+  static const noCredentialsBody =
+      '기기 암호나 Face ID·지문을 설정해야 기록이 보호됩니다. 설정하지 않아도 쓸 수는 있습니다.';
+  static const openWithoutLock = '잠금 없이 열기';
 }
