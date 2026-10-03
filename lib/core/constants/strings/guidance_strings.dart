@@ -53,6 +53,9 @@ class GuidanceStrings {
   static String resetWarning(int records, int attachments) =>
       '지도 기록 $records건과 첨부 $attachments개도 지워집니다.';
 
+  /// 기록이 0건이어도 명단은 지워진다 — 따로 말한다.
+  static String resetPeopleWarning(int people) => '지도 기록 명단 $people명도 지워집니다.';
+
   // 목록
   static const newRecord = '새 기록';
   static const peopleTitle = '명단 관리';
@@ -105,7 +108,11 @@ class GuidanceStrings {
   static const quotesHint = '누가 무엇이라고 말했는지 들은 그대로 적어 주세요.';
   static const actionsHint = '어떻게 지도했는지, 보호자 연락·학교 보고·이관을 언제 했는지 적어 주세요.';
   static const discardTitle = '저장하지 않고 나갈까요?';
-  static const discardMessage = '고친 내용이 사라집니다. 이미 저장된 판은 그대로 남습니다.';
+  static const discardMessage = '고친 내용이 사라집니다. 이미 저장된 내용은 그대로 남습니다.';
+
+  /// 붙이지 못한 녹음이 남은 채 나가려 할 때 — 나가면 그 녹음을 이 화면에서 다시 붙일 길이 없다.
+  static String discardUnattachedMessage(int n) =>
+      '붙이지 못한 녹음 $n개가 있어요. 나가면 이 화면에서 다시 붙일 수 없습니다.';
   static const discardConfirm = '나가기';
   static const saveFailed = '저장하지 못했어요. 다시 눌러 주세요.';
 
@@ -215,11 +222,11 @@ class GuidanceStrings {
 
   // 삭제한 기록
   static const trashIntro =
-      '자동으로 지워지지 않습니다. 영구 삭제하면 모든 판과 녹음·사진이 함께 지워지고 되돌릴 수 없습니다.';
+      '자동으로 지워지지 않습니다. 영구 삭제하면 처음 작성부터 모든 수정 버전과 녹음·사진이 함께 지워지고 되돌릴 수 없습니다.';
   static const trashEmpty = '삭제한 기록이 없습니다';
   static String deletedAt(String when) => '삭제 $when';
   static const restore = '되살리기';
   static const purge = '영구 삭제';
   static const purgeTitle = '영구 삭제할까요?';
-  static const purgeMessage = '이 기록의 모든 판과 첨부 파일이 지워집니다. 되돌릴 수 없습니다.';
+  static const purgeMessage = '이 기록의 저장된 내용과 수정 이력, 첨부 파일이 모두 지워집니다. 되돌릴 수 없습니다.';
 }
