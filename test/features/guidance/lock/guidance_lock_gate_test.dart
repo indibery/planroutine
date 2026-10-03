@@ -19,6 +19,16 @@ class FakeAuth implements DeviceAuthenticator {
   }
 }
 
+class ThrowingOnceAuth implements DeviceAuthenticator {
+  var calls = 0;
+  @override
+  Future<AuthOutcome> authenticate(String reason) async {
+    calls++;
+    if (calls == 1) throw StateError('예상 밖 예외');
+    return AuthOutcome.success;
+  }
+}
+
 class FakeSecure implements SecureWindow {
   final log = <bool>[];
   @override
@@ -153,5 +163,27 @@ void main() {
     expect(secure.log, [true]);
     await tester.pumpWidget(const SizedBox());
     expect(secure.log, [true, false]);
+  });
+
+  testWidgets('인증기가 예상 밖 예외를 던져도 덮개는 남고 다시 시도할 수 있다', (tester) async {
+    final throwing = ThrowingOnceAuth();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceAuthenticatorProvider.overrideWithValue(throwing),
+          secureWindowProvider.overrideWithValue(secure),
+        ],
+        child: const MaterialApp(
+          home: GuidanceLockGate(child: Scaffold(body: SizedBox())),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(throwing.calls, 1);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsOneWidget);
+    await tester.tap(find.byKey(GuidanceLockGate.unlockKey));
+    await tester.pumpAndSettle();
+    expect(throwing.calls, 2, reason: '_authing이 풀려 두 번째 시도가 일어난다');
+    expect(find.byKey(GuidanceLockGate.coverKey), findsNothing);
   });
 }

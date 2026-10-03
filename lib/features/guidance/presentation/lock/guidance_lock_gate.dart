@@ -76,10 +76,17 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate> with Widget
   Future<void> _authenticate() async {
     if (_authing || _unlocked || !mounted) return;
     _authing = true;
-    final outcome = await SystemSheetGuard.run(
-      () => ref.read(deviceAuthenticatorProvider).authenticate(GuidanceStrings.unlockReason),
-    );
-    _authing = false;
+    var outcome = AuthOutcome.failed;
+    try {
+      outcome = await SystemSheetGuard.run(
+        () => ref.read(deviceAuthenticatorProvider).authenticate(GuidanceStrings.unlockReason),
+      );
+    } catch (_) {
+      // 예상 밖 예외도 실패로 취급한다 — `_authing`이 true로 남으면 잠금 해제 버튼과
+      // 복귀 재인증이 모두 조용히 무시되어 영구히 못 푼다.
+    } finally {
+      _authing = false;
+    }
     if (!mounted) return;
     setState(() {
       switch (outcome) {
