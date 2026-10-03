@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +14,9 @@ class PickedFile {
 abstract class AttachmentImporter {
   Future<PickedFile?> pickAudio();
   Future<PickedFile?> pickImage();
+
+  /// 고르기 창이 넘긴 사본을 지운다. 첨부 폴더로 복사가 끝난 뒤(성공·실패 모두) 부른다.
+  Future<void> discard(PickedFile picked);
 }
 
 /// 고르기 창은 앱을 비활성(Android는 백그라운드)으로 만든다 — 반드시 가드 안에서 연다.
@@ -33,6 +38,22 @@ class FilePickerImporter implements AttachmentImporter {
     final r = await FilePicker.platform.pickFiles(type: FileType.image, allowCompression: false);
     return _first(r);
   });
+
+  /// `picked.path`만 지운다. file_picker 9.2.3 소스로 확인한 사실:
+  /// - iOS 사진(PHPicker)은 `Documents/picked_images/`에 사본을 쓴다 — **tmp가 아니라**
+  ///   `clearTemporaryFiles()`(= NSTemporaryDirectory 전체 삭제)로는 지워지지 않는다.
+  ///   Documents는 iCloud 백업에도 들어간다.
+  /// - iOS 파일(UIDocumentPicker import)은 tmp로 옮긴 사본, Android는 `cache/file_picker/<시각>/`의 사본이다.
+  /// 즉 이 경로는 늘 플러그인이 만든 사본이고 원본이 아니다. `clearTemporaryFiles()`를 쓰지 않는
+  /// 이유는 위의 iOS 사진을 못 지우고, iOS에서는 앱의 tmp 전체를 지우기 때문이다.
+  @override
+  Future<void> discard(PickedFile picked) async {
+    try {
+      await File(picked.path).delete();
+    } catch (_) {
+      // 이미 없거나 지울 수 없어도 첨부는 끝났다 — 기능을 멈추지 않는다.
+    }
+  }
 
   PickedFile? _first(FilePickerResult? r) {
     final f = r?.files.firstOrNull;

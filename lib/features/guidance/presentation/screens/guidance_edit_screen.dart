@@ -150,15 +150,14 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     if (existing != null) return existing;
     var content = _current();
     if (content.title.isEmpty) content = content.copyWith(title: GuidanceStrings.untitled);
+    final repo = ref.read(guidanceRepositoryProvider);
     final id = await ref.read(guidanceActionsProvider).create(content);
-    final record = await ref.read(guidanceRepositoryProvider).getRecord(id);
-    if (mounted) {
-      setState(() {
-        _recordId = id;
-        _saved = content;
-        _createdAt = record?.createdAt;
-      });
-    }
+    // 만든 id를 **먼저** 붙든다 — 아래 조회가 실패해도 다음 첨부가 기록을 또 만들지 않게.
+    _recordId = id;
+    _saved = content;
+    if (mounted) setState(() {});
+    final record = await repo.getRecord(id);
+    if (mounted) setState(() => _createdAt = record?.createdAt);
     return id;
   }
 
@@ -168,11 +167,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   }
 
   Future<void> _attachRecording(RecordingResult r) async {
-    // 기록이 아직 없으면 지금 만든다 — 실수로 나가도 녹음이 사라지지 않게.
+    // 기다리는 사이 화면이 사라져도 붙일 수 있게 먼저 읽어 둔다(dispose 뒤에는 ref를 못 쓴다).
+    final actions = ref.read(guidanceActionsProvider);
     final id = await _ensureRecord();
-    await ref
-        .read(guidanceActionsProvider)
-        .attachRecording(recordId: id, path: r.path, durationMs: r.durationMs, startedAt: r.startedAt);
+    await actions.attachRecording(recordId: id, path: r.path, durationMs: r.durationMs, startedAt: r.startedAt);
   }
 
   Future<void> _record() async {
@@ -180,11 +178,21 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     _recording = true;
     final RecordingResult? result;
     try {
+      // 녹음 **전에** 기록을 만든다 — 녹음 중 탭을 옮겨 이 화면들이 사라져도 녹음 화면이
+      // 이 기록에 직접 붙일 수 있게(RecordingScreen 참고).
+      final int id;
+      try {
+        id = await _ensureRecord();
+      } catch (_) {
+        _saveFailed();
+        return;
+      }
+      if (!mounted) return;
       final title = _title.text.trim();
       result = await Navigator.of(context).push<RecordingResult>(
         MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (_) => RecordingScreen(title: title.isEmpty ? GuidanceStrings.untitled : title),
+          builder: (_) => RecordingScreen(recordId: id, title: title.isEmpty ? GuidanceStrings.untitled : title),
         ),
       );
     } finally {
@@ -226,14 +234,18 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   Future<void> _import(AttachmentType type) async {
     final importer = ref.read(attachmentImporterProvider);
     final picked = type == AttachmentType.audio ? await importer.pickAudio() : await importer.pickImage();
-    if (picked == null || !mounted) return;
+    if (picked == null) return;
     try {
+      if (!mounted) return;
       final id = await _ensureRecord();
       await ref
           .read(guidanceActionsProvider)
           .attachImported(recordId: id, sourcePath: picked.path, type: type, originalName: picked.name);
     } catch (_) {
       _saveFailed();
+    } finally {
+      // 고르기 창이 넘긴 사본은 첨부 폴더로 복사가 끝났으면(성공·실패 모두) 남길 이유가 없다.
+      await importer.discard(picked);
     }
   }
 
@@ -370,7 +382,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       context: context,
       useRootNavigator: false,
       title: GuidanceStrings.discardTitle,
-      message: GuidanceStrings.discardMessage,
+      // 붙이지 못한 녹음은 나가면 이 화면에서 다시 붙일 길이 없다 — 그 사실을 먼저 말한다.
+      message: _unattached.isEmpty
+          ? GuidanceStrings.discardMessage
+          : GuidanceStrings.discardUnattachedMessage(_unattached.length),
       confirmLabel: GuidanceStrings.discardConfirm,
     );
     if (leave && mounted) {

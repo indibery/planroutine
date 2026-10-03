@@ -23,9 +23,16 @@ enum _Phase { checking, denied, recording, failed }
 
 /// 녹음 화면. 녹음 동안 화면이 꺼지지 않고, **앱을 떠나거나 전화가 오거나 뒤로 가면
 /// 그때까지 저장해 결과를 돌려준다** — 녹음을 버리는 길이 없다.
+///
+/// ⚠️ 이 화면은 탭의 중첩 내비게이터에 떠서 하단 탭바가 보인다. 녹음 중 다른 탭을 누르거나
+/// 외부 CSV 공유로 `/import`에 가면 셸과 함께 **결과를 돌려주지 못하고** dispose된다.
+/// 그래서 편집 화면이 녹음 **전에** 기록을 만들어 [recordId]를 넘기고, 그렇게 사라질 때는
+/// 이 화면이 직접 멈추고 그 기록에 붙인다(파일만 남는 고아 녹음 방지).
 class RecordingScreen extends ConsumerStatefulWidget {
-  const RecordingScreen({super.key, required this.title});
+  const RecordingScreen({super.key, required this.recordId, required this.title});
 
+  /// 녹음을 붙일 기록. 편집 화면이 녹음을 열기 전에 저장해 둔 것이다.
+  final int recordId;
   final String title;
 
   static const stopKey = Key('recording_stop');
@@ -48,6 +55,10 @@ class RecordingScreen extends ConsumerStatefulWidget {
 
 class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsBindingObserver {
   late final GuidanceRecorder _recorder = ref.read(guidanceRecorderFactoryProvider)();
+
+  /// dispose 뒤에는 `ref`를 쓸 수 없다 — 직접 붙일 때 쓰려고 미리 읽어 둔다.
+  late final GuidanceActions _actions;
+  late final int _recordId;
   var _phase = _Phase.checking;
   String? _path;
   DateTime? _startedAt;
@@ -55,9 +66,14 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
   var _elapsed = Duration.zero;
   var _finishing = false;
 
+  /// 녹음을 멈추는 일은 한 번만 한다 — `_finish`와 dispose가 같은 결과를 나눠 쓴다.
+  Future<RecordingResult?>? _stopping;
+
   @override
   void initState() {
     super.initState();
+    _actions = ref.read(guidanceActionsProvider);
+    _recordId = widget.recordId;
     WidgetsBinding.instance.addObserver(this);
     _begin();
   }
@@ -106,32 +122,63 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
     _finish();
   }
 
-  Future<void> _finish() async {
-    if (_finishing) return;
-    _finishing = true;
-    _ticker?.cancel();
+  /// 녹음을 멈추고 결과를 만든다. 녹음이 시작되지 않았으면 null. 몇 번 불러도 한 번만 멈춘다.
+  Future<RecordingResult?> _stop() => _stopping ??= () async {
     final path = _path;
     final started = _startedAt;
-    if (path == null || started == null) {
-      if (mounted) Navigator.of(context).pop();
-      return;
-    }
+    if (path == null || started == null) return null;
     // 멈추는 호출이 실패해도 파일은 첨부 폴더에 있다 — 녹음을 버리지 않고 그 경로로 돌려준다.
     var out = path;
     try {
       out = await _recorder.stop() ?? path;
     } catch (_) {}
     final ms = DateTime.now().difference(started).inMilliseconds;
+    return RecordingResult(path: out, durationMs: ms, startedAt: started);
+  }();
+
+  Future<void> _finish() async {
+    if (_finishing) return;
+    _finishing = true;
+    _ticker?.cancel();
+    final result = await _stop();
     if (mounted) {
-      Navigator.of(context).pop(RecordingResult(path: out, durationMs: ms, startedAt: started));
+      Navigator.of(context).pop(result);
+    } else if (result != null) {
+      // 멈추는 사이에 화면이 사라졌다 — 결과를 받을 곳이 없으니 직접 붙인다.
+      _attachDirectly(result);
     }
+  }
+
+  /// 결과를 돌려주지 못하고 사라질 때 그 기록에 직접 붙인다. 위젯 수명과 무관하게 끝까지 돈다.
+  void _attachDirectly(RecordingResult r) {
+    unawaited(
+      _actions
+          .attachRecording(recordId: _recordId, path: r.path, durationMs: r.durationMs, startedAt: r.startedAt)
+          .then<void>(
+            (_) {},
+            // 삼키지 않는다 — 다만 기록 내용은 넣지 않는다(파일 이름만).
+            onError: (Object e) => debugPrint('지도 기록 녹음을 붙이지 못함(${r.path.split('/').last}): $e'),
+          ),
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
-    _recorder.dispose();
+    if (!_finishing && _path != null) {
+      // `_finish`를 거치지 않고 사라진다(탭 이동·외부 공유로 셸이 dispose) — 멈추고 직접 붙인다.
+      // `_finish`가 이미 돌고 있으면 그쪽이 mounted를 보고 직접 붙이므로 여기서는 하지 않는다.
+      _finishing = true;
+      unawaited(
+        _stop().then((r) {
+          if (r != null) _attachDirectly(r);
+        }),
+      );
+    }
+    // 녹음기는 멈춘 **뒤에** 버린다 — 멈추는 중에 버리면 파일이 끝까지 쓰이지 않을 수 있다.
+    final stopping = _stopping;
+    unawaited(stopping == null ? _recorder.dispose() : stopping.whenComplete(_recorder.dispose));
     super.dispose();
   }
 

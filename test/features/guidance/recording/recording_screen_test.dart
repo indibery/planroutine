@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
+import 'package:planroutine/features/guidance/domain/guidance_models.dart';
+import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/lock/system_sheet_guard.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/recording/guidance_recorder.dart';
@@ -39,8 +41,33 @@ class FakeRecorder implements GuidanceRecorder {
   Future<void> dispose() async {}
 }
 
+/// 직접 붙이기(화면이 결과를 돌려주지 못하고 사라질 때)를 세는 가짜.
+class FakeActions extends GuidanceActions {
+  FakeActions(super.ref);
+  final attached = <(int, String)>[];
+  @override
+  Future<GuidanceAttachment> attachRecording({
+    required int recordId,
+    required String path,
+    required int durationMs,
+    required DateTime startedAt,
+  }) async {
+    attached.add((recordId, path));
+    return GuidanceAttachment(
+      recordId: recordId,
+      type: AttachmentType.audio,
+      source: AttachmentSource.recorded,
+      fileName: path,
+      sha256: '',
+      byteSize: 0,
+      attachedAt: '',
+    );
+  }
+}
+
 void main() {
   late Directory base;
+  late FakeActions actions;
   late FakeRecorder rec;
   RecordingResult? result;
   var popped = false;
@@ -70,26 +97,39 @@ void main() {
     }
   }
 
-  Future<void> pump(WidgetTester tester, {bool permitted = true, FakeRecorder? recorder, String? readyText}) async {
+  /// [show]를 false로 바꾸면 MaterialApp 아래가 통째로 사라진다(탭 이동으로 셸이 dispose되는 것).
+  Future<void> pump(
+    WidgetTester tester, {
+    bool permitted = true,
+    FakeRecorder? recorder,
+    String? readyText,
+    ValueNotifier<bool>? show,
+  }) async {
     rec = recorder ?? FakeRecorder(permitted: permitted);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           guidanceRecorderFactoryProvider.overrideWithValue(() => rec),
           guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
+          guidanceActionsProvider.overrideWith((ref) => actions = FakeActions(ref)),
         ],
-        child: MaterialApp(
-          home: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await Navigator.of(
-                  context,
-                ).push<RecordingResult>(MaterialPageRoute(builder: (_) => const RecordingScreen(title: '복도 다툼')));
-                popped = true;
-              },
-              child: const Text('열기'),
-            ),
-          ),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: show ?? ValueNotifier(true),
+          builder: (_, on, _) => !on
+              ? const SizedBox.shrink()
+              : MaterialApp(
+                  home: Builder(
+                    builder: (context) => TextButton(
+                      onPressed: () async {
+                        result = await Navigator.of(context).push<RecordingResult>(
+                          MaterialPageRoute(builder: (_) => const RecordingScreen(recordId: 7, title: '복도 다툼')),
+                        );
+                        popped = true;
+                      },
+                      child: const Text('열기'),
+                    ),
+                  ),
+                ),
         ),
       ),
     );
@@ -194,5 +234,36 @@ void main() {
     expect(style?.systemNavigationBarIconBrightness, Brightness.light);
     expect(style?.statusBarIconBrightness, Brightness.light);
     expect(style?.systemNavigationBarContrastEnforced, isFalse);
+  });
+
+  testWidgets('녹음 중 화면이 결과를 돌려주지 못하고 사라지면 멈추고 그 기록에 직접 붙인다', (tester) async {
+    final show = ValueNotifier(true);
+    await pump(tester, show: show);
+    show.value = false;
+    await tester.pump();
+    await waitUntil(tester, () => actions.attached.isNotEmpty);
+    expect(rec.stopped, 1);
+    expect(actions.attached.single, (7, rec.startedAt));
+  });
+
+  testWidgets('멈춰서 결과를 돌려준 뒤 사라질 때는 직접 붙이지 않는다(두 번 붙지 않음)', (tester) async {
+    final show = ValueNotifier(true);
+    await pump(tester, show: show);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitUntil(tester, () => popped);
+    show.value = false;
+    await tester.pump();
+    await idle(tester);
+    expect(rec.stopped, 1);
+    expect(actions.attached, isEmpty, reason: '결과는 편집 화면이 붙인다');
+  });
+
+  testWidgets('녹음을 시작하지 못한 채 사라지면 붙일 것이 없다', (tester) async {
+    final show = ValueNotifier(true);
+    await pump(tester, permitted: false, show: show);
+    show.value = false;
+    await tester.pump();
+    await idle(tester);
+    expect(actions.attached, isEmpty);
   });
 }
