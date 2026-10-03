@@ -109,7 +109,8 @@ GoRouter createRouter({
               const NoTransitionPage(child: MemoBoardScreen()),
         ),
         // 지도 기록(선택 탭). 탭의 모든 화면이 이 **중첩 셸** 아래에 있다 — 다른 탭으로
-        // `go`하면 셸이 dispose되어 잠금 상태가 함께 사라진다.
+        // `go`하면 셸은 dispose되지만, 잠금 상태는 guidanceUnlockProvider가 들고 있어
+        // 셸과 함께 사라지지 않는다(15분 규칙).
         ShellRoute(
           builder: (context, state, child) => GuidanceLockGate(child: child),
           routes: [

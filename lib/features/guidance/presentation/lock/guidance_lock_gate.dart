@@ -24,6 +24,7 @@ class GuidanceLockGate extends ConsumerStatefulWidget {
   final Widget child;
 
   static const coverKey = Key('guidance_lock_cover');
+  static const veilKey = Key('guidance_lock_veil');
   static const unlockKey = Key('guidance_unlock');
   static const openWithoutLockKey = Key('guidance_open_without_lock');
 
@@ -35,6 +36,11 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     with WidgetsBindingObserver {
   var _noCredentials = false;
   var _authing = false;
+
+  /// 화면을 가리기만 하는 면(잠금 상태와 무관). 풀린 상태에서 `inactive`가 오면 켠다 —
+  /// 15분이 지나 돌아오면 `resumed`에서야 만료를 아는데, 그때 덮개를 올리면 그려지기 전 몇 프레임
+  /// 동안 기록이 보인다. `hidden`/`paused`에서는 프레임이 그려지지 않으므로 `inactive`에서 미리 가린다.
+  var _veiled = false;
 
   // dispose에서 ref를 쓰지 않는다 — 둘 다 initState에서 읽어 둔다.
   late final SecureWindow _secure;
@@ -75,11 +81,17 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
         // 그러지 않으면 Face ID 창을 닫을 때마다 다시 떠 무한 반복된다.
         final was = _unlocked;
         _unlock.markBack();
-        if (!was || _unlocked) return;
+        if (!was || _unlocked) {
+          // 15분 안에 돌아왔다(또는 이미 잠긴 채였다) — 가림 면만 걷는다.
+          if (_veiled) setState(() => _veiled = false);
+          return;
+        }
         FocusManager.instance.primaryFocus?.unfocus();
-        setState(() {});
+        setState(() => _veiled = false);
         _authenticate();
       case AppLifecycleState.inactive:
+        // 잠금 상태도 떠난 시각도 건드리지 않는다(inactive는 떠남이 아니다) — 보이는 것만 가린다.
+        if (_unlocked && !_veiled) setState(() => _veiled = true);
       case AppLifecycleState.detached:
         break;
     }
@@ -116,13 +128,15 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
   @override
   Widget build(BuildContext context) {
     final locked = !_unlocked;
+    final hidden = locked || _veiled;
     return Stack(
       fit: StackFit.expand,
       children: [
         ExcludeSemantics(
-          excluding: locked,
-          child: IgnorePointer(ignoring: locked, child: widget.child),
+          excluding: hidden,
+          child: IgnorePointer(ignoring: hidden, child: widget.child),
         ),
+        if (!locked && _veiled) const _Veil(key: GuidanceLockGate.veilKey),
         if (locked)
           _LockCover(
             key: GuidanceLockGate.coverKey,
@@ -133,6 +147,18 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
       ],
     );
   }
+}
+
+/// 문구 없는 불투명 면 — iOS `SceneDelegate`의 앱 전환기 가림막과 같은 모양(배경색 + 가운데 자물쇠).
+/// 잠긴 덮개(문구·버튼)와 구별한다: 이것은 잠금이 아니라 잠깐 가리는 것이다.
+class _Veil extends StatelessWidget {
+  const _Veil({super.key});
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: AppColors.background,
+    child: Center(child: Icon(Icons.lock, size: 40, color: AppColors.sub)),
+  );
 }
 
 class _LockCover extends StatelessWidget {

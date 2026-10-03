@@ -176,37 +176,40 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   Future<void> _record() async {
     if (_recording) return;
     _recording = true;
+    // 빈 기록 정리·첨부가 끝날 때까지 잠가 둔다 — 정리 중에 다시 누르면 지워지는 기록에 녹음이 붙는다.
+    try {
+      await _recordOnce();
+    } finally {
+      _recording = false;
+    }
+  }
+
+  Future<void> _recordOnce() async {
     final RecordingResult? result;
     // 이번 호출이 기록을 새로 만드는지 — 녹음 없이 끝나면 그 빈 기록을 되돌리는 근거다.
     final createdHere = _recordId == null;
     final prevSaved = _saved;
     final prevCreatedAt = _createdAt;
-    final int recordId;
+    // 녹음 **전에** 기록을 만든다 — 녹음 중 탭을 옮겨 이 화면들이 사라져도 녹음 화면이
+    // 이 기록에 직접 붙일 수 있게(RecordingScreen 참고).
+    final int id;
     try {
-      // 녹음 **전에** 기록을 만든다 — 녹음 중 탭을 옮겨 이 화면들이 사라져도 녹음 화면이
-      // 이 기록에 직접 붙일 수 있게(RecordingScreen 참고).
-      final int id;
-      try {
-        id = await _ensureRecord();
-      } catch (_) {
-        _saveFailed();
-        return;
-      }
-      recordId = id;
-      if (!mounted) return;
-      final title = _title.text.trim();
-      result = await Navigator.of(context).push<RecordingResult>(
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) => RecordingScreen(recordId: id, title: title.isEmpty ? GuidanceStrings.untitled : title),
-        ),
-      );
-    } finally {
-      _recording = false;
+      id = await _ensureRecord();
+    } catch (_) {
+      _saveFailed();
+      return;
     }
+    if (!mounted) return;
+    final title = _title.text.trim();
+    result = await Navigator.of(context).push<RecordingResult>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => RecordingScreen(recordId: id, title: title.isEmpty ? GuidanceStrings.untitled : title),
+      ),
+    );
     if (result == null) {
       // 화면이 사라졌다면(탭 이동) 녹음 화면이 직접 붙이는 중이라 건드리지 않는다.
-      if (mounted && createdHere) await _discardEmptyNewRecord(recordId, prevSaved, prevCreatedAt);
+      if (mounted && createdHere) await _discardEmptyNewRecord(id, prevSaved, prevCreatedAt);
       return;
     }
     if (!mounted) return;

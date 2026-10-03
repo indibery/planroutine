@@ -17,7 +17,7 @@ abstract class GuidanceRecorder {
 class RecordGuidanceRecorder implements GuidanceRecorder {
   final _recorder = AudioRecorder();
 
-  /// 권한 창도 앱을 비활성으로 만든다 — 가드로 감싸야 잠금·녹음 중단이 일어나지 않는다.
+  /// 권한 창도 앱을 비활성으로 만든다 — 가드로 감싸야 녹음 중단이 일어나지 않는다.
   @override
   Future<bool> ensurePermission() => SystemSheetGuard.run(() => _recorder.hasPermission());
 

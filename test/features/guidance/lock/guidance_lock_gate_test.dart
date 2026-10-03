@@ -160,9 +160,10 @@ void main() {
     expect(find.text('쓰던 글'), findsOneWidget);
   });
 
-  // 의도는 그대로, 근거가 바뀌었다(15분 규칙): 시스템 창 중의 백그라운드도 이제 "떠남"으로 찍히지만
-  // 15분 안에 돌아오므로 다시 묻지 않는다. 게이트는 더 이상 SystemSheetGuard를 보지 않는다.
-  testWidgets('시스템 창(사진 고르기 등) 동안의 비활성·백그라운드는 잠그지 않는다', (tester) async {
+  // 이름을 바꿨다(수정 1회차): 예전 '시스템 창(사진 고르기 등) 동안의 비활성·백그라운드는 잠그지 않는다'.
+  // 게이트는 더 이상 SystemSheetGuard를 보지 않는다 — 시스템 창 중의 백그라운드도 "떠남"으로 찍히고,
+  // 15분 안에 돌아왔기 때문에 묻지 않는 것이다.
+  testWidgets('시스템 창(사진 고르기 등)을 다녀와도 15분 안이면 다시 묻지 않는다', (tester) async {
     auth.outcomes.add(AuthOutcome.success);
     await pump(tester);
     final picker = Completer<void>();
@@ -382,6 +383,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(auth.calls, 1, reason: '방금 떠났다 돌아온 것뿐이다');
     expect(find.byKey(GuidanceLockGate.coverKey), findsNothing);
+  });
+
+  // 가림 면(수정 1회차): 15분이 지나 돌아오면 `resumed`에서야 만료를 안다. 그때 덮개를 올리면 그려지기 전
+  // 1~3프레임 동안 기록이 보인다. `hidden`/`paused`에서는 프레임이 그려지지 않으므로 `inactive`에서 미리 가린다.
+  // 잠금 상태는 건드리지 않는다(inactive는 떠남이 아니다 — 규칙 4).
+  const secret = Key('secret');
+  Future<SemanticsHandle> pumpUnlockedWithSecret(WidgetTester tester) async {
+    auth.outcomes.add(AuthOutcome.success);
+    final handle = tester.ensureSemantics();
+    await pump(tester, child: const Scaffold(body: Text('비밀 내용', key: secret)));
+    expect(find.semantics.byLabel('비밀 내용'), findsOneWidget);
+    return handle;
+  }
+
+  testWidgets('풀린 상태에서 inactive가 오면 문구 없는 가림 면이 아래 화면을 가린다', (tester) async {
+    final handle = await pumpUnlockedWithSecret(tester);
+    lifecycle(tester, AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(GuidanceLockGate.veilKey), findsOneWidget);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsNothing, reason: '잠긴 덮개와 다르다');
+    expect(find.text(GuidanceStrings.lockedTitle), findsNothing);
+    expect(find.semantics.byLabel('비밀 내용'), findsNothing, reason: '가린 동안 스크린리더도 읽지 않는다');
+    expect(auth.calls, 1);
+    lifecycle(tester, AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    handle.dispose();
+  });
+
+  testWidgets('가린 채 떠났다 10분 안에 돌아오면 면만 걷히고 묻지 않는다', (tester) async {
+    final handle = await pumpUnlockedWithSecret(tester);
+    leave(tester);
+    now = now.add(within);
+    lifecycle(tester, AppLifecycleState.hidden);
+    lifecycle(tester, AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(GuidanceLockGate.veilKey), findsOneWidget, reason: '돌아오는 inactive 프레임도 가려져 있다');
+    lifecycle(tester, AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.byKey(GuidanceLockGate.veilKey), findsNothing);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsNothing);
+    expect(find.semantics.byLabel('비밀 내용'), findsOneWidget);
+    expect(auth.calls, 1, reason: '추가 인증 0회');
+    handle.dispose();
+  });
+
+  testWidgets('가린 채 떠났다 16분 뒤 돌아오면 잠금 덮개와 인증 1회', (tester) async {
+    final handle = await pumpUnlockedWithSecret(tester);
+    lifecycle(tester, AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(GuidanceLockGate.veilKey), findsOneWidget);
+    lifecycle(tester, AppLifecycleState.hidden);
+    lifecycle(tester, AppLifecycleState.paused);
+    now = now.add(beyond);
+    comeBack(tester); // 두 번째 인증은 실패(가짜 인증기 기본값) — 덮개가 남는다
+    await tester.pumpAndSettle();
+    expect(auth.calls, 2);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsOneWidget);
+    expect(find.byKey(GuidanceLockGate.veilKey), findsNothing, reason: '잠긴 덮개가 대신한다');
+    expect(find.semantics.byLabel('비밀 내용'), findsNothing);
+    handle.dispose();
+  });
+
+  test('시계가 뒤로 갔으면 만료로 친다(기기 시각을 돌려 재잠금을 피하지 못한다)', () {
+    final unlock = GuidanceUnlock(clock: () => now)..markUnlocked();
+    unlock.markLeft();
+    now = now.subtract(const Duration(hours: 1));
+    unlock.markBack();
+    expect(unlock.isUnlocked, isFalse);
   });
 
   test('덮개 문구가 다시 잠기는 시간(분)을 말한다', () {

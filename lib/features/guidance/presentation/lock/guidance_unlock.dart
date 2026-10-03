@@ -33,11 +33,14 @@ class GuidanceUnlock {
     if (_unlocked) _leftAt ??= _clock();
   }
 
-  /// 돌아왔다. 떠난 지 [guidanceRelockAfter]가 지났으면 잠그고, 아니면 떠난 시각만 지운다.
+  /// 돌아왔다. 떠난 지 [guidanceRelockAfter]가 지났거나 시계가 뒤로 갔으면 잠그고, 아니면 떠난 시각만 지운다.
   void markBack() {
     final left = _leftAt;
     _leftAt = null;
-    if (left != null && _clock().difference(left) > guidanceRelockAfter) {
+    if (left == null) return;
+    final away = _clock().difference(left);
+    // 시계가 뒤로 갔으면(기기 시각을 돌려 재잠금을 피하려는 경우 포함) 만료로 친다.
+    if (away.isNegative || away > guidanceRelockAfter) {
       _unlocked = false;
     }
   }
