@@ -16,6 +16,13 @@ const memoTab = ModuleTab(
   label: MemoStrings.tabLabel,
 );
 
+const guidanceTab = ModuleTab(
+  route: AppRoutes.guidance,
+  icon: Icons.lock_outline,
+  activeIcon: Icons.lock,
+  label: GuidanceStrings.tabLabel,
+);
+
 /// 기능 등록부. **새 기능은 여기에 한 항목만 더한다.**
 ///
 /// 탭형 기능의 라우트는 설치 여부와 무관하게 `app_router.dart`에 항상 등록한다
@@ -70,5 +77,13 @@ const moduleCatalog = <AppModule>[
     icon: Icons.sticky_note_2_outlined,
     placement: ModulePlacement.tab,
     tab: memoTab,
+  ),
+  AppModule(
+    id: ModuleIds.guidance,
+    name: GuidanceStrings.title,
+    description: GuidanceStrings.moduleDescription,
+    icon: Icons.lock_outline,
+    placement: ModulePlacement.tab,
+    tab: guidanceTab,
   ),
 ];

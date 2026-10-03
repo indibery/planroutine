@@ -40,6 +40,7 @@ class _Palette {
     required this.memoGreen,
     required this.memoBlue,
     required this.memoPink,
+    required this.guidanceKindBlue,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
     required this.busSignalNear,
@@ -102,6 +103,8 @@ class _Palette {
   final Color memoGreen;
   final Color memoBlue;
   final Color memoPink;
+  // 지도 기록 생활지도 배지 — info는 다크 카드 위 4.44:1로 미달이라 중립 파랑을 따로 둔다
+  final Color guidanceKindBlue;
   final Color categoryDailyOps;
   final Color categoryCurriculum;
 
@@ -158,6 +161,7 @@ const _dark = _Palette(
   memoGreen: Color(0xFF24402F),
   memoBlue: Color(0xFF23364F),
   memoPink: Color(0xFF4A2D2D),
+  guidanceKindBlue: Color(0xFF8BA8D4),
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
   busSignalNear: Color(0xFFEF5F52),
@@ -207,6 +211,7 @@ const _light = _Palette(
   memoGreen: Color(0xFFDCF1E3),
   memoBlue: Color(0xFFE1EBF8),
   memoPink: Color(0xFFFBE4E1),
+  guidanceKindBlue: Color(0xFF3F5F94),
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
   // 라이트 노랑은 흰 배경 대비가 없어 딥 앰버로 잡는다. 라이트 gold(#9A7415)와
@@ -307,6 +312,7 @@ class AppColors {
   static Color get memoGreen => _current.memoGreen;
   static Color get memoBlue => _current.memoBlue;
   static Color get memoPink => _current.memoPink;
+  static Color get guidanceKindBlue => _current.guidanceKindBlue;
 
   /// 이벤트 점·막대 공통 액센트색.
   static Color get eventAccent => _current.eventAccent;

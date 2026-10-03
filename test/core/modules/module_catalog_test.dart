@@ -16,6 +16,7 @@ const _shippedIds = [
   ModuleIds.schedule,
   ModuleIds.settings,
   ModuleIds.bus,
+  ModuleIds.guidance,
 ];
 
 List<String> _paths(List<RouteBase> routes) => [
@@ -104,5 +105,14 @@ void main() {
     expect(memo.fixed, isFalse);
     expect(memo.tab?.route, AppRoutes.memo);
     expect(memo.settingsRoute, isNull);
+  });
+
+  test('지도 기록은 고정이 아닌 탭형이고 /guidance로 간다', () {
+    final g = moduleCatalog.firstWhere((m) => m.id == ModuleIds.guidance);
+    expect(g.placement, ModulePlacement.tab);
+    expect(g.fixed, isFalse);
+    expect(g.tab?.route, AppRoutes.guidance);
+    expect(g.settingsRoute, isNull);
+    expect(ModuleIds.guidance, 'guidance');
   });
 }

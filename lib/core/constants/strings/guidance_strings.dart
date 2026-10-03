@@ -52,4 +52,19 @@ class GuidanceStrings {
   // 전체 초기화 경고
   static String resetWarning(int records, int attachments) =>
       '지도 기록 $records건과 첨부 $attachments개도 지워집니다.';
+
+  // 목록
+  static const newRecord = '새 기록';
+  static const peopleTitle = '명단 관리';
+  static const trashTitle = '삭제한 기록';
+  static const kindAll = '전체';
+  static const personAll = '사람: 전체';
+  static String personLabel(String name) => '사람: $name';
+  static const personPickerTitle = '사람으로 찾기';
+  static const personPickerEmpty = '기록에 등장한 사람이 아직 없습니다';
+  static const empty = '아직 기록이 없습니다';
+  static const emptyScope =
+      '학교 단계의 생활지도·교육활동 침해를 남기는 곳입니다. 교육청으로 이관된 뒤의 조사는 전담조사관이 맡습니다.';
+  static const noMatch = '조건에 맞는 기록이 없습니다';
+  static String revisedTimes(int n) => '수정 $n회';
 }

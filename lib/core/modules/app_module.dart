@@ -12,6 +12,7 @@ abstract final class ModuleIds {
   static const settings = 'settings';
   static const bus = 'bus';
   static const memo = 'memo';
+  static const guidance = 'guidance';
 }
 
 /// 기능이 화면에 들어오는 자리. 한 기능은 하나의 자리만 갖는다.

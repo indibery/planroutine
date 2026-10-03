@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/bus/domain/commute_direction.dart';
 import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -23,6 +24,13 @@ class AppRoutes {
   static const calendar = '/calendar';
   static const schedule = '/schedule';
   static const memo = '/memo';
+  static const guidance = '/guidance';
+  static const guidanceNew = '/guidance/new';
+  static const guidancePeople = '/guidance/people';
+  static const guidanceTrash = '/guidance/trash';
+  static String guidanceRecord(int id) => '/guidance/record/$id';
+  static String guidanceEdit(int id) => '/guidance/record/$id/edit';
+  static String guidanceHistory(int id) => '/guidance/record/$id/history';
   static const settings = '/settings';
   static const trash = '/trash';
   static const import = '/import';
@@ -93,6 +101,19 @@ GoRouter createRouter({
           path: AppRoutes.memo,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: MemoBoardScreen()),
+        ),
+        // 지도 기록(선택 탭). 탭의 모든 화면이 이 **중첩 셸** 아래에 있다 — 다른 탭으로
+        // `go`하면 셸이 dispose되어 잠금 상태가 함께 사라진다(Task 5가 builder를 잠금 게이트로 바꾼다).
+        ShellRoute(
+          builder: (context, state, child) => child,
+          routes: [
+            GoRoute(
+              path: AppRoutes.guidance,
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: GuidanceListScreen()),
+              routes: const [],
+            ),
+          ],
         ),
         GoRoute(
           path: AppRoutes.settings,
