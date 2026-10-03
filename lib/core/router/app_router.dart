@@ -4,6 +4,7 @@ import '../../features/bus/domain/commute_direction.dart';
 import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/guidance/presentation/lock/guidance_lock_gate.dart';
+import '../../features/guidance/presentation/screens/guidance_edit_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
@@ -112,7 +113,18 @@ GoRouter createRouter({
               path: AppRoutes.guidance,
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: GuidanceListScreen()),
-              routes: const [],
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  builder: (context, state) => const GuidanceEditScreen(),
+                ),
+                GoRoute(
+                  path: 'record/:id/edit',
+                  builder: (context, state) => GuidanceEditScreen(
+                    recordId: int.tryParse(state.pathParameters['id'] ?? ''),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

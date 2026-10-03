@@ -77,4 +77,42 @@ class GuidanceStrings {
   static const noCredentialsBody =
       '기기 암호나 Face ID·지문을 설정해야 기록이 보호됩니다. 설정하지 않아도 쓸 수는 있습니다.';
   static const openWithoutLock = '잠금 없이 열기';
+
+  // 기록 쓰기
+  static const editNewTitle = '새 기록';
+  static const editTitle = '기록 고치기';
+  static const save = '저장';
+  static const cancel = '취소';
+  static const untitled = '제목 없음';
+  static const titleRequired = '제목을 적어 주세요';
+  static const labelKind = '구분';
+  static const labelStatus = '진행 상태';
+  static const labelOccurred = '사건 시각';
+  static const labelCreated = '기록 시각';
+  static const createdOnSave = '저장할 때 자동으로 남아요';
+  static const labelTitle = '제목';
+  static const labelPlace = '장소';
+  static const labelParticipants = '관련인';
+  static const labelFacts = '경과';
+  static const labelQuotes = '들은 말';
+  static const labelActions = '판단·조치';
+  static const approxHint = '예: 3월 초~여름방학 전';
+  static const pickDate = '날짜';
+  static const pickTime = '시각';
+  static const addPerson = '사람 추가';
+  static const participantsHint =
+      '가해·피해를 나누어 적지 않아요. 판단이 나오기 전의 기록이 결론처럼 읽힐 수 있어서입니다. 필요하면 경과에 사실대로 적어 주세요.';
+  static const quotesHint = '누가 무엇이라고 말했는지 들은 그대로 적어 주세요.';
+  static const actionsHint = '어떻게 지도했는지, 보호자 연락·학교 보고·이관을 언제 했는지 적어 주세요.';
+  static const discardTitle = '저장하지 않고 나갈까요?';
+  static const discardMessage = '고친 내용이 사라집니다. 이미 저장된 판은 그대로 남습니다.';
+  static const discardConfirm = '나가기';
+
+  // 관련인 고르기
+  static const pickerTitle = '관련인 추가';
+  static const pickerQueryHint = '이름';
+  static String outsideRoster(String name) => '‘$name’ 명단 밖 이름으로 넣기';
+  static const outsideMemoHint = '소속·관계 (예: 5반, 민준 어머니)';
+  static const addToRoster = '명단에도 추가';
+  static const pickerConfirm = '넣기';
 }
