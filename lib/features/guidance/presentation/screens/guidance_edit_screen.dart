@@ -35,6 +35,7 @@ class GuidanceEditScreen extends ConsumerStatefulWidget {
   static const recordKey = Key('guidance_edit_record');
   static const importAudioKey = Key('guidance_edit_import_audio');
   static const importImageKey = Key('guidance_edit_import_image');
+  static const retryAttachKey = Key('guidance_edit_retry_attach');
   static Key kindKey(GuidanceKind k) => Key('guidance_edit_kind_${k.dbValue}');
   static Key statusKey(GuidanceStatus s) => Key('guidance_edit_status_${s.dbValue}');
 
@@ -65,6 +66,13 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   var _loaded = false;
   var _titleError = false;
   var _busy = false;
+
+  /// 녹음 화면이 열려 있는 동안 — 빠르게 두 번 눌러도 화면이 쌓이지 않게.
+  var _recording = false;
+
+  /// 녹음은 끝났는데 기록 저장·첨부가 실패해 아직 붙지 못한 것. 파일은 첨부 폴더에 있다.
+  final _unattached = <RecordingResult>[];
+  var _retrying = false;
 
   @override
   void initState() {
@@ -159,24 +167,56 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.saveFailed)));
   }
 
+  Future<void> _attachRecording(RecordingResult r) async {
+    // 기록이 아직 없으면 지금 만든다 — 실수로 나가도 녹음이 사라지지 않게.
+    final id = await _ensureRecord();
+    await ref
+        .read(guidanceActionsProvider)
+        .attachRecording(recordId: id, path: r.path, durationMs: r.durationMs, startedAt: r.startedAt);
+  }
+
   Future<void> _record() async {
-    final title = _title.text.trim();
-    final result = await Navigator.of(context).push<RecordingResult>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => RecordingScreen(title: title.isEmpty ? GuidanceStrings.untitled : title),
-      ),
-    );
-    if (result == null || !mounted) return;
-    // 녹음이 끝난 순간 기록이 없으면 지금 만든다 — 실수로 나가도 녹음이 사라지지 않게.
-    // 실패해도 녹음 파일은 첨부 폴더에 남아 있다.
+    if (_recording) return;
+    _recording = true;
+    final RecordingResult? result;
     try {
-      final id = await _ensureRecord();
-      await ref
-          .read(guidanceActionsProvider)
-          .attachRecording(recordId: id, path: result.path, durationMs: result.durationMs, startedAt: result.startedAt);
+      final title = _title.text.trim();
+      result = await Navigator.of(context).push<RecordingResult>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => RecordingScreen(title: title.isEmpty ? GuidanceStrings.untitled : title),
+        ),
+      );
+    } finally {
+      _recording = false;
+    }
+    if (result == null || !mounted) return;
+    try {
+      await _attachRecording(result);
     } catch (_) {
-      _saveFailed();
+      // 파일은 첨부 폴더에 남아 있다 — 잃지 않게 화면에 붙들어 두고 다시 붙이게 한다.
+      if (!mounted) return;
+      setState(() => _unattached.add(result!));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.attachFailedKept)));
+    }
+  }
+
+  Future<void> _retryAttach() async {
+    if (_retrying) return;
+    setState(() => _retrying = true);
+    var failed = false;
+    for (final r in List.of(_unattached)) {
+      try {
+        await _attachRecording(r);
+        _unattached.remove(r);
+      } catch (_) {
+        failed = true;
+      }
+    }
+    if (!mounted) return;
+    setState(() => _retrying = false);
+    if (failed) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.attachFailedKept)));
     }
   }
 
@@ -223,6 +263,32 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     return [
       _gap(),
       _label(GuidanceStrings.labelAttachments),
+      if (_unattached.isNotEmpty)
+        Container(
+          margin: const EdgeInsets.only(bottom: AppSizes.spacing8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12, vertical: AppSizes.spacing8),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.error),
+            borderRadius: BorderRadius.circular(AppSizes.radius8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.error),
+              const SizedBox(width: AppSizes.spacing8),
+              Expanded(
+                child: Text(
+                  GuidanceStrings.unattachedRecording(_unattached.length),
+                  style: AppTextStyles.bodyM.copyWith(color: AppColors.ink, fontWeight: FontWeight.w600),
+                ),
+              ),
+              OutlinedButton(
+                key: GuidanceEditScreen.retryAttachKey,
+                onPressed: _retrying ? null : _retryAttach,
+                child: const Text(GuidanceStrings.retryAttach),
+              ),
+            ],
+          ),
+        ),
       for (final a in attachments)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
@@ -312,7 +378,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     final now = DateTime.now();
     final created = _createdAt;
     return PopScope(
-      canPop: !_dirty,
+      canPop: !_dirty && _unattached.isEmpty,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmLeave();
       },

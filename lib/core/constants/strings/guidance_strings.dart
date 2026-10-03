@@ -186,4 +186,11 @@ class GuidanceStrings {
   static const micDenied = '마이크 권한이 꺼져 있어요';
   static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';
   static const openSettings = '설정 열기';
+  static const recordingStartFailed = '녹음을 시작하지 못했어요. 다른 앱이 마이크를 쓰고 있는지 확인해 주세요.';
+  static const recordingClose = '닫기';
+
+  // 붙이지 못한 녹음
+  static String unattachedRecording(int n) => '붙이지 못한 녹음 $n개';
+  static const retryAttach = '다시 붙이기';
+  static const attachFailedKept = '녹음은 보관했어요. 아래 다시 붙이기를 눌러 주세요.';
 }

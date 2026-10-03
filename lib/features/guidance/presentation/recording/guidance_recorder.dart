@@ -24,10 +24,16 @@ class RecordGuidanceRecorder implements GuidanceRecorder {
   @override
   Future<void> start(String path) async {
     await WakelockPlus.enable();
-    await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100, numChannels: 1),
-      path: path,
-    );
+    try {
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000, sampleRate: 44100, numChannels: 1),
+        path: path,
+      );
+    } catch (_) {
+      // 시작에 실패하면 화면을 켜 둘 이유가 없다 — 켠 것을 도로 끄고 호출부가 안내하게 넘긴다.
+      await WakelockPlus.disable();
+      rethrow;
+    }
   }
 
   @override

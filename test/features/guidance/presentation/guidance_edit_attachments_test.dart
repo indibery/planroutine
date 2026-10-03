@@ -9,6 +9,7 @@ import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
 import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
+import 'package:planroutine/features/guidance/domain/guidance_models.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/recording/attachment_importer.dart';
@@ -26,6 +27,20 @@ class FakeImporter implements AttachmentImporter {
   Future<PickedFile?> pickAudio() async => PickedFile(path: file.path, name: '음성 메모 1002.m4a');
   @override
   Future<PickedFile?> pickImage() async => PickedFile(path: file.path, name: 'IMG_0001.HEIC');
+}
+
+/// 첫 `addAttachment`만 던지는 저장소 — 녹음 뒤 첨부가 실패하는 상황.
+class FlakyRepository extends GuidanceRepository {
+  FlakyRepository({super.dbHelper});
+  var failNext = true;
+  @override
+  Future<GuidanceAttachment> addAttachment(GuidanceAttachment a) async {
+    if (failNext) {
+      failNext = false;
+      throw StateError('저장 실패');
+    }
+    return super.addAttachment(a);
+  }
 }
 
 class FakeRecorder implements GuidanceRecorder {
@@ -82,14 +97,14 @@ void main() {
   Future<void> waitForTiles(WidgetTester tester, int n) =>
       waitUntil(tester, () => find.byType(AttachmentTile).evaluate().length == n);
 
-  Future<void> pump(WidgetTester tester, {AttachmentImporter? importer}) async {
+  Future<void> pump(WidgetTester tester, {AttachmentImporter? importer, GuidanceRepository? repository}) async {
     tester.view.physicalSize = const Size(390, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          guidanceRepositoryProvider.overrideWithValue(repo),
+          guidanceRepositoryProvider.overrideWithValue(repository ?? repo),
           guidancePeopleRepositoryProvider.overrideWithValue(GuidancePeopleRepository(dbHelper: db)),
           guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
           attachmentImporterProvider.overrideWithValue(importer ?? FakeImporter(source)),
@@ -159,5 +174,48 @@ void main() {
     expect(find.byType(GuidanceEditScreen), findsOneWidget);
     expect(find.text('쓰던 경과'), findsOneWidget);
     expect(find.byType(AttachmentTile), findsNothing);
+  });
+
+  testWidgets('녹음 뒤 첨부가 실패하면 보관 줄이 보이고, 다시 붙이면 첨부가 생기고 줄이 사라진다', (tester) async {
+    await pump(tester, repository: FlakyRepository(dbHelper: db));
+    await tester.tap(find.byKey(GuidanceEditScreen.recordKey));
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitUntil(tester, () => find.text(GuidanceStrings.unattachedRecording(1)).evaluate().isNotEmpty);
+    expect(find.text(GuidanceStrings.attachFailedKept), findsOneWidget);
+    expect(find.byType(AttachmentTile), findsNothing);
+
+    await tester.tap(find.byKey(GuidanceEditScreen.retryAttachKey));
+    await waitForTiles(tester, 1);
+    await waitUntil(tester, () => find.text(GuidanceStrings.unattachedRecording(1)).evaluate().isEmpty);
+    final list = await tester.runAsync(repo.getActive);
+    final atts = await tester.runAsync(() => repo.getAttachments(list?.single.id ?? -1));
+    expect(atts?.single.source, AttachmentSource.recorded);
+    expect(find.byKey(GuidanceEditScreen.retryAttachKey), findsNothing);
+  });
+
+  testWidgets('붙이지 못한 녹음이 있으면 저장 없이 나갈 때 묻는다', (tester) async {
+    await pump(tester, repository: FlakyRepository(dbHelper: db));
+    await tester.tap(find.byKey(GuidanceEditScreen.recordKey));
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitUntil(tester, () => find.byKey(GuidanceEditScreen.retryAttachKey).evaluate().isNotEmpty);
+    await tester.tap(find.byKey(GuidanceEditScreen.cancelKey));
+    await tester.pumpAndSettle();
+    expect(find.text(GuidanceStrings.discardTitle), findsOneWidget);
+  });
+
+  testWidgets('녹음 버튼을 빠르게 두 번 눌러도 녹음 화면은 하나만 열린다', (tester) async {
+    await pump(tester);
+    final button = find.byKey(GuidanceEditScreen.recordKey);
+    // 탭은 첫 번째가 화면을 덮은 뒤라 두 번째가 닿지 않는다 — 콜백을 같은 프레임에 두 번 부른다.
+    final onPressed = tester.widget<OutlinedButton>(button).onPressed!;
+    onPressed();
+    onPressed();
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    expect(find.byType(RecordingScreen), findsOneWidget);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitForTiles(tester, 1);
+    expect(find.byType(RecordingScreen), findsNothing);
   });
 }

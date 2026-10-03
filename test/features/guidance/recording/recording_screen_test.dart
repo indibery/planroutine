@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
@@ -12,14 +13,17 @@ import 'package:planroutine/features/guidance/presentation/recording/guidance_re
 import 'package:planroutine/features/guidance/presentation/recording/recording_screen.dart';
 
 class FakeRecorder implements GuidanceRecorder {
-  FakeRecorder({this.permitted = true});
+  FakeRecorder({this.permitted = true, this.failStart = false, this.failStop = false});
   final bool permitted;
+  final bool failStart;
+  final bool failStop;
   String? startedAt;
   var stopped = 0;
   @override
   Future<bool> ensurePermission() async => permitted;
   @override
   Future<void> start(String path) async {
+    if (failStart) throw StateError('마이크 사용 중');
     startedAt = path;
     File(path).writeAsStringSync('rec');
   }
@@ -27,6 +31,7 @@ class FakeRecorder implements GuidanceRecorder {
   @override
   Future<String?> stop() async {
     stopped++;
+    if (failStop) throw StateError('멈추기 실패');
     return startedAt;
   }
 
@@ -65,8 +70,8 @@ void main() {
     }
   }
 
-  Future<void> pump(WidgetTester tester, {bool permitted = true}) async {
-    rec = FakeRecorder(permitted: permitted);
+  Future<void> pump(WidgetTester tester, {bool permitted = true, FakeRecorder? recorder, String? readyText}) async {
+    rec = recorder ?? FakeRecorder(permitted: permitted);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -91,9 +96,10 @@ void main() {
     await tester.tap(find.text('열기'));
     await waitUntil(
       tester,
-      () => permitted
-          ? find.text(GuidanceStrings.recordingLive).evaluate().isNotEmpty
-          : find.text(GuidanceStrings.micDenied).evaluate().isNotEmpty,
+      () => find
+          .text(readyText ?? (permitted ? GuidanceStrings.recordingLive : GuidanceStrings.micDenied))
+          .evaluate()
+          .isNotEmpty,
     );
   }
 
@@ -145,5 +151,48 @@ void main() {
     await waitUntil(tester, () => popped);
     expect(rec.stopped, 1);
     expect(result?.path, rec.startedAt);
+  });
+
+  testWidgets('시작이 실패하면 안내를 보이고, 결과 없이 닫을 수 있다', (tester) async {
+    await pump(tester, recorder: FakeRecorder(failStart: true), readyText: GuidanceStrings.recordingStartFailed);
+    expect(find.text(GuidanceStrings.recordingLive), findsNothing);
+    await tester.tap(find.byKey(RecordingScreen.closeKey));
+    await waitUntil(tester, () => popped);
+    expect(result, isNull);
+  });
+
+  testWidgets('멈추는 호출이 실패해도 녹음 경로를 결과로 돌려준다', (tester) async {
+    await pump(tester, recorder: FakeRecorder(failStop: true));
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitUntil(tester, () => popped);
+    expect(rec.stopped, 1);
+    expect(result?.path, rec.startedAt);
+  });
+
+  testWidgets('권한 거부 화면에서 앱이 비활성이 되어도 화면이 남는다', (tester) async {
+    await pump(tester, permitted: false);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await idle(tester);
+    expect(popped, isFalse);
+    expect(find.text(GuidanceStrings.micDenied), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('녹음 화면은 테마와 무관하게 시스템 바 아이콘을 밝게 둔다', (tester) async {
+    // 다른 테스트가 먼저 값을 바꿔 뒀어도 통과하지 않도록 반대 값으로 오염시켜 둔다.
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+    await pump(tester);
+    // 라우트 전환이 끝나야 화면이 제자리에서 영역을 덮는다.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    final style = SystemChrome.latestStyle;
+    expect(style?.systemNavigationBarIconBrightness, Brightness.light);
+    expect(style?.statusBarIconBrightness, Brightness.light);
+    expect(style?.systemNavigationBarContrastEnforced, isFalse);
   });
 }
