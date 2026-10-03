@@ -137,7 +137,8 @@ planroutine/
 │   │   │   ├── data/memo_repository.dart        # memos CRUD·순서·휴지통·범위 조회
 │   │   │   ├── domain/
 │   │   │   │   ├── memo.dart · memo_color.dart  # Freezed 모델 + 쪽지 색 4종
-│   │   │   │   └── memo_order.dart              # moveId (순수 함수)
+│   │   │   │   ├── memo_order.dart              # moveId (순수 함수)
+│   │   │   │   └── memo_to_event.dart           # splitMemoForEvent — 첫 줄 제목·나머지 설명
 │   │   │   └── presentation/
 │   │   │       ├── providers/memo_providers.dart  # memosProvider·monthMemosByDateProvider
 │   │   │       ├── screens/memo_board_screen.dart # /memo — 빠른 입력 + 2열 보드 + 끌기

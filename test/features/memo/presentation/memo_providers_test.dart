@@ -103,6 +103,19 @@ void main() {
     expect(await MemoRepository(dbHelper: db).getDeleted(), hasLength(1));
   });
 
+  test('여러 줄 쪽지를 바꾸면 첫 줄이 제목, 나머지가 설명이 된다', () async {
+    final c = container();
+    await c.read(memosProvider.future);
+    final n = c.read(memosProvider.notifier);
+    await n.add('운동회 물품\n줄다리기 줄 2개');
+    final memo = (await c.read(memosProvider.future)).single;
+    await n.convertToEvent(memo, kind: EntryKind.event, date: DateTime(2026, 10, 24));
+
+    final e = (await CalendarRepository(dbHelper: db).getEventsByMonth(2026, 10)).single;
+    expect(e.title, '운동회 물품');
+    expect(e.description, '줄다리기 줄 2개');
+  });
+
   test('캘린더용 조회는 그 달의 날짜 붙은 쪽지를 날짜별로 묶는다', () async {
     final c = container();
     await c.read(memosProvider.future);

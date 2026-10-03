@@ -8,6 +8,7 @@ import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../schedule/domain/entry_kind.dart';
 import '../../data/memo_repository.dart';
 import '../../domain/memo.dart';
+import '../../domain/memo_to_event.dart';
 import '../../domain/memo_order.dart';
 
 final memoRepositoryProvider = Provider<MemoRepository>(
@@ -76,11 +77,13 @@ class MemosNotifier extends AsyncNotifier<List<Memo>> {
     final id = memo.id;
     if (id == null) return;
     await _settled();
+    final parts = splitMemoForEvent(memo.text);
     await ref
         .read(selectedMonthEventsProvider.notifier)
         .addEvent(
           CalendarEvent(
-            title: memo.text.trim(),
+            title: parts.title,
+            description: parts.description,
             eventDate: formatDate(date),
             kind: kind,
           ),
