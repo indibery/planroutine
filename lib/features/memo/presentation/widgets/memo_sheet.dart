@@ -67,7 +67,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
       context: context,
       initialDate: _date ?? DateTime.now(),
       firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
+      lastDate: DateTime(2030), // 일정 편집 시트와 같은 상한 — 바꾼 일정을 다시 열 수 있게
     );
     if (picked != null) setState(() => _date = picked);
   }
@@ -167,7 +167,16 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
                 onTap: _pickDate,
               ),
               const SizedBox(height: AppSizes.spacing8),
-              FilledButton(key: MemoSheet.saveKey, onPressed: _save, child: const Text(MemoStrings.save)),
+              // 채움은 goldFill + onGold — Material 기본(primary)은 라이트에서 3.57:1이다.
+              FilledButton(
+                key: MemoSheet.saveKey,
+                onPressed: _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.goldFill,
+                  foregroundColor: AppColors.onGold,
+                ),
+                child: const Text(MemoStrings.save),
+              ),
               const Divider(height: AppSizes.spacing32),
               Text(MemoStrings.toEventTitle, style: TextStyle(fontSize: 14, color: AppColors.sub)),
               const SizedBox(height: AppSizes.spacing8),

@@ -49,15 +49,18 @@ class MemoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            memo.text,
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 15,
-              height: 1.45,
-              color: AppColors.ink,
+          // 칸 높이가 고정이라 큰 글자 설정에서는 남은 높이만큼만 그리고 말줄임한다.
+          Flexible(
+            child: Text(
+              memo.text,
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 15,
+                height: 1.45,
+                color: AppColors.ink,
+              ),
             ),
           ),
           const SizedBox(height: AppSizes.spacing8),

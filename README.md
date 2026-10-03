@@ -29,7 +29,7 @@
 - **csv / charset_converter**(EUC-KR·UTF-8 BOM 자동 감지) · **file_picker** · **share_plus**
 - **google_sign_in + googleapis**(Google Calendar) · **flutter_local_notifications + timezone**
 - **App Intents**(Swift, 앱 타깃 직접 구현 — 패키지 없음) — iOS 배포 타깃 **16.0**
-- 테스트: flutter_test(유닛/위젯 **1281**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
+- 테스트: flutter_test(유닛/위젯 **1286**) · integration_test(iPhone E2E 19) · sqflite_common_ffi
 
 ## 시작하기
 

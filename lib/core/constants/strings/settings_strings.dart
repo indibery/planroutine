@@ -77,7 +77,7 @@ class SettingsStrings {
   static const exportShareCountSuffix = '건의 일정을 공유합니다';
 
   // 휴지통 섹션 설명
-  static const trashDescription = '삭제한 일정·캘린더 이벤트 (30일 후 자동 영구 삭제)';
+  static const trashDescription = '삭제한 일정·캘린더 이벤트·포스트잇 (30일 후 자동 영구 삭제)';
 
   // 전체 초기화
   static const resetAll = '전체 데이터 초기화';
