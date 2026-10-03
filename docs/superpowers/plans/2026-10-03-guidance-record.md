@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-03-guidance-record-design.md`
 
+> **용어:** 이 문서의 `판`(revision)은 화면에서 `수정 버전`이다 — 판 1은 `처음 작성`, 판 n은 `수정 버전 n-1`. 화면 문구에 `판`을 쓰지 않는다(사용자 결정 2026-10-03).
+
 ## Global Constraints
 
 - 기능 id `'guidance'`, 라우트 `/guidance` — **저장값이라 바꾸지 않는다.** 탭 이름 `지도 기록`.
@@ -4982,10 +4984,11 @@ Run: `flutter pub add just_audio:^0.10.6`
 
   // 수정 이력
   static const historyTitle = '수정 이력';
-  static const historyIntro = '저장할 때마다 그때의 내용이 그대로 남습니다. 이전 판은 고치거나 지울 수 없어요.';
-  static String revisionTitle(int no) => '판 $no';
+  static const historyIntro = '저장할 때마다 그때 내용이 수정 버전으로 남습니다. 이전 버전은 고치거나 지울 수 없어요.';
+  /// 화면에서는 `판`이라는 말을 쓰지 않는다(사용자 결정 2026-10-03) — 판 1은 `처음 작성`,
+  /// 판 n은 `수정 버전 n-1`. 목록의 `수정 N회`와 번호가 맞는다.
+  static String revisionTitle(int no) => no == 1 ? '처음 작성' : '수정 버전 ${no - 1}';
   static const revisionCurrent = '현재';
-  static const revisionFirst = '처음 기록';
   static String changedLabel(String fields) => '바뀐 칸: $fields';
   static const attachmentLog = '첨부 기록';
   static String attachedLog(String what) => '$what 붙임';
@@ -5577,7 +5580,10 @@ void main() {
     expect(find.text('처음 쓴 경과'), findsOneWidget, reason: '옛 판의 원문이 남아 있다');
     expect(find.text('고친 경과'), findsOneWidget);
     expect(find.text(GuidanceStrings.revisionCurrent), findsOneWidget);
-    expect(find.text(GuidanceStrings.revisionFirst), findsOneWidget);
+    expect(find.text('처음 작성'), findsOneWidget);
+    expect(find.text('수정 버전 1'), findsOneWidget);
+    // `판단·조치` 칸 이름에도 `판`이 있으므로 `판 1` 같은 번호 꼴만 찾는다
+    expect(find.textContaining(RegExp(r'판 \d')), findsNothing, reason: '화면에 `판 N`을 쓰지 않는다');
     expect(
       find.text(GuidanceStrings.changedLabel('${GuidanceStrings.fieldStatus}, ${GuidanceStrings.fieldFacts}')),
       findsOneWidget,
@@ -5906,7 +5912,6 @@ class _RevisionCard extends StatelessWidget {
                 Text(GuidanceStrings.revisionTitle(revision.revisionNo), style: AppTextStyles.heading),
                 const SizedBox(width: AppSizes.spacing8),
                 if (isCurrent) _tag(GuidanceStrings.revisionCurrent),
-                if (revision.revisionNo == 1) _tag(GuidanceStrings.revisionFirst),
                 const Spacer(),
                 Text(formatStamp(revision.savedAt, now: now), style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
               ],
