@@ -102,7 +102,11 @@ class GuidanceStrings {
   static const approxHint = '예: 3월 초~여름방학 전';
   static const pickDate = '날짜';
   static const pickTime = '시각';
-  static const addPerson = '사람 추가';
+  static const participantsInputHint = '이름을 쉼표로 구분해 여러 명 쓸 수 있어요';
+  static const suggestionHint = '한 번 쓴 이름이 추천으로 떠요. 길게 누르면 추천에서 삭제합니다.';
+  static const forgetSuggestionTitle = '추천에서 삭제할까요?';
+  static String forgetSuggestionMessage(String name) =>
+      '‘$name’ 이름이 더는 추천으로 뜨지 않습니다. 이미 쓴 기록의 이름은 그대로 남습니다.';
   static const participantsHint =
       '가해·피해를 나누어 적지 않아요. 판단이 나오기 전의 기록이 결론처럼 읽힐 수 있어서입니다. 필요하면 경과에 사실대로 적어 주세요.';
   static const quotesHint = '누가 무엇이라고 말했는지 들은 그대로 적어 주세요.';
@@ -127,14 +131,12 @@ class GuidanceStrings {
   // 기록 보기
   static const edit = '수정';
   static const delete = '삭제';
-  static const more = '더 보기';
   static const labelOccurredShort = '사건';
   static const labelCreatedShort = '기록';
   static String revisionLink(int times, String last) => '수정 $times회 · 마지막 $last';
   static const labelAttachments = '첨부';
   static const deleteTitle = '이 기록을 삭제할까요?';
   static const deleteMessage = '삭제한 기록으로 옮겨집니다. 자동으로 지워지지 않으며, 거기서 되살릴 수 있습니다.';
-  static const outsideRosterBadge = '명단 밖';
 
   // 첨부
   static const play = '재생';
@@ -188,7 +190,6 @@ class GuidanceStrings {
   static const recordingStopHint = '멈추면 이 기록에 붙어요';
   static const recordingLegal =
       '대화에 직접 참여하는 경우에만 녹음하세요. 자리를 비운 사이의 녹음은 불법이 될 수 있습니다.';
-  static const recordingNotice = '가능하면 녹음한다고 먼저 알려 주세요.';
   static const recordingScreenOn = '녹음하는 동안 화면이 꺼지지 않아요 · 앱을 떠나면 여기까지 저장돼요';
   static const micDenied = '마이크 권한이 꺼져 있어요';
   static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';

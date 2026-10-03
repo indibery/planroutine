@@ -47,6 +47,13 @@ void main() {
       expect(sameContent(a, b), isFalse);
     });
 
+    test('관련인의 personId만 다르면 같은 내용이다 — 저장 때 이름으로 채워지는 값이라', () {
+      const a = GuidanceContent(title: 't', participants: [Participant(name: '김하늘')]);
+      const b = GuidanceContent(title: 't', participants: [Participant(personId: 3, name: '김하늘')]);
+      expect(sameContent(a, b), isTrue);
+      expect(changedFields(a, b.copyWith(facts: '덧붙임')), {ContentField.facts});
+    });
+
     test('날짜만이면 시각 차이는 무시한다', () {
       final a = GuidanceContent(
         title: 't',
@@ -116,15 +123,14 @@ void main() {
       _rec(3, people: [kim, park]),
     ];
 
-    test('명단 사람은 id로 찾는다(이름이 바뀌어도)', () {
-      final got = filterRecords(
-        records,
-        person: const Participant(personId: 7, name: '김하늘(개명)'),
-      );
+    test('같은 이름이면 같은 사람이다 — personId가 없거나 달라도', () {
+      final got = filterRecords(records, person: const Participant(name: ' 김하늘 '));
       expect(got.map((r) => r.id), [1, 3]);
+      final other = filterRecords(records, person: const Participant(personId: 99, name: '김하늘'));
+      expect(other.map((r) => r.id), [1, 3]);
     });
 
-    test('명단 밖 사람은 이름으로 찾는다', () {
+    test('명단에 없던 사람도 이름으로 찾는다', () {
       final got = filterRecords(records, person: const Participant(name: '박서준'));
       expect(got.map((r) => r.id), [2, 3]);
     });
@@ -161,5 +167,35 @@ void main() {
       _rec(2, people: [kim, const Participant(name: '박서준')]),
     ]);
     expect(got, {7: 2});
+  });
+
+  test('splitNames — 쉼표·전각 쉼표로 나누고 빈 조각을 버린다', () {
+    expect(splitNames('김하늘, 이도윤，박서준(5반) , ,'), ['김하늘', '이도윤', '박서준(5반)']);
+    expect(splitNames('   '), isEmpty);
+  });
+
+  test('addParticipantNames — 빈 이름·이미 있는 이름(앞뒤 공백 무시)은 건너뛴다', () {
+    const kim = Participant(personId: 7, name: '김하늘');
+    final got = addParticipantNames([kim], ['이도윤', ' 김하늘 ', '', '이도윤', '박서준']);
+    expect(got.map((p) => p.name), ['김하늘', '이도윤', '박서준']);
+    expect(got.first, kim, reason: '있던 사람은 그대로 둔다');
+  });
+
+  group('suggestPeople', () {
+    const roster = [
+      GuidancePerson(id: 1, name: '김하늘'),
+      GuidancePerson(id: 2, name: '김하랑'),
+      GuidancePerson(id: 3, name: '이도윤'),
+    ];
+
+    test('친 글을 포함하는 이름만, 이미 넣은 사람은 빼고', () {
+      final got = suggestPeople(roster, '하', const [Participant(name: '김하늘')]);
+      expect(got.map((p) => p.name), ['김하랑']);
+    });
+
+    test('친 글이 없으면 추천하지 않고, 개수 상한을 지킨다', () {
+      expect(suggestPeople(roster, ' ', const []), isEmpty);
+      expect(suggestPeople(roster, '김', const [], limit: 1).map((p) => p.name), ['김하늘']);
+    });
   });
 }

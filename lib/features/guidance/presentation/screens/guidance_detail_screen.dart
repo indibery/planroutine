@@ -22,7 +22,6 @@ class GuidanceDetailScreen extends ConsumerWidget {
   final int recordId;
 
   static const editKey = Key('guidance_detail_edit');
-  static const menuKey = Key('guidance_detail_menu');
   static const deleteKey = Key('guidance_detail_delete');
   static const historyKey = Key('guidance_detail_history');
 
@@ -63,13 +62,12 @@ class GuidanceDetailScreen extends ConsumerWidget {
             onPressed: () => context.push(AppRoutes.guidanceEdit(recordId)),
             child: const Text(GuidanceStrings.edit),
           ),
-          PopupMenuButton<String>(
-            key: menuKey,
-            tooltip: GuidanceStrings.more,
-            onSelected: (_) => _delete(context, ref),
-            itemBuilder: (_) => const [
-              PopupMenuItem(key: deleteKey, value: 'delete', child: Text(GuidanceStrings.delete)),
-            ],
+          // 메뉴에 `삭제` 하나뿐이라 `⋯`로 감출 이유가 없다(실기기 피드백) — 바로 누르는 아이콘으로 둔다.
+          IconButton(
+            key: deleteKey,
+            tooltip: GuidanceStrings.delete,
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _delete(context, ref),
           ),
         ],
       ),
@@ -150,14 +148,9 @@ class GuidanceDetailScreen extends ConsumerWidget {
     ),
   );
 
-  /// 명단 사람은 채운 칩, 명단 밖은 테두리 칩 + `명단 밖` — 색만이 아니라 형태와 글로 구분한다.
-  Widget _personChip(Participant p) => p.personId != null
-      ? Chip(label: Text(p.displayName), backgroundColor: AppColors.surfaceVariant, side: BorderSide.none)
-      : Chip(
-          label: Text('${p.displayName} · ${GuidanceStrings.outsideRosterBadge}'),
-          backgroundColor: Colors.transparent,
-          side: BorderSide(color: AppColors.lineStrong),
-        );
+  /// 명단 관리 화면이 없어져 `명단 밖` 구분도 뺐다 — 관련인은 모두 같은 칩이다.
+  Widget _personChip(Participant p) =>
+      Chip(label: Text(p.displayName), backgroundColor: AppColors.surfaceVariant, side: BorderSide.none);
 
   Widget _heading(String text) => Padding(
     padding: const EdgeInsets.only(bottom: AppSizes.spacing8),

@@ -16,7 +16,7 @@ import '../recording/attachment_importer.dart';
 import '../recording/recording_screen.dart';
 import '../widgets/attachment_tile.dart';
 import '../widgets/occurred_input.dart';
-import '../widgets/participant_picker_sheet.dart';
+import '../widgets/participant_chips_field.dart';
 
 /// 새 기록·고치기 공용 전체 화면. 저장은 판을 하나 더한다(같은 내용이면 더하지 않는다).
 class GuidanceEditScreen extends ConsumerStatefulWidget {
@@ -31,7 +31,6 @@ class GuidanceEditScreen extends ConsumerStatefulWidget {
   static const factsKey = Key('guidance_edit_facts');
   static const quotesKey = Key('guidance_edit_quotes');
   static const actionsKey = Key('guidance_edit_actions');
-  static const addPersonKey = Key('guidance_edit_add_person');
   static const recordKey = Key('guidance_edit_record');
   static const importAudioKey = Key('guidance_edit_import_audio');
   static const importImageKey = Key('guidance_edit_import_image');
@@ -49,6 +48,9 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   final _facts = TextEditingController();
   final _quotes = TextEditingController();
   final _actions = TextEditingController();
+
+  /// 관련인 칸에 아직 칩이 안 된 글. 저장·같은 내용 판정에 칩과 함께 들어간다.
+  final _personInput = TextEditingController();
 
   var _kind = GuidanceKind.guidance;
   var _status = GuidanceStatus.open;
@@ -78,7 +80,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   void initState() {
     super.initState();
     _recordId = widget.recordId;
-    for (final c in [_title, _place, _facts, _quotes, _actions]) {
+    for (final c in [_title, _place, _facts, _quotes, _actions, _personInput]) {
       c.addListener(_touch);
     }
     _load();
@@ -118,7 +120,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
 
   @override
   void dispose() {
-    for (final c in [_title, _place, _facts, _quotes, _actions]) {
+    for (final c in [_title, _place, _facts, _quotes, _actions, _personInput]) {
       c.dispose();
     }
     super.dispose();
@@ -132,7 +134,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     occurredText: _occurredText,
     title: _title.text,
     place: _place.text,
-    participants: _participants,
+    // 쉼표 없이 이름 하나만 치고 바로 저장하는 일이 흔하다 — 남은 글도 관련인으로 넣는다.
+    participants: addParticipantNames(_participants, splitNames(_personInput.text)),
     facts: _facts.text,
     quotes: _quotes.text,
     actions: _actions.text,
@@ -427,12 +430,6 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     }
   }
 
-  Future<void> _addPerson() async {
-    final p = await showParticipantPicker(context, exclude: _participants);
-    if (p == null || !mounted) return;
-    setState(() => _participants = [..._participants, p]);
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -568,27 +565,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                   TextField(key: GuidanceEditScreen.placeKey, controller: _place),
                   _gap(),
                   _label(GuidanceStrings.labelParticipants),
-                  Wrap(
-                    spacing: AppSizes.spacing8,
-                    runSpacing: AppSizes.spacing8,
-                    children: [
-                      for (final p in _participants)
-                        InputChip(
-                          label: Text(p.displayName),
-                          onDeleted: () => setState(
-                            () => _participants = [
-                              for (final q in _participants)
-                                if (!identical(q, p)) q,
-                            ],
-                          ),
-                        ),
-                      ActionChip(
-                        key: GuidanceEditScreen.addPersonKey,
-                        avatar: const Icon(Icons.add, size: AppSizes.iconSmall),
-                        label: const Text(GuidanceStrings.addPerson),
-                        onPressed: _addPerson,
-                      ),
-                    ],
+                  ParticipantChipsField(
+                    participants: _participants,
+                    controller: _personInput,
+                    onChanged: (list) => setState(() => _participants = list),
                   ),
                   _hint(GuidanceStrings.participantsHint),
                   _gap(),

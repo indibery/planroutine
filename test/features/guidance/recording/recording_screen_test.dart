@@ -147,7 +147,8 @@ void main() {
     await pump(tester);
     expect(find.text(GuidanceStrings.recordingLive), findsOneWidget);
     expect(find.text(GuidanceStrings.recordingLegal), findsOneWidget);
-    expect(find.text(GuidanceStrings.recordingNotice), findsOneWidget);
+    // 사전 고지 문구는 뺐다(사용자 결정 2026-10-04) — 대화 당사자 녹음은 불법이 아니고, 상대를 불쾌하게 할 수 있다.
+    expect(find.textContaining('먼저 알려'), findsNothing);
     expect(rec.startedAt?.contains(GuidanceFileStore.folder), isTrue);
     await tester.tap(find.byKey(RecordingScreen.stopKey));
     await waitUntil(tester, () => popped);

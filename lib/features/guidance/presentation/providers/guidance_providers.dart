@@ -87,15 +87,28 @@ class GuidanceActions {
 
   void _changed() => _ref.read(guidanceChangedProvider.notifier).state++;
 
+  /// 관련인 이름을 명단에 기억하고(이름 추천용) 그 id를 `personId`로 채운다.
+  /// 같은 이름 = 같은 사람. 판에 들어가는 것은 여전히 저장 시점의 사본이다.
+  Future<GuidanceContent> _remember(GuidanceContent content) async {
+    final names = [for (final x in content.participants) x.name];
+    if (names.every((n) => n.trim().isEmpty)) return content;
+    final ids = await _people.remember(names);
+    return content.copyWith(
+      participants: [
+        for (final x in content.participants) x.copyWith(personId: ids[x.name.trim()] ?? x.personId),
+      ],
+    );
+  }
+
   Future<int> create(GuidanceContent content) async {
-    final id = await _repo.create(content);
+    final id = await _repo.create(await _remember(content));
     _changed();
     return id;
   }
 
-  /// 같은 내용이면 판을 만들지 않고 false.
+  /// 같은 내용이면 판을 만들지 않고 false. `personId`만 달라진 것은 같은 내용이다([sameContent]).
   Future<bool> save(int id, GuidanceContent content) async {
-    final saved = await _repo.saveRevision(id, content);
+    final saved = await _repo.saveRevision(id, await _remember(content));
     if (saved) _changed();
     return saved;
   }

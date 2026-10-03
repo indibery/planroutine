@@ -19,7 +19,6 @@ class GuidanceListScreen extends ConsumerWidget {
   const GuidanceListScreen({super.key});
 
   static const addKey = Key('guidance_add');
-  static const peopleKey = Key('guidance_people');
   static const trashKey = Key('guidance_trash');
   static const personFilterKey = Key('guidance_person_filter');
   static Key kindFilterKey(GuidanceKind? kind) => Key('guidance_kind_${kind?.dbValue ?? 'all'}');
@@ -44,12 +43,6 @@ class GuidanceListScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          IconButton(
-            key: peopleKey,
-            tooltip: GuidanceStrings.peopleTitle,
-            icon: const Icon(Icons.groups_outlined),
-            onPressed: () => context.push(AppRoutes.guidancePeople),
-          ),
           IconButton(
             key: trashKey,
             tooltip: GuidanceStrings.trashTitle,
@@ -143,7 +136,7 @@ class GuidanceListScreen extends ConsumerWidget {
     ),
   );
 
-  /// 기록에 등장한 사람(명단 밖 포함) 중 하나를 고른다. `(null,)`은 "전체", 시트를 그냥 닫으면 null.
+  /// 기록에 등장한 사람 중 하나를 고른다. `(null,)`은 "전체", 시트를 그냥 닫으면 null.
   Future<void> _pickPerson(BuildContext context, WidgetRef ref, List<GuidanceRecord> records) async {
     final candidates = collectParticipants(records);
     final picked = await showModalBottomSheet<(Participant?,)>(
@@ -163,7 +156,6 @@ class GuidanceListScreen extends ConsumerWidget {
             for (final p in candidates)
               ListTile(
                 title: Text(p.displayName),
-                subtitle: Text(p.role.label),
                 onTap: () => Navigator.pop(ctx, (p,)),
               ),
           ],

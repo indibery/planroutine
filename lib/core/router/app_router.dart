@@ -8,7 +8,6 @@ import '../../features/guidance/presentation/screens/guidance_detail_screen.dart
 import '../../features/guidance/presentation/screens/guidance_edit_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_history_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
-import '../../features/guidance/presentation/screens/guidance_people_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_trash_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
@@ -32,7 +31,6 @@ class AppRoutes {
   static const memo = '/memo';
   static const guidance = '/guidance';
   static const guidanceNew = '/guidance/new';
-  static const guidancePeople = '/guidance/people';
   static const guidanceTrash = '/guidance/trash';
   static String guidanceRecord(int id) => '/guidance/record/$id';
   static String guidanceEdit(int id) => '/guidance/record/$id/edit';
@@ -147,10 +145,6 @@ GoRouter createRouter({
                       ),
                     ),
                   ],
-                ),
-                GoRoute(
-                  path: 'people',
-                  builder: (context, state) => const GuidancePeopleScreen(),
                 ),
                 GoRoute(
                   path: 'trash',

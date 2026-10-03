@@ -58,7 +58,7 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('사건 시각과 기록 시각, 칸 셋, 명단 밖 표시를 보여 준다', (tester) async {
+  testWidgets('사건 시각과 기록 시각, 칸 셋, 관련인을 보여 준다 — 명단 밖 표시는 없다', (tester) async {
     final id = await tester.runAsync(
       () => repo.create(
         GuidanceContent(
@@ -78,7 +78,9 @@ void main() {
     expect(find.text('밀침'), findsOneWidget);
     expect(find.text('"먼저 걸었어요"'), findsOneWidget);
     expect(find.text('분리 지도'), findsOneWidget);
-    expect(find.textContaining(GuidanceStrings.outsideRosterBadge), findsOneWidget);
+    expect(find.text('김하늘'), findsOneWidget);
+    expect(find.text('박서준 · 5반'), findsOneWidget);
+    expect(find.textContaining('명단 밖'), findsNothing);
     // 판이 하나면 수정 링크가 없다
     expect(find.byKey(GuidanceDetailScreen.historyKey), findsNothing);
   });
@@ -97,8 +99,8 @@ void main() {
   testWidgets('삭제는 묻고, 확인하면 삭제한 기록으로 가고 화면이 닫힌다', (tester) async {
     final id = await tester.runAsync(() => repo.create(const GuidanceContent(title: '지울 것')));
     await pump(tester, id ?? -1);
-    await tester.tap(find.byKey(GuidanceDetailScreen.menuKey));
-    await tester.pumpAndSettle();
+    // `⋯` 메뉴 없이 앱바의 삭제 아이콘 한 번으로 확인 창이 뜬다.
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
     await tester.tap(find.byKey(GuidanceDetailScreen.deleteKey));
     await tester.pumpAndSettle();
     expect(find.text(GuidanceStrings.deleteTitle), findsOneWidget);

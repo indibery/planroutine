@@ -23,13 +23,20 @@ enum ContentField {
   final String label;
 }
 
+/// 비교용으로 다듬는다. 관련인의 `personId`는 뺀다 — 저장할 때 이름으로 채워지는 값이라
+/// (같은 이름 = 같은 사람) 그것만 달라진 것은 고친 것이 아니다. 옛 기록을 그대로 저장해도
+/// id가 새로 채워졌다는 이유로 판이 생기거나 이력에 `관련인`이 바뀐 칸으로 뜨지 않게.
+GuidanceContent _comparable(GuidanceContent c) {
+  final n = c.normalized();
+  return n.copyWith(participants: [for (final p in n.participants) p.copyWith(personId: null)]);
+}
+
 /// 다듬은 뒤 같으면 같은 내용이다 — 이때는 새 판을 만들지 않는다.
-bool sameContent(GuidanceContent a, GuidanceContent b) =>
-    a.normalized() == b.normalized();
+bool sameContent(GuidanceContent a, GuidanceContent b) => _comparable(a) == _comparable(b);
 
 Set<ContentField> changedFields(GuidanceContent before, GuidanceContent after) {
-  final a = before.normalized();
-  final b = after.normalized();
+  final a = _comparable(before);
+  final b = _comparable(after);
   return {
     if (a.kind != b.kind) ContentField.kind,
     if (a.status != b.status) ContentField.status,
@@ -85,13 +92,9 @@ List<GuidanceRecord> sortRecords(List<GuidanceRecord> records) {
   return list;
 }
 
-/// 명단 사람은 id로, 명단 밖 사람은 이름으로 같은 사람을 판정한다.
-bool sameParticipant(Participant a, Participant b) {
-  final ai = a.personId;
-  final bi = b.personId;
-  if (ai != null || bi != null) return ai == bi;
-  return a.name == b.name;
-}
+/// 같은 이름(앞뒤 공백 정리 후)이면 같은 사람이다 — `personId`는 보지 않는다.
+/// 이름은 저장할 때 명단에 기억되고 그 id가 붙지만, 명단 이전에 쓴 기록은 id가 없다.
+bool sameParticipant(Participant a, Participant b) => a.name.trim() == b.name.trim();
 
 List<GuidanceRecord> filterRecords(
   List<GuidanceRecord> records, {
@@ -104,7 +107,7 @@ List<GuidanceRecord> filterRecords(
       r,
 ];
 
-/// 목록의 `사람` 고르기에 쓸 후보 — 기록에 등장한 사람(명단 밖 포함), 처음 등장 순.
+/// 목록의 `사람` 고르기에 쓸 후보 — 기록에 등장한 이름, 처음 등장 순.
 List<Participant> collectParticipants(List<GuidanceRecord> records) {
   final out = <Participant>[];
   for (final r in records) {
@@ -138,4 +141,42 @@ Map<int, int> countRecordsByPerson(List<GuidanceRecord> records) {
     }
   }
   return counts;
+}
+
+/// 관련인 칸의 구분자 — 쉼표와 전각 쉼표.
+final nameSeparator = RegExp('[,，]');
+
+/// 관련인 칸에 친 글을 이름들로 나눈다(`김하늘, 이도윤，박서준` → 셋). 빈 조각은 버린다.
+List<String> splitNames(String text) => [
+  for (final part in text.split(nameSeparator))
+    if (part.trim().isNotEmpty) part.trim(),
+];
+
+/// 이름들을 관련인 끝에 더한다. 빈 이름·이미 있는 이름(같은 이름 = 같은 사람)은 건너뛴다.
+List<Participant> addParticipantNames(List<Participant> current, Iterable<String> names) {
+  final out = [...current];
+  for (final raw in names) {
+    final p = Participant(name: raw.trim());
+    if (p.name.isEmpty || out.any((q) => sameParticipant(q, p))) continue;
+    out.add(p);
+  }
+  return out;
+}
+
+/// 관련인 칸 아래 추천 — 명단에서 [query]를 포함하는 이름, 이미 넣은 사람은 빼고 [limit]개까지.
+/// 친 글이 없으면 추천하지 않는다.
+List<GuidancePerson> suggestPeople(
+  List<GuidancePerson> roster,
+  String query,
+  List<Participant> taken, {
+  int limit = 5,
+}) {
+  final q = query.trim();
+  if (q.isEmpty) return const [];
+  return [
+    for (final person in roster)
+      if (person.name.contains(q) &&
+          !taken.any((p) => sameParticipant(p, Participant(name: person.name))))
+        person,
+  ].take(limit).toList();
 }
