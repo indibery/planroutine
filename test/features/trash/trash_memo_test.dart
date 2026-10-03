@@ -25,15 +25,10 @@ void main() {
       ],
     );
     addTearDown(c.dispose);
-    return c;
-  }
-
-  /// TrashNotifier.build가 watch하는 두 목록 provider를 먼저 끝내 둔다.
-  /// 셋이 같은 in-memory DB로 동시에 첫 조회를 하면 휴지통 조회가 끝나지 않는다.
-  Future<ProviderContainer> warmContainer() async {
-    final c = container();
-    await c.read(schedulesProvider.future);
-    await c.read(selectedMonthEventsProvider.future);
+    // 휴지통 provider가 watch하는 목록들이 로딩을 끝내면 이 provider는 dirty가 되는데,
+    // Riverpod은 리스너가 없는 dirty provider를 다시 빌드하지 않아 read(...future)가
+    // 끝나지 않는다. 실제 화면은 watch하므로 운영에서는 문제없다 — 화면처럼 listen한다.
+    c.listen(trashSnapshotProvider, (_, _) {});
     return c;
   }
 
@@ -46,7 +41,7 @@ void main() {
   test('뗀 쪽지가 휴지통 목록에 있다', () async {
     final m = await memos.add('뗀 것');
     await memos.softDelete(m.id ?? -1);
-    final snap = await (await warmContainer()).read(trashSnapshotProvider.future);
+    final snap = await container().read(trashSnapshotProvider.future);
     expect(snap.memos.single.text, '뗀 것');
     expect(snap.total, 1);
   });
@@ -54,7 +49,7 @@ void main() {
   test('휴지통에서 되살리면 보드로 돌아온다', () async {
     final m = await memos.add('되살림');
     await memos.softDelete(m.id ?? -1);
-    final c = await warmContainer();
+    final c = container();
     await c.read(trashSnapshotProvider.future);
     await c.read(trashSnapshotProvider.notifier).restoreMemo(m.id ?? -1);
     expect((await memos.getActive()).single.text, '되살림');
@@ -64,7 +59,7 @@ void main() {
   test('영구 삭제하면 어디에도 없다', () async {
     final m = await memos.add('영구');
     await memos.softDelete(m.id ?? -1);
-    final c = await warmContainer();
+    final c = container();
     await c.read(trashSnapshotProvider.future);
     await c.read(trashSnapshotProvider.notifier).permanentDeleteMemo(m.id ?? -1);
     expect(await memos.getDeleted(), isEmpty);
