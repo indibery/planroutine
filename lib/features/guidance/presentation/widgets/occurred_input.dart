@@ -46,10 +46,10 @@ class _OccurredInputState extends State<OccurredInput> {
     super.dispose();
   }
 
-  void _emit({OccurredPrecision? precision, DateTime? at, bool clearAt = false}) => widget.onChanged(
+  void _emit({OccurredPrecision? precision, DateTime? at}) => widget.onChanged(
     OccurredValue(
       precision: precision ?? widget.precision,
-      at: clearAt ? null : (at ?? widget.at),
+      at: at ?? widget.at,
       text: _approx.text,
     ),
   );
@@ -94,8 +94,9 @@ class _OccurredInputState extends State<OccurredInput> {
           selected: {widget.precision},
           onSelectionChanged: (s) {
             final p = s.first;
-            // 대략으로 바꾸면 시각을 비운다 — 남겨 두면 저장할 때 정밀도와 어긋난다.
-            _emit(precision: p, clearAt: p == OccurredPrecision.approx, at: at ?? DateTime.now());
+            // 마지막 시각은 화면 상태에 남긴다 — 대략 → 정확히로 되돌릴 때 근거 시각이 바뀌면 안 된다.
+            // 저장할 때 `normalized()`가 정밀도에 맞춰 버린다(대략이면 시각 null).
+            _emit(precision: p, at: at ?? DateTime.now());
           },
         ),
         const SizedBox(height: AppSizes.spacing8),

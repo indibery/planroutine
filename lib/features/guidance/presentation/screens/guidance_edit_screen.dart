@@ -158,13 +158,23 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     setState(() => _busy = true);
     final actions = ref.read(guidanceActionsProvider);
     final id = _recordId;
-    if (id == null) {
-      _recordId = await actions.create(content);
-    } else {
-      await actions.save(id, content);
+    try {
+      if (id == null) {
+        _recordId = await actions.create(content);
+      } else {
+        await actions.save(id, content);
+      }
+      _saved = content;
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      // 실패하면 글을 그대로 두고 다시 누를 수 있게 푼다. 성공해 pop한 뒤에는 풀지 않는다(닫히는 동안 두 번 눌림 방지).
+      if (mounted) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(GuidanceStrings.saveFailed)),
+        );
+      }
     }
-    _saved = content;
-    if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _confirmLeave() async {

@@ -68,10 +68,21 @@ class _ParticipantPickerSheetState extends ConsumerState<ParticipantPickerSheet>
     var result = Participant(name: name, role: _role, memo: memo);
     if (_addToRoster) {
       setState(() => _busy = true);
-      final saved = await ref
-          .read(guidanceActionsProvider)
-          .addPerson(GuidancePerson(name: name, role: _role, memo: memo));
-      result = saved.toParticipant();
+      try {
+        final saved = await ref
+            .read(guidanceActionsProvider)
+            .addPerson(GuidancePerson(name: name, role: _role, memo: memo));
+        result = saved.toParticipant();
+      } catch (_) {
+        // 실패하면 입력을 그대로 두고 다시 누를 수 있게 푼다.
+        if (mounted) {
+          setState(() => _busy = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(GuidanceStrings.saveFailed)),
+          );
+        }
+        return;
+      }
     }
     if (mounted) Navigator.pop(context, result);
   }

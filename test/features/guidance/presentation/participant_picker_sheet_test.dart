@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
@@ -106,6 +107,61 @@ void main() {
     expect(got?.personId, isNull);
     expect(got?.role, PersonRole.guardian);
   });
+
+  testWidgets('명단에 더하다 실패하면 안내하고 시트가 남으며, 다시 누르면 들어간다', (tester) async {
+    final flaky = _FailOncePeopleRepository(db);
+    Participant? got;
+    await tester.runAsync(() => db.database);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [guidancePeopleRepositoryProvider.overrideWithValue(flaky)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async =>
+                    got = await showParticipantPicker(context, exclude: const []),
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('열기'));
+    await settle(tester);
+    await tester.enterText(find.byKey(ParticipantPickerSheet.queryKey), '박서준');
+    await tester.pump();
+    await tester.tap(find.byKey(ParticipantPickerSheet.outsideKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ParticipantPickerSheet.addToRosterKey));
+    await tester.pump();
+    await tester.tap(find.byKey(ParticipantPickerSheet.confirmKey));
+    await settle(tester);
+    expect(find.byType(ParticipantPickerSheet), findsOneWidget);
+    expect(got, isNull);
+    expect(find.text(GuidanceStrings.saveFailed), findsOneWidget);
+    await tester.tap(find.byKey(ParticipantPickerSheet.confirmKey));
+    await settle(tester);
+    expect(got?.name, '박서준');
+    expect(got?.personId, isNotNull);
+  });
+}
+
+/// 첫 `add`만 예외를 던지는 명단 저장소.
+class _FailOncePeopleRepository extends GuidancePeopleRepository {
+  _FailOncePeopleRepository(DatabaseHelper db) : super(dbHelper: db);
+
+  var _failed = false;
+
+  @override
+  Future<GuidancePerson> add(GuidancePerson person) {
+    if (!_failed) {
+      _failed = true;
+      throw StateError('저장 실패');
+    }
+    return super.add(person);
+  }
 }
 
 /// DB 왕복(runAsync) 뒤 프레임을 돌린다.

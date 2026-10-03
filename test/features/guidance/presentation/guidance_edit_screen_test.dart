@@ -35,7 +35,12 @@ void main() {
   }
 
   /// 편집 화면을 한 번 push한 상태로 띄운다 — 저장·취소가 pop하는지 보려고.
-  Future<void> pump(WidgetTester tester, {int? recordId, double width = 390}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    int? recordId,
+    double width = 390,
+    GuidanceRepository? repository,
+  }) async {
     tester.view.physicalSize = Size(width, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -44,7 +49,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          guidanceRepositoryProvider.overrideWithValue(repo),
+          guidanceRepositoryProvider.overrideWithValue(repository ?? repo),
           guidancePeopleRepositoryProvider.overrideWithValue(GuidancePeopleRepository(dbHelper: db)),
         ],
         child: MaterialApp(
@@ -154,8 +159,59 @@ void main() {
     expect(find.byType(GuidanceEditScreen), findsNothing);
   });
 
+  testWidgets('저장이 실패하면 안내하고 글을 남기며, 다시 누르면 저장된다', (tester) async {
+    final flaky = _FailOnceRepository(db);
+    await pump(tester, repository: flaky);
+    await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
+    await tester.pump();
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await settle(tester);
+    expect(find.text(GuidanceStrings.saveFailed), findsOneWidget);
+    expect(find.byType(GuidanceEditScreen), findsOneWidget);
+    expect(find.text('복도 다툼'), findsOneWidget);
+    expect(await tester.runAsync(repo.getActive), isEmpty);
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await settle(tester);
+    expect(find.byType(GuidanceEditScreen), findsNothing);
+    expect((await tester.runAsync(repo.getActive))?.single.content.title, '복도 다툼');
+  });
+
+  testWidgets('대략으로 바꿨다가 정확히로 되돌려도 사건 시각이 그대로다', (tester) async {
+    final at = DateTime(2026, 9, 25, 12, 40);
+    final id = await tester.runAsync(
+      () => repo.create(GuidanceContent(title: '처음', occurredAt: at)),
+    );
+    await pump(tester, recordId: id);
+    await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.approx)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.exact)));
+    await tester.pumpAndSettle();
+    expect(find.text('12:40'), findsOneWidget);
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await settle(tester);
+    final revs = await tester.runAsync(() => repo.getRevisions(id ?? -1));
+    expect(revs, hasLength(1), reason: '되돌렸으면 고친 것이 없다');
+    expect(revs?.single.content.occurredAt, at);
+  });
+
   testWidgets('320pt에서 넘치지 않는다', (tester) async {
     await pump(tester, width: 320);
     expect(tester.takeException(), isNull);
   });
+}
+
+/// 첫 `create`만 예외를 던지는 저장소 — 저장 실패 경로 확인용.
+class _FailOnceRepository extends GuidanceRepository {
+  _FailOnceRepository(DatabaseHelper db) : super(dbHelper: db);
+
+  var _failed = false;
+
+  @override
+  Future<int> create(GuidanceContent content) {
+    if (!_failed) {
+      _failed = true;
+      throw StateError('저장 실패');
+    }
+    return super.create(content);
+  }
 }

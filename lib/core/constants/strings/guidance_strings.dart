@@ -107,6 +107,7 @@ class GuidanceStrings {
   static const discardTitle = '저장하지 않고 나갈까요?';
   static const discardMessage = '고친 내용이 사라집니다. 이미 저장된 판은 그대로 남습니다.';
   static const discardConfirm = '나가기';
+  static const saveFailed = '저장하지 못했어요. 다시 눌러 주세요.';
 
   // 관련인 고르기
   static const pickerTitle = '관련인 추가';
