@@ -74,7 +74,7 @@ class GuidanceStrings {
   // 잠금
   static const unlockReason = '지도 기록을 열려면 본인 확인이 필요합니다';
   static const lockedTitle = '지도 기록은 잠겨 있어요';
-  static const lockedBody = '다른 탭으로 옮기거나 앱을 떠나면 다시 잠깁니다.';
+  static const lockedBody = '지도 기록을 떠난 지 15분이 지나면 다시 잠깁니다.';
   static const unlock = '잠금 해제';
   static const noCredentialsTitle = '기기 암호가 설정되어 있지 않아요';
   static const noCredentialsBody =

@@ -6,11 +6,14 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'device_authenticator.dart';
+import 'guidance_unlock.dart';
 import 'secure_window.dart';
-import 'system_sheet_guard.dart';
 
-/// 지도 기록 탭 전체를 감싸는 잠금. 중첩 셸의 builder가 쓴다 — 다른 탭으로 `go`하면
-/// 셸과 함께 dispose되어 다음에 들어올 때 다시 잠겨 있다.
+/// 지도 기록 탭 전체를 감싸는 잠금. 중첩 셸의 builder가 쓴다.
+///
+/// **한 번 풀면 지도 기록을 떠난 지 [guidanceRelockAfter](15분)까지 다시 묻지 않는다**(사용자 결정 2026-10-03).
+/// 풀린 상태는 게이트가 아니라 [guidanceUnlockProvider]가 든다 — 탭을 옮기면 게이트는 dispose되지만 상태는 남는다.
+/// 떠남은 탭 이동(dispose)과 `hidden`/`paused`뿐이고, `inactive`(알림 센터·Face ID 창)는 아무것도 하지 않는다.
 ///
 /// **덮개는 화면을 덮기만 한다.** 아래 화면을 dispose하지 않으므로 잠금을 풀면 쓰던 글이
 /// 그대로다. 잠긴 동안에는 아래 화면이 눌리지 않고(`IgnorePointer`) 스크린리더도
@@ -30,15 +33,14 @@ class GuidanceLockGate extends ConsumerStatefulWidget {
 
 class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     with WidgetsBindingObserver {
-  var _unlocked = false;
   var _noCredentials = false;
   var _authing = false;
 
-  /// 생명주기 때문에 잠겼다 — 돌아오면(resumed) 자동으로 다시 묻는다.
-  /// 인증 창을 취소한 뒤의 resumed에서는 묻지 않는다(그 비활성은 가드가 흘려보냈으므로 이 값이 안 켜진다).
-  var _askOnResume = false;
-
+  // dispose에서 ref를 쓰지 않는다 — 둘 다 initState에서 읽어 둔다.
   late final SecureWindow _secure;
+  late final GuidanceUnlock _unlock;
+
+  bool get _unlocked => _unlock.isUnlocked;
 
   @override
   void initState() {
@@ -46,39 +48,40 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     WidgetsBinding.instance.addObserver(this);
     _secure = ref.read(secureWindowProvider);
     _secure.setSecure(true);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
+    _unlock = ref.read(guidanceUnlockProvider);
+    _unlock.attach();
+    // 15분 안에 돌아왔으면 덮개 없이 연다. 처음 들어왔거나 만료됐으면 덮개 + 자동 인증.
+    if (!_unlocked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _unlock.detach();
     _secure.setSecure(false);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Android: 시스템 창(고르기 창) 중 오래 떠나 있었다 — 그 동안의 paused는 가드가 흘려보냈으니 여기서 잠근다.
-      if (SystemSheetGuard.takeLongAbsence()) {
-        _askOnResume = true;
-        if (_unlocked) {
-          FocusManager.instance.primaryFocus?.unfocus();
-          setState(() => _unlocked = false);
-        }
-      }
-      if (_askOnResume) {
-        _askOnResume = false;
+    switch (state) {
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        _unlock.markLeft();
+      case AppLifecycleState.resumed:
+        // 풀려 있다가 만료된 경우에만 묻는다. 이미 잠긴 채(인증 취소·실패)였으면 묻지 않는다 —
+        // 그러지 않으면 Face ID 창을 닫을 때마다 다시 떠 무한 반복된다.
+        final was = _unlocked;
+        _unlock.markBack();
+        if (!was || _unlocked) return;
+        FocusManager.instance.primaryFocus?.unfocus();
+        setState(() {});
         _authenticate();
-      }
-      return;
-    }
-    if (state == AppLifecycleState.detached) return;
-    if (SystemSheetGuard.shouldIgnore(state)) return;
-    _askOnResume = true;
-    if (_unlocked) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      setState(() => _unlocked = false);
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
@@ -87,11 +90,9 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     _authing = true;
     var outcome = AuthOutcome.failed;
     try {
-      outcome = await SystemSheetGuard.run(
-        () => ref
-            .read(deviceAuthenticatorProvider)
-            .authenticate(GuidanceStrings.unlockReason),
-      );
+      outcome = await ref
+          .read(deviceAuthenticatorProvider)
+          .authenticate(GuidanceStrings.unlockReason);
     } catch (_) {
       // 예상 밖 예외도 실패로 취급한다 — `_authing`이 true로 남으면 잠금 해제 버튼과
       // 복귀 재인증이 모두 조용히 무시되어 영구히 못 푼다.
@@ -102,7 +103,7 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     setState(() {
       switch (outcome) {
         case AuthOutcome.success:
-          _unlocked = true;
+          _unlock.markUnlocked();
           _noCredentials = false;
         case AuthOutcome.noCredentials:
           _noCredentials = true;
@@ -127,7 +128,7 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
             key: GuidanceLockGate.coverKey,
             noCredentials: _noCredentials,
             onUnlock: _authenticate,
-            onOpenAnyway: () => setState(() => _unlocked = true),
+            onOpenAnyway: () => setState(_unlock.markUnlocked),
           ),
       ],
     );

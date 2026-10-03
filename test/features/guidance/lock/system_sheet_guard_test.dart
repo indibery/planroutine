@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/features/guidance/presentation/lock/guidance_unlock.dart';
 import 'package:planroutine/features/guidance/presentation/lock/system_sheet_guard.dart';
 
 void main() {
@@ -9,30 +10,25 @@ void main() {
   setUp(() {
     SystemSheetGuard.reset();
     SystemSheetGuard.clock = () => now;
-    // 플랫폼은 각 테스트가 정한다 — 테스트 호스트(macOS)의 실제 값에 기대지 않는다.
-    SystemSheetGuard.isIOS = () => false;
   });
   tearDown(() {
     SystemSheetGuard.reset();
     SystemSheetGuard.clock = DateTime.now;
-    SystemSheetGuard.isIOS = SystemSheetGuard.platformIsIOS;
   });
 
-  // 기대값을 바꿨다(2026-10-03 최종 리뷰): 예전에는 "시스템 창 중이면 백그라운드도 무시"를
-  // 플랫폼 구분 없이 고정했는데, 그러면 고르기 창을 띄운 채 홈으로 나가도 잠기지 않았다.
-  // 지금 이 동작은 **Android 한정**이다(고르기 창이 별도 Activity라 paused가 정상으로 온다) —
-  // 대신 오래 떠나 있었으면 돌아올 때 잠근다(아래 테스트들).
-  test('Android: 시스템 창이 떠 있는 동안에는 비활성·백그라운드를 모두 무시한다', () async {
+  // 기대값을 바꿨다(15분 규칙, 2026-10-03): 예전에는 Android에서 가드 중 백그라운드(paused)까지
+  // 흘려보내고 60초 규칙으로 잠갔다. 게이트가 가드를 보지 않게 되면서 그 분기의 유일한 이유가
+  // 사라졌다 — 이제 남은 사용처(녹음 화면)에게 가드는 플랫폼 구분 없이 비활성만 흘려보낸다.
+  test('시스템 창이 떠 있는 동안 비활성은 무시한다(플랫폼 구분 없음)', () async {
     final done = Completer<void>();
     final running = SystemSheetGuard.run(() => done.future);
     expect(SystemSheetGuard.shouldIgnore(AppLifecycleState.inactive), isTrue);
-    expect(SystemSheetGuard.shouldIgnore(AppLifecycleState.paused), isTrue);
     done.complete();
     await running;
   });
 
-  test('iOS: 시스템 창이 떠 있어도 백그라운드는 잠근다(비활성만 무시)', () async {
-    SystemSheetGuard.isIOS = () => true;
+  // 기대값을 바꿨다(15분 규칙): 예전에는 iOS만 이랬다. 이제 모든 플랫폼이 같다.
+  test('시스템 창이 떠 있어도 백그라운드는 떠난 것이다(비활성만 무시)', () async {
     final done = Completer<void>();
     final running = SystemSheetGuard.run(() => done.future);
     expect(SystemSheetGuard.shouldIgnore(AppLifecycleState.inactive), isTrue);
@@ -42,41 +38,47 @@ void main() {
     await running;
   });
 
-  test('Android: 시스템 창 중 백그라운드에서 60초 넘게 있다 돌아오면 잠그라는 신호가 한 번 난다', () async {
+  // 아래 셋은 예전 Android 60초 규칙(`takeLongAbsence`) 테스트였다. 그 규칙은 걷어냈고, 같은 상황
+  // (고르기 창을 띄운 채 백그라운드로 갔다 돌아옴)을 이제 15분 규칙이 판단한다 — 같은 장면을 새 규칙으로 본다.
+  test('고르기 창 중 백그라운드로 가 15분을 넘겨 돌아오면 다시 잠긴다', () async {
+    final unlock = GuidanceUnlock(clock: () => now)..markUnlocked();
     final done = Completer<void>();
     final running = SystemSheetGuard.run(() => done.future);
-    SystemSheetGuard.shouldIgnore(AppLifecycleState.paused);
-    now = now.add(const Duration(seconds: 90));
+    expect(SystemSheetGuard.shouldIgnore(AppLifecycleState.paused), isFalse);
+    unlock.markLeft();
+    now = now.add(const Duration(minutes: 16));
     done.complete();
     await running;
-    expect(SystemSheetGuard.takeLongAbsence(), isTrue);
-    expect(
-      SystemSheetGuard.takeLongAbsence(),
-      isFalse,
-      reason: '한 번 가져가면 사라진다',
-    );
+    unlock.markBack();
+    expect(unlock.isUnlocked, isFalse);
   });
 
-  test('Android: 60초 안에 돌아오면 잠그라는 신호가 없다', () async {
+  test('고르기 창 중 15분 안에 돌아오면 풀린 채다', () async {
+    final unlock = GuidanceUnlock(clock: () => now)..markUnlocked();
     final done = Completer<void>();
     final running = SystemSheetGuard.run(() => done.future);
-    SystemSheetGuard.shouldIgnore(AppLifecycleState.paused);
-    now = now.add(const Duration(seconds: 30));
-    expect(SystemSheetGuard.takeLongAbsence(), isFalse);
+    unlock.markLeft();
+    now = now.add(const Duration(minutes: 14));
     done.complete();
     await running;
+    unlock.markBack();
+    expect(unlock.isUnlocked, isTrue);
+    // 돌아오면 떠난 시각이 지워진다 — 다음 떠남은 그때부터 다시 잰다.
+    now = now.add(const Duration(minutes: 14));
+    unlock.markLeft();
+    now = now.add(const Duration(minutes: 14));
+    unlock.markBack();
+    expect(unlock.isUnlocked, isTrue);
   });
 
-  test('Android: 처음 백그라운드가 된 시각부터 잰다(paused가 여러 번 와도)', () async {
-    final done = Completer<void>();
-    final running = SystemSheetGuard.run(() => done.future);
-    SystemSheetGuard.shouldIgnore(AppLifecycleState.paused);
-    now = now.add(const Duration(seconds: 50));
-    SystemSheetGuard.shouldIgnore(AppLifecycleState.paused);
-    now = now.add(const Duration(seconds: 20));
-    expect(SystemSheetGuard.takeLongAbsence(), isTrue);
-    done.complete();
-    await running;
+  test('처음 떠난 시각부터 잰다(hidden·paused가 여러 번 와도)', () async {
+    final unlock = GuidanceUnlock(clock: () => now)..markUnlocked();
+    unlock.markLeft();
+    now = now.add(const Duration(minutes: 10));
+    unlock.markLeft();
+    now = now.add(const Duration(minutes: 6));
+    unlock.markBack();
+    expect(unlock.isUnlocked, isFalse);
   });
 
   test('끝난 직후 잠깐은 비활성만 무시하고 백그라운드는 잠근다', () async {
