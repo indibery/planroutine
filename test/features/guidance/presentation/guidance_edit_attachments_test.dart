@@ -87,6 +87,12 @@ class FakeRecorder implements GuidanceRecorder {
   Future<void> dispose() async {}
 }
 
+/// 마이크 권한을 못 받는 녹음기 — 녹음 화면이 결과 없이 닫히는 상황.
+class DeniedRecorder extends FakeRecorder {
+  @override
+  Future<bool> ensurePermission() async => false;
+}
+
 void main() {
   setUpAll(() async => initializeDateFormatting('ko', null));
   setUpAll(setUpFfiForTests);
@@ -132,6 +138,8 @@ void main() {
     AttachmentImporter? importer,
     GuidanceRepository? repository,
     ValueNotifier<bool>? show,
+    int? recordId,
+    GuidanceRecorder Function()? recorder,
   }) async {
     tester.view.physicalSize = const Size(390, 2200);
     tester.view.devicePixelRatio = 1;
@@ -145,7 +153,7 @@ void main() {
           guidancePeopleRepositoryProvider.overrideWithValue(GuidancePeopleRepository(dbHelper: db)),
           guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
           attachmentImporterProvider.overrideWithValue(importer ?? FakeImporter(source)),
-          guidanceRecorderFactoryProvider.overrideWithValue(FakeRecorder.new),
+          guidanceRecorderFactoryProvider.overrideWithValue(recorder ?? FakeRecorder.new),
         ],
         child: ValueListenableBuilder<bool>(
           valueListenable: show ?? ValueNotifier(true),
@@ -157,7 +165,7 @@ void main() {
                       body: TextButton(
                         onPressed: () => Navigator.of(
                           context,
-                        ).push(MaterialPageRoute<void>(builder: (_) => const GuidanceEditScreen())),
+                        ).push(MaterialPageRoute<void>(builder: (_) => GuidanceEditScreen(recordId: recordId))),
                         child: const Text('열기'),
                       ),
                     ),
@@ -335,6 +343,50 @@ void main() {
     final list = await tester.runAsync(repo.getActive);
     expect(list, hasLength(1), reason: '녹음 화면이 뜬 시점에 이미 기록이 있다');
     expect(tester.widget<RecordingScreen>(find.byType(RecordingScreen)).recordId, list?.single.id);
+  });
+
+  /// 권한 거부 화면이 뜰 때까지 기다렸다가 결과 없이 닫는다.
+  Future<void> recordThenCloseWithoutResult(WidgetTester tester) async {
+    await tester.tap(find.byKey(GuidanceEditScreen.recordKey));
+    await waitUntil(tester, () => find.byType(RecordingScreen).evaluate().isNotEmpty);
+    await tester.pump(const Duration(milliseconds: 100));
+    // 권한 거부 화면은 닫기 버튼 대신 뒤로 가기로 닫는다.
+    final nav = tester.state<NavigatorState>(find.byType(Navigator).last);
+    nav.pop();
+    await waitUntil(tester, () => find.byType(RecordingScreen).evaluate().isEmpty);
+  }
+
+  testWidgets('새 기록에서 녹음하기를 결과 없이 닫으면 빈 기록은 삭제한 기록으로 가고, 이어 쓴 글은 새 기록으로 저장된다', (tester) async {
+    await pump(tester, recorder: DeniedRecorder.new);
+    await recordThenCloseWithoutResult(tester);
+    await waitUntil(tester, () => find.byKey(GuidanceEditScreen.titleKey).evaluate().isNotEmpty);
+    final deleted = await pollDb(tester, repo.getDeleted, (l) => l.length == 1);
+    expect(deleted, hasLength(1));
+    expect(await tester.runAsync(repo.getActive), isEmpty);
+    expect(find.byType(GuidanceEditScreen), findsOneWidget);
+    // 화면은 저장 전인 새 기록으로 돌아왔다 — 기록 시각 표시도 `저장하면 정해져요` 쪽이다.
+    expect(find.text(GuidanceStrings.createdOnSave), findsOneWidget);
+
+    await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await waitUntil(tester, () => find.byType(GuidanceEditScreen).evaluate().isEmpty);
+    final active = await tester.runAsync(repo.getActive);
+    expect(active, hasLength(1));
+    expect(active?.single.content.title, '복도 다툼');
+    expect(deleted?.single.id, isNot(active?.single.id));
+  });
+
+  testWidgets('이미 저장된 기록을 고치다 녹음하기를 결과 없이 닫아도 그 기록은 그대로다', (tester) async {
+    final id = await tester.runAsync(() => repo.create(const GuidanceContent(title: '처음')));
+    await pump(tester, recordId: id, recorder: DeniedRecorder.new);
+    await recordThenCloseWithoutResult(tester);
+    for (var i = 0; i < 6; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await tester.pump();
+    }
+    final active = await tester.runAsync(repo.getActive);
+    expect(active?.map((r) => r.id), [id]);
+    expect(await tester.runAsync(repo.getDeleted), isEmpty);
   });
 
   testWidgets('녹음 중 화면 트리가 통째로 사라져도(탭 이동) 녹음이 그 기록에 붙는다', (tester) async {

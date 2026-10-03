@@ -177,6 +177,11 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     if (_recording) return;
     _recording = true;
     final RecordingResult? result;
+    // 이번 호출이 기록을 새로 만드는지 — 녹음 없이 끝나면 그 빈 기록을 되돌리는 근거다.
+    final createdHere = _recordId == null;
+    final prevSaved = _saved;
+    final prevCreatedAt = _createdAt;
+    final int recordId;
     try {
       // 녹음 **전에** 기록을 만든다 — 녹음 중 탭을 옮겨 이 화면들이 사라져도 녹음 화면이
       // 이 기록에 직접 붙일 수 있게(RecordingScreen 참고).
@@ -187,6 +192,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
         _saveFailed();
         return;
       }
+      recordId = id;
       if (!mounted) return;
       final title = _title.text.trim();
       result = await Navigator.of(context).push<RecordingResult>(
@@ -198,7 +204,12 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     } finally {
       _recording = false;
     }
-    if (result == null || !mounted) return;
+    if (result == null) {
+      // 화면이 사라졌다면(탭 이동) 녹음 화면이 직접 붙이는 중이라 건드리지 않는다.
+      if (mounted && createdHere) await _discardEmptyNewRecord(recordId, prevSaved, prevCreatedAt);
+      return;
+    }
+    if (!mounted) return;
     try {
       await _attachRecording(result);
     } catch (_) {
@@ -206,6 +217,24 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       if (!mounted) return;
       setState(() => _unattached.add(result!));
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.attachFailedKept)));
+    }
+  }
+
+  /// 녹음하려고 방금 만든 기록이 녹음 없이 끝났고 첨부도 없으면 삭제한 기록으로 보내고,
+  /// 화면을 "아직 저장 전인 새 기록"으로 되돌린다. 실패해도 화면을 막지 않는다.
+  Future<void> _discardEmptyNewRecord(int id, GuidanceContent? prevSaved, String? prevCreatedAt) async {
+    try {
+      final attachments = await ref.read(guidanceRepositoryProvider).getAttachments(id);
+      if (attachments.isNotEmpty) return;
+      await ref.read(guidanceActionsProvider).delete(id);
+      if (!mounted) return;
+      setState(() {
+        _recordId = null;
+        _saved = prevSaved;
+        _createdAt = prevCreatedAt;
+      });
+    } catch (e) {
+      debugPrint('지도 기록 빈 새 기록을 정리하지 못함($id): $e');
     }
   }
 
