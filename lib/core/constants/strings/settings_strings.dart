@@ -83,7 +83,7 @@ class SettingsStrings {
   static const resetAll = '전체 데이터 초기화';
   static const resetAllConfirmTitle = '정말 초기화하시겠어요?';
   static const resetAllConfirmMessage =
-      '일정과 캘린더 이벤트가 모두 삭제됩니다.\n'
+      '일정·캘린더 이벤트·포스트잇이 모두 삭제됩니다.\n'
       '알림·도장·정류장 등 앱 설정은 남습니다. 이 작업은 되돌릴 수 없습니다.';
   static const resetAllConfirm = '초기화';
   static const resetAllDone = '전체 데이터가 초기화되었습니다';

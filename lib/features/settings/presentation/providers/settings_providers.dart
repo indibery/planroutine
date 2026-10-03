@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../import/presentation/providers/import_providers.dart';
+import '../../../memo/presentation/providers/memo_providers.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../data/app_reset_repository.dart';
 import '../../data/schedule_csv_exporter.dart';
@@ -48,6 +49,7 @@ class AppResetNotifier extends StateNotifier<ResetState> {
       _ref.invalidate(schedulesProvider);
       _ref.invalidate(monthEventsByYearMonthProvider);
       _ref.invalidate(selectedMonthEventsProvider);
+      _ref.read(memoRevisionProvider.notifier).state++;
       _ref.read(importStateProvider.notifier).reset();
 
       state = const ResetSuccess();
