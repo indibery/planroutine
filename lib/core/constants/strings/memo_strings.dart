@@ -20,11 +20,11 @@ class MemoStrings {
   static const colorPink = '분홍';
   static const dateLabel = '날짜';
   static const dateNone = '없음';
-  static const dateRemove = '날짜 빼기';
+  static const dateRemove = '날짜 삭제';
   static const save = '저장';
   static const toEventTitle = '일정으로 등록하면 캘린더 목록에 정식 일정으로 들어갑니다';
   static const toEvent = '일정으로 등록';
-  static const remove = '떼기';
+  static const remove = '삭제';
 
   static const removedSnack = '포스트잇을 휴지통으로 옮겼어요';
   static const convertedSnack = '일정으로 등록하고 포스트잇은 휴지통으로 옮겼어요';

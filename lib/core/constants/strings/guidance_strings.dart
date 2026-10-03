@@ -83,7 +83,7 @@ class GuidanceStrings {
 
   // 기록 쓰기
   static const editNewTitle = '새 기록';
-  static const editTitle = '기록 고치기';
+  static const editTitle = '기록 수정';
   static const save = '저장';
   static const cancel = '취소';
   static const untitled = '제목 없음';
@@ -125,7 +125,7 @@ class GuidanceStrings {
   static const pickerConfirm = '넣기';
 
   // 기록 보기
-  static const edit = '고치기';
+  static const edit = '수정';
   static const delete = '삭제';
   static const more = '더 보기';
   static const labelOccurredShort = '사건';
@@ -141,7 +141,7 @@ class GuidanceStrings {
   static const pause = '멈춤';
   static const attachmentInfo = '첨부 정보';
   static const attachmentMissing = '파일을 찾을 수 없어요';
-  static const removeAttachment = '첨부에서 빼기';
+  static const removeAttachment = '첨부 삭제';
   static const infoSource = '출처';
   static const infoOriginalName = '원래 이름';
   static const infoSize = '크기';
@@ -169,7 +169,7 @@ class GuidanceStrings {
   static String changedLabel(String fields) => '바뀐 칸: $fields';
   static const attachmentLog = '첨부 기록';
   static String attachedLog(String what) => '$what 붙임';
-  static String removedLog(String what) => '$what 뺌';
+  static String removedLog(String what) => '$what 삭제';
 
   // 첨부 넣기
   static const record = '녹음하기';
@@ -178,9 +178,9 @@ class GuidanceStrings {
   static const importHintSchoolPhone = '학부모 통화는 학교 전화 사용이 원칙입니다.';
   static const importHintCallRecording =
       '아이폰 통화 녹음(iOS 18.1 이상)은 메모 앱에 저장됩니다. 메모에서 공유 › 파일에 저장한 뒤 가져오세요.';
-  static const removeAttachmentTitle = '첨부에서 뺄까요?';
-  static const removeAttachmentMessage = '목록에서만 빠지고 파일은 지우지 않습니다. 수정 이력에 남습니다.';
-  static const removeAttachmentConfirm = '빼기';
+  static const removeAttachmentTitle = '첨부를 삭제할까요?';
+  static const removeAttachmentMessage = '목록에서는 사라지지만 파일과 수정 이력은 남습니다.';
+  static const removeAttachmentConfirm = '삭제';
 
   // 녹음 화면
   static const recordingLive = '녹음 중';
@@ -212,7 +212,7 @@ class GuidanceStrings {
   static const pasteConfirm = '넣기';
   static String pasteDone(int n) => '$n명을 넣었어요';
   static const personAddTitle = '사람 추가';
-  static const personEditTitle = '사람 고치기';
+  static const personEditTitle = '사람 수정';
   static const personName = '이름';
   static const personMemo = '소속·관계';
   static const archive = '보관';

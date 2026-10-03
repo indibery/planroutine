@@ -238,6 +238,17 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: Colors.transparent,
+        // 선택된 칩은 골드 채움 + 네이비 글자(`goldFill`+`onGold` 규칙). 지정하지 않으면 M3 기본
+        // 선택 배경(밝은 색) 위에 `labelStyle`의 옅은 글자가 그대로 얹혀 다크에서 글자가 사라졌다
+        // (지도 기록 목록의 `전체` 칩, 실기기 신고 2026-10-04).
+        selectedColor: AppColors.goldFill,
+        checkmarkColor: AppColors.onGold,
+        secondaryLabelStyle: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.onGold,
+        ),
         side: BorderSide(color: AppColors.line, width: 0.5),
         labelStyle: TextStyle(
           fontFamily: 'Pretendard',

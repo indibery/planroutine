@@ -51,8 +51,15 @@ class GuidanceDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          TextButton(
+          // 글자만 있으면 버튼으로 읽히지 않는다(실기기 피드백) — 골드 채움 버튼으로 둔다.
+          FilledButton(
             key: editKey,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.goldFill,
+              foregroundColor: AppColors.onGold,
+              minimumSize: const Size(0, AppSizes.buttonHeightSmall),
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
+            ),
             onPressed: () => context.push(AppRoutes.guidanceEdit(recordId)),
             child: const Text(GuidanceStrings.edit),
           ),
