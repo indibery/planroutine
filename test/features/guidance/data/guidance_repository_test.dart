@@ -119,7 +119,7 @@ void main() {
 
   test('counts는 명단(보관한 사람 포함)도 센다 — 기록이 0건이어도 초기화가 명단을 지운다', () async {
     final people = GuidancePeopleRepository(dbHelper: db);
-    await people.addNames(['김하늘', '이도윤']);
+    await people.remember(['김하늘', '이도윤']);
     final p = await people.add(const GuidancePerson(name: '최민서', role: PersonRole.guardian));
     await people.archive(p.id ?? -1);
     final c = await repo.counts();

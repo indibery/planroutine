@@ -58,7 +58,6 @@ class GuidanceStrings {
 
   // 목록
   static const newRecord = '새 기록';
-  static const peopleTitle = '명단 관리';
   static const trashTitle = '삭제한 기록';
   static const kindAll = '전체';
   static const personAll = '사람: 전체';
@@ -119,14 +118,6 @@ class GuidanceStrings {
       '붙이지 못한 녹음 $n개가 있어요. 나가면 이 화면에서 다시 붙일 수 없습니다.';
   static const discardConfirm = '나가기';
   static const saveFailed = '저장하지 못했어요. 다시 눌러 주세요.';
-
-  // 관련인 고르기
-  static const pickerTitle = '관련인 추가';
-  static const pickerQueryHint = '이름';
-  static String outsideRoster(String name) => '‘$name’ 명단 밖 이름으로 넣기';
-  static const outsideMemoHint = '소속·관계 (예: 5반, 민준 어머니)';
-  static const addToRoster = '명단에도 추가';
-  static const pickerConfirm = '넣기';
 
   // 기록 보기
   static const edit = '수정';
@@ -202,23 +193,7 @@ class GuidanceStrings {
   static const retryAttach = '다시 붙이기';
   static const attachFailedKept = '녹음은 보관했어요. 아래 다시 붙이기를 눌러 주세요.';
 
-  // 명단 관리
-  static String studentsHeader(int n) => '학생 · $n명';
-  static const othersHeader = '보호자 · 교직원 · 기타';
-  static String archivedHeader(int n) => '보관된 사람 · $n명';
-  static String recordCount(int n) => '기록 $n';
-  static const pasteTitle = '여러 명 붙여넣기';
-  static const pasteHint = '한 줄에 한 명씩. 앞의 번호는 지워집니다.';
-  static String pastePreview(int n) => '$n명을 학생으로 넣습니다';
-  static const pasteConfirm = '넣기';
-  static String pasteDone(int n) => '$n명을 넣었어요';
-  static const personAddTitle = '사람 추가';
-  static const personEditTitle = '사람 수정';
-  static const personName = '이름';
-  static const personMemo = '소속·관계';
-  static const archive = '보관';
-  static const unarchive = '되살리기';
-  static const archiveNote = '보관해도 옛 기록의 이름은 그대로 남습니다.';
+  // 이름 추천 지우기 등 명단 동작
   static const actionFailed = '처리하지 못했어요. 다시 눌러 주세요.';
 
   // 삭제한 기록

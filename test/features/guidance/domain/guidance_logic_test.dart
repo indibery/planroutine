@@ -150,23 +150,21 @@ void main() {
     expect(got.map((p) => p.name), ['김하늘', '박서준']);
   });
 
-  test('parseRosterPaste — 번호·빈 줄·중복을 걷어낸다', () {
-    const raw = '1. 김하늘\n2\t이도윤\n\n  최민서  \n김하늘\n10) 박서준';
-    expect(parseRosterPaste(raw), ['김하늘', '이도윤', '최민서', '박서준']);
-  });
-
-  test('parseRosterPaste — 번호 뒤 구분자가 없으면 이름의 일부로 둔다', () {
-    expect(parseRosterPaste('1반 김하늘'), ['1반 김하늘']);
-    expect(parseRosterPaste('3 박서준\n7\t최민서'), ['박서준', '최민서']);
-  });
-
-  test('countRecordsByPerson — 명단 사람만 센다', () {
-    const kim = Participant(personId: 7, name: '김하늘');
-    final got = countRecordsByPerson([
-      _rec(1, people: [kim]),
-      _rec(2, people: [kim, const Participant(name: '박서준')]),
+  test('collectParticipants — 같은 이름은 personId가 있든 없든 한 사람으로 모은다', () {
+    final got = collectParticipants([
+      _rec(1, people: [const Participant(name: '김하늘')]),
+      _rec(2, people: [const Participant(personId: 7, name: '김하늘 ')]),
     ]);
-    expect(got, {7: 2});
+    expect(got.map((p) => p.name), ['김하늘']);
+  });
+
+  test('sameParticipant — 앞뒤 공백을 무시하고 이름으로만 판정한다', () {
+    expect(sameParticipant(const Participant(name: ' 김하늘'), const Participant(personId: 3, name: '김하늘')), isTrue);
+    expect(sameParticipant(const Participant(personId: 3, name: '김하늘'), const Participant(personId: 3, name: '김하랑')), isFalse);
+  });
+
+  test('splitNames — 쉼표만 있으면 이름이 없다', () {
+    expect(splitNames(', ，,'), isEmpty);
   });
 
   test('splitNames — 쉼표·전각 쉼표로 나누고 빈 조각을 버린다', () {

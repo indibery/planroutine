@@ -17,33 +17,28 @@ void main() {
   });
   tearDown(() async => db.close());
 
-  test('여러 명을 한 번에 넣으면 학생으로 들어간다', () async {
-    expect(await repo.addNames(['김하늘', '이도윤']), 2);
+  test('기억한 이름은 구분을 묻지 않아 학생 기본값으로 들어간다', () async {
+    await repo.remember(['김하늘', '이도윤']);
     final people = await repo.getActive();
     expect(people.map((p) => p.name), ['김하늘', '이도윤']);
     expect(people.every((p) => p.role == PersonRole.student), isTrue);
   });
 
-  test('이미 있는 이름(현재 명단)은 다시 넣지 않는다', () async {
-    await repo.addNames(['김하늘']);
-    expect(await repo.addNames(['김하늘', '최민서']), 1);
-    expect(await repo.getActive(), hasLength(2));
-  });
-
-  test('보관하면 현재 명단에서 빠지고 보관 목록에 있다', () async {
-    final p = await repo.add(const GuidancePerson(name: '김하늘'));
-    await repo.archive(p.id ?? -1);
+  test('기억할 이름이 없으면 아무것도 넣지 않는다', () async {
+    expect(await repo.remember(const ['', '  ']), isEmpty);
     expect(await repo.getActive(), isEmpty);
-    expect((await repo.getArchived()).single.name, '김하늘');
-    await repo.unarchive(p.id ?? -1);
-    expect((await repo.getActive()).single.name, '김하늘');
   });
 
-  test('고친 이름·구분·메모가 저장된다', () async {
-    final p = await repo.add(const GuidancePerson(name: '보호자'));
-    await repo.update(p.copyWith(name: '이도윤 보호자', role: PersonRole.guardian, memo: '어머니'));
+  test('보관하면 현재 명단(이름 추천)에서 빠진다', () async {
+    final p = await repo.add(const GuidancePerson(name: '김하늘'));
+    await repo.add(const GuidancePerson(name: '이도윤'));
+    await repo.archive(p.id ?? -1);
+    expect((await repo.getActive()).map((x) => x.name), ['이도윤']);
+  });
+
+  test('명단 화면 시절에 넣은 구분·메모는 읽을 때 그대로다', () async {
+    await repo.add(const GuidancePerson(name: '이도윤 보호자', role: PersonRole.guardian, memo: '어머니'));
     final got = (await repo.getActive()).single;
-    expect(got.name, '이도윤 보호자');
     expect(got.role, PersonRole.guardian);
     expect(got.memo, '어머니');
   });

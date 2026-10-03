@@ -118,31 +118,6 @@ List<Participant> collectParticipants(List<GuidanceRecord> records) {
   return out;
 }
 
-// 번호 뒤에 구분자(`.`·`)`·탭·공백)가 있을 때만 번호로 본다 — `1반 김하늘`의 `1`은 이름의 일부다.
-final _leadingNumber = RegExp(r'^\d+(?:\s*[.)]\s*|\t\s*|\s+)');
-
-/// 명단 붙여넣기 — 줄마다 한 명. 앞의 번호(`1.`·`2\t`·`10)`)·빈 줄·중복을 걷어낸다.
-List<String> parseRosterPaste(String raw) {
-  final out = <String>[];
-  for (final line in raw.split(RegExp(r'\r?\n'))) {
-    final name = line.trim().replaceFirst(_leadingNumber, '').trim();
-    if (name.isNotEmpty && !out.contains(name)) out.add(name);
-  }
-  return out;
-}
-
-/// 명단 관리 화면의 `기록 N` — 명단 사람(personId 있음)만 센다.
-Map<int, int> countRecordsByPerson(List<GuidanceRecord> records) {
-  final counts = <int, int>{};
-  for (final r in records) {
-    final ids = {for (final p in r.content.participants) ?p.personId};
-    for (final id in ids) {
-      counts[id] = (counts[id] ?? 0) + 1;
-    }
-  }
-  return counts;
-}
-
 /// 관련인 칸의 구분자 — 쉼표와 전각 쉼표.
 final nameSeparator = RegExp('[,，]');
 

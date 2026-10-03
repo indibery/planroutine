@@ -72,7 +72,7 @@ void main() {
 
   testWidgets('지도 기록이 0건이어도 명단이 있으면 명단이 지워진다고 말한다', (tester) async {
     final db = freshDatabaseHelper();
-    await tester.runAsync(() => GuidancePeopleRepository(dbHelper: db).addNames(['김하늘', '이도윤']));
+    await tester.runAsync(() => GuidancePeopleRepository(dbHelper: db).remember(['김하늘', '이도윤']));
     await tester.pumpWidget(
       ProviderScope(
         overrides: [guidanceRepositoryProvider.overrideWithValue(GuidanceRepository(dbHelper: db))],

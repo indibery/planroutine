@@ -53,11 +53,6 @@ final guidancePeopleProvider = FutureProvider.autoDispose<List<GuidancePerson>>(
   return ref.watch(guidancePeopleRepositoryProvider).getActive();
 });
 
-final guidanceArchivedPeopleProvider = FutureProvider.autoDispose<List<GuidancePerson>>((ref) {
-  ref.watch(guidanceChangedProvider);
-  return ref.watch(guidancePeopleRepositoryProvider).getArchived();
-});
-
 /// 목록의 구분 필터. null = 전체. 탭을 떠나면 풀린다(autoDispose).
 final guidanceKindFilterProvider = StateProvider.autoDispose<GuidanceKind?>((ref) => null);
 
@@ -186,30 +181,9 @@ class GuidanceActions {
     _changed();
   }
 
-  Future<GuidancePerson> addPerson(GuidancePerson person) async {
-    final saved = await _people.add(person);
-    _changed();
-    return saved;
-  }
-
-  Future<int> addNames(List<String> names) async {
-    final n = await _people.addNames(names);
-    _changed();
-    return n;
-  }
-
-  Future<void> updatePerson(GuidancePerson person) async {
-    await _people.update(person);
-    _changed();
-  }
-
+  /// 이름 추천에서 지운다(명단에서 보관). 이미 쓴 기록의 이름은 판의 사본이라 그대로다.
   Future<void> archivePerson(int id) async {
     await _people.archive(id);
-    _changed();
-  }
-
-  Future<void> unarchivePerson(int id) async {
-    await _people.unarchive(id);
     _changed();
   }
 }

@@ -1,8 +1,8 @@
 import '../../../core/database/database_helper.dart';
 import '../domain/guidance_models.dart';
-import '../domain/guidance_types.dart';
 
-/// 지도 기록 명단. 지우지 않고 **보관**한다 — 옛 기록은 판의 사본으로 이름을 보여 준다.
+/// 지도 기록 명단 — 저장한 관련인 이름을 기억해 두는 이름 추천용 목록([remember]).
+/// 지우지 않고 **보관**한다(추천에서 지우기) — 옛 기록은 판의 사본으로 이름을 보여 준다.
 class GuidancePeopleRepository {
   GuidancePeopleRepository({DatabaseHelper? dbHelper})
     : _dbHelper = dbHelper ?? DatabaseHelper.instance;
@@ -49,48 +49,15 @@ class GuidancePeopleRepository {
     });
   }
 
-  /// 붙여넣은 이름을 한 번에. 현재 명단에 같은 이름이 있으면 건너뛴다.
-  Future<int> addNames(List<String> names, {PersonRole role = PersonRole.student}) async {
+  /// 이름 추천에서 지운다. 행은 남는다 — 같은 이름을 다시 저장하면 이 id를 쓴다([remember]).
+  Future<void> archive(int id) async {
     final db = await _dbHelper.database;
-    final existing = {for (final p in await getActive()) p.name};
-    var added = 0;
-    await db.transaction((txn) async {
-      for (final name in names) {
-        if (existing.contains(name)) continue;
-        await txn.insert(_table, GuidancePerson(name: name, role: role).toMap());
-        existing.add(name);
-        added++;
-      }
-    });
-    return added;
-  }
-
-  Future<void> update(GuidancePerson p) async {
-    final id = p.id;
-    if (id == null) return;
-    final db = await _dbHelper.database;
-    final map = p.toMap()..['updated_at'] = DateTime.now().toIso8601String();
-    await db.update(_table, map, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> archive(int id) => _setArchived(id, DateTime.now().toIso8601String());
-
-  Future<void> unarchive(int id) => _setArchived(id, null);
-
-  Future<void> _setArchived(int id, String? at) async {
-    final db = await _dbHelper.database;
-    await db.update(_table, {'archived_at': at}, where: 'id = ?', whereArgs: [id]);
+    await db.update(_table, {'archived_at': DateTime.now().toIso8601String()}, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<List<GuidancePerson>> getActive() async {
     final db = await _dbHelper.database;
     final rows = await db.query(_table, where: 'archived_at IS NULL', orderBy: _order);
-    return rows.map(GuidancePerson.fromMap).toList();
-  }
-
-  Future<List<GuidancePerson>> getArchived() async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(_table, where: 'archived_at IS NOT NULL', orderBy: _order);
     return rows.map(GuidancePerson.fromMap).toList();
   }
 }
