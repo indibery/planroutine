@@ -116,4 +116,50 @@ class GuidanceStrings {
   static const outsideMemoHint = '소속·관계 (예: 5반, 민준 어머니)';
   static const addToRoster = '명단에도 추가';
   static const pickerConfirm = '넣기';
+
+  // 기록 보기
+  static const edit = '고치기';
+  static const delete = '삭제';
+  static const more = '더 보기';
+  static const labelOccurredShort = '사건';
+  static const labelCreatedShort = '기록';
+  static String revisionLink(int times, String last) => '수정 $times회 · 마지막 $last';
+  static const labelAttachments = '첨부';
+  static const deleteTitle = '이 기록을 삭제할까요?';
+  static const deleteMessage = '삭제한 기록으로 옮겨집니다. 자동으로 지워지지 않으며, 거기서 되살릴 수 있습니다.';
+  static const outsideRosterBadge = '명단 밖';
+
+  // 첨부
+  static const play = '재생';
+  static const pause = '멈춤';
+  static const attachmentInfo = '첨부 정보';
+  static const removeAttachment = '첨부에서 빼기';
+  static const infoSource = '출처';
+  static const infoOriginalName = '원래 이름';
+  static const infoSize = '크기';
+  static const infoCaptured = '녹음 시작';
+  static const infoAttached = '붙인 시각';
+  static const infoHash = 'SHA-256';
+  static const infoHashNote = '파일이 바뀌지 않았음을 확인할 때 쓰는 값입니다.';
+  static String durationLabel(int ms) {
+    final s = ms ~/ 1000;
+    return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+  }
+
+  static String sizeLabel(int bytes) => bytes >= 1024 * 1024
+      ? '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB'
+      : '${(bytes / 1024).ceil()}KB';
+
+  // 수정 이력
+  static const historyTitle = '수정 이력';
+  static const historyIntro = '저장할 때마다 그때 내용이 수정 버전으로 남습니다. 이전 버전은 고치거나 지울 수 없어요.';
+
+  /// 화면에서는 `판`이라는 말을 쓰지 않는다(사용자 결정 2026-10-03) — 판 1은 `처음 작성`,
+  /// 판 n은 `수정 버전 n-1`. 목록의 `수정 N회`와 번호가 맞는다.
+  static String revisionTitle(int no) => no == 1 ? '처음 작성' : '수정 버전 ${no - 1}';
+  static const revisionCurrent = '현재';
+  static String changedLabel(String fields) => '바뀐 칸: $fields';
+  static const attachmentLog = '첨부 기록';
+  static String attachedLog(String what) => '$what 붙임';
+  static String removedLog(String what) => '$what 뺌';
 }
