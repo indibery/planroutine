@@ -60,7 +60,7 @@
 | 잠금·녹음 | local_auth 3.0.2 · record 7.1.1 · just_audio 0.10.6 · wakelock_plus 1.3.3 · crypto 3.0.7 | 지도 기록 전용(`pubspec.lock` 실측) |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1447** 유닛/위젯 + 19 E2E (실측 2026-10-03, 지도 기록 `test/features/guidance/` 등 149건을 더한 값. 직전 `1298`은 포스트잇 68건 + 휴지통 최근순 4건을 더한 값이었고, 그 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1482** 유닛/위젯 + 19 E2E (실측 2026-10-03, 지도 기록 최종 수정 35건을 더한 값. 직전 `1447`은 지도 기록 `test/features/guidance/` 등 149건을, 그 직전 `1298`은 포스트잇 68건 + 휴지통 최근순 4건을 더한 값이었고, 그 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -1536,13 +1536,21 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
 - **잠금은 중첩 셸의 builder(`GuidanceLockGate`)가 진다.** 다른 탭으로 `go`하면 셸이 dispose되어
   다음에 들어올 때 다시 잠겨 있다. 덮개는 아래 화면을 dispose하지 않는다(`Stack` + `IgnorePointer` +
   `ExcludeSemantics`) — 풀면 쓰던 글이 그대로다. 기기 암호가 없으면 `잠금 없이 열기`.
-  - ⚠️ **`SystemSheetGuard`가 급소다.** Face ID·사진/파일 고르기·마이크 권한 창은 앱을 `inactive`(Android는
-    `paused`)로 만든다. 감싸지 않으면 Face ID가 무한 반복되고 사진을 고르고 오면 잠겨 있다. grace는
-    `inactive`·`hidden`만 흘려보내고 **`paused`는 늘 잠근다.**
+  - ⚠️ **`SystemSheetGuard`가 급소다.** Face ID·사진/파일 고르기·마이크 권한 창은 앱을 `inactive`(Android 고르기
+    창은 별도 Activity라 `paused`)로 만든다. 감싸지 않으면 Face ID가 무한 반복되고 사진을 고르고 오면 잠겨 있다.
+    가드가 끝난 뒤의 grace는 `inactive`·`hidden`만 흘려보내고 `paused`는 잠근다. **가드 중에는 플랫폼마다 다르다**:
+    iOS는 시스템 창이 `inactive`만 만들므로 가드 중에도 `hidden`·`paused`(= 앱을 떠남)는 잠근다. Android는 가드 중
+    `paused`를 흘려보내되 처음 받은 시각을 기억해, 돌아온 `resumed`에서 **60초를 넘었으면** 게이트가 잠그고 다시
+    묻는다(`takeLongAbsence`) — 고르기 창을 띄운 채 홈으로 나간 경우를 막는다(2026-10-03 최종 리뷰).
   - 게이트 `_authenticate`는 예상 밖 예외를 실패로 처리하고 `finally`에서 `_authing`을 푼다(영구 잠김 방지).
   - **`FLAG_SECURE`는 참조 카운트다**(`PlatformSecureWindow`) — 테마가 바뀌면 `app.dart`가 하위를 재생성해
-    새 게이트의 initState가 옛 게이트의 dispose보다 먼저 불려 플래그가 꺼지던 문제를 막는다. Android 한정.
-    iOS에는 같은 플래그가 없어 잠금 덮개가 그 몫이다(앱 전환기 가림은 실기기에서 확인할 몫).
+    새 게이트의 initState가 옛 게이트의 dispose보다 먼저 불려 플래그가 꺼지던 문제를 막는다.
+  - **iOS는 같은 채널(`planroutine/secure_window`)로 "지도 기록이 보이는 중" 플래그만 든다.** Flutter 잠금 덮개는
+    `inactive` 콜백 **한 프레임 뒤**에 그려져(런타임 확인) 앱 전환기 스냅샷이 먼저 찍히면 내용이 남을 수 있다.
+    그래서 `SceneDelegate.sceneWillResignActive`가 플래그가 켜져 있으면 **루트 뷰 위에** 불투명 가림막을 올리고
+    `sceneDidBecomeActive`에서 내린다(둘 다 `super` 호출 필수 — Flutter 생명주기가 거기로 온다). 창이 아니라 루트
+    뷰에 얹는 이유는 그 위에 모달로 뜬 고르기 창을 가리지 않기 위해서다. 채널은 `didInitializeImplicitFlutterEngine`
+    에서 잡는다. 실제 스냅샷 가림은 실기기에서 확인할 몫이다.
 - **대화상자는 `useRootNavigator: false`다**(`showDialog`·`ConfirmDialog.show`·`showDatePicker`·
   `showTimePicker`, 가드가 지킨다) — 루트 내비게이터에 뜨면 잠금 덮개 **위**에 남는다.
 - **첨부는 원본 그대로 + SHA-256이다.** 변환·압축·자르기 없이 바이트를 복사한 뒤 스트림으로 해시를 낸다
@@ -1558,17 +1566,29 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
   - 녹음 뒤 기록 저장·첨부가 실패하면 `붙이지 못한 녹음 n개` 줄과 `다시 붙이기`로 보관하고, `저장`이 먼저
     다시 붙인다(못 붙이면 화면 유지). 저장·첨부·명단 동작이 실패하면 버튼이 풀리고 안내가 뜬다(`saveFailed`·`actionFailed`).
   - 녹음 화면은 테마와 무관하게 어둡고 `AnnotatedRegion`으로 시스템 바 아이콘을 밝게 둔다.
+  - ⚠️ **녹음 화면은 탭의 중첩 내비게이터에 떠서 탭바가 보인다.** 녹음 중 다른 탭을 누르거나 외부 CSV 공유로
+    `/import`에 가면 셸과 함께 dispose되어 결과를 돌려주지 못한다. 그래서 편집 화면이 **녹음 전에** 기록을 만들어
+    `RecordingScreen(recordId:)`에 넘기고, `_finish`를 거치지 않고 사라질 때는 녹음 화면이 멈춘 뒤 **미리 읽어 둔
+    `GuidanceActions`로 직접 붙인다**(위젯 수명과 분리). 멈추기는 `_stop()` 하나를 나눠 써 두 번 붙지 않는다.
+    편집 중 **글**이 탭 이동으로 사라지는 것은 앱 전체 ShellRoute 동작이라 고치지 않았다(원장 Ruling).
+  - 첨부 타일은 앱이 `resumed`가 아니게 되면 재생을 멈춘다(덮개가 가려도 소리는 나므로).
+  - 가져오기가 끝나면(성공·실패) 고르기 창의 사본(`picked.path`)을 지운다. file_picker 9.2.3의 iOS 사진은
+    tmp가 아니라 `Documents/picked_images/`에 사본을 써서 `clearTemporaryFiles()`로는 안 지워진다.
+- **스낵바에 기록 내용(제목·이름)을 넣지 않는다.** 스낵바는 잠금 덮개 밖(`MainShell`의 메신저)에 떠서, 잠긴
+  뒤에도 덮개 위에 남는다.
 - **공용 휴지통·30일 정리·내보내기·알림·캘린더·오늘·Google·단축어·입력 탭·포스트잇은 `guidance`를 모른다**
   (`guidance_isolation_test.dart`가 그 소스에 낱말 자체가 없는지 본다). 삭제는 탭 안 `삭제한 기록`으로 가고
   **30일 자동 삭제 대상이 아니다** — 근거 자료가 조용히 사라지면 안 된다. **전체 데이터 초기화는 지도 기록과
-  첨부 폴더도 지운다**(확인 창에 `지도 기록 N건과 첨부 N개도 지워집니다`). 기능을 꺼도 데이터는 남는다.
+  첨부 폴더도 지운다**(확인 창에 `지도 기록 N건과 첨부 N개도 지워집니다`, 기록이 0건이어도 명단이 있으면
+  `지도 기록 명단 N명도 지워집니다`). 기능을 꺼도 데이터는 남는다.
   - ⚠️ 분리 가드가 실패하면 **가드를 고치지 말고 그 파일의 참조를 걷어낸다.** 정당하게 연결된 곳은 가드
     목록에 없다(`settings`의 초기화).
 - **색 토큰 넷을 추가했다**(기존 값 무수정): `guidanceKindBlue`(생활지도 배지 — `info`가 다크 카드 위
   4.44:1로 미달), `recordingBackground`·`onRecording`·`recordingLive`(녹음 화면은 테마와 무관하게 어둡다).
   상태 배지(마무리·이관)는 둘 다 `sub` — 상태는 색이 아니라 글자로 가른다.
 - **네이티브**: `MainActivity`가 `FlutterFragmentActivity`다(`local_auth`가 생체 인증 창에 필요) + LaunchTheme가
-  AppCompat. 부모를 바꿨으므로 CSV 공유(`planroutine/shared_file`)를 cold-start·running 둘 다 다시 태워야 한다.
+  AppCompat. 부모를 바꾼 뒤 CSV 공유(`planroutine/shared_file`)가 cold-start·running 둘 다 `/import`에 도착함을
+  에뮬레이터에서 확인했다(2026-10-03).
   iOS는 `NSFaceIDUsageDescription`·`NSMicrophoneUsageDescription`, Android는 `RECORD_AUDIO`.
 - 개인정보처리방침은 §2·§4·§5-4·§6을 고쳤다(마이크·사진은 사용자가 녹음·첨부할 때만, 서버 전송 없음).
   스토어 개인정보 라벨은 기기 밖으로 나가지 않아 `수집 안 함` 유지 — 제출 때 재확인.

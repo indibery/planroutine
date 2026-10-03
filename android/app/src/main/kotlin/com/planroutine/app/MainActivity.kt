@@ -29,7 +29,8 @@ import java.io.File
  *
  * `FlutterFragmentActivity`인 이유: 지도 기록 잠금(`local_auth`)이 생체 인증 창을 띄우려면
  * FragmentActivity가 필요하다. 부모를 바꿔도 공유 채널 동작은 같다 — 에뮬레이터에서
- * cold-start·running 공유를 다시 태워 확인한다(Task 10 런타임 검증).
+ * cold-start·running 공유가 둘 다 `/import`(작년 업무 가져오기)에 도착함을 확인했다
+ * (2026-10-03, 런타임 스크린샷 and-08·09).
  */
 class MainActivity : FlutterFragmentActivity() {
     private var channel: MethodChannel? = null
