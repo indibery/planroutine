@@ -33,6 +33,10 @@
 14. **포스트잇(선택 탭)** — 일정으로 정식 등록하기 애매한 것을 붙여 두는 쪽지 보드. 기본 꺼짐
    (`설정 › 기능 관리 › 포스트잇`). 날짜를 붙이면 그날 캘린더 목록·격자에 보이고, 쪽지 시트에서
    업무·행사로 등록하면 쪽지는 휴지통으로 간다. 꾹 눌러 끌어 순서를 바꾼다. 오늘 탭에는 안 뜬다.
+15. **지도 기록(선택 탭)** — 학교 단계의 생활지도·교육활동 침해를 남겨 두는 곳. 기본 꺼짐
+   (`설정 › 기능 관리 › 지도 기록`). 들어갈 때마다 기기 인증 잠금. 저장할 때마다 **판이 쌓이고**
+   이전 판은 고칠 수 없다. 녹음(앱 안·파일 가져오기)·사진을 원본 그대로(SHA-256) 붙인다.
+   관련인에게 가해·피해 역할을 붙이지 않는다. 캘린더·오늘·내보내기·공용 휴지통과 연결되지 않는다.
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -43,8 +47,8 @@
 |--------|------|------|
 | 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 Play 비공개 테스트 진행 중 — **알림은 M2-①로 배선 완료**(2026-08-08, 에뮬레이터 실측). CSV 공유 목록 노출은 아직 M2. ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 고정 4탭(오늘/캘린더/입력/설정) + 선택 탭(최대 6, 등록부가 정한다) + push(/trash, /import, /modules, /bus/settings, /bus/stops). 선택 탭 라우트(`/memo`)는 설치와 무관하게 항상 등록. 초기 라우트 `/today` |
-| 로컬 DB | sqflite | 스키마 v9 (4 테이블, soft-delete + completed + google_event_id + kind + reviewed_at + memos) |
+| 라우팅 | GoRouter | ShellRoute 고정 4탭(오늘/캘린더/입력/설정) + 선택 탭(최대 6, 등록부가 정한다) + push(/trash, /import, /modules, /bus/settings, /bus/stops). 선택 탭 라우트(`/memo`·`/guidance`)는 설치와 무관하게 항상 등록 — `/guidance`는 **중첩 `ShellRoute`**(잠금 게이트)가 감싼다. 초기 라우트 `/today` |
+| 로컬 DB | sqflite | 스키마 v10 (8 테이블, soft-delete + completed + google_event_id + kind + reviewed_at + memos + guidance_* 넷) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
@@ -53,9 +57,10 @@
 | 영구 설정 | shared_preferences | 알림 설정, 힌트 바 dismiss, 화면 테마, 완료 도장, 버스 설정, 기능 설치·탭 순서(`installed_modules_v1`) |
 | 구글 | google_sign_in 6.x + googleapis 13.x + http | 단방향 Calendar API. **iOS 전용** — 안드로이드는 선택지를 감춘다 |
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
+| 잠금·녹음 | local_auth 3.0.2 · record 7.1.1 · just_audio 0.10.6 · wakelock_plus 1.3.3 · crypto 3.0.7 | 지도 기록 전용(`pubspec.lock` 실측) |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1298** 유닛/위젯 + 19 E2E (실측 2026-10-03, 포스트잇 68건 + 휴지통 최근순 4건을 더한 값. 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1447** 유닛/위젯 + 19 E2E (실측 2026-10-03, 지도 기록 `test/features/guidance/` 등 149건을 더한 값. 직전 `1298`은 포스트잇 68건 + 휴지통 최근순 4건을 더한 값이었고, 그 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -95,7 +100,7 @@ lib/
 - `test/` — `deploy/`(문서↔코드 가드) · `features/` · `helpers/` · `tools/`(자동 스캔 제외)
 - `integration_test/` — `app_test.dart`(UX E2E 19) · `screenshot_test.dart`(스토어 촬영)
 
-## 데이터베이스 스키마 (v9)
+## 데이터베이스 스키마 (v10)
 
 ### schedules
 - `id`, `title`, `description`, `scheduled_date`
@@ -122,12 +127,19 @@ lib/
 - `sort_order`(작을수록 앞, 새 쪽지는 최소값 − 1), `created_at`, `updated_at`, `deleted_at`
 - 다른 테이블과 연결 고리가 없다 — 일정으로 바꾸면 새 이벤트가 생기고 쪽지는 휴지통으로 갈 뿐이다.
 
+### guidance_* (v10, 지도 기록 — 다른 테이블과 연결 고리가 없다)
+- `guidance_people`: `id`, `name`, `role`(`student`/`guardian`/`staff`/`other`, 모르면 `other`), `memo`, `archived_at`(보관 — 지우지 않는다), `created_at`, `updated_at`
+- `guidance_records`: `id`, `created_at`(**insert 뒤 바꾸지 않는다** — 기록 시각), `deleted_at`(탭 안 `삭제한 기록`)
+- `guidance_revisions`(**추가만**): `id`, `record_id`, `revision_no`(`UNIQUE (record_id, revision_no)`), `saved_at`, `kind`(`guidance`/`infringement`), `status`(`open`/`closed_at_school`/`transferred`), `occurred_precision`(`exact`/`date`/`approx`), `occurred_at`, `occurred_text`, `title`, `place`, `participants`(JSON — 저장 시점 **사본**), `facts`, `quotes`, `actions`
+- `guidance_attachments`: `id`, `record_id`, `type`(`audio`/`image`), `source`(`recorded`/`imported`), `file_name`, `original_name`, `sha256`, `byte_size`, `duration_ms`, `captured_at`, `attached_at`, `removed_at`(빼기 = 이것만 찍는다)
+- 인덱스 둘: `idx_guidance_rev_record`·`idx_guidance_att_record`.
+
 ### imported_schedules
 - 원본 생산문서등록대장 CSV 보관. PlanRoutine export 포맷 임포트는 이 테이블을 건너뛰고 schedules로 직접 삽입.
 
 ### 마이그레이션
 - `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id),
-  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블), v7→v8(reviewed_at), v8→v9(`memos` 테이블 생성).
+  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블), v7→v8(reviewed_at), v8→v9(`memos` 테이블 생성), v9→v10(`guidance_*` 테이블 넷 + 인덱스 둘 생성 — 기존 테이블 무수정).
   기존 사용자도 ALTER TABLE로 데이터 유지한 채 업그레이드.
 - v7의 `DEFAULT 'task'`가 곧 제품 결정이다 — **기존 데이터는 전부 업무**(지금까지 들어온 것은
   사실상 전부 CSV). 별도 백필 스크립트가 없는 이유.
@@ -1503,6 +1515,64 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
   검증해도 된다**는 근거가 된다 — 플랫폼이 개입하는 것은 시스템 바(위 절)뿐이다.
   iOS에서 실제로 변한 곳은 픽셀 차분으로 세 군데였다: 히어로 가운데 칸(`AI 앱`) ·
   검토 대기 칩의 chevron · 탭바 미선택 라벨.
+
+### 지도 기록 (선택 탭)
+
+등록부의 두 번째 탭형 선택 기능이다(`id: 'guidance'`, 라우트 `/guidance` — **저장값이라 바꾸지
+않는다**). 학교 단계의 생활지도·교육활동 침해를 **나중에 근거로 쓸 수 있게** 남긴다. 설계는
+`docs/superpowers/specs/2026-10-03-guidance-record-design.md`, 계획은 같은 날짜의 `plans/`.
+
+- **판은 추가만 한다.** 저장할 때마다 `guidance_revisions`에 판이 하나 쌓이고 UPDATE는 쓰지 않는다.
+  DELETE는 `GuidanceRepository.permanentDelete` 한 곳뿐이다(`guidance_append_only_guard_test.dart`).
+  기록 시각(`guidance_records.created_at`)도 insert 뒤 바꾸지 않는다. **내용이 같으면(`sameContent`,
+  `normalized()` 뒤 비교) 판을 만들지 않는다.**
+  - 화면 용어: 판은 화면에서 `처음 작성`·`수정 버전 N`이다. **화면에 `판 N`을 쓰지 않는다**(이력 테스트가 지킨다).
+  - 사건 시각 정밀도를 바꿔도 화면 상태의 시각은 지우지 않는다(저장 때 `normalized()`가 맞춘다) —
+    지우면 되돌릴 때 시각이 지금으로 바뀐다.
+- **관련인에게 역할(가해·피해·목격)을 붙이지 않는다.** `PersonRole`은 사람이 누구인지만 말한다.
+  판에는 관련인의 **저장 시점 사본**(JSON)이 들어가 명단에서 이름을 고치거나 보관해도 옛 판은 그대로다.
+  `parseRosterPaste`는 번호 뒤 구분자가 있을 때만 번호를 지운다(`1반 김하늘`은 그대로).
+- **잠금은 중첩 셸의 builder(`GuidanceLockGate`)가 진다.** 다른 탭으로 `go`하면 셸이 dispose되어
+  다음에 들어올 때 다시 잠겨 있다. 덮개는 아래 화면을 dispose하지 않는다(`Stack` + `IgnorePointer` +
+  `ExcludeSemantics`) — 풀면 쓰던 글이 그대로다. 기기 암호가 없으면 `잠금 없이 열기`.
+  - ⚠️ **`SystemSheetGuard`가 급소다.** Face ID·사진/파일 고르기·마이크 권한 창은 앱을 `inactive`(Android는
+    `paused`)로 만든다. 감싸지 않으면 Face ID가 무한 반복되고 사진을 고르고 오면 잠겨 있다. grace는
+    `inactive`·`hidden`만 흘려보내고 **`paused`는 늘 잠근다.**
+  - 게이트 `_authenticate`는 예상 밖 예외를 실패로 처리하고 `finally`에서 `_authing`을 푼다(영구 잠김 방지).
+  - **`FLAG_SECURE`는 참조 카운트다**(`PlatformSecureWindow`) — 테마가 바뀌면 `app.dart`가 하위를 재생성해
+    새 게이트의 initState가 옛 게이트의 dispose보다 먼저 불려 플래그가 꺼지던 문제를 막는다. Android 한정.
+    iOS에는 같은 플래그가 없어 잠금 덮개가 그 몫이다(앱 전환기 가림은 실기기에서 확인할 몫).
+- **대화상자는 `useRootNavigator: false`다**(`showDialog`·`ConfirmDialog.show`·`showDatePicker`·
+  `showTimePicker`, 가드가 지킨다) — 루트 내비게이터에 뜨면 잠금 덮개 **위**에 남는다.
+- **첨부는 원본 그대로 + SHA-256이다.** 변환·압축·자르기 없이 바이트를 복사한 뒤 스트림으로 해시를 낸다
+  (사진 고르기는 `allowCompression: false`). 빼기는 `removed_at`만 찍고 **파일은 남긴다.** 영구 삭제 때만 지운다.
+  - 파일은 `getApplicationSupportDirectory()/guidance/` — 파일 앱·사진 앱에 안 보인다.
+  - 첨부 타일은 `key: ValueKey(a.id)`가 필수다(목록이 바뀔 때 다른 첨부의 플레이어 상태를 재사용한다).
+    파일이 없으면(Android 백업 복원 등) `파일을 찾을 수 없어요` + 재생 비활성, 재생이 끝나면 처음으로 되감는다.
+- **Android 클라우드 백업에서 첨부(`files/guidance/`)만 뺀다**(자동 백업 앱당 25MB 상한 — 넘으면 일정 데이터까지
+  멈춘다). 글 기록·명단은 백업되고 기기 간 이전에는 첨부도 포함된다. iOS iCloud 백업에는 그대로 포함된다.
+- **녹음은 화면을 켜 둔다**(`WakelockPlus`) — 백그라운드 녹음은 없다. AAC `.m4a` 모노 64kbps 44.1kHz.
+  앱이 비활성/백그라운드가 되면(시스템 창 가드 중이 아니면) **그때까지 저장하고 멈춘다.** 녹음을 버리는 길이 없다.
+  - 시작 실패는 안내 화면(`_Phase.failed`)으로, 녹음 중이 아니면 생명주기를 무시한다.
+  - 녹음 뒤 기록 저장·첨부가 실패하면 `붙이지 못한 녹음 n개` 줄과 `다시 붙이기`로 보관하고, `저장`이 먼저
+    다시 붙인다(못 붙이면 화면 유지). 저장·첨부·명단 동작이 실패하면 버튼이 풀리고 안내가 뜬다(`saveFailed`·`actionFailed`).
+  - 녹음 화면은 테마와 무관하게 어둡고 `AnnotatedRegion`으로 시스템 바 아이콘을 밝게 둔다.
+- **공용 휴지통·30일 정리·내보내기·알림·캘린더·오늘·Google·단축어·입력 탭·포스트잇은 `guidance`를 모른다**
+  (`guidance_isolation_test.dart`가 그 소스에 낱말 자체가 없는지 본다). 삭제는 탭 안 `삭제한 기록`으로 가고
+  **30일 자동 삭제 대상이 아니다** — 근거 자료가 조용히 사라지면 안 된다. **전체 데이터 초기화는 지도 기록과
+  첨부 폴더도 지운다**(확인 창에 `지도 기록 N건과 첨부 N개도 지워집니다`). 기능을 꺼도 데이터는 남는다.
+  - ⚠️ 분리 가드가 실패하면 **가드를 고치지 말고 그 파일의 참조를 걷어낸다.** 정당하게 연결된 곳은 가드
+    목록에 없다(`settings`의 초기화).
+- **색 토큰 넷을 추가했다**(기존 값 무수정): `guidanceKindBlue`(생활지도 배지 — `info`가 다크 카드 위
+  4.44:1로 미달), `recordingBackground`·`onRecording`·`recordingLive`(녹음 화면은 테마와 무관하게 어둡다).
+  상태 배지(마무리·이관)는 둘 다 `sub` — 상태는 색이 아니라 글자로 가른다.
+- **네이티브**: `MainActivity`가 `FlutterFragmentActivity`다(`local_auth`가 생체 인증 창에 필요) + LaunchTheme가
+  AppCompat. 부모를 바꿨으므로 CSV 공유(`planroutine/shared_file`)를 cold-start·running 둘 다 다시 태워야 한다.
+  iOS는 `NSFaceIDUsageDescription`·`NSMicrophoneUsageDescription`, Android는 `RECORD_AUDIO`.
+- 개인정보처리방침은 §2·§4·§5-4·§6을 고쳤다(마이크·사진은 사용자가 녹음·첨부할 때만, 서버 전송 없음).
+  스토어 개인정보 라벨은 기기 밖으로 나가지 않아 `수집 안 함` 유지 — 제출 때 재확인.
+- ⚠️ **미확인**: 교사 개인 기기에 학생 명단을 저장하는 것에 대한 시도교육청 지침. 서버 전송이 없어 위험은
+  낮다고 보지만 확인된 사실이 아니다.
 
 ## 배포 · 빌드 도구
 

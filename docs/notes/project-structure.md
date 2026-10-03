@@ -29,6 +29,7 @@ planroutine/
 │   │   │       ├── calendar_strings.dart
 │   │   │       ├── google_strings.dart
 │   │   │       ├── import_strings.dart
+│   │   │       ├── guidance_strings.dart     # 지도 기록 문구
 │   │   │       ├── notification_strings.dart
 │   │   │       ├── schedule_strings.dart
 │   │   │       ├── settings_strings.dart
@@ -45,7 +46,7 @@ planroutine/
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles,
 │   │   │                               #   system_overlay_region(내비게이션 바 스타일 루트 리전)
 │   │   ├── router/                     # GoRouter (고정 4탭 + 선택 탭, /trash·/import·/modules 등 푸시)
-│   │   ├── database/                   # DatabaseHelper (v9, forTesting 생성자)
+│   │   ├── database/                   # DatabaseHelper (v10, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
 │   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
@@ -145,6 +146,37 @@ planroutine/
 │   │   │       └── widgets/
 │   │   │           ├── memo_card.dart · memo_calendar_card.dart  # 보드 쪽지 / 캘린더 쪽지
 │   │   │           └── memo_sheet.dart          # 편집·색·날짜·일정으로 등록·떼기
+│   │   ├── guidance/                   # 지도 기록(선택 탭) — 잠금 안에만 있다 (다른 feature는 이 낱말을 모른다)
+│   │   │   ├── data/
+│   │   │   │   ├── guidance_repository.dart        # 기록·판(추가만)·첨부·삭제한 기록·영구 삭제·건수
+│   │   │   │   ├── guidance_people_repository.dart # 명단 — 지우지 않고 보관한다
+│   │   │   │   └── guidance_file_store.dart        # Application Support/guidance/ 복사·해시·삭제·wipe
+│   │   │   ├── domain/
+│   │   │   │   ├── guidance_types.dart             # PersonRole·GuidanceKind·GuidanceStatus·OccurredPrecision (모르는 값 폴백)
+│   │   │   │   ├── guidance_content.dart           # 판 하나의 내용(사용자가 고치는 칸 전부) + normalized/sameContent
+│   │   │   │   ├── guidance_models.dart            # 판·기록 요약·첨부·명단 Freezed 모델
+│   │   │   │   ├── participant.dart                # 판에 들어가는 관련인 저장 시점 사본
+│   │   │   │   └── guidance_logic.dart             # 바뀐 칸 비교·사건 시각 문구·parseRosterPaste (순수 함수)
+│   │   │   └── presentation/
+│   │   │       ├── lock/
+│   │   │       │   ├── guidance_lock_gate.dart     # 탭 전체 잠금 덮개 (중첩 셸 builder)
+│   │   │       │   ├── system_sheet_guard.dart     # Face ID·고르기·권한 창 동안 잠그지 않는 표시
+│   │   │       │   ├── device_authenticator.dart   # local_auth 래퍼(테스트에서 교체)
+│   │   │       │   └── secure_window.dart          # Android FLAG_SECURE 참조 카운트
+│   │   │       ├── recording/
+│   │   │       │   ├── guidance_recorder.dart      # record 래퍼 — AAC m4a 모노 64kbps + wakelock
+│   │   │       │   ├── recording_screen.dart       # 녹음 화면(어두운 고정 테마) — 떠나면 그때까지 저장
+│   │   │       │   └── attachment_importer.dart    # 사진·녹음 파일 가져오기(원본 그대로)
+│   │   │       ├── providers/guidance_providers.dart  # 변경 신호·목록·필터·저장소 provider
+│   │   │       ├── screens/                        # 목록 · 보기 · 쓰기/고치기 · 수정 이력 · 명단 · 삭제한 기록
+│   │   │       │   ├── guidance_list_screen.dart · guidance_detail_screen.dart
+│   │   │       │   ├── guidance_edit_screen.dart · guidance_history_screen.dart
+│   │   │       │   └── guidance_people_screen.dart · guidance_trash_screen.dart
+│   │   │       └── widgets/
+│   │   │           ├── guidance_record_tile.dart · guidance_badges.dart   # 목록 한 줄 / 구분·상태 배지
+│   │   │           ├── attachment_tile.dart · attachment_info_sheet.dart  # 첨부 한 줄(재생·썸네일) / 해시 시트
+│   │   │           ├── audio_playback.dart                                # just_audio 래퍼(테스트에서 교체)
+│   │   │           └── occurred_input.dart · participant_picker_sheet.dart · person_edit_sheet.dart
 │   │   └── onboarding/                 # 최초 진입 플로우
 │   └── shared/
 │       └── widgets/
