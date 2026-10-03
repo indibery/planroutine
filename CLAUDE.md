@@ -88,6 +88,7 @@ lib/
 | `notifications/` | 로컬 알림 — `computeNotifications`(순수) + syncer |
 | `settings/` | 설정 탭 — 섹션별 위젯 분리 |
 | `memo/` | 포스트잇(선택 탭) — 쪽지 보드·시트, 캘린더 카드 |
+| `guidance/` | 지도 기록(선택 탭) — 잠금·판(추가만)·첨부·명단 |
 | `google/` · `trash/` · `onboarding/` | Google Calendar 단방향 · 휴지통 · 최초 진입 |
 
 각 feature는 `data/` · `domain/` · `presentation/`으로 나뉘고 **빈 레이어는 만들지 않는다**
@@ -987,7 +988,7 @@ Swift에는 테이블도 컬럼도 SQL도 없고, 가드가 그것을 검사한�
    --grant-read-uri-permission`이 실제 공유와 같은 조건이다.
 
 ### 문자열 구조
-- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings·AppIntentsStrings·MemoStrings).
+- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings·AppIntentsStrings·MemoStrings·GuidanceStrings).
 - 공통 문자열(appName·tab*·cancel·save·retry·loading·error·compareYearFormat·categoryDailyOps)만 `AppStrings`에 잔류.
 - `app_strings.dart`가 각 domain strings를 barrel export하므로 호출부는 이 파일 하나만 import 하면 된다.
 
@@ -1523,7 +1524,7 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
 `docs/superpowers/specs/2026-10-03-guidance-record-design.md`, 계획은 같은 날짜의 `plans/`.
 
 - **판은 추가만 한다.** 저장할 때마다 `guidance_revisions`에 판이 하나 쌓이고 UPDATE는 쓰지 않는다.
-  DELETE는 `GuidanceRepository.permanentDelete` 한 곳뿐이다(`guidance_append_only_guard_test.dart`).
+  DELETE는 `GuidanceRepository.permanentDelete` 한 곳뿐이다(전체 초기화 `resetAllData`는 제외, `guidance_append_only_guard_test.dart`).
   기록 시각(`guidance_records.created_at`)도 insert 뒤 바꾸지 않는다. **내용이 같으면(`sameContent`,
   `normalized()` 뒤 비교) 판을 만들지 않는다.**
   - 화면 용어: 판은 화면에서 `처음 작성`·`수정 버전 N`이다. **화면에 `판 N`을 쓰지 않는다**(이력 테스트가 지킨다).
