@@ -201,21 +201,24 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     }
   }
 
-  Future<void> _retryAttach() async {
-    if (_retrying) return;
-    setState(() => _retrying = true);
-    var failed = false;
+  /// 붙이지 못한 녹음을 모두 다시 붙여 본다. 성공한 것만 목록에서 빼고, 하나라도 남으면 false.
+  Future<bool> _attachPending() async {
     for (final r in List.of(_unattached)) {
       try {
         await _attachRecording(r);
         _unattached.remove(r);
-      } catch (_) {
-        failed = true;
-      }
+      } catch (_) {}
     }
+    return _unattached.isEmpty;
+  }
+
+  Future<void> _retryAttach() async {
+    if (_retrying) return;
+    setState(() => _retrying = true);
+    final ok = await _attachPending();
     if (!mounted) return;
     setState(() => _retrying = false);
-    if (failed) {
+    if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.attachFailedKept)));
     }
   }
@@ -340,6 +343,16 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
         await actions.save(id, content);
       }
       _saved = content;
+      // 붙이지 못한 녹음이 남아 있으면 닫기 전에 먼저 붙여 본다 — 하나라도 못 붙이면 화면을 지킨다.
+      if (_unattached.isNotEmpty && !await _attachPending()) {
+        if (mounted) {
+          setState(() => _busy = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text(GuidanceStrings.attachFailedKept)));
+        }
+        return;
+      }
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       // 실패하면 글을 그대로 두고 다시 누를 수 있게 푼다. 성공해 pop한 뒤에는 풀지 않는다(닫히는 동안 두 번 눌림 방지).

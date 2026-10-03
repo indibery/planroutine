@@ -33,9 +33,12 @@ class FakeImporter implements AttachmentImporter {
 class FlakyRepository extends GuidanceRepository {
   FlakyRepository({super.dbHelper});
   var failNext = true;
+  var failAlways = false;
+  var attempts = 0;
   @override
   Future<GuidanceAttachment> addAttachment(GuidanceAttachment a) async {
-    if (failNext) {
+    attempts++;
+    if (failNext || failAlways) {
       failNext = false;
       throw StateError('저장 실패');
     }
@@ -82,7 +85,7 @@ void main() {
   Future<void> waitUntil(WidgetTester tester, bool Function() cond) async {
     for (var i = 0; i < 60 && !cond(); i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
     }
     expect(cond(), isTrue, reason: '조건이 상한 안에 충족되지 않음');
   }
@@ -101,6 +104,8 @@ void main() {
     tester.view.physicalSize = const Size(390, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    // DB를 fake-async 밖에서 미리 연다.
+    await tester.runAsync(() => db.database);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -110,9 +115,20 @@ void main() {
           attachmentImporterProvider.overrideWithValue(importer ?? FakeImporter(source)),
           guidanceRecorderFactoryProvider.overrideWithValue(FakeRecorder.new),
         ],
-        child: const MaterialApp(home: GuidanceEditScreen()),
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GuidanceEditScreen())),
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
       ),
     );
+    await tester.tap(find.text('열기'));
     await settle(tester);
   }
 
@@ -182,7 +198,8 @@ void main() {
     await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
     await tester.tap(find.byKey(RecordingScreen.stopKey));
     await waitUntil(tester, () => find.text(GuidanceStrings.unattachedRecording(1)).evaluate().isNotEmpty);
-    expect(find.text(GuidanceStrings.attachFailedKept), findsOneWidget);
+    // 홈 화면의 Scaffold도 같은 메신저의 스낵바를 그려 한 개 이상으로 잡힌다.
+    expect(find.text(GuidanceStrings.attachFailedKept), findsWidgets);
     expect(find.byType(AttachmentTile), findsNothing);
 
     await tester.tap(find.byKey(GuidanceEditScreen.retryAttachKey));
@@ -217,5 +234,41 @@ void main() {
     await tester.tap(find.byKey(RecordingScreen.stopKey));
     await waitForTiles(tester, 1);
     expect(find.byType(RecordingScreen), findsNothing);
+  });
+
+  Future<void> recordAndFail(WidgetTester tester) async {
+    await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
+    await tester.tap(find.byKey(GuidanceEditScreen.recordKey));
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitUntil(tester, () => find.byKey(GuidanceEditScreen.retryAttachKey).evaluate().isNotEmpty);
+  }
+
+  testWidgets('붙이지 못한 녹음이 있을 때 저장하면 먼저 붙이고, 붙으면 저장하고 닫는다', (tester) async {
+    await pump(tester, repository: FlakyRepository(dbHelper: db));
+    await recordAndFail(tester);
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await waitUntil(tester, () => find.byType(GuidanceEditScreen).evaluate().isEmpty);
+    final list = await tester.runAsync(repo.getActive);
+    final atts = await tester.runAsync(() => repo.getAttachments(list?.single.id ?? -1));
+    expect(atts?.single.source, AttachmentSource.recorded);
+  });
+
+  testWidgets('계속 붙지 않으면 저장해도 화면과 보관 줄이 남는다', (tester) async {
+    final flaky = FlakyRepository(dbHelper: db);
+    await pump(tester, repository: flaky);
+    await recordAndFail(tester);
+    flaky.failAlways = true;
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    // 기록 때의 스낵바가 이미 떠 있어 문구로는 기다릴 수 없다 — 저장이 다시 붙여 본 횟수로 기다린다.
+    await waitUntil(tester, () => flaky.attempts >= 2);
+    await waitUntil(
+      tester,
+      () => tester.widget<FilledButton>(find.byKey(GuidanceEditScreen.saveKey)).onPressed != null,
+    );
+    expect(find.byType(GuidanceEditScreen), findsOneWidget);
+    expect(find.text(GuidanceStrings.unattachedRecording(1)), findsOneWidget);
+    final saveButton = tester.widget<FilledButton>(find.byKey(GuidanceEditScreen.saveKey));
+    expect(saveButton.onPressed, isNotNull, reason: '다시 누를 수 있게 풀려야 한다');
   });
 }
