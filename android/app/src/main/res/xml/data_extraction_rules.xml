@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 클라우드 백업에서만 뺀다. 기기 간 직접 이전(device-transfer)에는 크기 상한이 없어 포함한다. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="guidance/" />
+    </cloud-backup>
+</data-extraction-rules>

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../guidance/presentation/providers/guidance_providers.dart';
 import '../providers/settings_providers.dart';
 
 /// '전체 데이터 초기화' 타일 — 탭 시 확인 다이얼로그 후 resetAll 실행.
@@ -34,10 +35,17 @@ class ResetListTile extends ConsumerWidget {
   }
 
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
+    // 지도 기록은 되돌릴 수 없는 근거 자료다 — 지워진다는 사실을 건수로 따로 말한다.
+    final counts = await ref.read(guidanceRepositoryProvider).counts();
+    if (!context.mounted) return;
+    final message = counts.records == 0
+        ? SettingsStrings.resetAllConfirmMessage
+        : '${SettingsStrings.resetAllConfirmMessage}\n\n'
+              '${GuidanceStrings.resetWarning(counts.records, counts.attachments)}';
     final confirmed = await ConfirmDialog.show(
       context: context,
       title: SettingsStrings.resetAllConfirmTitle,
-      message: SettingsStrings.resetAllConfirmMessage,
+      message: message,
       confirmLabel: SettingsStrings.resetAllConfirm,
       confirmColor: AppColors.error,
     );

@@ -48,4 +48,8 @@ class GuidanceStrings {
   static const fieldFacts = '경과';
   static const fieldQuotes = '들은 말';
   static const fieldActions = '판단·조치';
+
+  // 전체 초기화 경고
+  static String resetWarning(int records, int attachments) =>
+      '지도 기록 $records건과 첨부 $attachments개도 지워집니다.';
 }

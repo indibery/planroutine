@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 지도 기록 첨부(녹음·사진)는 클라우드 백업에서 뺀다.
+     자동 백업은 앱당 25MB가 상한이고 넘으면 백업 전체가 멈춘다 — 그러면 일정 DB까지 백업되지 않는다.
+     exclude만 적으면 나머지는 전부 포함된다. -->
+<full-backup-content>
+    <exclude domain="file" path="guidance/" />
+</full-backup-content>

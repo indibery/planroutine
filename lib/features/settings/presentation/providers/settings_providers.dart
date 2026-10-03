@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../calendar/presentation/providers/calendar_providers.dart';
+import '../../../guidance/presentation/providers/guidance_providers.dart';
 import '../../../import/presentation/providers/import_providers.dart';
 import '../../../memo/presentation/providers/memo_providers.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
@@ -50,6 +51,7 @@ class AppResetNotifier extends StateNotifier<ResetState> {
       _ref.invalidate(monthEventsByYearMonthProvider);
       _ref.invalidate(selectedMonthEventsProvider);
       _ref.read(memoRevisionProvider.notifier).state++;
+      _ref.read(guidanceChangedProvider.notifier).state++;
       _ref.read(importStateProvider.notifier).reset();
 
       state = const ResetSuccess();
