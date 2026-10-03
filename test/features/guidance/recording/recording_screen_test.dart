@@ -267,4 +267,23 @@ void main() {
     await idle(tester);
     expect(actions.attached, isEmpty);
   });
+
+  testWidgets('안내 문구는 320pt 폭에서 각각 한 줄에 들어간다', (tester) async {
+    // 한글은 글자 단위로 줄이 바뀌어 길면 `녹/음`처럼 낱말이 쪼개진다(실기기 피드백 2026-10-04).
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester);
+    for (final text in [
+      GuidanceStrings.recordingLegal,
+      GuidanceStrings.recordingScreenOn,
+      GuidanceStrings.recordingSavesOnLeave,
+    ]) {
+      final finder = find.text(text);
+      expect(finder, findsOneWidget, reason: text);
+      final style = tester.widget<Text>(finder).style;
+      final lineHeight = (style?.fontSize ?? 14) * (style?.height ?? 1.0);
+      expect(tester.getSize(finder).height, lessThan(lineHeight * 1.5), reason: '한 줄이어야 한다: $text');
+    }
+  });
 }

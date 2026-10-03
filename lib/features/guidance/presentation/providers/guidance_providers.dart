@@ -180,10 +180,4 @@ class GuidanceActions {
     await _repo.removeAttachment(attachmentId);
     _changed();
   }
-
-  /// 이름 추천에서 지운다(명단에서 보관). 이미 쓴 기록의 이름은 판의 사본이라 그대로다.
-  Future<void> archivePerson(int id) async {
-    await _people.archive(id);
-    _changed();
-  }
 }

@@ -180,6 +180,8 @@ void main() {
 
   testWidgets('학생·보호자 구분을 묻지 않는다', (tester) async {
     await pump(tester);
+    // 입력칸 안내는 칩이 없을 때 보인다 — 칩이 생기면 칩과 같은 줄의 좁은 칸이 된다.
+    expect(find.text(GuidanceStrings.participantsInputHint), findsOneWidget);
     await tester.enterText(input, '김하늘,');
     await tester.pump();
     for (final label in [
@@ -190,7 +192,6 @@ void main() {
     ]) {
       expect(find.text(label), findsNothing, reason: label);
     }
-    expect(find.text(GuidanceStrings.participantsInputHint), findsOneWidget);
     expect(find.text(GuidanceStrings.participantsHint), findsOneWidget);
   });
 }

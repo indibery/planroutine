@@ -334,6 +334,12 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
                       textAlign: TextAlign.center,
                       style: TextStyle(color: on, fontSize: 13),
                     ),
+                    const SizedBox(height: AppSizes.spacing4),
+                    Text(
+                      GuidanceStrings.recordingSavesOnLeave,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: on, fontSize: 13),
+                    ),
                   ],
                 ),
               },

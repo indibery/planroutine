@@ -20,14 +20,6 @@ import 'package:planroutine/features/guidance/presentation/widgets/participant_c
 
 import '../../../helpers/test_database.dart';
 
-/// 보관(추천에서 지우기)이 항상 실패하는 명단 저장소.
-class _FailingArchive extends GuidancePeopleRepository {
-  _FailingArchive(DatabaseHelper db) : super(dbHelper: db);
-
-  @override
-  Future<void> archive(int id) async => throw StateError('archive 실패');
-}
-
 List<String> _paths(List<RouteBase> routes) => [
   for (final r in routes) ...[if (r is GoRoute) r.path, ..._paths(r.routes)],
 ];
@@ -220,35 +212,77 @@ void main() {
     expect(suggestion('김하늘'), findsNothing);
   });
 
-  testWidgets('추천을 길게 눌러 지우면 추천에서 사라지고, 이미 쓴 기록의 이름은 그대로다', (tester) async {
-    await tester.runAsync(() async {
-      final kim = await people.add(const GuidancePerson(name: '김하늘'));
-      await repo.create(
-        GuidanceContent(title: '지난 기록', participants: [kim.toParticipant()]),
-      );
-    });
+  // 추천 이름 길게 눌러 지우기는 걷어냈다(실기기 피드백 2026-10-04 — 틀린 이름은 안 쓰면 된다).
+  testWidgets('추천을 길게 눌러도 지우는 창 없이 누른 것처럼 칩이 되고 명단은 그대로다', (tester) async {
+    await tester.runAsync(() => people.add(const GuidancePerson(name: '김하늘')));
     await pumpEdit(tester);
     await tester.enterText(input, '김');
     await waitFor(tester, suggestion('김하늘'));
     await tester.longPress(suggestion('김하늘'));
     await tester.pumpAndSettle();
-    expect(find.text(GuidanceStrings.forgetSuggestionTitle), findsOneWidget);
-    await tester.tap(find.text(GuidanceStrings.delete).last);
-    await waitUntil(tester, () => suggestion('김하늘').evaluate().isEmpty);
-    expect(await tester.runAsync(people.getActive), isEmpty);
-    expect((await savedParticipants(tester, '지난 기록')).single.name, '김하늘');
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(chip('김하늘'), findsOneWidget);
+    expect(await tester.runAsync(people.getActive), hasLength(1));
   });
 
-  testWidgets('추천 지우기가 실패하면 안내하고 추천이 남는다', (tester) async {
+  testWidgets('추천 안내 문구는 길게 누르기를 말하지 않는다', (tester) async {
     await tester.runAsync(() => people.add(const GuidancePerson(name: '김하늘')));
-    await pumpEdit(tester, peopleRepo: _FailingArchive(db));
+    await pumpEdit(tester);
+    await tester.enterText(input, '하늘');
+    await waitFor(tester, suggestion('김하늘'));
+    expect(find.text(GuidanceStrings.suggestionHint), findsOneWidget);
+    expect(GuidanceStrings.suggestionHint, isNot(contains('길게')));
+    expect(GuidanceStrings.suggestionHint, isNot(contains('삭제')));
+  });
+
+  testWidgets('첫 칩이 생겨도 관련인 칸 높이가 그대로이고 칩은 입력칸과 같은 줄에 선다', (tester) async {
+    // 칩이 칸 위에 줄을 새로 만들며 화면을 밀었다(실기기 피드백 2026-10-04).
+    await pumpEdit(tester);
+    final box = find.byKey(ParticipantChipsField.boxKey);
+    final before = tester.getSize(box).height;
+    await tester.enterText(input, '김하늘,');
+    await tester.pump();
+    expect(chip('김하늘'), findsOneWidget);
+    expect(tester.getSize(box).height, before);
+    expect(
+      (tester.getCenter(chip('김하늘')).dy - tester.getCenter(input).dy).abs(),
+      lessThan(2),
+    );
+  });
+
+  Future<void> raiseKeyboard(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 760);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 340);
+    addTearDown(tester.view.resetViewInsets);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+  }
+
+  void expectAboveKeyboard(WidgetTester tester, Finder f) {
+    final keyboardTop = tester.view.physicalSize.height - tester.view.viewInsets.bottom;
+    expect(tester.getRect(f).bottom, lessThanOrEqualTo(keyboardTop), reason: '키보드에 가렸다');
+  }
+
+  testWidgets('추천이 뜬 뒤 키보드가 올라와도 추천이 키보드 위에 보인다', (tester) async {
+    await tester.runAsync(() => people.add(const GuidancePerson(name: '김하늘')));
+    await pumpEdit(tester);
+    await tester.showKeyboard(input);
     await tester.enterText(input, '김');
     await waitFor(tester, suggestion('김하늘'));
-    await tester.longPress(suggestion('김하늘'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(GuidanceStrings.delete).last);
-    await waitFor(tester, find.text(GuidanceStrings.actionFailed));
-    expect(suggestion('김하늘'), findsOneWidget);
+    await raiseKeyboard(tester);
+    expectAboveKeyboard(tester, find.text(GuidanceStrings.suggestionHint));
+  });
+
+  testWidgets('키보드가 올라온 채로 이름을 쳐서 추천이 뜨면 추천이 키보드 위에 보인다', (tester) async {
+    await tester.runAsync(() => people.add(const GuidancePerson(name: '김하늘')));
+    await pumpEdit(tester);
+    await tester.showKeyboard(input);
+    await raiseKeyboard(tester);
+    await tester.enterText(input, '김');
+    await waitFor(tester, suggestion('김하늘'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expectAboveKeyboard(tester, find.text(GuidanceStrings.suggestionHint));
   });
 
   testWidgets('명단 이전의 기록(personId 없음)을 그대로 저장하면 판이 생기지 않는다', (tester) async {

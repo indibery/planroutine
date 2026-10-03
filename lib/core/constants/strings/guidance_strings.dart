@@ -102,10 +102,7 @@ class GuidanceStrings {
   static const pickDate = '날짜';
   static const pickTime = '시각';
   static const participantsInputHint = '이름을 쉼표로 구분해 여러 명 쓸 수 있어요';
-  static const suggestionHint = '한 번 쓴 이름이 추천으로 떠요. 길게 누르면 추천에서 삭제합니다.';
-  static const forgetSuggestionTitle = '추천에서 삭제할까요?';
-  static String forgetSuggestionMessage(String name) =>
-      '‘$name’ 이름이 더는 추천으로 뜨지 않습니다. 이미 쓴 기록의 이름은 그대로 남습니다.';
+  static const suggestionHint = '한 번 쓴 이름이 추천으로 떠요.';
   static const participantsHint =
       '가해·피해를 나누어 적지 않아요. 판단이 나오기 전의 기록이 결론처럼 읽힐 수 있어서입니다. 필요하면 경과에 사실대로 적어 주세요.';
   static const quotesHint = '누가 무엇이라고 말했는지 들은 그대로 적어 주세요.';
@@ -179,9 +176,10 @@ class GuidanceStrings {
   static const recordingLive = '녹음 중';
   static const recordingStop = '녹음 멈추기';
   static const recordingStopHint = '멈추면 이 기록에 붙어요';
-  static const recordingLegal =
-      '대화에 직접 참여하는 경우에만 녹음하세요. 자리를 비운 사이의 녹음은 불법이 될 수 있습니다.';
-  static const recordingScreenOn = '녹음하는 동안 화면이 꺼지지 않아요 · 앱을 떠나면 여기까지 저장돼요';
+  // 한글은 글자 단위로 줄이 바뀌므로 녹음 화면 안내는 한 줄에 들어가게 짧게 쓴다(320pt 가드).
+  static const recordingLegal = '직접 참여한 대화만 녹음하세요.';
+  static const recordingScreenOn = '녹음 중에는 화면이 켜져 있어요.';
+  static const recordingSavesOnLeave = '앱을 나가면 그때까지 저장돼요.';
   static const micDenied = '마이크 권한이 꺼져 있어요';
   static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';
   static const openSettings = '설정 열기';
