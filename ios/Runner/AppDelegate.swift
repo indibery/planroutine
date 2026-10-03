@@ -13,6 +13,10 @@ import UIKit
   static var pendingPath: String?
   static var sharedChannel: FlutterMethodChannel?
 
+  /// 지도 기록이 화면에 올라와 있는 동안 true — Dart `PlatformSecureWindow`가 알려 준다.
+  /// `SceneDelegate`가 비활성이 될 때 이 값을 보고 앱 전환기용 가림막을 올린다.
+  static var secureContent = false
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -50,6 +54,25 @@ import UIKit
           let path = AppDelegate.pendingPath
           AppDelegate.pendingPath = nil
           result(path)
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+    }
+
+    // 지도 기록 가림막 플래그. 공유 채널과 같은 자리에서 잡는다(rootViewController가 아직
+    // nil인 didFinishLaunchingWithOptions가 아니라 여기).
+    let secureRegistrar = engineBridge.pluginRegistry.registrar(forPlugin: "PlanRoutineSecureWindow")
+    if let secureMessenger = secureRegistrar?.messenger() {
+      let secureChannel = FlutterMethodChannel(
+        name: "planroutine/secure_window",
+        binaryMessenger: secureMessenger
+      )
+      secureChannel.setMethodCallHandler { call, result in
+        switch call.method {
+        case "setSecure":
+          AppDelegate.secureContent = (call.arguments as? Bool) ?? false
+          result(nil)
         default:
           result(FlutterMethodNotImplemented)
         }

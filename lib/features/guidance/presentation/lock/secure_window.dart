@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Android `FLAG_SECURE` — 최근 앱 화면에 내용이 찍히지 않고 스크린샷도 막힌다.
-/// iOS에는 같은 플래그가 없어 아무것도 하지 않는다(잠금 덮개가 그 몫을 한다).
+/// "지도 기록이 보이는 중"을 네이티브에 알린다.
+/// - Android: `FLAG_SECURE` — 최근 앱 화면에 내용이 찍히지 않고 스크린샷도 막힌다.
+/// - iOS: 같은 플래그가 없다. 대신 `SceneDelegate`가 비활성이 되는 순간 창 위에 불투명 가림막을
+///   올린다 — Flutter 잠금 덮개는 `inactive` 콜백 **한 프레임 뒤**에 그려져(런타임 확인 2026-10-03)
+///   앱 전환기 스냅샷이 그보다 먼저 찍히면 내용이 보일 수 있다.
 abstract class SecureWindow {
   Future<void> setSecure(bool on);
 }
@@ -16,23 +19,26 @@ abstract class SecureWindow {
 class PlatformSecureWindow implements SecureWindow {
   PlatformSecureWindow({
     bool? isAndroid,
+    bool? isIOS,
     Future<void> Function(bool on)? invoke,
-  }) : _isAndroid = isAndroid ?? Platform.isAndroid,
+  }) : _supported = (isAndroid ?? Platform.isAndroid) || (isIOS ?? Platform.isIOS),
        _invoke = invoke ?? _invokeChannel;
 
-  /// `MainActivity.kt`의 `SECURE_CHANNEL`과 같아야 한다(`lock_native_wiring_test.dart`).
+  /// `MainActivity.kt`의 `SECURE_CHANNEL`, iOS `AppDelegate`의 채널과 같아야 한다
+  /// (`lock_native_wiring_test.dart`).
   static const channel = MethodChannel('planroutine/secure_window');
+  static const method = 'setSecure';
 
-  final bool _isAndroid;
+  final bool _supported;
   final Future<void> Function(bool on) _invoke;
   var _count = 0;
 
   static Future<void> _invokeChannel(bool on) =>
-      channel.invokeMethod<void>('setSecure', on);
+      channel.invokeMethod<void>(method, on);
 
   @override
   Future<void> setSecure(bool on) async {
-    if (!_isAndroid) return;
+    if (!_supported) return;
     if (on) {
       _count++;
       if (_count != 1) return;
