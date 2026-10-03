@@ -175,6 +175,38 @@ void main() {
     expect((await savedParticipants(tester, '추천으로')).single.personId, kim?.id);
   });
 
+  testWidgets('한 번에 여러 글자 늘어도 composing이 있으면 붙여넣기로 보지 않는다', (tester) async {
+    await pumpEdit(tester);
+    await tester.showKeyboard(input);
+    // 조합 중인 `이도윤`이 쉼표 뒤에 있다 — 붙여넣기였다면 `이도윤`도 칩이 된다.
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '김하늘, 이도윤',
+        selection: TextSelection.collapsed(offset: 8),
+        composing: TextRange(start: 5, end: 8),
+      ),
+    );
+    await tester.pump();
+    expect(chip('김하늘'), findsOneWidget);
+    expect(chip('이도윤'), findsNothing);
+    expect(tester.widget<TextField>(input).controller?.text, '이도윤');
+  });
+
+  testWidgets('composing 없이 한 번에 늘면 붙여넣기라 마지막 이름도 칩이 된다', (tester) async {
+    await pumpEdit(tester);
+    await tester.showKeyboard(input);
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '김하늘, 이도윤',
+        selection: TextSelection.collapsed(offset: 8),
+      ),
+    );
+    await tester.pump();
+    expect(chip('김하늘'), findsOneWidget);
+    expect(chip('이도윤'), findsOneWidget);
+    expect(tester.widget<TextField>(input).controller?.text, isEmpty);
+  });
+
   testWidgets('이미 칩으로 넣은 이름은 추천에 없다', (tester) async {
     await tester.runAsync(() async {
       await people.add(const GuidancePerson(name: '김하늘'));

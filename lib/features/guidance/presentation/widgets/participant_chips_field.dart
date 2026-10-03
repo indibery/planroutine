@@ -34,11 +34,15 @@ class ParticipantChipsField extends ConsumerWidget {
   /// 쉼표가 들어오면 그 앞의 이름들을 칩으로 만들고 칸에는 마지막 쉼표 뒤의 글만 남긴다.
   /// 한 번에 여러 글자가 들어온 것(붙여넣기)이면 마지막 조각도 다 쓴 이름으로 보고 칩으로 만든다 —
   /// `김하늘, 이도윤, 박서준`을 붙여 넣으면 셋 다 칩이 된다. 쳐서 넣는 쉼표는 한 글자씩 들어온다.
+  /// 키보드가 조합 중인 글을 한꺼번에 바꿔 넣는 것(composing 있음)은 붙여넣기로 보지 않는다.
   TextEditingValue _split(TextEditingValue before, TextEditingValue after) {
     final text = after.text;
     final cut = text.lastIndexOf(nameSeparator);
     if (cut < 0) return after;
-    final pasted = text.length - before.text.length > 1;
+    // 한글 조합 중(composing이 있다)에는 한 번에 여러 글자가 바뀌어도 붙여넣기가 아니다.
+    final composing = after.composing;
+    final composingNow = composing.isValid && !composing.isCollapsed;
+    final pasted = !composingNow && text.length - before.text.length > 1;
     final rest = pasted ? '' : text.substring(cut + 1).trimLeft();
     onChanged(addParticipantNames(participants, splitNames(pasted ? text : text.substring(0, cut))));
     return TextEditingValue(text: rest, selection: TextSelection.collapsed(offset: rest.length));

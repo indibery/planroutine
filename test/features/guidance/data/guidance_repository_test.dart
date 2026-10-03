@@ -107,6 +107,62 @@ void main() {
     expect((await repo.getAttachments(b)).single.fileName, 'b1.m4a');
   });
 
+  group('영구 삭제는 그 기록에만 나온 이름 추천도 지운다', () {
+    late GuidancePeopleRepository people;
+    setUp(() => people = GuidancePeopleRepository(dbHelper: db));
+
+    Future<int> record(String title, List<String> names) async {
+      await people.remember(names);
+      return repo.create(GuidanceContent(title: title, participants: [for (final n in names) Participant(name: n)]));
+    }
+
+    Future<List<String>> remembered() async {
+      final rows = await (await db.database).query(DatabaseHelper.tableGuidancePeople);
+      return [for (final r in rows) r['name'] as String]..sort();
+    }
+
+    test('A에만 나온 이름은 지우고, 다른 기록에도 나온 이름은 남긴다', () async {
+      final a = await record('a', ['김하늘', '이도윤']);
+      await record('b', ['이도윤']);
+      await repo.softDelete(a);
+      await repo.permanentDelete(a);
+      expect(await remembered(), ['이도윤']);
+    });
+
+    test('다른 기록이 삭제한 기록이어도 되살릴 수 있으므로 그 이름은 남긴다', () async {
+      final a = await record('a', ['김하늘', '이도윤']);
+      final b = await record('b', ['이도윤']);
+      await repo.softDelete(b);
+      await repo.softDelete(a);
+      await repo.permanentDelete(a);
+      expect(await remembered(), ['이도윤']);
+    });
+
+    test('앞뒤 공백이 달라도 같은 이름으로 보고, 다른 기록과 무관한 명단 행은 건드리지 않는다', () async {
+      final a = await record('a', ['김하늘', '이도윤']);
+      await repo.create(const GuidanceContent(title: 'b', participants: [Participant(name: ' 이도윤 ')]));
+      await people.add(const GuidancePerson(name: '박서준')); // 어느 기록에도 나온 적 없음
+      await repo.permanentDelete(a);
+      expect(await remembered(), ['박서준', '이도윤']);
+    });
+
+    test('보관한(추천에서 숨긴) 이름도 그 기록에만 나왔다면 함께 지운다', () async {
+      final a = await record('a', ['김하늘']);
+      final id = (await people.remember(['김하늘']))['김하늘'] ?? -1;
+      await people.archive(id);
+      await repo.permanentDelete(a);
+      expect(await remembered(), isEmpty);
+    });
+
+    test('판은 그대로 두고 지우지 않는다 — 남은 기록의 판 수는 변하지 않는다', () async {
+      final a = await record('a', ['김하늘']);
+      final b = await record('b', ['이도윤']);
+      await repo.saveRevision(b, const GuidanceContent(title: 'b2', participants: [Participant(name: '이도윤')]));
+      await repo.permanentDelete(a);
+      expect(await repo.getRevisions(b), hasLength(2));
+    });
+  });
+
   test('counts는 삭제한 기록·뺀 첨부까지 센다(초기화 경고용)', () async {
     final a = await repo.create(const GuidanceContent(title: 'a'));
     final x = await repo.addAttachment(_att(a, 'x.m4a'));

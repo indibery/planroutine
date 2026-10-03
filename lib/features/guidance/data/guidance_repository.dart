@@ -1,7 +1,10 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../../../core/database/database_helper.dart';
 import '../domain/guidance_content.dart';
 import '../domain/guidance_logic.dart';
 import '../domain/guidance_models.dart';
+import '../domain/participant.dart';
 
 /// 지도 기록 저장소 — 기록 몸통·판·첨부.
 ///
@@ -139,11 +142,34 @@ class GuidanceRepository {
         where: 'record_id = ?',
         whereArgs: [id],
       );
+      final gone = await _participantNames(txn, 'record_id = ?', [id]);
       await txn.delete(_attachments, where: 'record_id = ?', whereArgs: [id]);
       await txn.delete(DatabaseHelper.tableGuidanceRevisions, where: 'record_id = ?', whereArgs: [id]);
       await txn.delete(_records, where: 'id = ?', whereArgs: [id]);
+      // 이 기록에만 나왔던 이름의 추천(명단 행)도 함께 지운다 — 남은 기록(삭제한 기록 포함)에
+      // 나오는 이름은 지우지 않는다. 같은 사람인지는 [sameParticipant]처럼 앞뒤 공백을 뗀 이름으로 본다.
+      final stay = await _participantNames(txn, null, null);
+      final orphans = gone.difference(stay);
+      if (orphans.isNotEmpty) {
+        final people = await txn.query(DatabaseHelper.tableGuidancePeople, columns: ['id', 'name']);
+        for (final r in people) {
+          if (orphans.contains((r['name'] as String).trim())) {
+            await txn.delete(DatabaseHelper.tableGuidancePeople, where: 'id = ?', whereArgs: [r['id']]);
+          }
+        }
+      }
       return [for (final r in rows) r['file_name'] as String];
     });
+  }
+
+  /// 판들의 관련인 이름(앞뒤 공백 뗀 것) 집합. [where]가 null이면 모든 판.
+  Future<Set<String>> _participantNames(DatabaseExecutor db, String? where, List<Object?>? args) async {
+    final rows = await db.query(_revisions, columns: ['participants'], where: where, whereArgs: args);
+    return {
+      for (final r in rows)
+        for (final p in Participant.decodeList(r['participants'] as String?))
+          if (p.name.trim().isNotEmpty) p.name.trim(),
+    };
   }
 
   Future<GuidanceAttachment> addAttachment(GuidanceAttachment a) async {

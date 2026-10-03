@@ -198,11 +198,12 @@ class GuidanceStrings {
 
   // 삭제한 기록
   static const trashIntro =
-      '자동으로 지워지지 않습니다. 영구 삭제하면 처음 작성부터 모든 수정 버전과 녹음·사진이 함께 지워지고 되돌릴 수 없습니다.';
+      '자동으로 지워지지 않습니다. 영구 삭제하면 처음 작성부터 모든 수정 버전과 녹음·사진이 함께 지워지고, 이 기록에만 나온 이름 추천도 함께 지워집니다. 되돌릴 수 없습니다.';
   static const trashEmpty = '삭제한 기록이 없습니다';
   static String deletedAt(String when) => '삭제 $when';
   static const restore = '되살리기';
   static const purge = '영구 삭제';
   static const purgeTitle = '영구 삭제할까요?';
-  static const purgeMessage = '이 기록의 저장된 내용과 수정 이력, 첨부 파일이 모두 지워집니다. 되돌릴 수 없습니다.';
+  static const purgeMessage =
+      '이 기록의 저장된 내용과 수정 이력, 첨부 파일이 모두 지워집니다. 이 기록에만 나온 이름 추천도 함께 지워집니다. 되돌릴 수 없습니다.';
 }
