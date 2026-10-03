@@ -16,7 +16,12 @@ import 'audio_playback.dart';
 
 /// 첨부 한 줄. 녹음은 재생/멈춤, 사진은 썸네일(누르면 전체 화면). ⓘ로 해시·원래 이름을 본다.
 class AttachmentTile extends ConsumerStatefulWidget {
-  const AttachmentTile({super.key, required this.attachment, required this.now, this.onRemove});
+  const AttachmentTile({
+    super.key,
+    required this.attachment,
+    required this.now,
+    this.onRemove,
+  });
 
   final GuidanceAttachment attachment;
   final DateTime now;
@@ -36,36 +41,78 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
   StreamSubscription<bool>? _sub;
   var _playing = false;
   File? _file;
+  var _missing = false;
 
   @override
   void initState() {
     super.initState();
-    ref.read(guidanceFileStoreProvider).fileOf(widget.attachment.fileName).then((f) {
-      if (mounted) setState(() => _file = f);
-    });
+    _locate();
+  }
+
+  @override
+  void didUpdateWidget(AttachmentTile old) {
+    super.didUpdateWidget(old);
+    // 같은 자리에 다른 첨부가 들어오면 옛 파일·플레이어를 버린다 — 잘못된 녹음을 재생하면 안 된다.
+    if (old.attachment.fileName != widget.attachment.fileName) {
+      _releasePlayer();
+      _playing = false;
+      _file = null;
+      _missing = false;
+      _locate();
+    }
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
-    _player?.dispose();
+    _releasePlayer();
     super.dispose();
+  }
+
+  void _releasePlayer() {
+    _sub?.cancel();
+    _sub = null;
+    _player?.dispose();
+    _player = null;
+  }
+
+  /// 파일 위치를 찾고 실제로 있는지 본다. 도중에 다른 첨부로 바뀌면 결과를 버린다.
+  Future<void> _locate() async {
+    final name = widget.attachment.fileName;
+    final file = await ref.read(guidanceFileStoreProvider).fileOf(name);
+    final exists = await file.exists();
+    if (!mounted || widget.attachment.fileName != name) return;
+    setState(() {
+      _file = file;
+      _missing = !exists;
+    });
+  }
+
+  void _showMissing() {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      const SnackBar(content: Text(GuidanceStrings.attachmentMissing)),
+    );
   }
 
   Future<void> _toggle() async {
     final file = _file;
-    if (file == null) return;
-    final player = _player ?? ref.read(audioPlaybackFactoryProvider)();
-    if (_player == null) {
-      _player = player;
-      _sub = player.playing.listen((p) {
-        if (mounted) setState(() => _playing = p);
-      });
-    }
-    if (_playing) {
-      await player.pause();
-    } else {
-      await player.play(file.path);
+    if (file == null || _missing) return;
+    try {
+      final player = _player ?? ref.read(audioPlaybackFactoryProvider)();
+      if (_player == null) {
+        _player = player;
+        _sub = player.playing.listen((p) {
+          if (mounted) setState(() => _playing = p);
+        });
+      }
+      if (_playing) {
+        await player.pause();
+      } else {
+        await player.play(file.path);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _playing = false);
+      _showMissing();
     }
   }
 
@@ -74,20 +121,36 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
       fullscreenDialog: true,
       builder: (_) => Scaffold(
         backgroundColor: Colors.black,
-        appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-        body: Center(child: InteractiveViewer(child: Image.file(file))),
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            child: Image.file(
+              file,
+              errorBuilder: (_, _, _) => _brokenIcon(color: Colors.white),
+            ),
+          ),
+        ),
       ),
     ),
   );
+
+  Widget _brokenIcon({Color? color}) =>
+      Icon(Icons.broken_image_outlined, color: color ?? AppColors.sub);
 
   @override
   Widget build(BuildContext context) {
     final a = widget.attachment;
     final id = a.id ?? -1;
     final file = _file;
-    final subtitle = a.type == AttachmentType.audio && a.durationMs != null
+    final base = a.type == AttachmentType.audio && a.durationMs != null
         ? '${a.source.label} · ${GuidanceStrings.durationLabel(a.durationMs ?? 0)}'
         : '${a.source.label} · ${GuidanceStrings.sizeLabel(a.byteSize)}';
+    final subtitle = _missing
+        ? '$base · ${GuidanceStrings.attachmentMissing}'
+        : base;
     final leading = a.type == AttachmentType.audio
         ? IconButton.filled(
             key: AttachmentTile.playKey(id),
@@ -96,20 +159,28 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
               backgroundColor: AppColors.navy,
               foregroundColor: Colors.white,
             ),
-            onPressed: _toggle,
+            onPressed: file == null || _missing ? null : _toggle,
             icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
           )
         : InkWell(
             key: AttachmentTile.imageKey(id),
-            onTap: file == null ? null : () => _openImage(file),
+            onTap: file == null || _missing ? null : () => _openImage(file),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radius8),
               child: SizedBox(
                 width: 48,
                 height: 48,
-                child: file == null
-                    ? ColoredBox(color: AppColors.surfaceVariant)
-                    : Image.file(file, fit: BoxFit.cover, cacheWidth: 144),
+                child: file == null || _missing
+                    ? ColoredBox(
+                        color: AppColors.surfaceVariant,
+                        child: _missing ? _brokenIcon() : null,
+                      )
+                    : Image.file(
+                        file,
+                        fit: BoxFit.cover,
+                        cacheWidth: 144,
+                        errorBuilder: (_, _, _) => _brokenIcon(),
+                      ),
               ),
             ),
           );
@@ -129,8 +200,16 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(a.originalName ?? a.type.label, style: AppTextStyles.bodyM, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(subtitle, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
+                  Text(
+                    a.originalName ?? a.type.label,
+                    style: AppTextStyles.bodyM,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+                  ),
                 ],
               ),
             ),

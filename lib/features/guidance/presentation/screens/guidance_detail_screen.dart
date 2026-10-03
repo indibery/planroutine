@@ -118,7 +118,7 @@ class GuidanceDetailScreen extends ConsumerWidget {
                   for (final a in attachments)
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
-                      child: AttachmentTile(attachment: a, now: now),
+                      child: AttachmentTile(key: ValueKey(a.id), attachment: a, now: now),
                     ),
                 ],
               ],
