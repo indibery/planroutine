@@ -8,9 +8,13 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../domain/guidance_content.dart';
 import '../../domain/guidance_logic.dart';
+import '../../domain/guidance_models.dart';
 import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
 import '../providers/guidance_providers.dart';
+import '../recording/attachment_importer.dart';
+import '../recording/recording_screen.dart';
+import '../widgets/attachment_tile.dart';
 import '../widgets/occurred_input.dart';
 import '../widgets/participant_picker_sheet.dart';
 
@@ -28,6 +32,9 @@ class GuidanceEditScreen extends ConsumerStatefulWidget {
   static const quotesKey = Key('guidance_edit_quotes');
   static const actionsKey = Key('guidance_edit_actions');
   static const addPersonKey = Key('guidance_edit_add_person');
+  static const recordKey = Key('guidance_edit_record');
+  static const importAudioKey = Key('guidance_edit_import_audio');
+  static const importImageKey = Key('guidance_edit_import_image');
   static Key kindKey(GuidanceKind k) => Key('guidance_edit_kind_${k.dbValue}');
   static Key statusKey(GuidanceStatus s) => Key('guidance_edit_status_${s.dbValue}');
 
@@ -129,8 +136,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   }
 
   /// 아직 DB에 없는 새 기록을 지금 만든다 — 제목이 비었으면 `제목 없음`으로.
-  /// Task 8(첨부)이 쓴다: 녹음·사진을 붙이는 순간 기록이 저장돼 있어야 한다.
-  // ignore: unused_element — Task 8(첨부)이 쓴다
+  /// 첨부가 쓴다: 녹음·사진을 붙이는 순간 기록이 저장돼 있어야 한다.
   Future<int> _ensureRecord() async {
     final existing = _recordId;
     if (existing != null) return existing;
@@ -146,6 +152,109 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       });
     }
     return id;
+  }
+
+  void _saveFailed() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(GuidanceStrings.saveFailed)));
+  }
+
+  Future<void> _record() async {
+    final title = _title.text.trim();
+    final result = await Navigator.of(context).push<RecordingResult>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => RecordingScreen(title: title.isEmpty ? GuidanceStrings.untitled : title),
+      ),
+    );
+    if (result == null || !mounted) return;
+    // 녹음이 끝난 순간 기록이 없으면 지금 만든다 — 실수로 나가도 녹음이 사라지지 않게.
+    // 실패해도 녹음 파일은 첨부 폴더에 남아 있다.
+    try {
+      final id = await _ensureRecord();
+      await ref
+          .read(guidanceActionsProvider)
+          .attachRecording(recordId: id, path: result.path, durationMs: result.durationMs, startedAt: result.startedAt);
+    } catch (_) {
+      _saveFailed();
+    }
+  }
+
+  Future<void> _import(AttachmentType type) async {
+    final importer = ref.read(attachmentImporterProvider);
+    final picked = type == AttachmentType.audio ? await importer.pickAudio() : await importer.pickImage();
+    if (picked == null || !mounted) return;
+    try {
+      final id = await _ensureRecord();
+      await ref
+          .read(guidanceActionsProvider)
+          .attachImported(recordId: id, sourcePath: picked.path, type: type, originalName: picked.name);
+    } catch (_) {
+      _saveFailed();
+    }
+  }
+
+  Future<void> _removeAttachment(GuidanceAttachment a) async {
+    final id = a.id;
+    if (id == null) return;
+    final ok = await ConfirmDialog.show(
+      context: context,
+      useRootNavigator: false,
+      title: GuidanceStrings.removeAttachmentTitle,
+      message: GuidanceStrings.removeAttachmentMessage,
+      confirmLabel: GuidanceStrings.removeAttachmentConfirm,
+    );
+    if (!ok) return;
+    try {
+      await ref.read(guidanceActionsProvider).removeAttachment(id);
+    } catch (_) {
+      _saveFailed();
+    }
+  }
+
+  List<Widget> _attachmentsSection(DateTime now) {
+    final id = _recordId;
+    final attachments = id == null
+        ? const <GuidanceAttachment>[]
+        : [
+            for (final a in ref.watch(guidanceAttachmentsProvider(id)).valueOrNull ?? const <GuidanceAttachment>[])
+              if (!a.isRemoved) a,
+          ];
+    return [
+      _gap(),
+      _label(GuidanceStrings.labelAttachments),
+      for (final a in attachments)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
+          child: AttachmentTile(key: ValueKey(a.id), attachment: a, now: now, onRemove: () => _removeAttachment(a)),
+        ),
+      Wrap(
+        spacing: AppSizes.spacing8,
+        runSpacing: AppSizes.spacing8,
+        children: [
+          OutlinedButton.icon(
+            key: GuidanceEditScreen.recordKey,
+            onPressed: _record,
+            icon: Icon(Icons.fiber_manual_record, color: AppColors.error),
+            label: const Text(GuidanceStrings.record),
+          ),
+          OutlinedButton.icon(
+            key: GuidanceEditScreen.importAudioKey,
+            onPressed: () => _import(AttachmentType.audio),
+            icon: const Icon(Icons.audio_file_outlined),
+            label: const Text(GuidanceStrings.importAudio),
+          ),
+          OutlinedButton.icon(
+            key: GuidanceEditScreen.importImageKey,
+            onPressed: () => _import(AttachmentType.image),
+            icon: const Icon(Icons.image_outlined),
+            label: const Text(GuidanceStrings.importImage),
+          ),
+        ],
+      ),
+      _hint(GuidanceStrings.importHintSchoolPhone),
+      _hint(GuidanceStrings.importHintCallRecording),
+    ];
   }
 
   Future<void> _save() async {
@@ -382,6 +491,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                     maxLines: null,
                   ),
                   _hint(GuidanceStrings.actionsHint),
+                  ..._attachmentsSection(now),
                 ],
               ),
       ),

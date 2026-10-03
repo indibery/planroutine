@@ -10,6 +10,8 @@
     <!-- 시스템 캘린더 이벤트 저장(device_calendar 패키지) -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- 지도 기록의 앱 안 녹음. 사용자가 녹음 버튼을 누를 때만 요청한다. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- 기기를 바꿔도 1년치 일정이 복원된다. 교사에게 실질 가치가 크고, iOS의 iCloud
          백업이 이미 같은 성질이라 방침 한 문단이 양쪽을 덮는다.
          ⚠️ 기본값에 맡기지 않고 명시한다. "정하지 않아 기본값으로 출시된 것"과

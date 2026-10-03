@@ -40,6 +40,9 @@ class _Palette {
     required this.memoGreen,
     required this.memoBlue,
     required this.memoPink,
+    required this.recordingBackground,
+    required this.onRecording,
+    required this.recordingLive,
     required this.guidanceKindBlue,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
@@ -103,6 +106,10 @@ class _Palette {
   final Color memoGreen;
   final Color memoBlue;
   final Color memoPink;
+  // 지도 기록 녹음 화면 — 테마와 무관하게 어둡다(두 팔레트 같은 값). 대비는 recording_contrast_test가 지킨다.
+  final Color recordingBackground;
+  final Color onRecording;
+  final Color recordingLive;
   // 지도 기록 생활지도 배지 — info는 다크 카드 위 4.44:1로 미달이라 중립 파랑을 따로 둔다
   final Color guidanceKindBlue;
   final Color categoryDailyOps;
@@ -161,6 +168,9 @@ const _dark = _Palette(
   memoGreen: Color(0xFF24402F),
   memoBlue: Color(0xFF23364F),
   memoPink: Color(0xFF4A2D2D),
+  recordingBackground: Color(0xFF0F1A2C),
+  onRecording: Color(0xFFF3EFE6),
+  recordingLive: Color(0xFFF08A7E),
   guidanceKindBlue: Color(0xFF8BA8D4),
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
@@ -211,6 +221,9 @@ const _light = _Palette(
   memoGreen: Color(0xFFDCF1E3),
   memoBlue: Color(0xFFE1EBF8),
   memoPink: Color(0xFFFBE4E1),
+  recordingBackground: Color(0xFF0F1A2C),
+  onRecording: Color(0xFFF3EFE6),
+  recordingLive: Color(0xFFF08A7E),
   guidanceKindBlue: Color(0xFF3F5F94),
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
@@ -312,6 +325,9 @@ class AppColors {
   static Color get memoGreen => _current.memoGreen;
   static Color get memoBlue => _current.memoBlue;
   static Color get memoPink => _current.memoPink;
+  static Color get recordingBackground => _current.recordingBackground;
+  static Color get onRecording => _current.onRecording;
+  static Color get recordingLive => _current.recordingLive;
   static Color get guidanceKindBlue => _current.guidanceKindBlue;
 
   /// 이벤트 점·막대 공통 액센트색.

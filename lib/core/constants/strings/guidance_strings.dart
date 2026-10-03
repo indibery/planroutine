@@ -163,4 +163,27 @@ class GuidanceStrings {
   static const attachmentLog = '첨부 기록';
   static String attachedLog(String what) => '$what 붙임';
   static String removedLog(String what) => '$what 뺌';
+
+  // 첨부 넣기
+  static const record = '녹음하기';
+  static const importAudio = '녹음 파일 가져오기';
+  static const importImage = '사진 가져오기';
+  static const importHintSchoolPhone = '학부모 통화는 학교 전화 사용이 원칙입니다.';
+  static const importHintCallRecording =
+      '아이폰 통화 녹음(iOS 18.1 이상)은 메모 앱에 저장됩니다. 메모에서 공유 › 파일에 저장한 뒤 가져오세요.';
+  static const removeAttachmentTitle = '첨부에서 뺄까요?';
+  static const removeAttachmentMessage = '목록에서만 빠지고 파일은 지우지 않습니다. 수정 이력에 남습니다.';
+  static const removeAttachmentConfirm = '빼기';
+
+  // 녹음 화면
+  static const recordingLive = '녹음 중';
+  static const recordingStop = '녹음 멈추기';
+  static const recordingStopHint = '멈추면 이 기록에 붙어요';
+  static const recordingLegal =
+      '대화에 직접 참여하는 경우에만 녹음하세요. 자리를 비운 사이의 녹음은 불법이 될 수 있습니다.';
+  static const recordingNotice = '가능하면 녹음한다고 먼저 알려 주세요.';
+  static const recordingScreenOn = '녹음하는 동안 화면이 꺼지지 않아요 · 앱을 떠나면 여기까지 저장돼요';
+  static const micDenied = '마이크 권한이 꺼져 있어요';
+  static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';
+  static const openSettings = '설정 열기';
 }
