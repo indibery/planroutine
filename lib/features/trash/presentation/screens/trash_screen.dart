@@ -6,15 +6,16 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/section_header.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../memo/domain/memo.dart';
 import '../../../schedule/domain/schedule.dart';
+import '../../domain/trash_entries.dart';
 import '../providers/trash_providers.dart';
 
 /// 휴지통 화면 — 설정 탭에서 진입.
 ///
-/// 삭제된 일정/캘린더 이벤트를 함께 보여주고, 복구/영구삭제 가능.
+/// 삭제된 일정·캘린더 이벤트·쪽지를 **한 목록**에 최근에 지운 것부터 보여주고(줄마다
+/// 종류를 적는다), 복구/영구삭제 가능.
 /// 30일이 지난 항목은 앱 시작 시 자동 영구삭제된다 (main.dart 참조).
 class TrashScreen extends ConsumerWidget {
   const TrashScreen({super.key});
@@ -93,57 +94,15 @@ class TrashScreen extends ConsumerWidget {
             ],
           ),
         ),
-        if (snapshot.schedules.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
-            child: SectionHeader(
-              title: TrashStrings.sectionSchedules,
-              trailing: _SectionCountBadge(count: snapshot.schedules.length),
-            ),
-          ),
-          ...snapshot.schedules.map((s) => _TrashScheduleTile(schedule: s)),
-        ],
-        if (snapshot.events.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
-            child: SectionHeader(
-              title: TrashStrings.sectionEvents,
-              trailing: _SectionCountBadge(count: snapshot.events.length),
-            ),
-          ),
-          ...snapshot.events.map((e) => _TrashEventTile(event: e)),
-        ],
-        if (snapshot.memos.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
-            child: SectionHeader(
-              title: TrashStrings.sectionMemos,
-              trailing: _SectionCountBadge(count: snapshot.memos.length),
-            ),
-          ),
-          ...snapshot.memos.map((m) => _TrashMemoTile(memo: m)),
-        ],
+        // 종류별 묶음 없이 한 목록 — 최근에 지운 것이 위(`mergeTrashEntries`).
+        for (final entry in snapshot.entries)
+          switch (entry) {
+            TrashScheduleEntry(:final schedule) =>
+              _TrashScheduleTile(schedule: schedule),
+            TrashEventEntry(:final event) => _TrashEventTile(event: event),
+            TrashMemoEntry(:final memo) => _TrashMemoTile(memo: memo),
+          },
       ],
-    );
-  }
-}
-
-class _SectionCountBadge extends StatelessWidget {
-  const _SectionCountBadge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '$count',
-      style: TextStyle(
-        fontFamily: 'Pretendard',
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        color: AppColors.gold,
-        letterSpacing: 2.5,
-      ),
     );
   }
 }
@@ -175,7 +134,7 @@ class _TrashScheduleTile extends ConsumerWidget {
   String _subtitle(Schedule s) {
     final date = _safeFormat(s.scheduledDate, 'yyyy.MM.dd');
     final deleted = _daysAgo(s.deletedAt);
-    return '$date · $deleted';
+    return '${TrashStrings.sectionSchedules} · $date · $deleted';
   }
 }
 
@@ -205,7 +164,7 @@ class _TrashEventTile extends ConsumerWidget {
   String _subtitle(CalendarEvent e) {
     final date = _safeFormat(e.eventDate, 'yyyy.MM.dd');
     final deleted = _daysAgo(e.deletedAt);
-    return '$date · $deleted';
+    return '${TrashStrings.sectionEvents} · $date · $deleted';
   }
 }
 
@@ -219,7 +178,9 @@ class _TrashMemoTile extends ConsumerWidget {
     final id = memo.id ?? -1;
     return ListTile(
       title: Text(memo.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-      subtitle: Text(_daysAgo(memo.deletedAt)),
+      subtitle: Text(
+        '${TrashStrings.sectionMemos} · ${_daysAgo(memo.deletedAt)}',
+      ),
       trailing: _TrashActions(
         onRestore: () =>
             ref.read(trashSnapshotProvider.notifier).restoreMemo(id),
