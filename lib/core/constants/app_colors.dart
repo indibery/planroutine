@@ -36,6 +36,10 @@ class _Palette {
     required this.calendarWeekendTint,
     required this.calendarSaturdayTint,
     required this.calendarHolidayRowFill,
+    required this.memoYellow,
+    required this.memoGreen,
+    required this.memoBlue,
+    required this.memoPink,
     required this.categoryDailyOps,
     required this.categoryCurriculum,
     required this.busSignalNear,
@@ -93,6 +97,11 @@ class _Palette {
   /// 위에서는 분홍 띠로 읽혔다(실기기 신고 2026-08-18). 테두리와 붉은 글씨가 남으므로
   /// "누를 수 없는 배경 사실"이라는 신호는 유지된다.
   final Color calendarHolidayRowFill;
+  /// 포스트잇 쪽지 바탕. 위 글자는 ink·sub — memo_color_contrast_test가 4.5:1을 지킨다.
+  final Color memoYellow;
+  final Color memoGreen;
+  final Color memoBlue;
+  final Color memoPink;
   final Color categoryDailyOps;
   final Color categoryCurriculum;
 
@@ -145,6 +154,10 @@ const _dark = _Palette(
   calendarWeekendTint: Color(0x1FE08978), // 일요일 열 — 붉은 기 12%
   calendarSaturdayTint: Color(0x1F8BA8D4), // 토요일 열 — 파란 기 12%
   calendarHolidayRowFill: Color(0x12E08978), // 공휴일 행 — 붉은 기 7%
+  memoYellow: Color(0xFF4A4225),
+  memoGreen: Color(0xFF24402F),
+  memoBlue: Color(0xFF23364F),
+  memoPink: Color(0xFF4A2D2D),
   categoryDailyOps: Color(0xFF8BA8D4),
   categoryCurriculum: Color(0xFFB89AE0),
   busSignalNear: Color(0xFFEF5F52),
@@ -190,6 +203,10 @@ const _light = _Palette(
   calendarWeekendTint: Color(0x12C0392B), // 일요일 열 — 붉은 기 7%
   calendarSaturdayTint: Color(0x143F5F94), // 토요일 열 — 파란 기 8%
   calendarHolidayRowFill: Color(0x00000000), // 공휴일 행 — 채우지 않는다
+  memoYellow: Color(0xFFFFF3C4),
+  memoGreen: Color(0xFFDCF1E3),
+  memoBlue: Color(0xFFE1EBF8),
+  memoPink: Color(0xFFFBE4E1),
   categoryDailyOps: Color(0xFF3F5F94),
   categoryCurriculum: Color(0xFF6B4E9E),
   // 라이트 노랑은 흰 배경 대비가 없어 딥 앰버로 잡는다. 라이트 gold(#9A7415)와
@@ -286,6 +303,10 @@ class AppColors {
   static Color get calendarWeekendTint => _current.calendarWeekendTint;
   static Color get calendarSaturdayTint => _current.calendarSaturdayTint;
   static Color get calendarHolidayRowFill => _current.calendarHolidayRowFill;
+  static Color get memoYellow => _current.memoYellow;
+  static Color get memoGreen => _current.memoGreen;
+  static Color get memoBlue => _current.memoBlue;
+  static Color get memoPink => _current.memoPink;
 
   /// 이벤트 점·막대 공통 액센트색.
   static Color get eventAccent => _current.eventAccent;
