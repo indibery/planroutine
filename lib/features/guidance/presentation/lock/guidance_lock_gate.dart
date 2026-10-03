@@ -28,7 +28,8 @@ class GuidanceLockGate extends ConsumerStatefulWidget {
   ConsumerState<GuidanceLockGate> createState() => _GuidanceLockGateState();
 }
 
-class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate> with WidgetsBindingObserver {
+class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
+    with WidgetsBindingObserver {
   var _unlocked = false;
   var _noCredentials = false;
   var _authing = false;
@@ -58,6 +59,14 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate> with Widget
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Android: 시스템 창(고르기 창) 중 오래 떠나 있었다 — 그 동안의 paused는 가드가 흘려보냈으니 여기서 잠근다.
+      if (SystemSheetGuard.takeLongAbsence()) {
+        _askOnResume = true;
+        if (_unlocked) {
+          FocusManager.instance.primaryFocus?.unfocus();
+          setState(() => _unlocked = false);
+        }
+      }
       if (_askOnResume) {
         _askOnResume = false;
         _authenticate();
@@ -79,7 +88,9 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate> with Widget
     var outcome = AuthOutcome.failed;
     try {
       outcome = await SystemSheetGuard.run(
-        () => ref.read(deviceAuthenticatorProvider).authenticate(GuidanceStrings.unlockReason),
+        () => ref
+            .read(deviceAuthenticatorProvider)
+            .authenticate(GuidanceStrings.unlockReason),
       );
     } catch (_) {
       // 예상 밖 예외도 실패로 취급한다 — `_authing`이 true로 남으면 잠금 해제 버튼과
@@ -148,13 +159,17 @@ class _LockCover extends StatelessWidget {
               Icon(Icons.lock_outline, size: 48, color: AppColors.gold),
               const SizedBox(height: AppSizes.spacing16),
               Text(
-                noCredentials ? GuidanceStrings.noCredentialsTitle : GuidanceStrings.lockedTitle,
+                noCredentials
+                    ? GuidanceStrings.noCredentialsTitle
+                    : GuidanceStrings.lockedTitle,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.heading,
               ),
               const SizedBox(height: AppSizes.spacing8),
               Text(
-                noCredentials ? GuidanceStrings.noCredentialsBody : GuidanceStrings.lockedBody,
+                noCredentials
+                    ? GuidanceStrings.noCredentialsBody
+                    : GuidanceStrings.lockedBody,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyM.copyWith(color: AppColors.sub),
               ),

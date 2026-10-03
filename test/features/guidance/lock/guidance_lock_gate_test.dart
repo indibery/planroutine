@@ -39,10 +39,19 @@ void main() {
   late FakeAuth auth;
   late FakeSecure secure;
 
+  var now = DateTime(2026, 10, 3, 9);
+
   setUp(() {
     SystemSheetGuard.reset();
+    SystemSheetGuard.clock = () => now;
+    SystemSheetGuard.isIOS = () => false;
     auth = FakeAuth();
     secure = FakeSecure();
+  });
+  tearDown(() {
+    SystemSheetGuard.reset();
+    SystemSheetGuard.clock = DateTime.now;
+    SystemSheetGuard.isIOS = SystemSheetGuard.platformIsIOS;
   });
 
   Future<void> pump(WidgetTester tester, {Widget? child}) async {
@@ -124,7 +133,11 @@ void main() {
     expect(find.text('쓰던 글'), findsOneWidget);
   });
 
+  // 의도를 좁혔다(2026-10-03 최종 리뷰): "시스템 창 중 백그라운드는 잠그지 않는다"는 이제
+  // **Android에서 60초 안에 돌아온 경우**만이다. iOS는 시스템 창 중에도 떠나면 잠그고,
+  // Android도 오래 떠나 있었으면 돌아올 때 잠근다(아래 테스트들).
   testWidgets('시스템 창(사진 고르기 등) 동안의 비활성·백그라운드는 잠그지 않는다', (tester) async {
+    SystemSheetGuard.isIOS = () => false;
     auth.outcomes.add(AuthOutcome.success);
     await pump(tester);
     final picker = Completer<void>();
@@ -185,5 +198,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(throwing.calls, 2, reason: '_authing이 풀려 두 번째 시도가 일어난다');
     expect(find.byKey(GuidanceLockGate.coverKey), findsNothing);
+  });
+
+  testWidgets('iOS: 고르기 창을 띄운 채 앱을 떠나면 잠근다', (tester) async {
+    SystemSheetGuard.isIOS = () => true;
+    // 두 번째 인증은 실패시킨다 — 덮개가 남으면 떠날 때 잠갔다는 뜻이다.
+    // (paused 상태에서는 프레임이 그려지지 않아 떠난 직후의 덮개는 볼 수 없다.)
+    auth.outcomes.addAll([AuthOutcome.success, AuthOutcome.failed]);
+    await pump(tester);
+    final picker = Completer<void>();
+    final running = SystemSheetGuard.run(() => picker.future);
+    leave(tester);
+    comeBack(tester);
+    picker.complete();
+    await running;
+    await tester.pumpAndSettle();
+    expect(auth.calls, 2, reason: '돌아오면 다시 묻는다');
+    expect(find.byKey(GuidanceLockGate.coverKey), findsOneWidget);
+  });
+
+  Future<void> pickerAway(WidgetTester tester, Duration away) async {
+    auth.outcomes.addAll([AuthOutcome.success, AuthOutcome.success]);
+    await pump(tester);
+    final picker = Completer<void>();
+    final running = SystemSheetGuard.run(() => picker.future);
+    leave(tester); // 고르기 창(별도 Activity)이 뜨며 paused
+    now = now.add(away);
+    comeBack(tester);
+    picker.complete();
+    await running;
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Android: 고르기 창 중 30초 만에 돌아오면 잠그지 않는다', (tester) async {
+    await pickerAway(tester, const Duration(seconds: 30));
+    expect(auth.calls, 1);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsNothing);
+  });
+
+  testWidgets('Android: 고르기 창 중 90초 떠나 있다 돌아오면 잠그고 다시 묻는다', (tester) async {
+    await pickerAway(tester, const Duration(seconds: 90));
+    expect(auth.calls, 2, reason: '돌아온 resumed에서 재인증');
+    expect(find.byKey(GuidanceLockGate.coverKey), findsNothing, reason: '재인증이 성공해 다시 열린다');
+  });
+
+  testWidgets('Android: 오래 떠났다 돌아왔는데 재인증이 실패하면 덮개가 남는다', (tester) async {
+    auth.outcomes.addAll([AuthOutcome.success, AuthOutcome.failed]);
+    await pump(tester);
+    final picker = Completer<void>();
+    final running = SystemSheetGuard.run(() => picker.future);
+    leave(tester);
+    now = now.add(const Duration(seconds: 90));
+    comeBack(tester);
+    picker.complete();
+    await running;
+    await tester.pumpAndSettle();
+    expect(auth.calls, 2);
+    expect(find.byKey(GuidanceLockGate.coverKey), findsOneWidget);
   });
 }
