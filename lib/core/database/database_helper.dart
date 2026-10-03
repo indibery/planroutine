@@ -14,12 +14,13 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 8;
+  static const _databaseVersion = 9;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
   static const tableSchedules = 'schedules';
   static const tableCalendarEvents = 'calendar_events';
+  static const tableMemos = 'memos';
 
   final String? _customPath;
   Database? _database;
@@ -51,6 +52,9 @@ class DatabaseHelper {
   /// [device_event_id] 컬럼 추가. 동일 패턴.
   /// v5 → v6: 중요 표시. calendar_events에 [is_important] 컬럼 추가.
   /// 0 = 일반, 1 = 중요. 격자/목록에서 ★로 강조.
+  /// v6 → v7: 업무/행사 구분. schedules/calendar_events에 [kind] 컬럼 추가.
+  /// v7 → v8: 검토 상태. calendar_events에 [reviewed_at] 컬럼 추가.
+  /// v8 → v9: 포스트잇. [memos] 테이블 신설(기존 테이블은 그대로).
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
@@ -97,6 +101,10 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE $tableCalendarEvents ADD COLUMN reviewed_at TEXT',
       );
+    }
+    if (oldVersion < 9) {
+      // 포스트잇(선택 탭). 기존 테이블은 건드리지 않는다.
+      await _createMemos(db);
     }
   }
 
@@ -177,6 +185,25 @@ class DatabaseHelper {
     await db.execute(
       'CREATE INDEX idx_event_date ON $tableCalendarEvents(event_date)',
     );
+
+    await _createMemos(db);
+  }
+
+  /// `memos` 테이블. `_onCreate`와 v8→v9 업그레이드가 같은 정의를 쓴다.
+  static Future<void> _createMemos(Database db) async {
+    await db.execute('''
+      CREATE TABLE $tableMemos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT 'yellow',
+        memo_date TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_memo_date ON $tableMemos(memo_date)');
   }
 
   /// 데이터베이스 닫기
@@ -199,6 +226,7 @@ class DatabaseHelper {
       await txn.delete(tableCalendarEvents);
       await txn.delete(tableSchedules);
       await txn.delete(tableImportedSchedules);
+      await txn.delete(tableMemos);
       await txn.delete('sqlite_sequence');
     });
   }
