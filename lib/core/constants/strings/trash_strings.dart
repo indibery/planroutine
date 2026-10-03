@@ -7,6 +7,7 @@ class TrashStrings {
   static const autoPurgeNotice = '삭제 후 30일 뒤 자동 영구 삭제됩니다';
   static const sectionSchedules = '일정';
   static const sectionEvents = '캘린더 이벤트';
+  static const sectionMemos = '포스트잇';
   static const restore = '복구';
   static const permanentDelete = '영구 삭제';
   static const permanentDeleteTitle = '영구 삭제하시겠어요?';

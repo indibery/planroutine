@@ -8,7 +8,7 @@ const _labels = [
   AppStrings.tabToday,
   AppStrings.tabCalendar,
   AppStrings.tabSchedule,
-  '시간표',
+  MemoStrings.tabLabel,
   '여섯째',
   SettingsStrings.title,
 ];

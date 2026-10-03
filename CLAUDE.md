@@ -30,6 +30,9 @@
 13. **기능 관리** — 고정 4탭 + 스위치로 켜는 선택 기능(탭 / 오늘 카드). 탭은 최대 6개이고
    설정은 항상 맨 끝이다. 고정 탭은 숨길 수 없지만 순서는 바꿀 수 있다(`설정 › 기능 관리`).
    첫 선택 기능은 출퇴근 버스 카드다.
+14. **포스트잇(선택 탭)** — 일정으로 정식 등록하기 애매한 것을 붙여 두는 쪽지 보드. 기본 꺼짐
+   (`설정 › 기능 관리 › 포스트잇`). 날짜를 붙이면 그날 캘린더 목록·격자에 보이고, 쪽지 시트에서
+   업무·행사로 등록하면 쪽지는 휴지통으로 간다. 꾹 눌러 끌어 순서를 바꾼다. 오늘 탭에는 안 뜬다.
 
 ## 타깃 사용자
 - 매년 비슷한 업무 사이클을 가진 초등 교사
@@ -40,8 +43,8 @@
 |--------|------|------|
 | 앱 | Flutter **3.44.8** (Dart 3.12.2) | iOS 배포 중(App Store). Android는 Play 비공개 테스트 진행 중 — **알림은 M2-①로 배선 완료**(2026-08-08, 에뮬레이터 실측). CSV 공유 목록 노출은 아직 M2. ⚠️ **리포에 버전 고정 장치가 없다**(fvm·CI 없음) — 이 칸이 유일한 기록이다(2026-08-03 3.41.6에서 올림) |
 | 상태 관리 | Riverpod | 다른 라이브러리 사용 금지 |
-| 라우팅 | GoRouter | ShellRoute 고정 4탭(오늘/캘린더/입력/설정) + 선택 탭(최대 6, 등록부가 정한다) + push(/trash, /import, /modules, /bus/settings, /bus/stops). 초기 라우트 `/today` |
-| 로컬 DB | sqflite | 스키마 v8 (3 테이블, soft-delete + completed + google_event_id + kind + reviewed_at) |
+| 라우팅 | GoRouter | ShellRoute 고정 4탭(오늘/캘린더/입력/설정) + 선택 탭(최대 6, 등록부가 정한다) + push(/trash, /import, /modules, /bus/settings, /bus/stops). 선택 탭 라우트(`/memo`)는 설치와 무관하게 항상 등록. 초기 라우트 `/today` |
+| 로컬 DB | sqflite | 스키마 v9 (4 테이블, soft-delete + completed + google_event_id + kind + reviewed_at + memos) |
 | 모델 | Freezed + json_serializable | 불변 객체 |
 | CSV 파싱 | csv + charset_converter | EUC-KR/UTF-8 BOM 자동 감지 |
 | 파일 선택 | file_picker | |
@@ -52,7 +55,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1226** 유닛/위젯 + 19 E2E (실측 2026-10-03, 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1290** 유닛/위젯 + 19 E2E (실측 2026-10-03, 포스트잇 64건을 더한 값. 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -79,6 +82,7 @@ lib/
 | `bus/` | 출퇴근 버스 도착 카드 — TAGO/GBIS 소스 라우팅 |
 | `notifications/` | 로컬 알림 — `computeNotifications`(순수) + syncer |
 | `settings/` | 설정 탭 — 섹션별 위젯 분리 |
+| `memo/` | 포스트잇(선택 탭) — 쪽지 보드·시트, 캘린더 카드 |
 | `google/` · `trash/` · `onboarding/` | Google Calendar 단방향 · 휴지통 · 최초 진입 |
 
 각 feature는 `data/` · `domain/` · `presentation/`으로 나뉘고 **빈 레이어는 만들지 않는다**
@@ -91,7 +95,7 @@ lib/
 - `test/` — `deploy/`(문서↔코드 가드) · `features/` · `helpers/` · `tools/`(자동 스캔 제외)
 - `integration_test/` — `app_test.dart`(UX E2E 19) · `screenshot_test.dart`(스토어 촬영)
 
-## 데이터베이스 스키마 (v8)
+## 데이터베이스 스키마 (v9)
 
 ### schedules
 - `id`, `title`, `description`, `scheduled_date`
@@ -113,12 +117,17 @@ lib/
 - **`reviewed_at`** (v8): NULL=아직 검토 안 함, ISO=편집 시트 저장 시각. 연도를 고쳤는지는
   구분하지 않는다 — 저장 자체가 검토의 증거(아래 "작년 배지" 참고)
 
+### memos (v9)
+- `id`, `text`, `color`(`yellow`/`green`/`blue`/`pink`, 모르는 값은 노랑), `memo_date`(NULL=날짜 없음)
+- `sort_order`(작을수록 앞, 새 쪽지는 최소값 − 1), `created_at`, `updated_at`, `deleted_at`
+- 다른 테이블과 연결 고리가 없다 — 일정으로 바꾸면 새 이벤트가 생기고 쪽지는 휴지통으로 갈 뿐이다.
+
 ### imported_schedules
 - 원본 생산문서등록대장 CSV 보관. PlanRoutine export 포맷 임포트는 이 테이블을 건너뛰고 schedules로 직접 삽입.
 
 ### 마이그레이션
 - `DatabaseHelper._onUpgrade`: v1→v2(deleted_at), v2→v3(completed_at), v3→v4(google_event_id),
-  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블), v7→v8(reviewed_at).
+  v4→v5(device_event_id), v5→v6(is_important), v6→v7(kind, 두 테이블), v7→v8(reviewed_at), v8→v9(`memos` 테이블 생성).
   기존 사용자도 ALTER TABLE로 데이터 유지한 채 업그레이드.
 - v7의 `DEFAULT 'task'`가 곧 제품 결정이다 — **기존 데이터는 전부 업무**(지금까지 들어온 것은
   사실상 전부 CSV). 별도 백필 스크립트가 없는 이유.
@@ -960,7 +969,7 @@ Swift에는 테이블도 컬럼도 SQL도 없고, 가드가 그것을 검사한�
    --grant-read-uri-permission`이 실제 공유와 같은 조건이다.
 
 ### 문자열 구조
-- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings·AppIntentsStrings).
+- 도메인에 귀속되는 문자열은 `lib/core/constants/strings/*.dart`의 각 클래스(SettingsStrings·NotificationStrings·GoogleStrings·ImportStrings·ScheduleStrings·CalendarStrings·TrashStrings·AppIntentsStrings·MemoStrings).
 - 공통 문자열(appName·tab*·cancel·save·retry·loading·error·compareYearFormat·categoryDailyOps)만 `AppStrings`에 잔류.
 - `app_strings.dart`가 각 domain strings를 barrel export하므로 호출부는 이 파일 하나만 import 하면 된다.
 
@@ -1025,6 +1034,50 @@ Swift에는 테이블도 컬럼도 SQL도 없고, 가드가 그것을 검사한�
 - ⚠️ **push 화면에서 테마를 바꾸면 설정 탭으로 돌아간다**(테마 변경 = 전체 재생성). 테마
   선택이 설정 탭에 있어 사용자가 이 상황을 만들 수는 없다. 통합 테스트에서 테마를 바꿀 때는
   설정 탭에서 바꾸고 다시 들어갈 것.
+
+### 포스트잇 (선택 탭)
+
+등록부의 **첫 탭형 선택 기능**이다(`id: 'memo'`, 라우트 `/memo`, `settingsRoute` 없음). 설계는
+`docs/superpowers/specs/2026-10-03-postit-design.md`, 시안은 Claude 디자인에서 사용자가 고른
+A(보드형) + C(날짜 → 캘린더) + E(일정으로 바꾸기)다.
+
+- **저장은 새 테이블 `memos`(DB v9)다.** 기각한 둘:
+  - shared_preferences JSON — 휴지통(soft-delete)·날짜 범위 조회·초기화를 따로 만들어야 한다.
+  - `calendar_events`에 `memo` 종류 — 내보내기·알림·Google/기기 저장·오늘 탭·스와이프가 전부
+    이 행을 걸러야 한다. 한 곳이라도 빠뜨리면 쪽지가 일정으로 새어 나간다(`copyWith` 함정과 같은 부류).
+  - 실측(iPhone 17 / iOS 27.0, 2026-10-03): v8 판본에 일정을 넣고 새 판본을 덮어 설치하자
+    `user_version` 9, 일정 그대로, `memos` 빈 테이블 + `idx_memo_date`.
+- **순서는 `sort_order` 하나로 정한다.** 끌어서 놓으면 순수 함수 `moveId`(`memo_order.dart`)가 새 순서를
+  만들고 `saveOrder`가 한 트랜잭션으로 다시 쓴다. 끌기는 패키지 없이 `LongPressDraggable` +
+  `DragTarget`으로 직접 만들었다(사용자 결정). 짧게 누르면 시트, 꾹 누르면 들린다.
+- **일정으로 바꾸기는 일정을 먼저 만들고, 성공한 뒤에 쪽지를 뗀다**(`MemosNotifier.convertToEvent`).
+  순서가 반대면 일정 생성이 실패했을 때 쪽지만 사라진다. 일정은 손으로 넣은 것과 같은 경로
+  (`selectedMonthEventsProvider.addEvent`)라 원본 `schedules` 행이 없다. 여러 줄 쪽지는 **첫 줄이 제목,
+  나머지가 설명**이 된다(`splitMemoForEvent`, 사용자 결정) — 글 전체를 제목으로 쓰면 일정 제목에 줄바꿈이
+  들어간다. 일정으로 바꾼 쪽지를 휴지통에서 되살리면 일정과 쪽지가 둘 다 남는데, 일부러 되살린
+  것이라 막지 않는다(사용자 결정). 시트는 `_busy`로 두 번째 탭을
+  막는다 — 없으면 DB 왕복 중에 두 번 눌러 일정이 둘 생겼다(리뷰가 잡았다).
+- **기능이 꺼지면 캘린더에서도 보이지 않는다**(`monthMemosByDateProvider`가 빈 맵). 데이터는 남는다.
+  쪽지만 있는 날도 섹션이 생기도록 `mergeExtraDateKeys`가 키를 합친다(`mergeHolidayKeys`와 같은 이유).
+  캘린더의 쪽지 카드(`MemoCalendarCard`)는 **`Dismissible`이 아니다** — 스와이프는 일정의 동작이다.
+- 격자에는 일정 점과 구별되는 **4px 네모** 하나(`memoMarkerKey`)를 찍는다. ★와 함께 뜨는 날 칸이
+  가로로 넘쳐서 ★ 폭을 11로 고정했다(가드가 잡았다).
+- **휴지통·전체 초기화에 포함된다.** 휴지통에 `포스트잇` 섹션, `purgeExpiredTrash`가 30일 정리에 넣고,
+  `resetAllData`가 `memos`도 지운다(설정 메뉴 규칙 8 — 기능의 데이터는 지우고 설정은 남긴다).
+  초기화 방법을 등록부가 선언하는 일은 데이터를 가진 기능이 둘이 될 때 한다.
+- **쪽지 색 넷은 두 테마에서 따로 잡는다**(`AppColors.memo*`). 글자 대비 최저 5.05:1이고
+  `memo_color_contrast_test.dart`가 지킨다. 카드의 날짜 글자는 `info`가 아니라 **`ink` w600**이다 —
+  다크의 어두운 쪽지 위에서 파랑이 대비를 잃었다.
+- **시트의 `저장`은 `goldFill` + `onGold`를 직접 준다.** 스타일 없는 `FilledButton`은 `primary`를 칠해
+  라이트에서 3.57:1이었다 — 계획 문서가 그 위젯을 지정해 함정이 계획 단계에서 들어왔고, 최종 리뷰가
+  잡았다. 쪽지 날짜 상한은 일정 편집 시트와 같은 2030이다(넘으면 바꾼 일정을 다시 열 때 assert).
+  카드 글은 `Flexible`로 감싸 큰 글자 설정에서 고정 칸(168)을 넘치지 않는다.
+  가드는 `memo_final_review_test.dart`(두 테마 렌더 대비 · 글자 1.3배 · 상한 · 휴지통 설명).
+- **첫 탭형 기능이라 미뤄 둔 정리를 했다.** 고정 탭 상수를 `core/modules/fixed_tabs.dart`로 옮겨
+  `MainShell`이 등록부를 거쳐 `features/`에 닿지 않게 했고(`main_shell_imports_test.dart`), 기능 관리의
+  드래그를 deprecated `onReorder`에서 `onReorderItem`으로 옮겼다.
+- ⚠️ 휴지통 테스트에서 `container.read(trashSnapshotProvider.future)`가 멈춘다 — 리스너 없는 dirty
+  provider는 의존이 바뀐 뒤 다시 build되지 않는다. 화면처럼 `listen`을 걸어 둔다(제품은 화면이 watch해서 무관).
 
 ### 출퇴근 버스 도착 카드
 

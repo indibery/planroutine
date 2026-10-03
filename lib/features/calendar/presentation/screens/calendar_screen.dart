@@ -15,7 +15,11 @@ import '../../../device_calendar/presentation/providers/device_calendar_provider
 import '../../../google/data/google_calendar_service.dart';
 import '../../../google/presentation/providers/google_providers.dart';
 import '../../../settings/presentation/providers/calendar_target_provider.dart';
+import '../../../memo/domain/memo.dart';
+import '../../../memo/presentation/providers/memo_providers.dart';
+import '../../../memo/presentation/widgets/memo_sheet.dart';
 import '../../domain/calendar_event.dart';
+import '../../domain/extra_date_keys.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_month_pager.dart';
 import '../widgets/calendar_slide_hint_bar.dart';
@@ -32,6 +36,13 @@ class CalendarScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
     final monthEventsGrouped = ref.watch(monthEventsGroupedProvider);
+    final ym = ref.watch(selectedDateProvider.select((d) => (d.year, d.month)));
+    // 기능이 꺼져 있으면 provider가 빈 맵을 준다 — 캘린더에 쪽지가 안 보인다.
+    final memosByDate =
+        ref
+            .watch(monthMemosByDateProvider((year: ym.$1, month: ym.$2)))
+            .valueOrNull ??
+        const <String, List<Memo>>{};
 
     return Scaffold(
       appBar: AppBar(
@@ -53,24 +64,34 @@ class CalendarScreen extends ConsumerWidget {
           const CalendarSlideHintBar(),
           Expanded(
             child: monthEventsGrouped.when(
-              data: (groupedEntries) => groupedEntries.isEmpty
-                  ? Center(
-                      child: Text(
-                        CalendarStrings.noEvents,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textHint,
+              data: (events) {
+                // 일정 없이 쪽지만 있는 날도 섹션이 생겨야 쪽지를 그릴 자리가 있다.
+                final groupedEntries = mergeExtraDateKeys(
+                  events,
+                  memosByDate.keys,
+                );
+                return groupedEntries.isEmpty
+                    ? Center(
+                        child: Text(
+                          CalendarStrings.noEvents,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textHint,
+                          ),
                         ),
-                      ),
-                    )
-                  : MonthEventList(
-                      groupedEntries: groupedEntries,
-                      selectedDate: selectedDate,
-                      onEventTap: (event) => _onEditEvent(context, ref, event),
-                      onEventSaveToGoogle: _resolveSaveCallback(context, ref),
-                      onEventToggleCompleted: (event) =>
-                          _onToggleCompleted(context, ref, event),
-                    ),
+                      )
+                    : MonthEventList(
+                        groupedEntries: groupedEntries,
+                        selectedDate: selectedDate,
+                        onEventTap: (event) =>
+                            _onEditEvent(context, ref, event),
+                        onEventSaveToGoogle: _resolveSaveCallback(context, ref),
+                        onEventToggleCompleted: (event) =>
+                            _onToggleCompleted(context, ref, event),
+                        memosByDate: memosByDate,
+                        onMemoTap: (m) => MemoSheet.show(context, m),
+                      );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => const Center(child: Text(AppStrings.error)),
             ),

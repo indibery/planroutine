@@ -17,6 +17,7 @@ class CalendarGrid extends StatelessWidget {
     required this.selectedDate,
     required this.eventsMap,
     required this.onDateSelected,
+    this.memoDates = const {},
   });
 
   final int year;
@@ -24,6 +25,9 @@ class CalendarGrid extends StatelessWidget {
   final DateTime selectedDate;
   final Map<String, List<CalendarEvent>> eventsMap;
   final ValueChanged<DateTime> onDateSelected;
+
+  /// 날짜 붙은 포스트잇이 있는 날(YYYY-MM-DD) — 셀에 네모 점.
+  final Set<String> memoDates;
 
   static const _weekdays = [
     CalendarStrings.weekdaySun,
@@ -167,6 +171,7 @@ class CalendarGrid extends StatelessWidget {
           isHoliday: isKoreanHoliday(date),
           isCurrentMonth: false,
           events: eventsMap[dateStr] ?? [],
+          hasMemo: memoDates.contains(dateStr),
           onTap: () => onDateSelected(date),
         ),
       );
@@ -194,6 +199,7 @@ class CalendarGrid extends StatelessWidget {
           isHoliday: isKoreanHoliday(date),
           isCurrentMonth: true,
           events: eventsMap[dateStr] ?? [],
+          hasMemo: memoDates.contains(dateStr),
           onTap: () => onDateSelected(date),
         ),
       );
@@ -221,6 +227,7 @@ class CalendarGrid extends StatelessWidget {
           isHoliday: isKoreanHoliday(date),
           isCurrentMonth: false,
           events: eventsMap[dateStr] ?? [],
+          hasMemo: memoDates.contains(dateStr),
           onTap: () => onDateSelected(date),
         ),
       );

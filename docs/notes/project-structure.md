@@ -37,14 +37,15 @@ planroutine/
 │   │   ├── modules/                    # 기능 등록부 (고정 4탭 + 선택 탭/카드)
 │   │   │   ├── app_module.dart                 # AppModule 모델 (id·배치·탭 화면/오늘 카드)
 │   │   │   ├── module_rules.dart               # 순수 규칙 — 탭 상한 6·설정 맨 끝·이전
-│   │   │   ├── module_catalog.dart             # moduleCatalog + defaultTabs
+│   │   │   ├── fixed_tabs.dart                 # 고정 4탭 상수 + defaultTabs (기능을 모른다)
+│   │   │   ├── module_catalog.dart             # moduleCatalog (fixed_tabs를 다시 내보낸다)
 │   │   │   ├── installed_modules_provider.dart # installed_modules_v1 저장·해석
 │   │   │   ├── module_shell.dart               # ShellRoute 셸 — 등록부로 탭바 구성
 │   │   │   └── installed_today_cards.dart      # 오늘 탭 맨 위 설치된 카드들
 │   │   ├── theme/                      # app_theme, app_gradients, app_text_styles,
 │   │   │                               #   system_overlay_region(내비게이션 바 스타일 루트 리전)
 │   │   ├── router/                     # GoRouter (고정 4탭 + 선택 탭, /trash·/import·/modules 등 푸시)
-│   │   ├── database/                   # DatabaseHelper (v8, forTesting 생성자)
+│   │   ├── database/                   # DatabaseHelper (v9, forTesting 생성자)
 │   │   └── utils/                      # date_utils (formatDate)
 │   ├── features/
 │   │   ├── import/                     # 넣기 (사진 AI + 작년 CSV)
@@ -132,6 +133,18 @@ planroutine/
 │   │   │           ├── bus_body_text.dart · bus_body_axis.dart  # 모양 2종
 │   │   │           ├── bus_stop_confirm_sheet.dart     # 등록 직전 방향 확인
 │   │   │           └── bus_empty_state.dart · bus_more_count.dart
+│   │   ├── memo/                       # 포스트잇(선택 탭)
+│   │   │   ├── data/memo_repository.dart        # memos CRUD·순서·휴지통·범위 조회
+│   │   │   ├── domain/
+│   │   │   │   ├── memo.dart · memo_color.dart  # Freezed 모델 + 쪽지 색 4종
+│   │   │   │   ├── memo_order.dart              # moveId (순수 함수)
+│   │   │   │   └── memo_to_event.dart           # splitMemoForEvent — 첫 줄 제목·나머지 설명
+│   │   │   └── presentation/
+│   │   │       ├── providers/memo_providers.dart  # memosProvider·monthMemosByDateProvider
+│   │   │       ├── screens/memo_board_screen.dart # /memo — 빠른 입력 + 2열 보드 + 끌기
+│   │   │       └── widgets/
+│   │   │           ├── memo_card.dart · memo_calendar_card.dart  # 보드 쪽지 / 캘린더 쪽지
+│   │   │           └── memo_sheet.dart          # 편집·색·날짜·일정으로 등록·떼기
 │   │   └── onboarding/                 # 최초 진입 플로우
 │   └── shared/
 │       └── widgets/

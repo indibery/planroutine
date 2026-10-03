@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
+import '../../../memo/domain/memo.dart';
+import '../../../memo/presentation/providers/memo_providers.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../../../schedule/presentation/providers/schedule_providers.dart';
 import '../../domain/trash_filter.dart';
@@ -15,12 +17,14 @@ class TrashSnapshot {
   TrashSnapshot({
     required List<Schedule> schedules,
     required this.events,
+    this.memos = const [],
   }) : schedules = visibleTrashSchedules(schedules, events);
 
   final List<Schedule> schedules;
   final List<CalendarEvent> events;
+  final List<Memo> memos;
 
-  int get total => schedules.length + events.length;
+  int get total => schedules.length + events.length + memos.length;
   bool get isEmpty => total == 0;
 }
 
@@ -35,14 +39,20 @@ class TrashNotifier extends AsyncNotifier<TrashSnapshot> {
     // 값은 사용하지 않고 invalidation 전파 목적.
     ref.watch(schedulesProvider);
     ref.watch(selectedMonthEventsProvider);
+    ref.watch(memoRevisionProvider);
 
     final scheduleRepo = ref.watch(scheduleRepositoryProvider);
     final calendarRepo = ref.watch(calendarRepositoryProvider);
-    final (schedules, events) = await (
+    final (schedules, events, deletedMemos) = await (
       scheduleRepo.getDeletedSchedules(),
       calendarRepo.getDeletedEvents(),
+      ref.read(memoRepositoryProvider).getDeleted(),
     ).wait;
-    return TrashSnapshot(schedules: schedules, events: events);
+    return TrashSnapshot(
+      schedules: schedules,
+      events: events,
+      memos: deletedMemos,
+    );
   }
 
   Future<void> restoreSchedule(int id) async {
@@ -71,11 +81,23 @@ class TrashNotifier extends AsyncNotifier<TrashSnapshot> {
     await repo.permanentDeleteEvent(id);
     ref.invalidateSelf();
   }
+
+  Future<void> restoreMemo(int id) async {
+    await ref.read(memoRepositoryProvider).restore(id);
+    ref.read(memoRevisionProvider.notifier).state++;
+    ref.invalidateSelf();
+  }
+
+  Future<void> permanentDeleteMemo(int id) async {
+    await ref.read(memoRepositoryProvider).permanentDelete(id);
+    ref.read(memoRevisionProvider.notifier).state++;
+    ref.invalidateSelf();
+  }
 }
 
 /// 앱 시작 시 30일 이상 경과한 soft-delete 항목을 영구 삭제한다.
-/// 반환: (삭제된 일정 건수, 삭제된 이벤트 건수)
-Future<({int schedules, int events})> purgeExpiredTrash(
+/// 반환: (삭제된 일정 건수, 삭제된 이벤트 건수, 삭제된 쪽지 건수)
+Future<({int schedules, int events, int memos})> purgeExpiredTrash(
   ProviderContainer container,
 ) async {
   final cutoff = DateTime.now().subtract(const Duration(days: 30));
@@ -84,6 +106,7 @@ Future<({int schedules, int events})> purgeExpiredTrash(
   final results = await (
     scheduleRepo.purgeOlderThan(cutoff),
     calendarRepo.purgeOlderThan(cutoff),
+    container.read(memoRepositoryProvider).purgeOlderThan(cutoff),
   ).wait;
-  return (schedules: results.$1, events: results.$2);
+  return (schedules: results.$1, events: results.$2, memos: results.$3);
 }

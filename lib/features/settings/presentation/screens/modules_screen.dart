@@ -65,9 +65,8 @@ class ModulesScreen extends ConsumerWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             buildDefaultDragHandles: false,
-            // reorderTabs가 onReorder 규약(아래로 옮길 때 한 칸 큼)을 받는다.
-            // ignore: deprecated_member_use
-            onReorder: notifier.reorderTabs,
+            // reorderTabs는 onReorderItem 규약(newIndex가 이미 보정됨)을 받는다.
+            onReorderItem: notifier.reorderTabs,
             children: [
               for (final (i, m) in movable.indexed)
                 ListTile(

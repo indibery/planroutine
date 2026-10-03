@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../memo/presentation/providers/memo_providers.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import 'calendar_grid.dart';
@@ -154,6 +155,13 @@ class _CalendarPage extends ConsumerWidget {
       monthEventsByYearMonthProvider((year: year, month: month)),
     );
     final selectedDate = ref.watch(selectedDateProvider);
+    final memoDates =
+        ref
+            .watch(monthMemosByDateProvider((year: year, month: month)))
+            .valueOrNull
+            ?.keys
+            .toSet() ??
+        const <String>{};
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
@@ -169,6 +177,7 @@ class _CalendarPage extends ConsumerWidget {
             selectedDate: selectedDate,
             eventsMap: eventsMap,
             onDateSelected: onDateSelected,
+            memoDates: memoDates,
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

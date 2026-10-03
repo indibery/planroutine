@@ -8,6 +8,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../calendar/domain/calendar_event.dart';
+import '../../../memo/domain/memo.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../providers/trash_providers.dart';
 
@@ -112,6 +113,16 @@ class TrashScreen extends ConsumerWidget {
           ),
           ...snapshot.events.map((e) => _TrashEventTile(event: e)),
         ],
+        if (snapshot.memos.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing16),
+            child: SectionHeader(
+              title: TrashStrings.sectionMemos,
+              trailing: _SectionCountBadge(count: snapshot.memos.length),
+            ),
+          ),
+          ...snapshot.memos.map((m) => _TrashMemoTile(memo: m)),
+        ],
       ],
     );
   }
@@ -195,6 +206,30 @@ class _TrashEventTile extends ConsumerWidget {
     final date = _safeFormat(e.eventDate, 'yyyy.MM.dd');
     final deleted = _daysAgo(e.deletedAt);
     return '$date · $deleted';
+  }
+}
+
+class _TrashMemoTile extends ConsumerWidget {
+  const _TrashMemoTile({required this.memo});
+
+  final Memo memo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final id = memo.id ?? -1;
+    return ListTile(
+      title: Text(memo.text, maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle: Text(_daysAgo(memo.deletedAt)),
+      trailing: _TrashActions(
+        onRestore: () =>
+            ref.read(trashSnapshotProvider.notifier).restoreMemo(id),
+        onPermanentDelete: () => _confirmPermanentDelete(
+          context,
+          () =>
+              ref.read(trashSnapshotProvider.notifier).permanentDeleteMemo(id),
+        ),
+      ),
+    );
   }
 }
 

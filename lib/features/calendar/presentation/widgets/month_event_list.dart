@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../memo/domain/memo.dart';
 import '../../domain/calendar_event.dart';
 import '../date_jump.dart';
 import 'event_list_section.dart';
@@ -20,6 +21,8 @@ class MonthEventList extends StatefulWidget {
     required this.onEventTap,
     required this.onEventSaveToGoogle,
     required this.onEventToggleCompleted,
+    this.memosByDate = const {},
+    this.onMemoTap,
   });
 
   final List<MapEntry<String, List<CalendarEvent>>> groupedEntries;
@@ -27,6 +30,10 @@ class MonthEventList extends StatefulWidget {
   final ValueChanged<CalendarEvent> onEventTap;
   final ValueChanged<CalendarEvent>? onEventSaveToGoogle;
   final ValueChanged<CalendarEvent> onEventToggleCompleted;
+
+  /// 날짜(YYYY-MM-DD) → 그 날 포스트잇.
+  final Map<String, List<Memo>> memosByDate;
+  final ValueChanged<Memo>? onMemoTap;
 
   @override
   State<MonthEventList> createState() => _MonthEventListState();
@@ -109,6 +116,8 @@ class _MonthEventListState extends State<MonthEventList> {
               child: EventListSection(
                 selectedDate: DateTime.parse(entry.key),
                 events: entry.value,
+                memos: widget.memosByDate[entry.key] ?? const [],
+                onMemoTap: widget.onMemoTap,
                 highlight: _flashKey == entry.key,
                 onEventTap: widget.onEventTap,
                 onEventSaveToGoogle: widget.onEventSaveToGoogle,

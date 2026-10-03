@@ -13,6 +13,7 @@ export 'strings/calendar_integration_strings.dart';
 export 'strings/calendar_strings.dart';
 export 'strings/google_strings.dart';
 export 'strings/import_strings.dart';
+export 'strings/memo_strings.dart';
 export 'strings/notification_strings.dart';
 export 'strings/schedule_strings.dart';
 export 'strings/settings_strings.dart';

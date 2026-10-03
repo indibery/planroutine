@@ -295,4 +295,124 @@ void main() {
       );
     });
   });
+
+  group('마이그레이션 v8 → v9 (memos)', () {
+    setUpAll(setUpFfiForTests);
+
+    test('기존 일정·이벤트가 남고 memos가 빈 채로 생긴다', () async {
+      // :memory:는 연결을 닫으면 사라지므로 파일 DB가 필요하다.
+      final dir = await Directory.systemTemp.createTemp('planroutine_v8');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/v8.db';
+
+      final v8 = await databaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 8,
+          onCreate: (d, _) async {
+            // v8 스키마 그대로 — 기존 사용자의 DB를 재현한다.
+            await d.execute('''
+              CREATE TABLE ${DatabaseHelper.tableImportedSchedules} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                document_number TEXT,
+                approval_type TEXT,
+                title TEXT NOT NULL,
+                drafter TEXT,
+                registration_date TEXT NOT NULL,
+                category TEXT,
+                sub_category TEXT,
+                retention_period TEXT,
+                source_year INTEGER,
+                imported_at TEXT NOT NULL
+              )
+            ''');
+            await d.execute('''
+              CREATE TABLE ${DatabaseHelper.tableSchedules} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                scheduled_date TEXT NOT NULL,
+                category TEXT,
+                sub_category TEXT,
+                source_id INTEGER,
+                status TEXT NOT NULL DEFAULT 'pending',
+                kind TEXT NOT NULL DEFAULT 'task',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT
+              )
+            ''');
+            await d.execute('''
+              CREATE TABLE ${DatabaseHelper.tableCalendarEvents} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                event_date TEXT NOT NULL,
+                end_date TEXT,
+                is_all_day INTEGER NOT NULL DEFAULT 1,
+                color TEXT,
+                schedule_id INTEGER,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT,
+                completed_at TEXT,
+                google_event_id TEXT,
+                device_event_id TEXT,
+                is_important INTEGER NOT NULL DEFAULT 0,
+                kind TEXT NOT NULL DEFAULT 'task',
+                reviewed_at TEXT
+              )
+            ''');
+            const now = '2026-09-01T08:00:00.000';
+            final scheduleId = await d.insert(DatabaseHelper.tableSchedules, {
+              'title': '운동회',
+              'scheduled_date': '2026-10-10',
+              'status': 'confirmed',
+              'kind': 'event',
+              'created_at': now,
+              'updated_at': now,
+            });
+            await d.insert(DatabaseHelper.tableCalendarEvents, {
+              'title': '운동회',
+              'event_date': '2026-10-10',
+              'schedule_id': scheduleId,
+              'kind': 'event',
+              'reviewed_at': now,
+              'created_at': now,
+              'updated_at': now,
+            });
+          },
+        ),
+      );
+      await v8.close();
+
+      final helper = DatabaseHelper.forTesting(path: path);
+      addTearDown(helper.close);
+      final upgraded = await helper.database;
+
+      expect(await upgraded.getVersion(), 9);
+      final schedules = await upgraded.query(DatabaseHelper.tableSchedules);
+      expect(schedules.single['title'], '운동회');
+      final events = await upgraded.query(DatabaseHelper.tableCalendarEvents);
+      expect(events, hasLength(1));
+      expect(events.single['kind'], 'event');
+      expect(events.single['reviewed_at'], '2026-09-01T08:00:00.000');
+      expect(await upgraded.query(DatabaseHelper.tableMemos), isEmpty);
+      final cols = await upgraded.rawQuery('PRAGMA table_info(memos)');
+      expect(
+        cols.map((c) => c['name']).toSet(),
+        containsAll(<String>{
+          'id', 'text', 'color', 'memo_date', 'sort_order',
+          'created_at', 'updated_at', 'deleted_at',
+        }),
+      );
+    });
+
+    test('새로 설치한 DB에도 memos가 있다', () async {
+      final db = freshDatabaseHelper();
+      addTearDown(db.close);
+      final d = await db.database;
+      expect(await d.query(DatabaseHelper.tableMemos), isEmpty);
+    });
+  });
 }
