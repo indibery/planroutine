@@ -390,7 +390,7 @@ void main() {
       addTearDown(helper.close);
       final upgraded = await helper.database;
 
-      expect(await upgraded.getVersion(), 9);
+      expect(await upgraded.getVersion(), 10);
       final schedules = await upgraded.query(DatabaseHelper.tableSchedules);
       expect(schedules.single['title'], '운동회');
       final events = await upgraded.query(DatabaseHelper.tableCalendarEvents);

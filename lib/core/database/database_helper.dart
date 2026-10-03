@@ -14,13 +14,17 @@ class DatabaseHelper {
   static final instance = DatabaseHelper._();
 
   static const _databaseName = 'planroutine.db';
-  static const _databaseVersion = 9;
+  static const _databaseVersion = 10;
 
   // 테이블명
   static const tableImportedSchedules = 'imported_schedules';
   static const tableSchedules = 'schedules';
   static const tableCalendarEvents = 'calendar_events';
   static const tableMemos = 'memos';
+  static const tableGuidancePeople = 'guidance_people';
+  static const tableGuidanceRecords = 'guidance_records';
+  static const tableGuidanceRevisions = 'guidance_revisions';
+  static const tableGuidanceAttachments = 'guidance_attachments';
 
   final String? _customPath;
   Database? _database;
@@ -55,6 +59,7 @@ class DatabaseHelper {
   /// v6 → v7: 업무/행사 구분. schedules/calendar_events에 [kind] 컬럼 추가.
   /// v7 → v8: 검토 상태. calendar_events에 [reviewed_at] 컬럼 추가.
   /// v8 → v9: 포스트잇. [memos] 테이블 신설(기존 테이블은 그대로).
+  /// v9 → v10: 지도 기록. [guidance_*] 테이블 넷 신설(기존 테이블은 그대로).
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
@@ -105,6 +110,10 @@ class DatabaseHelper {
     if (oldVersion < 9) {
       // 포스트잇(선택 탭). 기존 테이블은 건드리지 않는다.
       await _createMemos(db);
+    }
+    if (oldVersion < 10) {
+      // 지도 기록(선택 탭). 기존 테이블은 건드리지 않는다.
+      await _createGuidance(db);
     }
   }
 
@@ -187,6 +196,7 @@ class DatabaseHelper {
     );
 
     await _createMemos(db);
+    await _createGuidance(db);
   }
 
   /// `memos` 테이블. `_onCreate`와 v8→v9 업그레이드가 같은 정의를 쓴다.
@@ -204,6 +214,75 @@ class DatabaseHelper {
       )
     ''');
     await db.execute('CREATE INDEX idx_memo_date ON $tableMemos(memo_date)');
+  }
+
+  /// 지도 기록 테이블 넷. `_onCreate`와 v9→v10 업그레이드가 같은 정의를 쓴다.
+  ///
+  /// `guidance_revisions`는 **추가만 한다** — UPDATE 없음, DELETE는 영구 삭제 한 곳
+  /// (`guidance_append_only_guard_test.dart`가 지킨다).
+  static Future<void> _createGuidance(Database db) async {
+    await db.execute('''
+      CREATE TABLE $tableGuidancePeople (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'student',
+        memo TEXT,
+        archived_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE $tableGuidanceRecords (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT NOT NULL,
+        deleted_at TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE $tableGuidanceRevisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        record_id INTEGER NOT NULL,
+        revision_no INTEGER NOT NULL,
+        saved_at TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'guidance',
+        status TEXT NOT NULL DEFAULT 'open',
+        occurred_precision TEXT NOT NULL DEFAULT 'exact',
+        occurred_at TEXT,
+        occurred_text TEXT,
+        title TEXT NOT NULL,
+        place TEXT,
+        participants TEXT NOT NULL DEFAULT '[]',
+        facts TEXT,
+        quotes TEXT,
+        actions TEXT,
+        UNIQUE (record_id, revision_no),
+        FOREIGN KEY (record_id) REFERENCES $tableGuidanceRecords(id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE $tableGuidanceAttachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        record_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        source TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        original_name TEXT,
+        sha256 TEXT NOT NULL,
+        byte_size INTEGER NOT NULL,
+        duration_ms INTEGER,
+        captured_at TEXT,
+        attached_at TEXT NOT NULL,
+        removed_at TEXT,
+        FOREIGN KEY (record_id) REFERENCES $tableGuidanceRecords(id)
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_guidance_rev_record ON $tableGuidanceRevisions(record_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_guidance_att_record ON $tableGuidanceAttachments(record_id)',
+    );
   }
 
   /// 데이터베이스 닫기
@@ -227,6 +306,10 @@ class DatabaseHelper {
       await txn.delete(tableSchedules);
       await txn.delete(tableImportedSchedules);
       await txn.delete(tableMemos);
+      await txn.delete(tableGuidanceAttachments);
+      await txn.delete(tableGuidanceRevisions);
+      await txn.delete(tableGuidanceRecords);
+      await txn.delete(tableGuidancePeople);
       await txn.delete('sqlite_sequence');
     });
   }
