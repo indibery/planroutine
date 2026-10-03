@@ -52,7 +52,7 @@
 | 알림 | flutter_local_notifications + timezone | 로컬 TZ 예약, timeSensitive |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1221** 유닛/위젯 + 19 E2E (실측 2026-10-03, 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 9건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1226** 유닛/위젯 + 19 E2E (실측 2026-10-03, 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -1297,6 +1297,15 @@ Play가 `versionCode 143`을 **정책 위반으로 거부했다.**
   미리보기는 `test/tools/kind_badge_preview.dart`가 **진짜 `DatePickerDialog`** 를 그린다.
   ⚠️ `AppColors`가 전역이라 **테마마다 따로 뽑아야 한다** — 한 트리에 둘을 넣으면 마지막
   팔레트가 둘 다 칠한다(실제로 다크 패널에 라이트 배지가 그려졌다).
+
+#### `ListTile` 오른쪽 글자는 테마가 정한다 — 안 정하면 `labelSmall`(자간 2.5)을 물려받는다 (2026-10-03)
+
+Material 3의 `ListTile`은 앞뒤 글자에 `textTheme.labelSmall`을 쓴다. 이 앱의 labelSmall은
+영문 소제목(eyebrow)용 **자간 2.5·10pt**라, 행 오른쪽의 `추가한 기능 없음`·`사용 안 함` 같은
+한글이 벌어져 보였다(사용자 지적). 행마다 자간을 고치지 않고 `listTileTheme.
+leadingAndTrailingTextStyle`(14pt·자간 0·보조색)로 한 번에 막았다 — 행이 정한 글자 크기는
+그대로 남는다. **labelSmall 자체는 건드리지 않는다**(eyebrow가 쓴다). 가드:
+`list_tile_trailing_text_test.dart`(두 테마 × 스타일 없음/크기만 지정).
 
 #### 안 준 `ColorScheme` 필드는 폴백끼리 같은 색으로 수렴할 수 있다 (2026-09-04)
 

@@ -210,6 +210,20 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: AppColors.gold),
       ),
+      // ListTile 앞뒤(주로 오른쪽 현재 상태) 글자. 정하지 않으면 Material 3가
+      // `labelSmall`을 쓰는데, 아래 labelSmall은 영문 소제목(eyebrow)용 **자간 2.5**라
+      // `추가한 기능 없음`·`사용 안 함` 같은 한글이 벌어져 보였다(2026-10-03).
+      // 메타 글자 규칙(14pt·보조색)을 여기서 한 번에 준다 — 행마다 고치지 않는다.
+      // 가드: `list_tile_trailing_text_test.dart`.
+      listTileTheme: ListTileThemeData(
+        leadingAndTrailingTextStyle: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0,
+          color: AppColors.sub,
+        ),
+      ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
