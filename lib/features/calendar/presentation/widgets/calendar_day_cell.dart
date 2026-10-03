@@ -109,6 +109,7 @@ class CalendarDayCell extends StatelessWidget {
       // dot 슬롯(약 5px)과 같은 레이아웃 높이를 보고하되, OverflowBox로 별만
       // 크게 그려 셀 높이(34px)를 넘기지 않게 한다.
       final star = SizedBox(
+        width: 11,
         height: 5,
         child: OverflowBox(
           minHeight: 0,
