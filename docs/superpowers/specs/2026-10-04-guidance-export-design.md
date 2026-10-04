@@ -164,6 +164,7 @@ feature-first, 빈 레이어 금지, 문자열은 `GuidanceStrings`.
 - 괜찮으면 그대로 쓴다.
 - 안 되면 정적 Pretendard Regular·Bold(필요하면 KS X 1001 서브셋)를 추가하고 늘어나는 앱 용량을 사용자에게 보고한다.
 - 해시용 고정폭 글꼴은 `pdf`의 내장 Courier(라틴 전용, 해시는 16진수뿐이라 충분)를 먼저 시험한다.
+- **실측 2026-10-04**: 가변 폰트로 한글 본문·Courier 해시는 정상, 한 쪽 PDF 7.1KB(쓴 글자만 담긴다). **굵기는 나오지 않았다**(기본 인스턴스 400만 그린다). 사용자 결정으로 공식 배포판 v1.3.9의 `Pretendard-Bold.ttf`(2.66MB, 한글 11,172자)를 **수정 없이** `assets/fonts/`에 넣었다 — 폰트 패밀리로 등록하지 않고 PDF에만 쓴다. Pretendard Std는 한글이 없어(라틴 전용) 못 쓰고, 직접 자른 서브셋(2.5MB)은 OFL Reserved Font Name 때문에 이름을 바꿔야 해 택하지 않았다. OTF(1.58MB)는 `pdf`가 TrueType만 받아 못 쓴다.
 
 ## 테스트와 가드
 
