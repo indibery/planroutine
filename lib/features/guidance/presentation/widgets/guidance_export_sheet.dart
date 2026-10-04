@@ -120,6 +120,9 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
   final _shareAnchor = GlobalKey();
   var _busy = false;
 
+  /// 결과 안내. 스낵바로 띄우면 열린 시트에 가려 보이지 않는다(에뮬레이터 확인) — 시트 안에 남긴다.
+  String? _status;
+
   bool get _android => widget.isAndroid ?? Platform.isAndroid;
   bool get _canSend =>
       !_busy && (_kind == ExportKind.pdfOnly || _selected.isNotEmpty);
@@ -131,43 +134,39 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
-  Future<void> _run(Future<void> Function(ExportOutput out) send) async {
+  Future<void> _run(Future<String?> Function(ExportOutput out) send) async {
     if (!_canSend) return;
-    setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    String? status;
     try {
       final out = await ref
           .read(guidanceExporterProvider)
-          .build(
-            record: widget.record,
-            attachments: _visible,
-            selectedIds: _selected,
-            kind: _kind,
-          );
-      await send(out);
+          .build(record: widget.record, attachments: _visible, selectedIds: _selected, kind: _kind);
+      status = await send(out);
     } catch (_) {
-      // 스낵바에 기록 내용을 넣지 않는다 — 잠금 덮개 밖에 뜬다.
-      messenger?.showSnackBar(
-        const SnackBar(content: Text(GuidanceStrings.exportFailed)),
-      );
+      // 기록 내용(제목·이름)은 넣지 않는다.
+      status = GuidanceStrings.exportFailed;
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _status = status;
+        });
+      }
     }
   }
 
-  Future<void> _share() =>
-      _run((out) => (widget.share ?? _shareViaSheet)(out, _origin()));
+  Future<void> _share() => _run((out) async {
+    await (widget.share ?? _shareViaSheet)(out, _origin());
+    return null;
+  });
 
-  Future<void> _save() {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    return _run((out) async {
-      if (await (widget.save ?? _saveViaPicker)(out)) {
-        messenger?.showSnackBar(
-          const SnackBar(content: Text(GuidanceStrings.exportSaved)),
-        );
-      }
-    });
-  }
+  Future<void> _save() => _run(
+    (out) async => await (widget.save ?? _saveViaPicker)(out) ? GuidanceStrings.exportSaved : null,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -225,6 +224,16 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
               style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
             ),
             const SizedBox(height: AppSizes.spacing12),
+            if (_status case final status?) ...[
+              Text(
+                status,
+                style: AppTextStyles.bodyS.copyWith(
+                  color: status == GuidanceStrings.exportFailed ? AppColors.error : AppColors.ink,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSizes.spacing8),
+            ],
             if (_busy) const LinearProgressIndicator(),
             const SizedBox(height: AppSizes.spacing8),
             Row(

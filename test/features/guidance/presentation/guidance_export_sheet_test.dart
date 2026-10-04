@@ -17,6 +17,7 @@ import 'package:planroutine/features/guidance/presentation/widgets/guidance_expo
 class FakeExporter extends GuidanceExporter {
   FakeExporter() : super(fileStore: GuidanceFileStore());
   final calls = <(Set<int>, ExportKind)>[];
+  var fail = false;
 
   @override
   Future<ExportOutput> build({
@@ -26,6 +27,7 @@ class FakeExporter extends GuidanceExporter {
     required ExportKind kind,
   }) async {
     calls.add(({...selectedIds}, kind));
+    if (fail) throw StateError('실패');
     return ExportOutput(
       fileName: kind == ExportKind.bundle ? 'a.zip' : 'a.pdf',
       bytes: Uint8List(1),
@@ -186,7 +188,11 @@ void main() {
     await tester.tap(find.byKey(GuidanceExportSheet.saveKey));
     await tester.pumpAndSettle();
     expect(saved, ['a.pdf']);
-    expect(find.text(GuidanceStrings.exportSaved), findsOneWidget);
+    // 스낵바는 열린 시트에 가려 보이지 않는다 — 결과는 시트 안에 남긴다.
+    expect(
+      find.descendant(of: find.byType(GuidanceExportSheet), matching: find.text(GuidanceStrings.exportSaved)),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(GuidanceExportSheet.guideKey));
     await tester.pumpAndSettle();
     expect(
@@ -199,5 +205,17 @@ void main() {
   testWidgets('안내 한 줄이 있다', (tester) async {
     await pump(tester);
     expect(find.text(GuidanceStrings.exportNotice), findsOneWidget);
+  });
+  testWidgets('실패하면 시트 안에 실패 안내가 남고 버튼이 다시 켜진다', (tester) async {
+    exporter.fail = true;
+    await pump(tester);
+    await tester.tap(find.byKey(GuidanceExportSheet.shareKey));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: find.byType(GuidanceExportSheet), matching: find.text(GuidanceStrings.exportFailed)),
+      findsOneWidget,
+    );
+    expect(shareButton(tester).onPressed, isNotNull);
+    expect(shared, isEmpty);
   });
 }
