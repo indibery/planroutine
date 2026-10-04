@@ -46,7 +46,9 @@ class GuidanceFileStore {
     return describe(name);
   }
 
-  Future<String> newRecordingPath() async => p.join((await dir()).path, _newName('m4a'));
+  /// 녹음 파일은 ADTS AAC(`.aac`) — 프레임마다 머리말이 있어 중간에 끊겨도 그때까지는 재생된다.
+  /// 예전 `.m4a` 첨부는 그대로 재생된다.
+  Future<String> newRecordingPath() async => p.join((await dir()).path, _newName('aac'));
 
   /// 폴더 안 파일의 해시·크기. 녹음이 끝난 파일에도 쓴다.
   Future<StoredFile> describe(String fileName) async {

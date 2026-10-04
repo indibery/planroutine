@@ -32,11 +32,11 @@ void main() {
     expect((await store.importCopy(src.path)).fileName.endsWith('.bin'), isTrue);
   });
 
-  test('녹음 경로는 첨부 폴더 안의 새 m4a다', () async {
+  test('녹음 경로는 첨부 폴더 안의 새 aac다 — 끊겨도 재생되는 ADTS', () async {
     final a = await store.newRecordingPath();
     final b = await store.newRecordingPath();
     expect(a, isNot(b));
-    expect(a.endsWith('.m4a'), isTrue);
+    expect(a.endsWith('.aac'), isTrue);
     expect(File(a).parent.path, (await store.dir()).path);
   });
 

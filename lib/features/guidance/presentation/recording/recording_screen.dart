@@ -92,9 +92,19 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
       if (!mounted || _finishing) {
         return;
       }
-      await _recorder.start(path);
-      if (!mounted) return;
+      // 시작 **전에** "녹음 중" 표시를 남긴다 — 방전·강제 종료로 끊기면 다음 실행 때 이 표시로
+      // 되살린다(recoverInterruptedRecording). 표시를 못 남겨도 녹음은 막지 않는다.
       final started = DateTime.now();
+      try {
+        await _actions.markRecording(recordId: _recordId, path: path, startedAt: started);
+      } catch (_) {}
+      try {
+        await _recorder.start(path);
+      } catch (_) {
+        unawaited(_actions.clearRecordingMarker().catchError((Object _) {}));
+        rethrow;
+      }
+      if (!mounted) return;
       setState(() {
         _path = path;
         _startedAt = started;

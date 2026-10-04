@@ -8,9 +8,12 @@ import 'package:go_router/go_router.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
+import 'core/modules/app_module.dart';
+import 'core/modules/installed_modules_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/system_overlay_region.dart';
+import 'features/guidance/presentation/providers/guidance_providers.dart';
 import 'features/import/presentation/providers/import_providers.dart';
 import 'features/settings/presentation/providers/theme_mode_provider.dart';
 import 'features/today/presentation/widgets/midnight_watcher.dart';
@@ -45,6 +48,27 @@ class _PlanRoutineAppState extends ConsumerState<PlanRoutineApp> {
     super.initState();
     _router = createRouter(onboardingDone: widget.onboardingDone);
     _setupSharedFileListener();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _recoverInterruptedRecording(),
+    );
+  }
+
+  /// 지난 실행에서 녹음 도중 방전·강제 종료로 끊긴 지도 기록 녹음을 그 기록에 붙이고,
+  /// 그 기록의 쓰기 화면으로 데려간다(사용자 요청 2026-10-04). 잠겨 있으면 잠금 게이트가
+  /// 먼저 인증을 묻는다. 지도 기록을 끈 사용자는 녹음만 붙이고 화면은 옮기지 않는다.
+  Future<void> _recoverInterruptedRecording() async {
+    if (!widget.onboardingDone) return;
+    try {
+      final id = await ref
+          .read(guidanceActionsProvider)
+          .recoverInterruptedRecording();
+      if (id == null || !mounted) return;
+      final installed = await ref.read(installedModulesProvider.future);
+      if (!mounted || !installed.ids.contains(ModuleIds.guidance)) return;
+      _router.go(AppRoutes.guidanceEdit(id));
+    } catch (_) {
+      // 되살리기는 보조 수단이다 — 실패해도 앱 시작을 막지 않는다(표시는 이미 지워졌다).
+    }
   }
 
   Future<void> _setupSharedFileListener() async {

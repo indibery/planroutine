@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
@@ -66,6 +67,8 @@ class FakeActions extends GuidanceActions {
 }
 
 void main() {
+  // 녹음 화면은 시작 전에 "녹음 중" 표시를 남긴다(SharedPreferences).
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   late Directory base;
   late FakeActions actions;
   late FakeRecorder rec;

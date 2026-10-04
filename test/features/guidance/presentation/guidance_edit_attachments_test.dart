@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
 import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
+import 'package:planroutine/features/guidance/data/recording_marker_store.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
@@ -102,6 +104,7 @@ void main() {
   late File source;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     db = freshDatabaseHelper();
     repo = GuidanceRepository(dbHelper: db);
     base = await Directory.systemTemp.createTemp('edit_att');
@@ -229,6 +232,19 @@ void main() {
     );
     final list = await tester.runAsync(repo.getActive);
     expect(list?.map((r) => r.content.title), contains(expected));
+  });
+
+  testWidgets('녹음하는 동안 "녹음 중" 표시가 남고, 붙으면 지워진다', (tester) async {
+    // 방전·강제 종료로 끊기면 이 표시로 다음 실행 때 되살린다(recording_recovery_test).
+    await pump(tester);
+    await tester.tap(find.byKey(GuidanceEditScreen.recordKey));
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    final during = await tester.runAsync(RecordingMarkerStore().read);
+    final list = await tester.runAsync(repo.getActive);
+    expect(during?.recordId, list?.single.id);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitForTiles(tester, 1);
+    expect(await tester.runAsync(RecordingMarkerStore().read), isNull);
   });
 
   testWidgets('녹음을 마치면 기록이 저장되고 녹음이 붙는다', (tester) async {
