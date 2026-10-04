@@ -130,4 +130,14 @@ void main() {
     await pump(tester, id ?? -1);
     expect(find.text(GuidanceStrings.statusTransferredShort), findsOneWidget);
   });
+  testWidgets('앱바에 이름 있는 내보내기 버튼이 있고 누르면 시트가 열린다', (tester) async {
+    final id = await tester.runAsync(
+      () => repo.create(const GuidanceContent(title: '복도 다툼')),
+    );
+    await pump(tester, id ?? -1);
+    expect(find.bySemanticsLabel(GuidanceStrings.export), findsOneWidget);
+    await tester.tap(find.byKey(GuidanceDetailScreen.exportKey));
+    await settle(tester);
+    expect(find.text(GuidanceStrings.exportPdfOnly), findsOneWidget);
+  });
 }

@@ -14,6 +14,7 @@ import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
 import '../providers/guidance_providers.dart';
 import '../widgets/attachment_tile.dart';
+import '../widgets/guidance_export_sheet.dart';
 import '../widgets/guidance_badges.dart';
 
 class GuidanceDetailScreen extends ConsumerWidget {
@@ -22,6 +23,7 @@ class GuidanceDetailScreen extends ConsumerWidget {
   final int recordId;
 
   static const editKey = Key('guidance_detail_edit');
+  static const exportKey = Key('guidance_detail_export');
   static const deleteKey = Key('guidance_detail_delete');
   static const historyKey = Key('guidance_detail_history');
 
@@ -61,6 +63,14 @@ class GuidanceDetailScreen extends ConsumerWidget {
             ),
             onPressed: () => context.push(AppRoutes.guidanceEdit(recordId)),
             child: const Text(GuidanceStrings.edit),
+          ),
+          // 학교 PC로 옮겨 인쇄·공문 첨부할 수 있게 — ZIP(PDF+원본) 또는 PDF만.
+          IconButton(
+            key: exportKey,
+            icon: const Icon(Icons.ios_share, semanticLabel: GuidanceStrings.export),
+            onPressed: record == null
+                ? null
+                : () => showGuidanceExportSheet(context, ref, record: record, attachments: attachments),
           ),
           // 메뉴에 `삭제` 하나뿐이라 `⋯`로 감출 이유가 없다(실기기 피드백) — 바로 누르는 아이콘으로 둔다.
           IconButton(
