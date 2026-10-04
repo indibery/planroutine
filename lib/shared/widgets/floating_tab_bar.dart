@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
+import 'button_semantics.dart';
 
 /// 하단 고정 탭바.
 ///
@@ -37,7 +38,12 @@ class FloatingTabBar extends StatelessWidget {
             children: List.generate(tabs.length, (i) {
               final selected = i == currentIndex;
               return Expanded(
-                child: GestureDetector(
+                // 이름 있는 버튼 + 선택 상태로 읽히게 한 노드로 묶는다. 없으면
+                // 아이콘 글리프와 라벨이 따로 `Text`로 잡혀 VoiceOver·시뮬레이터
+                // 자동화가 누를 대상도, 지금 탭도 알 수 없다.
+                child: ButtonSemantics.gesture(
+                  selected: selected,
+                  label: tabs[i].label,
                   onTap: () => onTap(i),
                   behavior: HitTestBehavior.opaque,
                   child: Column(

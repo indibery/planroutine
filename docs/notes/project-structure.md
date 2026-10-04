@@ -186,6 +186,8 @@ planroutine/
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
 │           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle
+│           ├── button_semantics.dart   # 직접 만든 터치 영역 → 이름 있는 버튼 잎 노드(.gesture는 탭까지)
+│           ├── segmented_button_semantics.dart  # SegmentedButton 시맨틱스를 세그먼트별 잎 노드로
 │           └── confirm_dialog.dart     # 2-버튼 확인 다이얼로그 공통
 ├── ios/
 │   ├── Runner/

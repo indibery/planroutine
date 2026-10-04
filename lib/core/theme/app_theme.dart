@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
@@ -74,6 +76,22 @@ class AppTheme {
         inversePrimary: isLight ? AppColors.goldFill : AppColors.navy,
       ),
       scaffoldBackgroundColor: AppColors.background,
+      // 뒤로 가기 아이콘에 이름을 붙인다. Flutter 기본값은 **Android에서만** 아이콘에
+      // 이름을 주고 iOS는 말풍선(tooltip)뿐이라, mobile MCP가 push 화면의 뒤로 가기를
+      // 이름 없는 버튼으로 읽었다(2026-10-04). 모양은 기본값 그대로 둔다.
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (context) => Icon(
+          Platform.isAndroid
+              ? Icons.arrow_back
+              : Icons.arrow_back_ios_new_rounded,
+          semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
+        ),
+        // 전체 화면 창(사진 보기·녹음)의 닫기 버튼도 같은 이유로 아이콘에 이름을 붙인다.
+        closeButtonIconBuilder: (context) => Icon(
+          Icons.close,
+          semanticLabel: MaterialLocalizations.of(context).closeButtonTooltip,
+        ),
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,

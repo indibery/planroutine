@@ -12,6 +12,24 @@ import '../../../../core/utils/korean_holidays.dart';
 import '../../../memo/domain/memo.dart';
 import '../../../memo/presentation/widgets/memo_calendar_card.dart';
 import '../../domain/calendar_event.dart';
+import '../../../../shared/widgets/button_semantics.dart';
+
+/// 일정 행을 스크린리더·시뮬레이터 자동화가 읽을 라벨 — 화면에 보이는 순서대로
+/// 종류 · (중요) · 제목 · (설명) · (작년) · (완료됨).
+///
+/// 행이 `GestureDetector`뿐이면 mobile MCP 목록에 행이 아예 나오지 않아 일정을 열려면
+/// 좌표로 눌러야 했다(2026-10-04 실측).
+String eventRowSemanticsLabel(CalendarEvent event) {
+  final description = event.description;
+  return [
+    event.kind.label,
+    if (event.showsImportant) CalendarStrings.importantBadge,
+    event.title,
+    if (description != null && description.isNotEmpty) description,
+    if (event.showsImportBadge) CalendarStrings.fromImportBadge,
+    if (event.isCompleted) CalendarStrings.eventDone,
+  ].join(', ');
+}
 
 /// 선택된 날짜의 이벤트 목록 섹션.
 ///
@@ -264,7 +282,8 @@ class EventListSection extends ConsumerWidget {
         horizontal: AppSizes.spacing16,
         vertical: AppSizes.spacing4,
       ),
-      child: GestureDetector(
+      child: ButtonSemantics.gesture(
+        label: eventRowSemanticsLabel(event),
         onTap: () => onEventTap(event),
         child: Container(
           key: Key('event_card_${event.id}'),

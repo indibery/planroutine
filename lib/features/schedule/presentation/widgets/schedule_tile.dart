@@ -7,6 +7,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/dismissible_background.dart';
 import '../../domain/schedule.dart';
 import 'kind_badge.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 일정 항목 카드
 class ScheduleTile extends StatelessWidget {
@@ -70,65 +71,74 @@ class ScheduleTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radius14),
           border: Border.all(color: AppColors.line, width: 0.5),
         ),
-        child: InkWell(
+        child: ButtonSemantics(
+          label: [
+            schedule.kind.label,
+            schedule.title,
+            _formatDate(schedule.scheduledDate),
+          ].join(', '),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSizes.radius14),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSizes.cardPadding),
-            child: Row(
-              children: [
-                _buildStatusIndicator(),
-                const SizedBox(width: AppSizes.spacing12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (schedule.status == ScheduleStatus.confirmed) ...[
-                            _buildConfirmedBadge(),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppSizes.radius14),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSizes.cardPadding),
+              child: Row(
+                children: [
+                  _buildStatusIndicator(),
+                  const SizedBox(width: AppSizes.spacing12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (schedule.status ==
+                                ScheduleStatus.confirmed) ...[
+                              _buildConfirmedBadge(),
+                              const SizedBox(width: AppSizes.spacing8),
+                            ],
+                            KindBadge(kind: schedule.kind),
                             const SizedBox(width: AppSizes.spacing8),
-                          ],
-                          KindBadge(kind: schedule.kind),
-                          const SizedBox(width: AppSizes.spacing8),
-                          Expanded(
-                            child: Text(
-                              schedule.title,
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.ink,
+                            Expanded(
+                              child: Text(
+                                schedule.title,
+                                style: TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.ink,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSizes.spacing4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: AppColors.sub,
-                          ),
-                          const SizedBox(width: AppSizes.spacing4),
-                          Text(
-                            _formatDate(schedule.scheduledDate),
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              fontSize: 14,
+                          ],
+                        ),
+                        const SizedBox(height: AppSizes.spacing4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
                               color: AppColors.sub,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: AppSizes.spacing4),
+                            Text(
+                              _formatDate(schedule.scheduledDate),
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 14,
+                                color: AppColors.sub,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

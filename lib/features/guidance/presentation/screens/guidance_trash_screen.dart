@@ -69,12 +69,19 @@ class GuidanceTrashScreen extends ConsumerWidget {
                   TextButton(
                     key: restoreKey(r.id),
                     onPressed: () => _guard(context, () => ref.read(guidanceActionsProvider).restore(r.id)),
-                    child: const Text(GuidanceStrings.restore),
+                    child: Text(
+                      GuidanceStrings.restore,
+                      // 어느 기록의 버튼인지 이름에 붙인다 — 행 제목이 트리에서 빠져 버튼만 보였다.
+                      semanticsLabel: AppStrings.rowAction(r.content.title, GuidanceStrings.restore),
+                    ),
                   ),
                   IconButton(
                     key: purgeKey(r.id),
-                    tooltip: GuidanceStrings.purge,
-                    icon: Icon(Icons.delete_forever, color: AppColors.error),
+                    icon: Icon(
+                      Icons.delete_forever,
+                      color: AppColors.error,
+                      semanticLabel: AppStrings.rowAction(r.content.title, GuidanceStrings.purge),
+                    ),
                     onPressed: () => _purge(context, ref, r.id),
                   ),
                 ],

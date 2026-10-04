@@ -9,6 +9,7 @@ import '../../domain/stamp_settings.dart';
 import '../../domain/today_view.dart';
 import 'today_event_row.dart';
 import 'today_progress_ring.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 오늘 탭 본문 — provider 없이 [TodayView]만 받아 그린다(위젯 테스트 대상).
 ///
@@ -163,10 +164,13 @@ class _TodayBodyState extends State<TodayBody> {
   }
 
   Widget _overdueHeader(int count) {
-    return GestureDetector(
+    void toggle() => setState(() => _overdueExpanded = !_overdueExpanded);
+    return ButtonSemantics.gesture(
       key: const Key('today_overdue_header'),
+      label:
+          '${TodayStrings.overdueSection}, ${TodayStrings.overdueCount(count)}',
+      onTap: toggle,
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _overdueExpanded = !_overdueExpanded),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSizes.pagePadding,

@@ -14,6 +14,17 @@ Color memoFill(MemoColor c) => switch (c) {
   MemoColor.pink => AppColors.memoPink,
 };
 
+/// 쪽지를 스크린리더·시뮬레이터 자동화가 읽을 라벨 — 글, 날짜가 붙어 있으면 그 날짜.
+///
+/// 만든 날(날짜 없는 쪽지 아래의 옅은 `M.d`)은 넣지 않는다 — 쪽지가 "언제 할 일"인지가
+/// 아니라 "언제 적었는지"라 이름으로 읽히면 날짜를 붙인 것으로 오해된다.
+final _labelDate = DateFormat('M월 d일 (E)', 'ko');
+
+String memoCardSemanticsLabel(Memo memo) {
+  final date = memo.memoDate;
+  return [memo.text, if (date != null) _labelDate.format(date)].join(', ');
+}
+
 /// 보드의 쪽지 한 장. 글은 최대 5줄, 아래에 날짜(있으면 달력 아이콘 + 요일).
 class MemoCard extends StatelessWidget {
   const MemoCard({super.key, required this.memo});

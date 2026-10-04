@@ -2,7 +2,30 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../domain/calendar_event.dart';
+import '../../../../shared/widgets/button_semantics.dart';
+
+/// 날짜 칸을 스크린리더·시뮬레이터 자동화가 읽을 라벨.
+///
+/// 칸에는 숫자만 보이고 몇 월인지·오늘인지·공휴일인지·일정이 있는지는 색과
+/// 점으로만 드러난다. 그 정보를 글로 옮긴다 — 앞뒤 달에서 빌려 온 칸도 그 달
+/// 이름으로 읽혀야 9월 27일과 10월 27일이 갈린다.
+String calendarDaySemanticsLabel({
+  required DateTime date,
+  required bool isToday,
+  String? holidayName,
+  required int eventCount,
+  required bool hasMemo,
+}) {
+  return [
+    CalendarStrings.dayDate(date.month, date.day, CalendarStrings.weekdays[date.weekday % 7]),
+    if (isToday) CalendarStrings.dayToday,
+    ?holidayName,
+    if (eventCount > 0) CalendarStrings.dayEventCount(eventCount),
+    if (hasMemo) CalendarStrings.dayMemo,
+  ].join(', ');
+}
 
 /// 캘린더 그리드의 개별 날짜 셀
 class CalendarDayCell extends StatelessWidget {
@@ -18,6 +41,7 @@ class CalendarDayCell extends StatelessWidget {
     this.isHoliday = false,
     this.events = const [],
     this.hasMemo = false,
+    this.semanticLabel,
   });
 
   final int day;
@@ -35,11 +59,16 @@ class CalendarDayCell extends StatelessWidget {
   /// 그 날 날짜 붙은 포스트잇이 있다 — 일정 점(원)과 모양으로 갈리는 네모 점.
   final bool hasMemo;
 
+  /// 스크린리더 라벨([calendarDaySemanticsLabel]). 없으면 숫자만 읽힌다.
+  final String? semanticLabel;
+
   static const memoMarkerKey = Key('calendar_memo_marker');
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ButtonSemantics.gesture(
+      selected: isSelected,
+      label: semanticLabel ?? '$day',
       onTap: onTap,
       child: Container(
         // 셀 높이를 명시해 dot 유무에 따라 행 높이가 흔들리지 않게 한다.

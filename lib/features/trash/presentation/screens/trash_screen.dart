@@ -97,8 +97,9 @@ class TrashScreen extends ConsumerWidget {
         // 종류별 묶음 없이 한 목록 — 최근에 지운 것이 위(`mergeTrashEntries`).
         for (final entry in snapshot.entries)
           switch (entry) {
-            TrashScheduleEntry(:final schedule) =>
-              _TrashScheduleTile(schedule: schedule),
+            TrashScheduleEntry(:final schedule) => _TrashScheduleTile(
+              schedule: schedule,
+            ),
             TrashEventEntry(:final event) => _TrashEventTile(event: event),
             TrashMemoEntry(:final memo) => _TrashMemoTile(memo: memo),
           },
@@ -118,6 +119,7 @@ class _TrashScheduleTile extends ConsumerWidget {
       title: Text(schedule.title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(_subtitle(schedule)),
       trailing: _TrashActions(
+        itemTitle: schedule.title,
         onRestore: () => ref
             .read(trashSnapshotProvider.notifier)
             .restoreSchedule(schedule.id!),
@@ -149,6 +151,7 @@ class _TrashEventTile extends ConsumerWidget {
       title: Text(event.title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(_subtitle(event)),
       trailing: _TrashActions(
+        itemTitle: event.title,
         onRestore: () =>
             ref.read(trashSnapshotProvider.notifier).restoreEvent(event.id!),
         onPermanentDelete: () => _confirmPermanentDelete(
@@ -182,6 +185,7 @@ class _TrashMemoTile extends ConsumerWidget {
         '${TrashStrings.sectionMemos} · ${_daysAgo(memo.deletedAt)}',
       ),
       trailing: _TrashActions(
+        itemTitle: memo.text,
         onRestore: () =>
             ref.read(trashSnapshotProvider.notifier).restoreMemo(id),
         onPermanentDelete: () => _confirmPermanentDelete(
@@ -196,10 +200,13 @@ class _TrashMemoTile extends ConsumerWidget {
 
 class _TrashActions extends StatelessWidget {
   const _TrashActions({
+    required this.itemTitle,
     required this.onRestore,
     required this.onPermanentDelete,
   });
 
+  /// 버튼 이름에 붙일 항목 제목 — 행마다 같은 버튼이 반복된다(자동화가 위치로 고르지 않게).
+  final String itemTitle;
   final VoidCallback onRestore;
   final VoidCallback onPermanentDelete;
 
@@ -209,13 +216,25 @@ class _TrashActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: TrashStrings.restore,
-          icon: Icon(Icons.restore, color: AppColors.gold),
+          icon: Icon(
+            Icons.restore,
+            color: AppColors.gold,
+            semanticLabel: AppStrings.rowAction(
+              itemTitle,
+              TrashStrings.restore,
+            ),
+          ),
           onPressed: onRestore,
         ),
         IconButton(
-          tooltip: TrashStrings.permanentDelete,
-          icon: Icon(Icons.delete_forever, color: AppColors.inkRed),
+          icon: Icon(
+            Icons.delete_forever,
+            color: AppColors.inkRed,
+            semanticLabel: AppStrings.rowAction(
+              itemTitle,
+              TrashStrings.permanentDelete,
+            ),
+          ),
           onPressed: onPermanentDelete,
         ),
       ],

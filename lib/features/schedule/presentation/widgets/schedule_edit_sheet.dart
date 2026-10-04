@@ -9,6 +9,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 일정 편집 바텀시트.
 ///
@@ -91,6 +92,10 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final dateText = DateFormat(
+      'yyyy.MM.dd (E)',
+      'ko_KR',
+    ).format(_selectedDate);
     // 아래를 가리는 것 중 **큰 쪽**만큼 여백을 준다 — 키보드(viewInsets)와
     // 시스템 내비게이션 바(viewPadding)는 서로 다른 값이다. 자세한 근거는
     // `event_edit_dialog.dart`의 같은 자리에 적어 뒀다(두 시트가 같은 규칙).
@@ -139,15 +144,17 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
               maxLines: 2,
             ),
             const SizedBox(height: AppSizes.spacing12),
-            InkWell(
+            ButtonSemantics(
+              label: '${ScheduleStrings.dateLabel}, $dateText',
               onTap: _pickDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: ScheduleStrings.dateLabel,
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                child: Text(
-                  DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(_selectedDate),
+              child: InkWell(
+                onTap: _pickDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: ScheduleStrings.dateLabel,
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(dateText),
                 ),
               ),
             ),

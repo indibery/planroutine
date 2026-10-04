@@ -65,8 +65,10 @@ class GuidanceDetailScreen extends ConsumerWidget {
           // 메뉴에 `삭제` 하나뿐이라 `⋯`로 감출 이유가 없다(실기기 피드백) — 바로 누르는 아이콘으로 둔다.
           IconButton(
             key: deleteKey,
-            tooltip: GuidanceStrings.delete,
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(
+              Icons.delete_outline,
+              semanticLabel: GuidanceStrings.delete,
+            ),
             onPressed: () => _delete(context, ref),
           ),
         ],

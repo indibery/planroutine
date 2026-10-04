@@ -54,4 +54,26 @@ class CalendarStrings {
   static const weekdayThu = '목';
   static const weekdayFri = '금';
   static const weekdaySat = '토';
+
+  /// 일요일부터 — `DateTime.weekday % 7`로 꺼낸다(일=0 … 토=6).
+  static const weekdays = [
+    weekdaySun,
+    weekdayMon,
+    weekdayTue,
+    weekdayWed,
+    weekdayThu,
+    weekdayFri,
+    weekdaySat,
+  ];
+
+  // 스크린리더·자동화 라벨 — 아이콘만 있는 버튼과 날짜 칸
+  static const prevMonth = '이전 달';
+  static const nextMonth = '다음 달';
+  static const dayToday = '오늘';
+  static const dayMemo = '포스트잇';
+  static String dayDate(int month, int day, String weekday) =>
+      '$month월 $day일 $weekday요일';
+  static String dayEventCount(int n) => '일정 $n건';
+  static const eventDone = '완료됨';
+  static const goToday = '오늘로 이동';
 }

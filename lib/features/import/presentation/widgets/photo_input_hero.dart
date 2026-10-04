@@ -8,6 +8,7 @@ import '../../../../core/theme/app_gradients.dart';
 import '../ai_photo_flow.dart';
 import '../../../schedule/domain/entry_kind.dart';
 import '../../../../shared/widgets/pill_chip.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 입력 탭 히어로 — 이 앱에서 가장 자주 하는 동작.
 ///
@@ -159,39 +160,43 @@ class _PhotoInputHeroState extends ConsumerState<PhotoInputHero> {
           // 보조 경로지만 학기 초에 반드시 한 번은 찾아야 한다 —
           // 옅은 글씨 한 줄이면 못 찾는다. 테두리로 눌 수 있음을 보이되,
           // 히어로(골드 채움)와는 위계를 벌려 주·보조가 뒤바뀌지 않게 한다.
-          InkWell(
+          ButtonSemantics(
+            label: ImportStrings.heroCsvLink,
             onTap: widget.onOpenCsvImport,
-            borderRadius: BorderRadius.circular(AppSizes.radius12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.spacing12,
-                vertical: AppSizes.spacing12,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppSizes.radius12),
-                border: Border.all(color: AppColors.line, width: 0.8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.file_download_outlined,
-                    size: 17,
-                    color: AppColors.gold,
-                  ),
-                  const SizedBox(width: AppSizes.spacing8),
-                  Expanded(
-                    child: Text(
-                      ImportStrings.heroCsvLink,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
+            child: InkWell(
+              onTap: widget.onOpenCsvImport,
+              borderRadius: BorderRadius.circular(AppSizes.radius12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spacing12,
+                  vertical: AppSizes.spacing12,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSizes.radius12),
+                  border: Border.all(color: AppColors.line, width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.file_download_outlined,
+                      size: 17,
+                      color: AppColors.gold,
+                    ),
+                    const SizedBox(width: AppSizes.spacing8),
+                    Expanded(
+                      child: Text(
+                        ImportStrings.heroCsvLink,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(Icons.chevron_right, size: 18, color: AppColors.sub),
-                ],
+                    Icon(Icons.chevron_right, size: 18, color: AppColors.sub),
+                  ],
+                ),
               ),
             ),
           ),
@@ -217,7 +222,9 @@ class _StepButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // 버튼으로 읽히게 한 노드로 묶는다 — 없으면 실기 접근성 트리에 그냥 `Text`로 잡힌다.
+    return ButtonSemantics.gesture(
+      label: label,
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(

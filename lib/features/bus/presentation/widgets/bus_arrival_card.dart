@@ -9,6 +9,7 @@ import '../../domain/commute_direction.dart';
 import 'bus_body_axis.dart';
 import 'bus_body_text.dart';
 import 'bus_empty_state.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 오늘 탭 최상단 버스 카드.
 ///
@@ -155,13 +156,14 @@ class BusArrivalCard extends StatelessWidget {
       ),
     );
 
-    return GestureDetector(
+    // 쿨다운이면 `null` — 하단 행에는 조상 제스처가 없으므로 흡수용 빈 콜백이
+    // 필요 없다(제목줄에 있을 때는 필요했다: 인식기가 없으면 제목줄 탭이 아레나를
+    // 이겨 카드가 접혔다). 눌러도 아무 일이 없고 흐린 색이 이유를 말한다.
+    return ButtonSemantics.gesture(
       key: refreshKey,
-      behavior: HitTestBehavior.opaque,
-      // 쿨다운이면 `null` — 하단 행에는 조상 제스처가 없으므로 흡수용 빈 콜백이
-      // 필요 없다(제목줄에 있을 때는 필요했다: 인식기가 없으면 제목줄 탭이 아레나를
-      // 이겨 카드가 접혔다). 눌러도 아무 일이 없고 흐린 색이 이유를 말한다.
+      label: BusStrings.refresh,
       onTap: refreshEnabled ? onRefresh : null,
+      behavior: HitTestBehavior.opaque,
       child: icon,
     );
   }
@@ -240,10 +242,15 @@ class BusArrivalCard extends StatelessWidget {
     if (toggle == null) return row;
     // 제목줄에는 다른 표적을 두지 않는다 — 새로고침은 하단 행으로 내렸다
     // (`_bottomRow` 문서 참고).
-    return GestureDetector(
+    return ButtonSemantics.gesture(
       key: headerKey,
-      behavior: HitTestBehavior.opaque,
+      label: [
+        direction.title,
+        if (stopName.isNotEmpty) stopName,
+        expanded ? BusStrings.collapse : BusStrings.expand,
+      ].join(', '),
       onTap: toggle,
+      behavior: HitTestBehavior.opaque,
       child: row,
     );
   }
@@ -314,10 +321,11 @@ class BusArrivalCard extends StatelessWidget {
   /// (실기기 확인 2026-08-07). 그래서 보이는 것은 예전과 같은 링크이고,
   /// 투명한 패딩이 히트 영역만 [_tapMinHeight]로 키운다.
   Widget _flipControl() {
-    return GestureDetector(
+    return ButtonSemantics.gesture(
       key: flipKey,
-      behavior: HitTestBehavior.opaque,
+      label: BusStrings.flip(direction.otherLabel),
       onTap: onFlipDirection,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         constraints: const BoxConstraints(minHeight: _tapMinHeight),
         alignment: Alignment.centerLeft,
@@ -338,10 +346,11 @@ class BusArrivalCard extends StatelessWidget {
   /// 정류장 선택 — 하단 행 **오른쪽 끝**. 방향 전환과 가로로 갈라 놓는 것이
   /// 오탭을 막는 본체이고, 무게 차이는 굵기(13 w700 대 12 w600)로만 낸다.
   Widget _registerControl() {
-    return GestureDetector(
+    return ButtonSemantics.gesture(
       key: registerKey,
-      behavior: HitTestBehavior.opaque,
+      label: BusStrings.emptyNoStopAction,
       onTap: onRegister,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         constraints: const BoxConstraints(minHeight: _tapMinHeight),
         alignment: Alignment.centerRight,

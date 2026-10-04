@@ -38,6 +38,11 @@ class AppStrings {
   static const cancel = '취소';
   static const delete = '삭제';
   static const retry = '다시 시도';
+  static const dismissHint = '안내 닫기';
+
+  /// 행마다 같은 버튼이 반복될 때(휴지통의 `복구`·`영구 삭제`) 어느 항목의 버튼인지 붙인 이름 —
+  /// 자동화가 위치로 고르다 다른 항목을 영구 삭제하지 않게.
+  static String rowAction(String title, String action) => '$title, $action';
   static const loading = '로딩 중...';
   static const error = '오류가 발생했습니다';
 

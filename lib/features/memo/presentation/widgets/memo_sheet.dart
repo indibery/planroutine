@@ -12,6 +12,8 @@ import '../../domain/memo.dart';
 import '../../domain/memo_color.dart';
 import '../providers/memo_providers.dart';
 import 'memo_card.dart';
+import '../../../../shared/widgets/segmented_button_semantics.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 쪽지 시트 — 글·색·날짜 고치기, 일정으로 등록, 떼기. 보드와 캘린더가 같은 시트를 연다.
 class MemoSheet extends ConsumerStatefulWidget {
@@ -158,9 +160,11 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
                     if (date != null)
                       IconButton(
                         key: MemoSheet.dateRemoveKey,
-                        tooltip: MemoStrings.dateRemove,
                         onPressed: () => setState(() => _date = null),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(
+                          Icons.close,
+                          semanticLabel: MemoStrings.dateRemove,
+                        ),
                       ),
                   ],
                 ),
@@ -180,14 +184,14 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
               const Divider(height: AppSizes.spacing32),
               Text(MemoStrings.toEventTitle, style: TextStyle(fontSize: 14, color: AppColors.sub)),
               const SizedBox(height: AppSizes.spacing8),
-              SegmentedButton<EntryKind>(
+              SegmentedButtonSemantics<EntryKind>(child: SegmentedButton<EntryKind>(
                 segments: [
                   for (final k in EntryKind.values)
                     ButtonSegment(value: k, label: Text(k.label, key: MemoSheet.kindKey(k))),
                 ],
                 selected: {_kind},
                 onSelectionChanged: (s) => setState(() => _kind = s.first),
-              ),
+              )),
               const SizedBox(height: AppSizes.spacing8),
               OutlinedButton(key: MemoSheet.toEventKey, onPressed: _toEvent, child: const Text(MemoStrings.toEvent)),
               const SizedBox(height: AppSizes.spacing8),
@@ -213,10 +217,10 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
       MemoColor.blue => MemoStrings.colorBlue,
       MemoColor.pink => MemoStrings.colorPink,
     };
-    return Semantics(
+    return ButtonSemantics(
       label: label,
       selected: selected,
-      button: true,
+      onTap: () => setState(() => _color = c),
       child: InkWell(
         key: MemoSheet.colorKey(c),
         onTap: () => setState(() => _color = c),

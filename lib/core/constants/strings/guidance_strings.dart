@@ -130,6 +130,7 @@ class GuidanceStrings {
   static const play = '재생';
   static const pause = '멈춤';
   static const attachmentInfo = '첨부 정보';
+  static const openImage = '사진 보기';
   static const attachmentMissing = '파일을 찾을 수 없어요';
   static const removeAttachment = '첨부 삭제';
   static const infoSource = '출처';

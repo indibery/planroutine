@@ -62,7 +62,7 @@ class TodayScreen extends ConsumerWidget {
       ),
       floatingActionButton: GoldFab(
         onTap: () => _onAddEvent(context, ref),
-        tooltip: TodayStrings.addEvent,
+        semanticLabel: TodayStrings.addEvent,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
+import 'button_semantics.dart';
 
 class PillChip extends StatelessWidget {
   const PillChip({
@@ -16,7 +17,11 @@ class PillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // 사용처 전부가 고르는 칩이라, 선택 여부를 색·체크 아이콘만이 아니라
+    // 시맨틱스로도 말한다(VoiceOver·시뮬레이터 자동화가 읽는다).
+    return ButtonSemantics.gesture(
+      selected: selected,
+      label: label,
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),

@@ -130,6 +130,7 @@ class _ParticipantChipsFieldState extends ConsumerState<ParticipantChipsField>
         key: _blockKey,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 시맨틱스 예외: 빈 곳을 눌러 입력칸에 커서를 줄 뿐이다 — 입력칸과 칩은 각자 읽힌다.
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _focus.requestFocus,

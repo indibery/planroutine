@@ -4,14 +4,24 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../domain/stamp_settings.dart';
 import 'completion_seal.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 오늘 탭의 이벤트 한 줄 — 체크 원 + 제목 + 완료 도장 슬롯.
 ///
 /// 체크 원을 누르면 행이 살짝 눌렸다 올라오고(340ms) 우측에 도장이 떨어진다(460ms).
 /// 완료해도 목록에서 빠지지 않고 자리에 남는다 — 재정렬하면 도장이 화면 밖에서 재생된다.
+/// 오늘 탭 행의 제목 부분 이름 — 화면 순서대로 (중요) · 제목 · (부제) · (완료됨).
+String todayRowSemanticsLabel(CalendarEvent event, String? meta) => [
+  if (event.showsImportant) CalendarStrings.importantBadge,
+  event.title,
+  ?meta,
+  if (event.isCompleted) CalendarStrings.eventDone,
+].join(', ');
+
 class TodayEventRow extends StatefulWidget {
   const TodayEventRow({
     super.key,
@@ -118,10 +128,13 @@ class _TodayEventRowState extends State<TodayEventRow>
 
   @override
   Widget build(BuildContext context) {
+    final meta = _metaLabel();
     return AnimatedBuilder(
       animation: _press,
       builder: (context, child) =>
           Transform.scale(scale: _pressScale.evaluate(_press), child: child),
+      // 시맨틱스 예외: 행 안에 체크 원과 제목이 각각 버튼 노드로 있다 — 행 전체를 한 노드로
+      // 묶으면 체크 원이 함께 숨는다. 제목 쪽 이름은 `_titleBlock`을 감싼 노드가 진다.
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
@@ -141,7 +154,13 @@ class _TodayEventRowState extends State<TodayEventRow>
             child: Row(
               children: [
                 _checkCircle(),
-                Expanded(child: _titleBlock()),
+                Expanded(
+                  child: ButtonSemantics(
+                    label: todayRowSemanticsLabel(widget.event, meta),
+                    onTap: widget.onTap,
+                    child: _titleBlock(meta),
+                  ),
+                ),
                 _sealSlot(),
               ],
             ),
@@ -153,10 +172,12 @@ class _TodayEventRowState extends State<TodayEventRow>
 
   Widget _checkCircle() {
     final isDone = widget.event.isCompleted;
-    return GestureDetector(
+    return ButtonSemantics.gesture(
       key: Key('today_check_${widget.event.id}'),
-      behavior: HitTestBehavior.opaque,
+      label: '${widget.event.title}, ${CalendarStrings.markComplete}',
       onTap: _onCheckTap,
+      checked: isDone,
+      behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: TodayEventRow._tapTarget,
         height: TodayEventRow._tapTarget,
@@ -189,11 +210,10 @@ class _TodayEventRowState extends State<TodayEventRow>
     );
   }
 
-  Widget _titleBlock() {
+  Widget _titleBlock(String? meta) {
     final event = widget.event;
     final isDone = event.isCompleted;
     final showImportant = event.showsImportant;
-    final meta = _metaLabel();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing12),

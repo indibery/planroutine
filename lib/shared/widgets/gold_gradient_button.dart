@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/app_gradients.dart';
+import 'button_semantics.dart';
 
 class GoldGradientButton extends StatelessWidget {
   const GoldGradientButton({
@@ -21,7 +22,10 @@ class GoldGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // 버튼으로 읽히게 한 노드로 묶는다 — `GestureDetector`만 두면 실기 트리에서
+    // `저장`이 그냥 글자로 잡혔다(2026-10-04).
+    return ButtonSemantics.gesture(
+      label: label,
       onTap: enabled ? onPressed : null,
       child: AnimatedOpacity(
         opacity: enabled ? 1.0 : 0.45,

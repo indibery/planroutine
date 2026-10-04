@@ -13,6 +13,7 @@ import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
 import '../providers/guidance_providers.dart';
 import '../widgets/guidance_record_tile.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 지도 기록 탭 첫 화면. 잠금은 이 화면이 아니라 셸(`GuidanceLockGate`)이 진다.
 class GuidanceListScreen extends ConsumerWidget {
@@ -45,19 +46,26 @@ class GuidanceListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             key: trashKey,
-            tooltip: GuidanceStrings.trashTitle,
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(
+              Icons.delete_outline,
+              semanticLabel: GuidanceStrings.trashTitle,
+            ),
             onPressed: () => context.push(AppRoutes.guidanceTrash),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      // 이름 있는 잎 노드로 감싼다. FAB에 `Icon(semanticLabel:)`만 주면 mobile MCP가
+      // 합쳐진 노드를 이름 없는 `Button`으로 읽었다(`SegmentedButtonSemantics`와 같은 이유).
+      floatingActionButton: ButtonSemantics(
+        label: GuidanceStrings.newRecord,
+        onTap: () => context.push(AppRoutes.guidanceNew),
+        child: FloatingActionButton(
         key: addKey,
-        tooltip: GuidanceStrings.newRecord,
         backgroundColor: AppColors.goldFill,
         foregroundColor: AppColors.onGold,
         onPressed: () => context.push(AppRoutes.guidanceNew),
         child: const Icon(Icons.add),
+      ),
       ),
       body: Column(
         children: [

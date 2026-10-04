@@ -17,6 +17,7 @@ import '../recording/recording_screen.dart';
 import '../widgets/attachment_tile.dart';
 import '../widgets/occurred_input.dart';
 import '../widgets/participant_chips_field.dart';
+import '../../../../shared/widgets/segmented_button_semantics.dart';
 
 /// 새 기록·고치기 공용 전체 화면. 저장은 판을 하나 더한다(같은 내용이면 더하지 않는다).
 class GuidanceEditScreen extends ConsumerStatefulWidget {
@@ -477,7 +478,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                 ),
                 children: [
                   _label(GuidanceStrings.labelKind),
-                  SegmentedButton<GuidanceKind>(
+                  SegmentedButtonSemantics<GuidanceKind>(child: SegmentedButton<GuidanceKind>(
                     showSelectedIcon: false,
                     segments: [
                       for (final k in GuidanceKind.values)
@@ -488,10 +489,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                     ],
                     selected: {_kind},
                     onSelectionChanged: (s) => setState(() => _kind = s.first),
-                  ),
+                  )),
                   _gap(),
                   _label(GuidanceStrings.labelStatus),
-                  SegmentedButton<GuidanceStatus>(
+                  SegmentedButtonSemantics<GuidanceStatus>(child: SegmentedButton<GuidanceStatus>(
                     showSelectedIcon: false,
                     segments: [
                       ButtonSegment(
@@ -518,7 +519,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                     ],
                     selected: {_status},
                     onSelectionChanged: (s) => setState(() => _status = s.first),
-                  ),
+                  )),
                   _gap(),
                   _label(GuidanceStrings.labelOccurred),
                   OccurredInput(
@@ -549,8 +550,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                     ],
                   ),
                   _gap(),
+                  // 칸 위의 글자는 따로 된 텍스트라 입력칸 자체에는 이름이 없다 — 자동화가 칸을
+                  // 위치로만 가렸다. 겉모양은 그대로 두고 이름만 붙인다(text_field_name_guard_test).
                   _label(GuidanceStrings.labelTitle),
-                  TextField(
+                  Semantics(label: GuidanceStrings.labelTitle, child: TextField(
                     key: GuidanceEditScreen.titleKey,
                     controller: _title,
                     textInputAction: TextInputAction.next,
@@ -559,10 +562,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                           ? GuidanceStrings.titleRequired
                           : null,
                     ),
-                  ),
+                  )),
                   _gap(),
                   _label(GuidanceStrings.labelPlace),
-                  TextField(key: GuidanceEditScreen.placeKey, controller: _place),
+                  Semantics(label: GuidanceStrings.labelPlace, child: TextField(key: GuidanceEditScreen.placeKey, controller: _place)),
                   _gap(),
                   _label(GuidanceStrings.labelParticipants),
                   ParticipantChipsField(
@@ -573,29 +576,29 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                   _hint(GuidanceStrings.participantsHint),
                   _gap(),
                   _label(GuidanceStrings.labelFacts),
-                  TextField(
+                  Semantics(label: GuidanceStrings.labelFacts, child: TextField(
                     key: GuidanceEditScreen.factsKey,
                     controller: _facts,
                     minLines: 5,
                     maxLines: null,
-                  ),
+                  )),
                   _gap(),
                   _label(GuidanceStrings.labelQuotes),
-                  TextField(
+                  Semantics(label: GuidanceStrings.labelQuotes, child: TextField(
                     key: GuidanceEditScreen.quotesKey,
                     controller: _quotes,
                     minLines: 3,
                     maxLines: null,
-                  ),
+                  )),
                   _hint(GuidanceStrings.quotesHint),
                   _gap(),
                   _label(GuidanceStrings.labelActions),
-                  TextField(
+                  Semantics(label: GuidanceStrings.labelActions, child: TextField(
                     key: GuidanceEditScreen.actionsKey,
                     controller: _actions,
                     minLines: 3,
                     maxLines: null,
-                  ),
+                  )),
                   _hint(GuidanceStrings.actionsHint),
                   ..._attachmentsSection(now),
                 ],

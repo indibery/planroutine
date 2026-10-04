@@ -61,7 +61,7 @@
 | 잠금·녹음 | local_auth 3.0.2 · record 7.1.1 · just_audio 0.10.6 · wakelock_plus 1.3.3 · crypto 3.0.7 | 지도 기록 전용(`pubspec.lock` 실측) |
 | 공공데이터 | http (직접 호출) | 버스 도착·정류소. **자체 서버 없음**. 키는 `--dart-define-from-file` |
 | 날짜 | intl | 한국어 로케일 |
-| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1521** 유닛/위젯 + 19 E2E (실측 2026-10-04, 칩 자리·키보드 가림 2순서·녹음 안내 한 줄 가드 4건을 더한 값. 직전 `1517`은 영구 삭제 시 이름 추천 정리 5건 + 칩 입력 조합 중 붙여넣기 방어 2건을, 그 직전 `1510`은 지도 기록 관련인 칩 입력·자동 명단·추천 13건을, 그 직전 `1497`은 선택 칩 대비 가드 2건을, 그 직전 `1495`는 빈 기록 정리 2건 + 잠금 완화(15분 규칙) 11건을, 그 직전 `1482`는 지도 기록 최종 수정 35건을, 그 직전 `1447`은 지도 기록 `test/features/guidance/` 등 149건을, 그 직전 `1298`은 포스트잇 68건 + 휴지통 최근순 4건을 더한 값이었고, 그 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
+| 테스트 | flutter_test, integration_test, sqflite_common_ffi | **1580** 유닛/위젯 + 19 E2E (실측 2026-10-04, 시뮬레이터 자동화가 읽는 시맨틱스 가드 59건 — 탭바·칩·세그먼트·날짜 칸·일정 행·쪽지·휴지통 행 버튼·입력칸 이름, `ButtonSemantics`·`tooltip` 금지·이름 없는 `IconButton` 가드 — 을 더한 값. 직전 `1521`은 칩 자리·키보드 가림 2순서·녹음 안내 한 줄 가드 4건을, 그 직전 `1517`은 영구 삭제 시 이름 추천 정리 5건 + 칩 입력 조합 중 붙여넣기 방어 2건을, 그 직전 `1510`은 지도 기록 관련인 칩 입력·자동 명단·추천 13건을, 그 직전 `1497`은 선택 칩 대비 가드 2건을, 그 직전 `1495`는 빈 기록 정리 2건 + 잠금 완화(15분 규칙) 11건을, 그 직전 `1482`는 지도 기록 최종 수정 35건을, 그 직전 `1447`은 지도 기록 `test/features/guidance/` 등 149건을, 그 직전 `1298`은 포스트잇 68건 + 휴지통 최근순 4건을 더한 값이었고, 그 직전 `1226`은 기능 모듈 58건 + Podfile 가드 1건 + 기능별 설정 이전 10건 + 행 오른쪽 글자 가드 4건을 더한 값. 작업 직전 실측은 `1153`이었는데 이 칸은 `1151`이었다 — ⚠️ 이 숫자를 지키는 가드가 없어 **여섯 번** 낡았다. README는 더 심해서 `1003`에 멈춰 있었다). ⚠️ E2E `전체 초기화 플로우`는 **10월에 실패한다** — 그 달의 공휴일 행이 캘린더 빈 상태 문구를 대신해 `일정이 없습니다`를 찾지 못한다(변경 전 코드에서도 같게 실패함을 확인, 2026-10-02) |
 
 ## 프로젝트 구조
 
@@ -1820,6 +1820,21 @@ Edit는 `old_string` 대 `new_string`). 새 파일은 검사 대상이 아니다
 - **`GoldGradientButton`은 좌우 padding 24를 스스로 갖는다** — 가운데 정렬하려면 `Center`로
   감싼다. (구조 트리를 `docs/notes/`로 옮길 때 트리 주석에만 있던 제약이라 여기로 올렸다.)
 - 설정 섹션 추가 시 `SettingsSection` wrapper + `widgets/{name}_list_tile.dart`에 위젯 분리
+- **직접 만든 누를 수 있는 위젯은 `ButtonSemantics`로 감싼다**(`lib/shared/widgets/button_semantics.dart`).
+  잉크가 없는 터치 영역은 `ButtonSemantics.gesture`(안에서 `GestureDetector`를 만든다 — 콜백을 한 번만 적는다),
+  `InkWell`은 기본 생성자로 감싼다.
+  `GestureDetector`·`InkWell`만 두면 시뮬레이터 자동화 두 도구(`snapshot_ui`·mobile MCP)가 그 자리를
+  글자로 읽어 누를 대상도 선택 상태도 알 수 없다(2026-10-04, 앱 전체 30여 곳을 고쳤다). 버튼이 아닌
+  터치 영역은 바로 위에 `// 시맨틱스 예외: <이유>`. 함께 지키는 규칙:
+  - Flutter `SegmentedButton`은 `SegmentedButtonSemantics`로 감싼다 — Flutter 트리에는 이름이 있어도
+    mobile MCP가 합쳐진 노드의 이름을 놓친다(`FloatingActionButton`도 같아서 `ButtonSemantics`로 감쌌다).
+  - 아이콘 버튼 이름은 **`tooltip`이 아니라 `Icon(semanticLabel:)`** — mobile MCP는 tooltip을 읽지
+    않고, 말풍선은 길게 눌러야 뜨는 데다 iPhone 전용 앱이라 볼 일도 없다.
+  - 입력칸은 `labelText`/`hintText`, 없으면 `Semantics(label:)`로 감싼다(겉모양 무변경).
+  - 행마다 반복되는 버튼(휴지통 `복구`·`영구 삭제`)은 이름에 항목 제목을 붙인다.
+  - 가드: `button_semantics_guard_test.dart`(터치 영역·이름 없는 `IconButton`) ·
+    `segmented_button_semantics_test.dart` · `no_tooltip_guard_test.dart` · `text_field_name_guard_test.dart`.
+    도구 쪽 절차는 `driving-ios-simulator` 스킬의 "두 도구 함께 쓰기".
 - **`ListTile`(`ExpansionTile` 포함) 위에 색칠된 컨테이너를 끼우지 않는다.** ListTile은 배경과
   잉크를 **가장 가까운 `Material`** 에 그리므로, 사이에 배경색 있는 `Container`/`DecoratedBox`가
   있으면 **탭해도 잉크 스플래시가 보이지 않는다** — 에듀파인 가이드 카드가 그 상태였고 아무도

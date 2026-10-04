@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/bus_card_view.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 실패 계약의 비정상 상태 문구 (스펙 §3).
 ///
@@ -113,9 +114,10 @@ class BusEmptyState extends StatelessWidget {
               ),
             )
           else
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
+            ButtonSemantics.gesture(
+              label: action,
               onTap: onAction,
+              behavior: HitTestBehavior.opaque,
               child: Text(
                 action,
                 style: TextStyle(

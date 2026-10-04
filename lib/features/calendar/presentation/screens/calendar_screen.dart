@@ -25,6 +25,7 @@ import '../widgets/calendar_month_pager.dart';
 import '../widgets/calendar_slide_hint_bar.dart';
 import '../widgets/event_edit_dialog.dart';
 import '../widgets/month_event_list.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 캘린더 화면
 class CalendarScreen extends ConsumerWidget {
@@ -100,6 +101,7 @@ class CalendarScreen extends ConsumerWidget {
       ),
       floatingActionButton: GoldFab(
         onTap: () => _onAddEvent(context, ref, selectedDate),
+        semanticLabel: CalendarStrings.addEvent,
       ),
     );
   }
@@ -109,6 +111,7 @@ class CalendarScreen extends ConsumerWidget {
     WidgetRef ref,
     DateTime selectedDate,
   ) {
+    final monthText = _monthFormatter.format(selectedDate);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spacing16,
@@ -118,7 +121,11 @@ class CalendarScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: Icon(Icons.chevron_left, color: AppColors.sub),
+            icon: Icon(
+              Icons.chevron_left,
+              color: AppColors.sub,
+              semanticLabel: CalendarStrings.prevMonth,
+            ),
             onPressed: () {
               final prev = DateTime(
                 selectedDate.year,
@@ -128,13 +135,11 @@ class CalendarScreen extends ConsumerWidget {
               ref.read(selectedDateProvider.notifier).state = prev;
             },
           ),
-          GestureDetector(
-            onTap: () {
-              final today = DateTime.now();
-              ref.read(selectedDateProvider.notifier).state = today;
-            },
+          ButtonSemantics.gesture(
+            label: '$monthText, ${CalendarStrings.goToday}',
+            onTap: () => _goToday(ref),
             child: Text(
-              _monthFormatter.format(selectedDate),
+              monthText,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 20,
@@ -145,7 +150,11 @@ class CalendarScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.chevron_right, color: AppColors.sub),
+            icon: Icon(
+              Icons.chevron_right,
+              color: AppColors.sub,
+              semanticLabel: CalendarStrings.nextMonth,
+            ),
             onPressed: () {
               final next = DateTime(
                 selectedDate.year,
@@ -159,6 +168,10 @@ class CalendarScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// 월 제목을 누르면 오늘이 있는 달로 돌아간다.
+  void _goToday(WidgetRef ref) =>
+      ref.read(selectedDateProvider.notifier).state = DateTime.now();
 
   Future<void> _onAddEvent(
     BuildContext context,

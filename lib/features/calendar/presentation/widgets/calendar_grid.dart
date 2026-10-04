@@ -29,16 +29,6 @@ class CalendarGrid extends StatelessWidget {
   /// 날짜 붙은 포스트잇이 있는 날(YYYY-MM-DD) — 셀에 네모 점.
   final Set<String> memoDates;
 
-  static const _weekdays = [
-    CalendarStrings.weekdaySun,
-    CalendarStrings.weekdayMon,
-    CalendarStrings.weekdayTue,
-    CalendarStrings.weekdayWed,
-    CalendarStrings.weekdayThu,
-    CalendarStrings.weekdayFri,
-    CalendarStrings.weekdaySat,
-  ];
-
   @override
   Widget build(BuildContext context) {
     // 주말 열 배경을 셀이 아니라 그리드 뒤에 한 장으로 깐다. 셀마다 그리면 radius로
@@ -114,7 +104,7 @@ class CalendarGrid extends StatelessWidget {
         return Expanded(
           child: Center(
             child: Text(
-              _weekdays[index],
+              CalendarStrings.weekdays[index],
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 12,
@@ -145,6 +135,19 @@ class CalendarGrid extends StatelessWidget {
     );
   }
 
+  String _semanticLabel(
+    DateTime date,
+    String dateStr,
+    String? holiday, {
+    bool isToday = false,
+  }) => calendarDaySemanticsLabel(
+    date: date,
+    isToday: isToday,
+    holidayName: holiday,
+    eventCount: eventsMap[dateStr]?.length ?? 0,
+    hasMemo: memoDates.contains(dateStr),
+  );
+
   List<Widget> _buildCalendarCells() {
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final firstWeekday =
@@ -161,14 +164,16 @@ class CalendarGrid extends StatelessWidget {
       final day = daysInPrevMonth - firstWeekday + 1 + i;
       final date = DateTime(prevYear, prevMonth, day);
       final dateStr = formatDate(date);
+      final holiday = koreanHolidayName(date);
       cells.add(
         CalendarDayCell(
           day: day,
+          semanticLabel: _semanticLabel(date, dateStr, holiday),
           isToday: false,
           isSelected: false,
           isWeekend: i == 0,
           isSaturday: i == 6,
-          isHoliday: isKoreanHoliday(date),
+          isHoliday: holiday != null,
           isCurrentMonth: false,
           events: eventsMap[dateStr] ?? [],
           hasMemo: memoDates.contains(dateStr),
@@ -182,21 +187,29 @@ class CalendarGrid extends StatelessWidget {
       final date = DateTime(year, month, day);
       final dateStr = formatDate(date);
       final weekday = (firstWeekday + day - 1) % 7;
+      final isToday =
+          date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day;
 
+      final holiday = koreanHolidayName(date);
       cells.add(
         CalendarDayCell(
           day: day,
-          isToday:
-              date.year == today.year &&
-              date.month == today.month &&
-              date.day == today.day,
+          semanticLabel: _semanticLabel(
+            date,
+            dateStr,
+            holiday,
+            isToday: isToday,
+          ),
+          isToday: isToday,
           isSelected:
               date.year == selectedDate.year &&
               date.month == selectedDate.month &&
               date.day == selectedDate.day,
           isWeekend: weekday == 0,
           isSaturday: weekday == 6,
-          isHoliday: isKoreanHoliday(date),
+          isHoliday: holiday != null,
           isCurrentMonth: true,
           events: eventsMap[dateStr] ?? [],
           hasMemo: memoDates.contains(dateStr),
@@ -217,14 +230,16 @@ class CalendarGrid extends StatelessWidget {
       final dateStr = formatDate(date);
       final weekday = (totalCells + i) % 7;
 
+      final holiday = koreanHolidayName(date);
       cells.add(
         CalendarDayCell(
           day: day,
+          semanticLabel: _semanticLabel(date, dateStr, holiday),
           isToday: false,
           isSelected: false,
           isWeekend: weekday == 0,
           isSaturday: weekday == 6,
-          isHoliday: isKoreanHoliday(date),
+          isHoliday: holiday != null,
           isCurrentMonth: false,
           events: eventsMap[dateStr] ?? [],
           hasMemo: memoDates.contains(dateStr),

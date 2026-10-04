@@ -13,6 +13,7 @@ import '../../domain/guidance_types.dart';
 import '../providers/guidance_providers.dart';
 import 'attachment_info_sheet.dart';
 import 'audio_playback.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 첨부 한 줄. 녹음은 재생/멈춤, 사진은 썸네일(누르면 전체 화면). ⓘ로 해시·원래 이름을 본다.
 class AttachmentTile extends ConsumerStatefulWidget {
@@ -164,20 +165,23 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
     final subtitle = _missing
         ? '$base · ${GuidanceStrings.attachmentMissing}'
         : base;
+    final openImage = file == null || _missing ? null : () => _openImage(file);
     final leading = a.type == AttachmentType.audio
         ? IconButton.filled(
             key: AttachmentTile.playKey(id),
-            tooltip: _playing ? GuidanceStrings.pause : GuidanceStrings.play,
             style: IconButton.styleFrom(
               backgroundColor: AppColors.navy,
               foregroundColor: Colors.white,
             ),
             onPressed: file == null || _missing ? null : _toggle,
-            icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
+            icon: Icon(
+              _playing ? Icons.pause : Icons.play_arrow,
+              semanticLabel: _playing ? GuidanceStrings.pause : GuidanceStrings.play,
+            ),
           )
-        : InkWell(
+        : ButtonSemantics(label: GuidanceStrings.openImage, onTap: openImage, child: InkWell(
             key: AttachmentTile.imageKey(id),
-            onTap: file == null || _missing ? null : () => _openImage(file),
+            onTap: openImage,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radius8),
               child: SizedBox(
@@ -196,7 +200,7 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
                       ),
               ),
             ),
-          );
+          ));
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -228,15 +232,19 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
             ),
             IconButton(
               key: AttachmentTile.infoKey(id),
-              tooltip: GuidanceStrings.attachmentInfo,
-              icon: const Icon(Icons.info_outline),
+              icon: const Icon(
+                Icons.info_outline,
+                semanticLabel: GuidanceStrings.attachmentInfo,
+              ),
               onPressed: () => showAttachmentInfo(context, a, now: widget.now),
             ),
             if (widget.onRemove != null)
               IconButton(
                 key: AttachmentTile.removeKey(id),
-                tooltip: GuidanceStrings.removeAttachment,
-                icon: const Icon(Icons.close),
+                icon: const Icon(
+                  Icons.close,
+                  semanticLabel: GuidanceStrings.removeAttachment,
+                ),
                 onPressed: widget.onRemove,
               ),
           ],

@@ -17,6 +17,7 @@ import '../providers/schedule_providers.dart';
 import '../widgets/schedule_edit_sheet.dart';
 import '../widgets/schedule_tile.dart';
 import '../widgets/slide_hint_bar.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 입력 탭 — 넣기가 주인공, **검토 대기**는 그 아래.
 ///
@@ -399,7 +400,8 @@ class _BulkConfirmPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ButtonSemantics.gesture(
+      label: label,
       onTap: onPressed,
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -453,7 +455,8 @@ class _DeleteAllPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ButtonSemantics.gesture(
+      label: label,
       onTap: onPressed,
       behavior: HitTestBehavior.opaque,
       child: Container(

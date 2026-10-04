@@ -65,6 +65,7 @@ class BusStrings {
 
   static const seeToWork = '출근 보기';
   static const seeToHome = '퇴근 보기';
+  static const search = '검색';
   static const collapse = '접기';
   static const expand = '펼치기';
 

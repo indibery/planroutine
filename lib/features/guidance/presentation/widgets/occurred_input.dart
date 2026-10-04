@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/guidance_types.dart';
+import '../../../../shared/widgets/segmented_button_semantics.dart';
 
 class OccurredValue {
   const OccurredValue({required this.precision, this.at, this.text});
@@ -85,7 +86,7 @@ class _OccurredInputState extends State<OccurredInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SegmentedButton<OccurredPrecision>(
+        SegmentedButtonSemantics<OccurredPrecision>(child: SegmentedButton<OccurredPrecision>(
           showSelectedIcon: false,
           segments: [
             for (final p in OccurredPrecision.values)
@@ -98,7 +99,7 @@ class _OccurredInputState extends State<OccurredInput> {
             // 저장할 때 `normalized()`가 정밀도에 맞춰 버린다(대략이면 시각 null).
             _emit(precision: p, at: at ?? DateTime.now());
           },
-        ),
+        )),
         const SizedBox(height: AppSizes.spacing8),
         if (widget.precision == OccurredPrecision.approx)
           TextField(

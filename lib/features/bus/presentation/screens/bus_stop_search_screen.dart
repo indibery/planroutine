@@ -13,6 +13,7 @@ import '../../domain/commute_direction.dart';
 import '../../domain/stop_search_view.dart';
 import '../providers/bus_providers.dart';
 import '../widgets/bus_stop_confirm_sheet.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 정류장 이름 검색 → 확인 시트 → 슬롯 저장.
 ///
@@ -278,7 +279,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
         decoration: InputDecoration(
           hintText: BusStrings.stopSearchHint,
           suffixIcon: IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, semanticLabel: BusStrings.search),
             // 지역 모드에서 도시를 고르기 전에는 조회가 나갈 수 없다 — 활성처럼
             // 보이면 눌러도 아무 일이 없는 죽은 컨트롤이 된다. 수도권 검색은
             // 도시가 필요 없으므로 기본 상태에서는 항상 활성이다.
@@ -463,10 +464,11 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.spacing24),
       child: Center(
-        child: GestureDetector(
+        child: ButtonSemantics.gesture(
           key: BusStopSearchScreen.otherRegionKey,
-          behavior: HitTestBehavior.opaque,
+          label: BusStrings.searchOtherRegion,
           onTap: _enableRegionMode,
+          behavior: HitTestBehavior.opaque,
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.spacing8),
             child: Text(
@@ -525,9 +527,10 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
           ),
           if (onRetry != null) ...[
             const SizedBox(height: AppSizes.spacing8),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
+            ButtonSemantics.gesture(
+              label: BusStrings.emptyDownAction,
               onTap: onRetry,
+              behavior: HitTestBehavior.opaque,
               child: Text(
                 BusStrings.emptyDownAction,
                 style: TextStyle(

@@ -3,12 +3,31 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../domain/guidance_content.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../../domain/guidance_types.dart';
 import 'guidance_badges.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 목록 한 줄. 배경·테두리는 `Material`이 진다 — 잉크가 보이게(ListTile 규칙과 같은 이유).
+/// 기록 한 줄의 이름 — 화면 순서대로 사건 시각 · 구분 · (진행 상태) · 제목 · (관련인).
+String guidanceRecordSemanticsLabel(GuidanceRecord record, {required DateTime now}) {
+  final c = record.content;
+  final names = _participantNames(c);
+  return [
+    formatOccurred(c, now: now),
+    c.kind.label,
+    if (c.status != GuidanceStatus.open) c.status.label,
+    c.title,
+    if (names.isNotEmpty) names,
+  ].join(', ');
+}
+
+/// 관련인 이름 한 줄 — 화면과 이름이 같은 규칙(` · `)을 쓴다.
+String _participantNames(GuidanceContent c) =>
+    c.participants.map((p) => p.displayName).join(' · ');
+
 class GuidanceRecordTile extends StatelessWidget {
   const GuidanceRecordTile({super.key, required this.record, required this.now, this.onTap});
 
@@ -19,7 +38,7 @@ class GuidanceRecordTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = record.content;
-    final names = c.participants.map((p) => p.displayName).join(' · ');
+    final names = _participantNames(c);
     final meta = TextStyle(fontSize: 14, color: AppColors.sub);
     return Material(
       color: AppColors.surface,
@@ -28,7 +47,7 @@ class GuidanceRecordTile extends StatelessWidget {
         side: BorderSide(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: ButtonSemantics(label: guidanceRecordSemanticsLabel(record, now: now), onTap: onTap, child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.cardPadding),
@@ -73,7 +92,7 @@ class GuidanceRecordTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }

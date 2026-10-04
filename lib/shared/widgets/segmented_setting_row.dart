@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
+import 'segmented_button_semantics.dart';
 
 /// 설정 한 줄 = 아이콘 + 라벨 + 세그먼트 선택기.
 ///
@@ -45,36 +46,38 @@ class SegmentedSettingRow<T> extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          SegmentedButton<T>(
-            showSelectedIcon: false,
-            style: ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              textStyle: WidgetStatePropertyAll(
-                const TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+          SegmentedButtonSemantics<T>(
+            child: SegmentedButton<T>(
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                textStyle: WidgetStatePropertyAll(
+                  const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                // 채움(선택) 세그먼트는 goldFill + onGold — 라이트에서 gold(딥골드)를
+                // 채움에 쓰면 navy 텍스트와 대비가 낮다(3.57:1). goldFill로 8.37:1.
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.onGold
+                      : AppColors.sub,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? AppColors.goldFill
+                      : Colors.transparent,
+                ),
+                side: WidgetStatePropertyAll(
+                  BorderSide(color: AppColors.lineStrong, width: 0.5),
                 ),
               ),
-              // 채움(선택) 세그먼트는 goldFill + onGold — 라이트에서 gold(딥골드)를
-              // 채움에 쓰면 navy 텍스트와 대비가 낮다(3.57:1). goldFill로 8.37:1.
-              foregroundColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? AppColors.onGold
-                    : AppColors.sub,
-              ),
-              backgroundColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? AppColors.goldFill
-                    : Colors.transparent,
-              ),
-              side: WidgetStatePropertyAll(
-                BorderSide(color: AppColors.lineStrong, width: 0.5),
-              ),
+              segments: segments,
+              selected: {selected},
+              onSelectionChanged: (selection) => onChanged(selection.first),
             ),
-            segments: segments,
-            selected: {selected},
-            onSelectionChanged: (selection) => onChanged(selection.first),
           ),
         ],
       ),

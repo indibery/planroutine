@@ -9,6 +9,7 @@ import '../../domain/memo.dart';
 import '../providers/memo_providers.dart';
 import '../widgets/memo_card.dart';
 import '../widgets/memo_sheet.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 포스트잇 탭 — 보드형(쪽지 2열 격자). 짧게 누르면 시트, **꾹 누르면 끌어서 순서 바꾸기**.
 ///
@@ -73,14 +74,16 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
                 const SizedBox(width: AppSizes.spacing8),
                 IconButton.filled(
                   key: MemoBoardScreen.quickAddKey,
-                  tooltip: MemoStrings.quickAdd,
                   onPressed: _add,
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.goldFill,
                     foregroundColor: AppColors.onGold,
                     minimumSize: const Size(44, 44),
                   ),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(
+                    Icons.add,
+                    semanticLabel: MemoStrings.quickAdd,
+                  ),
                 ),
               ],
             ),
@@ -126,9 +129,8 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
           ),
         ),
         childWhenDragging: Opacity(opacity: 0.3, child: card),
-        child: GestureDetector(
-          onTap: () => MemoSheet.show(context, memo),
-          child: AnimatedContainer(
+        // 버튼으로 읽히게 한 노드로 묶는다 — 없으면 두 자동화 도구 모두 글자로만 잡았다.
+        child: ButtonSemantics.gesture(label: memoCardSemanticsLabel(memo), onTap: () => MemoSheet.show(context, memo), child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
@@ -138,8 +140,7 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
               ),
             ),
             child: card,
-          ),
-        ),
+          )),
       ),
     );
   }

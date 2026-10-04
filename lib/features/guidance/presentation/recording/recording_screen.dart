@@ -11,6 +11,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../lock/system_sheet_guard.dart';
 import '../providers/guidance_providers.dart';
 import 'guidance_recorder.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 class RecordingResult {
   const RecordingResult({required this.path, required this.durationMs, required this.startedAt});
@@ -293,9 +294,9 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
                       ),
                     ),
                     const Spacer(),
-                    Semantics(
-                      button: true,
+                    ButtonSemantics(
                       label: GuidanceStrings.recordingStop,
+                      onTap: _finish,
                       child: InkResponse(
                         key: RecordingScreen.stopKey,
                         onTap: _finish,

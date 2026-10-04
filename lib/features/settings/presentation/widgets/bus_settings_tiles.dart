@@ -11,6 +11,7 @@ import '../../../bus/domain/bus_settings.dart';
 import '../../../bus/domain/commute_direction.dart';
 import '../../../bus/domain/time_range.dart';
 import '../../../bus/presentation/providers/bus_providers.dart';
+import '../../../../shared/widgets/segmented_button_semantics.dart';
 
 /// `기능 관리 › 출퇴근 버스` 상세 화면의 본문 — 정류장·카드 모양·시간대.
 ///
@@ -153,13 +154,15 @@ class BusSettingsTiles extends ConsumerWidget {
           Text(BusStrings.cardStyle, style: _titleStyle),
           Text(BusStrings.cardStyleHint, style: _subStyle),
           const SizedBox(height: AppSizes.spacing8),
-          SegmentedButton<BusCardStyle>(
-            segments: BusCardStyle.values
-                .map((s) => ButtonSegment(value: s, label: Text(s.label)))
-                .toList(),
-            selected: {settings.style},
-            showSelectedIcon: false,
-            onSelectionChanged: (set) => notifier.setStyle(set.first),
+          SegmentedButtonSemantics<BusCardStyle>(
+            child: SegmentedButton<BusCardStyle>(
+              segments: BusCardStyle.values
+                  .map((s) => ButtonSegment(value: s, label: Text(s.label)))
+                  .toList(),
+              selected: {settings.style},
+              showSelectedIcon: false,
+              onSelectionChanged: (set) => notifier.setStyle(set.first),
+            ),
           ),
         ],
       ),

@@ -16,6 +16,8 @@ import '../../../schedule/domain/entry_kind.dart';
 import '../../data/ai_task_exporter.dart';
 import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
+import '../../../../shared/widgets/segmented_button_semantics.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 이벤트 추가/수정 바텀시트
 class EventEditDialog extends ConsumerStatefulWidget {
@@ -194,8 +196,11 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           width: 40,
           child: _isEditing
               ? IconButton(
-                  icon: Icon(Icons.delete_outline, color: AppColors.inkRed),
-                  tooltip: AppStrings.delete,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: AppColors.inkRed,
+                    semanticLabel: AppStrings.delete,
+                  ),
                   onPressed: _onDelete,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -315,7 +320,8 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
     required VoidCallback onTap,
   }) {
     final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
-    return GestureDetector(
+    return ButtonSemantics.gesture(
+      label: '$label, ${formatter.format(date)}',
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -388,44 +394,46 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
           Icon(Icons.label_outline, color: AppColors.primary),
           const SizedBox(width: AppSizes.spacing12),
           Flexible(
-            child: SegmentedButton<EntryKind>(
-              key: const Key('kind_selector'),
-              showSelectedIcon: false,
-              style: ButtonStyle(
-                visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                textStyle: const WidgetStatePropertyAll(
-                  TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+            child: SegmentedButtonSemantics<EntryKind>(
+              child: SegmentedButton<EntryKind>(
+                key: const Key('kind_selector'),
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const WidgetStatePropertyAll(
+                    TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  // 채움은 goldFill + onGold — 라이트에서 gold(딥골드) 채움은 대비가 낮다.
+                  foregroundColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? AppColors.onGold
+                        : AppColors.sub,
+                  ),
+                  backgroundColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? AppColors.goldFill
+                        : Colors.transparent,
+                  ),
+                  side: WidgetStatePropertyAll(
+                    BorderSide(color: AppColors.lineStrong, width: 0.5),
                   ),
                 ),
-                // 채움은 goldFill + onGold — 라이트에서 gold(딥골드) 채움은 대비가 낮다.
-                foregroundColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? AppColors.onGold
-                      : AppColors.sub,
-                ),
-                backgroundColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? AppColors.goldFill
-                      : Colors.transparent,
-                ),
-                side: WidgetStatePropertyAll(
-                  BorderSide(color: AppColors.lineStrong, width: 0.5),
-                ),
+                segments: EntryKind.values
+                    .map(
+                      (k) => ButtonSegment<EntryKind>(
+                        value: k,
+                        label: Text(k.label),
+                      ),
+                    )
+                    .toList(),
+                selected: {_kind},
+                onSelectionChanged: (s) => setState(() => _kind = s.first),
               ),
-              segments: EntryKind.values
-                  .map(
-                    (k) => ButtonSegment<EntryKind>(
-                      value: k,
-                      label: Text(k.label),
-                    ),
-                  )
-                  .toList(),
-              selected: {_kind},
-              onSelectionChanged: (s) => setState(() => _kind = s.first),
             ),
           ),
           const SizedBox(width: AppSizes.spacing8),
@@ -449,49 +457,45 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   /// 채움은 `goldFill` + `onGold`로 바로 옆 세그먼트와 같은 규칙을 쓴다.
   Widget _buildImportantChip() {
     final on = _isImportant;
-    return Semantics(
+    // `ButtonSemantics`가 자식 시맨틱스를 숨긴다 — 칩 안의 `중요` 텍스트가 자기 노드를
+    // 만들어 부모 라벨을 덮으면 스크린리더가 `중요 표시` 대신 `중요`만 읽는다
+    // (가드가 `bySemanticsLabel`로 0건을 잡았다).
+    return ButtonSemantics.gesture(
+      key: const Key('important_toggle'),
       label: CalendarStrings.importantLabel,
-      button: true,
       toggled: on,
-      // **자식 시맨틱을 제외한다.** 칩 안의 `중요` 텍스트가 자기 노드를 만들어
-      // 부모 라벨을 덮으면, 스크린리더가 `중요 표시` 대신 `중요`만 읽는다
-      // (가드가 `bySemanticsLabel`로 0건을 잡았다).
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: const Key('important_toggle'),
-        behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _isImportant = !on),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 36),
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12),
-          decoration: BoxDecoration(
-            color: on ? AppColors.goldFill : Colors.transparent,
-            border: Border.all(
-              color: on ? AppColors.goldFill : AppColors.lineStrong,
-              width: 0.5,
-            ),
-            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+      onTap: () => setState(() => _isImportant = !on),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12),
+        decoration: BoxDecoration(
+          color: on ? AppColors.goldFill : Colors.transparent,
+          border: Border.all(
+            color: on ? AppColors.goldFill : AppColors.lineStrong,
+            width: 0.5,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                on ? Icons.star_rounded : Icons.star_border_rounded,
-                size: AppSizes.iconSmall,
+          borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              on ? Icons.star_rounded : Icons.star_border_rounded,
+              size: AppSizes.iconSmall,
+              color: on ? AppColors.onGold : AppColors.sub,
+            ),
+            const SizedBox(width: AppSizes.spacing4),
+            Text(
+              CalendarStrings.importantBadge,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
                 color: on ? AppColors.onGold : AppColors.sub,
               ),
-              const SizedBox(width: AppSizes.spacing4),
-              Text(
-                CalendarStrings.importantBadge,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: on ? AppColors.onGold : AppColors.sub,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

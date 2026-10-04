@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
+import 'button_semantics.dart';
+import '../../core/constants/app_strings.dart';
 
 /// 좌우 스와이프 액션 안내용 공용 힌트 바.
 ///
@@ -32,6 +34,7 @@ class SlideHintBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = slideHintVisibleProviderFamily(prefKey);
+    void dismiss() => ref.read(provider.notifier).dismiss();
     final visibleAsync = ref.watch(provider);
     final visible = visibleAsync.valueOrNull ?? false;
     if (!visible) return const SizedBox.shrink();
@@ -78,15 +81,19 @@ class SlideHintBar extends ConsumerWidget {
               ],
             ),
           ),
-          InkWell(
-            onTap: () => ref.read(provider.notifier).dismiss(),
-            borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSizes.spacing8),
-              child: Icon(
-                Icons.close,
-                size: AppSizes.iconSmall,
-                color: AppColors.sub,
+          ButtonSemantics(
+            label: AppStrings.dismissHint,
+            onTap: dismiss,
+            child: InkWell(
+              onTap: dismiss,
+              borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.spacing8),
+                child: Icon(
+                  Icons.close,
+                  size: AppSizes.iconSmall,
+                  color: AppColors.sub,
+                ),
               ),
             ),
           ),

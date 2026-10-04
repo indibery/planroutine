@@ -7,6 +7,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../today/domain/stamp_settings.dart';
 import '../../../today/presentation/widgets/completion_seal.dart';
 import '../providers/stamp_settings_provider.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 도장 모양 고르기 — 2열 그리드 바텀시트.
 ///
@@ -133,45 +134,50 @@ class _Option extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      key: StampStyleSheet.optionKey(style),
+    return ButtonSemantics(
+      label: style.label,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radius12),
-      child: Container(
-        padding: const EdgeInsets.all(AppSizes.spacing12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppSizes.radius12),
-          // 선택 표시는 색 + 형태 둘 다다. 체크(아래)가 비색상 단서 —
-          // 캘린더 목록에서 ★를 남긴 것과 같은 이유다.
-          color: selected
-              ? AppColors.goldFill.withValues(alpha: 0.10)
-              : Colors.transparent,
-          border: Border.all(
-            color: selected ? AppColors.gold : AppColors.line,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // 실제 오늘 탭에 찍히는 위젯 그대로. 안착 상태로 고정해 그린다.
-            CompletionSeal(
-              animation: const AlwaysStoppedAnimation(1),
-              style: style,
+      selected: selected,
+      child: InkWell(
+        key: StampStyleSheet.optionKey(style),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSizes.radius12),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.spacing12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSizes.radius12),
+            // 선택 표시는 색 + 형태 둘 다다. 체크(아래)가 비색상 단서 —
+            // 캘린더 목록에서 ★를 남긴 것과 같은 이유다.
+            color: selected
+                ? AppColors.goldFill.withValues(alpha: 0.10)
+                : Colors.transparent,
+            border: Border.all(
+              color: selected ? AppColors.gold : AppColors.line,
+              width: selected ? 1.5 : 1,
             ),
-            const SizedBox(width: AppSizes.spacing12),
-            Expanded(
-              child: Text(
-                style.label,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.gold : AppColors.ink,
+          ),
+          child: Row(
+            children: [
+              // 실제 오늘 탭에 찍히는 위젯 그대로. 안착 상태로 고정해 그린다.
+              CompletionSeal(
+                animation: const AlwaysStoppedAnimation(1),
+                style: style,
+              ),
+              const SizedBox(width: AppSizes.spacing12),
+              Expanded(
+                child: Text(
+                  style.label,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? AppColors.gold : AppColors.ink,
+                  ),
                 ),
               ),
-            ),
-            if (selected) Icon(Icons.check, size: 18, color: AppColors.gold),
-          ],
+              if (selected) Icon(Icons.check, size: 18, color: AppColors.gold),
+            ],
+          ),
         ),
       ),
     );
