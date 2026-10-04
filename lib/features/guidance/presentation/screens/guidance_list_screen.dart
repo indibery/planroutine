@@ -17,6 +17,8 @@ import '../../../../shared/widgets/sheet_title.dart';
 import '../../../../shared/widgets/gold_fab.dart';
 import '../../../../shared/widgets/pill_chip.dart';
 import '../../../../shared/widgets/tab_header_title.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 
 /// 지도 기록 탭 첫 화면. 잠금은 이 화면이 아니라 셸(`GuidanceLockGate`)이 진다.
 class GuidanceListScreen extends ConsumerWidget {
@@ -24,6 +26,7 @@ class GuidanceListScreen extends ConsumerWidget {
 
   static const addKey = Key('guidance_add');
   static const trashKey = Key('guidance_trash');
+  static const recordFabKey = Key('guidance_record_fab');
   static const personFilterKey = Key('guidance_person_filter');
   static Key kindFilterKey(GuidanceKind? kind) => Key('guidance_kind_${kind?.dbValue ?? 'all'}');
   static Key rowKey(int id) => Key('guidance_row_$id');
@@ -43,22 +46,29 @@ class GuidanceListScreen extends ConsumerWidget {
           title: GuidanceStrings.title,
         ),
         actions: [
-          IconButton(
+          _TrashShortcut(
             key: trashKey,
-            icon: const Icon(
-              Icons.delete_outline,
-              semanticLabel: GuidanceStrings.trashTitle,
-            ),
-            onPressed: () => context.push(AppRoutes.guidanceTrash),
+            onTap: () => context.push(AppRoutes.guidanceTrash),
           ),
         ],
       ),
       // 오늘·캘린더와 같은 원형 골드 추가 버튼(2026-10-04 디자인 점검). `GoldFab`은 스스로
       // 이름 있는 잎 노드다 — `FloatingActionButton`은 mobile MCP가 이름을 놓쳤다.
-      floatingActionButton: GoldFab(
-        key: addKey,
-        semanticLabel: GuidanceStrings.newRecord,
-        onTap: () => context.push(AppRoutes.guidanceNew),
+      // 녹음 버튼을 + 위에 둔다 — 상담을 하며 녹음부터 하는 경우가 많다(사용자 제안 2026-10-04).
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _RecordFab(
+            key: recordFabKey,
+            onTap: () => context.push(AppRoutes.guidanceNewRecording),
+          ),
+          const SizedBox(height: AppSizes.spacing12),
+          GoldFab(
+            key: addKey,
+            semanticLabel: GuidanceStrings.newRecord,
+            onTap: () => context.push(AppRoutes.guidanceNew),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -156,3 +166,67 @@ class GuidanceListScreen extends ConsumerWidget {
     ref.read(guidancePersonFilterProvider.notifier).state = picked.$1;
   }
 }
+
+/// 삭제한 기록으로 가는 버튼 — 되살리는 곳이라는 것을 아이콘(휴지통 + 위 화살표)과 작은 글자로 말한다.
+class _TrashShortcut extends StatelessWidget {
+  const _TrashShortcut({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ButtonSemantics(
+      label: GuidanceStrings.trashTitle,
+      onTap: onTap,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing12,
+            vertical: AppSizes.spacing4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.restore_from_trash_outlined, color: AppColors.ink),
+              Text(GuidanceStrings.trashShortcut, style: AppTextStyles.label),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// + 위의 녹음 버튼 — 누르면 새 기록을 열고 곧바로 녹음을 시작한다. +보다 한 단계 작고 조용하다.
+class _RecordFab extends StatelessWidget {
+  const _RecordFab({super.key, required this.onTap});
+
+  static const _size = 48.0;
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: CircleBorder(side: BorderSide(color: AppColors.gold, width: 1.5)),
+      elevation: 2,
+      child: ButtonSemantics(
+        label: GuidanceStrings.newRecordByRecording,
+        onTap: onTap,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: _size,
+            height: _size,
+            child: Icon(Icons.mic_none_rounded, color: AppColors.gold),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

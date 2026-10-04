@@ -21,9 +21,17 @@ import '../../../../shared/widgets/segmented_button_semantics.dart';
 
 /// 새 기록·고치기 공용 전체 화면. 저장은 판을 하나 더한다(같은 내용이면 더하지 않는다).
 class GuidanceEditScreen extends ConsumerStatefulWidget {
-  const GuidanceEditScreen({super.key, this.recordId});
+  const GuidanceEditScreen({
+    super.key,
+    this.recordId,
+    this.startRecording = false,
+  });
 
   final int? recordId;
+
+  /// 화면이 뜨자마자 녹음을 시작한다 — 상담하며 녹음부터 하고 글은 뒤에 쓰는 흐름
+  /// (목록의 녹음 버튼, 사용자 제안 2026-10-04). 녹음 없이 닫으면 빈 기록은 기존처럼 정리된다.
+  final bool startRecording;
 
   static const saveKey = Key('guidance_edit_save');
   static const cancelKey = Key('guidance_edit_cancel');
@@ -85,6 +93,11 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       c.addListener(_touch);
     }
     _load();
+    if (widget.startRecording) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _record();
+      });
+    }
   }
 
   void _touch() {
@@ -370,7 +383,6 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
         ],
       ),
       _hint(GuidanceStrings.importHintSchoolPhone),
-      _hint(GuidanceStrings.importHintCallRecording),
     ];
   }
 

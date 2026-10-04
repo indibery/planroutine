@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
+import 'package:planroutine/core/router/app_router.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
@@ -133,5 +135,54 @@ void main() {
   testWidgets('320pt에서도 필터 줄이 넘치지 않는다', (tester) async {
     await pump(tester, width: 320);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('삭제한 기록 버튼은 되살리는 곳임을 글자로 말한다', (tester) async {
+    // 휴지통 아이콘만 있으면 "누르면 지운다"로 읽힐 수 있다(사용자 제안 2026-10-04).
+    await pump(tester);
+    final trash = find.byKey(GuidanceListScreen.trashKey);
+    expect(
+      find.descendant(of: trash, matching: find.text(GuidanceStrings.trashShortcut)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: trash, matching: find.byIcon(Icons.restore_from_trash_outlined)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('녹음 버튼이 + 바로 위에 있고 누르면 녹음으로 새 기록을 연다', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final router = GoRouter(
+      initialLocation: AppRoutes.guidance,
+      routes: [
+        GoRoute(
+          path: AppRoutes.guidance,
+          builder: (_, _) => const GuidanceListScreen(),
+          routes: [
+            GoRoute(
+              path: 'new',
+              builder: (_, state) => Text('새 기록 ${state.uri.query}'),
+            ),
+          ],
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [guidanceRepositoryProvider.overrideWithValue(repo)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await settle(tester);
+    final mic = find.byKey(GuidanceListScreen.recordFabKey);
+    final add = find.byKey(GuidanceListScreen.addKey);
+    expect(tester.getCenter(mic).dx, moreOrLessEquals(tester.getCenter(add).dx, epsilon: 0.5));
+    expect(tester.getBottomLeft(mic).dy < tester.getTopLeft(add).dy, isTrue);
+    await tester.tap(mic);
+    await tester.pumpAndSettle();
+    expect(find.text('새 기록 record=1'), findsOneWidget);
   });
 }

@@ -59,6 +59,12 @@ class GuidanceStrings {
   // 목록
   static const newRecord = '새 기록';
   static const trashTitle = '삭제한 기록';
+
+  /// 목록 오른쪽 위 삭제한 기록 버튼의 작은 글자 — 휴지통 아이콘만으로는 "지운다"로 읽힐 수 있다.
+  static const trashShortcut = '복구';
+
+  /// 목록의 녹음 버튼 이름 — 누르면 새 기록을 만들고 곧바로 녹음을 시작한다.
+  static const newRecordByRecording = '녹음으로 새 기록';
   static const kindAll = '전체';
   static const personAll = '사람: 전체';
   static String personLabel(String name) => '사람: $name';
@@ -171,8 +177,6 @@ class GuidanceStrings {
   static const importAudio = '녹음 파일 가져오기';
   static const importImage = '사진 가져오기';
   static const importHintSchoolPhone = '학부모 통화는 학교 전화 사용이 원칙입니다.';
-  static const importHintCallRecording =
-      '아이폰 통화 녹음(iOS 18.1 이상)은 메모 앱에 저장됩니다. 메모에서 공유 › 파일에 저장한 뒤 가져오세요.';
   static const removeAttachmentTitle = '첨부를 삭제할까요?';
   static const removeAttachmentMessage = '목록에서는 사라지지만 파일과 수정 이력은 남습니다.';
   static const removeAttachmentConfirm = '삭제';

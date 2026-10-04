@@ -31,6 +31,9 @@ class AppRoutes {
   static const memo = '/memo';
   static const guidance = '/guidance';
   static const guidanceNew = '/guidance/new';
+
+  /// 새 기록을 열자마자 녹음을 시작한다(지도 기록 목록의 녹음 버튼).
+  static const guidanceNewRecording = '/guidance/new?record=1';
   static const guidanceTrash = '/guidance/trash';
   static String guidanceRecord(int id) => '/guidance/record/$id';
   static String guidanceEdit(int id) => '/guidance/record/$id/edit';
@@ -119,7 +122,9 @@ GoRouter createRouter({
               routes: [
                 GoRoute(
                   path: 'new',
-                  builder: (context, state) => const GuidanceEditScreen(),
+                  builder: (context, state) => GuidanceEditScreen(
+                    startRecording: state.uri.queryParameters['record'] == '1',
+                  ),
                 ),
                 GoRoute(
                   path: 'record/:id',

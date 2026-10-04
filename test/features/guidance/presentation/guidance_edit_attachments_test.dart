@@ -140,6 +140,7 @@ void main() {
     ValueNotifier<bool>? show,
     int? recordId,
     GuidanceRecorder Function()? recorder,
+    bool startRecording = false,
   }) async {
     tester.view.physicalSize = const Size(390, 2200);
     tester.view.devicePixelRatio = 1;
@@ -165,7 +166,7 @@ void main() {
                       body: TextButton(
                         onPressed: () => Navigator.of(
                           context,
-                        ).push(MaterialPageRoute<void>(builder: (_) => GuidanceEditScreen(recordId: recordId))),
+                        ).push(MaterialPageRoute<void>(builder: (_) => GuidanceEditScreen(recordId: recordId, startRecording: startRecording))),
                         child: const Text('열기'),
                       ),
                     ),
@@ -178,10 +179,11 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('가져오기 안내 두 줄이 보인다', (tester) async {
+  testWidgets('가져오기 안내는 학교 전화 원칙 한 줄이고 아이폰 통화 녹음 안내는 없다', (tester) async {
+    // 아이폰 통화 녹음 안내는 안드로이드에서도 보였고, 쓰지 않는 경로라 뺐다(사용자 결정 2026-10-04).
     await pump(tester);
     expect(find.text(GuidanceStrings.importHintSchoolPhone), findsOneWidget);
-    expect(find.text(GuidanceStrings.importHintCallRecording), findsOneWidget);
+    expect(find.textContaining('통화 녹음'), findsNothing);
   });
 
   testWidgets('새 기록에 사진을 붙이면 그 순간 기록이 저장되고, 쓰던 글은 남는다', (tester) async {
@@ -197,6 +199,19 @@ void main() {
     expect(atts?.single.originalName, 'IMG_0001.HEIC');
     expect(find.text('쓰던 경과'), findsOneWidget);
     expect(find.byType(AttachmentTile), findsOneWidget);
+  });
+
+  testWidgets('녹음으로 시작하면 열리자마자 녹음 화면이 뜨고, 마치면 새 기록에 붙는다', (tester) async {
+    // 목록의 녹음 버튼 경로 — 상담하며 녹음부터 하고 글은 뒤에 쓴다(사용자 제안 2026-10-04).
+    await pump(tester, startRecording: true);
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    expect(find.byType(RecordingScreen), findsOneWidget);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitForTiles(tester, 1);
+    expect(find.byType(GuidanceEditScreen), findsOneWidget, reason: '녹음 뒤에는 글을 쓰는 편집 화면이 남는다');
+    final list = await tester.runAsync(repo.getActive);
+    final atts = await tester.runAsync(() => repo.getAttachments(list?.single.id ?? -1));
+    expect(atts?.single.source, AttachmentSource.recorded);
   });
 
   testWidgets('녹음을 마치면 기록이 저장되고 녹음이 붙는다', (tester) async {
