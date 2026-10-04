@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
+import '../../data/guidance_exporter.dart';
 import '../../data/guidance_file_store.dart';
 import '../../data/guidance_people_repository.dart';
 import '../../data/guidance_repository.dart';
@@ -21,6 +22,10 @@ final guidancePeopleRepositoryProvider = Provider<GuidancePeopleRepository>(
 );
 
 final guidanceFileStoreProvider = Provider<GuidanceFileStore>((ref) => GuidanceFileStore());
+
+final guidanceExporterProvider = Provider<GuidanceExporter>(
+  (ref) => GuidanceExporter(fileStore: ref.watch(guidanceFileStoreProvider)),
+);
 
 /// "녹음 중" 표시 — 방전·강제 종료로 끊긴 녹음을 다음 실행 때 되살린다.
 final recordingMarkerStoreProvider = Provider<RecordingMarkerStore>((ref) => RecordingMarkerStore());
