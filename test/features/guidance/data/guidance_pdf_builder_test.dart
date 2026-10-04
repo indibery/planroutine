@@ -43,6 +43,8 @@ pw.Font font(String path) =>
     pw.Font.ttf(File(path).readAsBytesSync().buffer.asByteData());
 
 void main() {
+  // 엔진 이미지 코덱(dart:ui)을 쓰려면 바인딩이 필요하다.
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async => initializeDateFormatting('ko', null));
   late GuidancePdfFonts fonts;
   setUpAll(() {
@@ -96,14 +98,14 @@ void main() {
     final pdf = await build(
       record(const GuidanceContent(title: '사진 둘', facts: '경과')),
       plan,
-      {1: shrinkPhotoForPdf(jpg), 2: shrinkPhotoForPdf(jpg)},
+      {1: await shrinkPhotoForPdf(jpg), 2: await shrinkPhotoForPdf(jpg)},
     );
     expect(pageCount(pdf), 3);
   });
 
   test('디코드할 수 없는 사진(HEIC 등)은 축소 결과가 null이고, 그래도 붙임 쪽은 생긴다', () async {
     expect(
-      shrinkPhotoForPdf(Uint8List.fromList(utf8.encode('not an image'))),
+      await shrinkPhotoForPdf(Uint8List.fromList(utf8.encode('not an image'))),
       isNull,
     );
     final plan = buildExportPlan(
@@ -129,15 +131,25 @@ void main() {
     expect(pageCount(pdf), greaterThan(1));
   });
 
-  test('축소본은 긴 변이 maxSide를 넘지 않고 EXIF 방향을 반영한다', () {
+  test('축소본은 긴 변이 maxSide를 넘지 않고 EXIF 방향을 반영한다', () async {
     final wide = img.Image(width: 3000, height: 1000);
     wide.exif.imageIfd.orientation = 6; // 90도 돌려서 보여야 하는 사진
     final out = img.decodeJpg(
-      shrinkPhotoForPdf(Uint8List.fromList(img.encodeJpg(wide))) ??
+      await shrinkPhotoForPdf(Uint8List.fromList(img.encodeJpg(wide))) ??
           Uint8List(0),
     );
     expect(out, isNotNull);
     expect(out?.height, 2000); // 돌린 뒤 세로가 긴 변
     expect(out?.width, closeTo(667, 1));
+  });
+
+  test('작은 사진은 키우지 않는다', () async {
+    final small = img.Image(width: 400, height: 300);
+    final out = img.decodeJpg(
+      await shrinkPhotoForPdf(Uint8List.fromList(img.encodeJpg(small))) ??
+          Uint8List(0),
+    );
+    expect(out?.width, 400);
+    expect(out?.height, 300);
   });
 }

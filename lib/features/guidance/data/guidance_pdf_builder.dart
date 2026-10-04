@@ -1,3 +1,6 @@
+import 'dart:isolate';
+import 'dart:ui' as ui;
+
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
@@ -23,9 +26,48 @@ Future<GuidancePdfFonts> loadGuidancePdfFonts() async => GuidancePdfFonts(
   bold: pw.Font.ttf(await rootBundle.load('assets/fonts/Pretendard-Bold.ttf')),
 );
 
-/// PDF에 넣을 축소본. 원본은 손대지 않는다 — 해시는 원본 기준이다.
-/// 읽을 수 없는 형식(아이폰 HEIC 등)이면 null.
-Uint8List? shrinkPhotoForPdf(Uint8List bytes, {int maxSide = 2000}) {
+/// PDF에 넣을 축소본(긴 변 [maxSide], JPEG). 원본은 손대지 않는다 — 해시는 원본 기준이다.
+/// 기기 코덱을 먼저 쓴다 — iOS는 아이폰 기본 사진 형식인 HEIC도 읽고 EXIF 회전을 반영한다
+/// (시뮬레이터 실측 2026-10-04: 12MP HEIC 75ms). 기기가 못 읽으면 `image` 패키지로 한 번 더,
+/// 그래도 못 읽으면 null — 붙임 쪽에 안내 문구가 들어간다.
+Future<Uint8List?> shrinkPhotoForPdf(Uint8List bytes, {int maxSide = 2000}) async =>
+    await _shrinkWithEngine(bytes, maxSide) ??
+    await Isolate.run(() => _shrinkWithImagePackage(bytes, maxSide));
+
+Future<Uint8List?> _shrinkWithEngine(Uint8List bytes, int maxSide) async {
+  try {
+    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+    // 한 변만 정해 비율을 지킨다 — 회전 전 크기가 넘어와도 찌그러지지 않는다.
+    final codec = await ui.instantiateImageCodecWithSize(
+      buffer,
+      getTargetSize: (w, h) => w <= maxSide && h <= maxSide
+          ? const ui.TargetImageSize()
+          : w >= h
+          ? ui.TargetImageSize(width: maxSide)
+          : ui.TargetImageSize(height: maxSide),
+    );
+    final image = (await codec.getNextFrame()).image;
+    final rgba = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final width = image.width;
+    final height = image.height;
+    image.dispose();
+    codec.dispose();
+    if (rgba == null) return null;
+    final raw = rgba.buffer.asUint8List(rgba.offsetInBytes, rgba.lengthInBytes);
+    return Isolate.run(() => _encodeJpeg(raw, width, height));
+  } catch (_) {
+    return null;
+  }
+}
+
+Uint8List _encodeJpeg(Uint8List rgba, int width, int height) => Uint8List.fromList(
+  img.encodeJpg(
+    img.Image.fromBytes(width: width, height: height, bytes: rgba.buffer, numChannels: 4),
+    quality: 85,
+  ),
+);
+
+Uint8List? _shrinkWithImagePackage(Uint8List bytes, int maxSide) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return null;
   final upright = img.bakeOrientation(decoded);
@@ -33,11 +75,7 @@ Uint8List? shrinkPhotoForPdf(Uint8List bytes, {int maxSide = 2000}) {
   final longest = landscape ? upright.width : upright.height;
   final resized = longest <= maxSide
       ? upright
-      : img.copyResize(
-          upright,
-          width: landscape ? maxSide : null,
-          height: landscape ? null : maxSide,
-        );
+      : img.copyResize(upright, width: landscape ? maxSide : null, height: landscape ? null : maxSide);
   return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
 }
 

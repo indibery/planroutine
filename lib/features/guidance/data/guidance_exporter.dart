@@ -1,4 +1,3 @@
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import '../domain/guidance_export.dart';
@@ -57,10 +56,8 @@ class GuidanceExporter {
     final photos = <int, Uint8List?>{};
     for (final e in plan.images) {
       final bytes = originals[e.no];
-      // 축소가 가장 무겁다 — 화면이 멈추지 않게 다른 isolate에서.
-      photos[e.no] = bytes == null
-          ? null
-          : await Isolate.run(() => shrinkPhotoForPdf(bytes));
+      // 디코드는 기기 코덱(네이티브), JPEG 인코드는 다른 isolate — 화면이 멈추지 않는다.
+      photos[e.no] = bytes == null ? null : await shrinkPhotoForPdf(bytes);
     }
     final pdf = await buildGuidancePdf(
       record: record,
