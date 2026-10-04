@@ -96,6 +96,7 @@ void main() {
               share: (out, _) async {
                 shared.add(out.fileName);
                 await Future<void>.delayed(shareDelay);
+                return true;
               },
               save: (out) async {
                 saved.add(out.fileName);
@@ -189,11 +190,6 @@ void main() {
     await tester.tap(find.byKey(GuidanceExportSheet.saveKey));
     await tester.pumpAndSettle();
     expect(saved, ['a.pdf']);
-    // 스낵바는 열린 시트에 가려 보이지 않는다 — 결과는 시트 안에 남긴다.
-    expect(
-      find.descendant(of: find.byType(GuidanceExportSheet), matching: find.text(GuidanceStrings.exportSaved)),
-      findsOneWidget,
-    );
     await tester.tap(find.byKey(GuidanceExportSheet.guideKey));
     await tester.pumpAndSettle();
     expect(
@@ -236,6 +232,7 @@ void main() {
     await shareViaSheet(out, null, tempDir: () async => tmp, share: (path, _) async {
       seen = path;
       expect(File(path).readAsBytesSync(), [1, 2, 3]);
+      return true;
     });
     expect(seen, isNotNull);
     expect(File(seen ?? '').existsSync(), isFalse);
@@ -245,5 +242,68 @@ void main() {
       throwsStateError,
     );
     expect(tmp.listSync(recursive: true).whereType<File>(), isEmpty);
+  });
+  Future<void> openFromScreen(WidgetTester tester, {required Future<bool> Function() share, bool isAndroid = false}) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [guidanceExporterProvider.overrideWithValue(exporter)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) => TextButton(
+                onPressed: () => showGuidanceExportSheet(
+                  context,
+                  ref,
+                  record: record,
+                  attachments: const [],
+                  isAndroid: isAndroid,
+                  share: (out, _) => share(),
+                  save: (out) async {
+                    saved.add(out.fileName);
+                    return true;
+                  },
+                ),
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('열기'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('공유를 마치면 시트가 닫히고 화면에 공유했다고 알린다', (tester) async {
+    await openFromScreen(tester, share: () async => true);
+    await tester.tap(find.byKey(GuidanceExportSheet.shareKey));
+    await tester.pumpAndSettle();
+    expect(find.byType(GuidanceExportSheet), findsNothing);
+    expect(find.text(GuidanceStrings.exportShared), findsOneWidget);
+  });
+
+  testWidgets('공유 창에서 취소하면 시트가 그대로 남는다 — 다른 방법으로 다시 보낼 수 있다', (tester) async {
+    await openFromScreen(tester, share: () async => false);
+    await tester.tap(find.byKey(GuidanceExportSheet.shareKey));
+    await tester.pumpAndSettle();
+    expect(find.byType(GuidanceExportSheet), findsOneWidget);
+    expect(find.text(GuidanceStrings.exportShared), findsNothing);
+  });
+
+  testWidgets('기기에 저장하면 시트가 닫히고 화면에 저장했다고 알린다', (tester) async {
+    await openFromScreen(tester, share: () async => true, isAndroid: true);
+    await tester.tap(find.byKey(GuidanceExportSheet.saveKey));
+    await tester.pumpAndSettle();
+    expect(saved, ['a.pdf']);
+    expect(find.byType(GuidanceExportSheet), findsNothing);
+    expect(find.text(GuidanceStrings.exportSaved), findsOneWidget);
+  });
+
+  testWidgets('시트 맨 위에 끌어 내리는 손잡이가 있다 — 닫는 방법이 보인다', (tester) async {
+    await pump(tester);
+    expect(find.byKey(GuidanceExportSheet.handleKey), findsOneWidget);
   });
 }

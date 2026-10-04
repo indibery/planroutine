@@ -238,6 +238,7 @@ class GuidanceStrings {
   static const exportShare = '공유';
   static const exportSaveToDevice = '기기에 저장';
   static const exportSaved = '다운로드 폴더 등 고른 곳에 저장했어요';
+  static const exportShared = '공유했어요';
   static const exportFailed = '내보내지 못했어요. 다시 눌러 주세요.';
   static const exportPcGuideTitle = 'PC로 옮기는 방법';
 

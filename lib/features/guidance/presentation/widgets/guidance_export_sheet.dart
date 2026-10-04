@@ -20,7 +20,8 @@ import '../../domain/guidance_types.dart';
 import '../lock/system_sheet_guard.dart';
 import '../providers/guidance_providers.dart';
 
-typedef ShareExport = Future<void> Function(ExportOutput out, Rect? origin);
+/// 보냈으면(또는 결과를 알 수 없으면) true, 공유 창에서 취소했으면 false.
+typedef ShareExport = Future<bool> Function(ExportOutput out, Rect? origin);
 
 /// 저장했으면 true, 저장 창에서 취소했으면 false.
 typedef SaveExport = Future<bool> Function(ExportOutput out);
@@ -29,18 +30,18 @@ typedef SaveExport = Future<bool> Function(ExportOutput out);
 /// ⚠️ 안드로이드의 share_plus는 넘긴 파일을 자기 캐시(`cache/share_plus/`)에 한 번 더 복사하고 그 사본은
 /// 다음 공유 때까지 남는다 — 앱 샌드박스 안이라 노출 범위는 DB와 같다.
 @visibleForTesting
-Future<void> shareViaSheet(
+Future<bool> shareViaSheet(
   ExportOutput out,
   Rect? origin, {
   Future<Directory> Function()? tempDir,
-  Future<void> Function(String path, Rect? origin)? share,
+  Future<bool> Function(String path, Rect? origin)? share,
 }) async {
   final dir = Directory(p.join((await (tempDir ?? getTemporaryDirectory)()).path, 'guidance_export'));
   await dir.create(recursive: true);
   final file = File(p.join(dir.path, out.fileName));
   await file.writeAsBytes(out.bytes, flush: true);
   try {
-    await (share ?? _shareFile)(file.path, origin);
+    return await (share ?? _shareFile)(file.path, origin);
   } finally {
     try {
       await file.delete();
@@ -48,8 +49,11 @@ Future<void> shareViaSheet(
   }
 }
 
-Future<void> _shareFile(String path, Rect? origin) async {
-  await Share.shareXFiles([XFile(path)], sharePositionOrigin: origin);
+/// 취소(`dismissed`)만 false다. 결과를 알 수 없는 경우(`unavailable`)는 보낸 것으로 친다 —
+/// 시트가 남아 있으면 사용자가 닫는 법을 찾아 헤맨다(실기기 피드백 2026-10-05).
+Future<bool> _shareFile(String path, Rect? origin) async {
+  final result = await Share.shareXFiles([XFile(path)], sharePositionOrigin: origin);
+  return result.status != ShareResultStatus.dismissed;
 }
 
 /// 안드로이드 저장 위치 선택 창(SAF). 공유시트에는 "파일로 저장"하는 공통 항목이 없다.
@@ -61,17 +65,23 @@ Future<bool> _saveViaPicker(ExportOutput out) async {
   return path != null;
 }
 
+/// 보내기를 마치면 시트가 닫히고 결과를 이 화면의 스낵바로 알린다 — 시트가 열린 채면 스낵바가 가려지고,
+/// 닫는 법을 찾아 헤맨다(실기기 피드백 2026-10-05). 문구는 상수뿐이라 기록 내용이 잠금 덮개 밖에 남지 않는다.
 Future<void> showGuidanceExportSheet(
   BuildContext context,
   WidgetRef ref, {
   required GuidanceRecord record,
   required List<GuidanceAttachment> attachments,
+  @visibleForTesting bool? isAndroid,
+  @visibleForTesting ShareExport? share,
+  @visibleForTesting SaveExport? save,
 }) async {
   final available = await ref
       .read(guidanceExporterProvider)
       .availableIds(attachments);
   if (!context.mounted) return;
-  await showModalBottomSheet<void>(
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final message = await showModalBottomSheet<String>(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
@@ -79,8 +89,12 @@ Future<void> showGuidanceExportSheet(
       record: record,
       attachments: attachments,
       availableIds: available,
+      isAndroid: isAndroid,
+      share: share,
+      save: save,
     ),
   );
+  if (message != null) messenger?.showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// 위에서 무엇을(ZIP / PDF만) 고르고, 아래 버튼으로 어떻게(공유 / 기기에 저장) 보낼지 고른다.
@@ -111,6 +125,7 @@ class GuidanceExportSheet extends ConsumerStatefulWidget {
   static const shareKey = Key('guidance_export_share');
   static const saveKey = Key('guidance_export_save');
   static const guideKey = Key('guidance_export_guide');
+  static const handleKey = Key('guidance_export_handle');
   static Key attachmentKey(int id) => Key('guidance_export_attachment_$id');
 
   @override
@@ -130,7 +145,7 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
   final _shareAnchor = GlobalKey();
   var _busy = false;
 
-  /// 결과 안내. 스낵바로 띄우면 열린 시트에 가려 보이지 않는다(에뮬레이터 확인) — 시트 안에 남긴다.
+  /// 실패 안내. 열린 시트에 스낵바는 가려지므로(에뮬레이터 확인) 시트 안에 남긴다.
   String? _status;
 
   bool get _android => widget.isAndroid ?? Platform.isAndroid;
@@ -144,35 +159,32 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
+  /// [send]가 문구를 돌려주면 보내기가 끝난 것이다 — 시트를 닫고 그 문구를 화면에 넘긴다.
+  /// null이면(취소) 시트를 그대로 둔다. 실패는 시트 안 상태 줄에 남긴다(시트가 열려 있어 스낵바는 가려진다).
   Future<void> _run(Future<String?> Function(ExportOutput out) send) async {
     if (!_canSend) return;
     setState(() {
       _busy = true;
       _status = null;
     });
-    String? status;
+    String? done;
     try {
       final out = await ref
           .read(guidanceExporterProvider)
           .build(record: widget.record, attachments: _visible, selectedIds: _selected, kind: _kind);
-      status = await send(out);
+      done = await send(out);
     } catch (_) {
       // 기록 내용(제목·이름)은 넣지 않는다.
-      status = GuidanceStrings.exportFailed;
+      if (mounted) setState(() => _status = GuidanceStrings.exportFailed);
     } finally {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _status = status;
-        });
-      }
+      if (mounted) setState(() => _busy = false);
     }
+    if (done != null && mounted) await Navigator.of(context).maybePop(done);
   }
 
-  Future<void> _share() => _run((out) async {
-    await (widget.share ?? shareViaSheet)(out, _origin());
-    return null;
-  });
+  Future<void> _share() => _run(
+    (out) async => await (widget.share ?? shareViaSheet)(out, _origin()) ? GuidanceStrings.exportShared : null,
+  );
 
   Future<void> _save() => _run(
     (out) async => await (widget.save ?? _saveViaPicker)(out) ? GuidanceStrings.exportSaved : null,
@@ -187,11 +199,24 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
     final now = DateTime.now();
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.spacing20),
+        padding: const EdgeInsets.fromLTRB(AppSizes.spacing20, AppSizes.spacing12, AppSizes.spacing20, AppSizes.spacing20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 끌어 내려 닫을 수 있다는 표시 — 도장 모양 시트와 같은 손잡이.
+            Center(
+              child: Container(
+                key: GuidanceExportSheet.handleKey,
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.faint,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSizes.spacing16),
             const SheetTitle(GuidanceStrings.export),
             const SizedBox(height: AppSizes.spacing12),
             RadioGroup<ExportKind>(
