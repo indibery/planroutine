@@ -63,4 +63,44 @@ void main() {
       );
     });
   }
+
+  // **2026-10-04에 실제로 났다.** `1.4.0-android.ko.txt`가 없자 `stage_changelog`가
+  // App Store용 `1.4.0.ko.txt`(1343자)를 대신 Play에 올렸고, 업로드 마지막 단계에서
+  // 거부됐다. 위 검사는 파일 이름으로 상한을 정해서 그 파일을 4000자 기준으로만 봤다 —
+  // **Play가 실제로 받는 파일**을 기준으로 재야 한다.
+  // 안드로이드 노트가 처음 생긴 버전보다 앞선 노트(아이폰만 출시하던 때)는 Play로 간 적이 없다.
+  List<int> parse(String v) => v.split('.').map(int.parse).toList();
+  int compare(String a, String b) {
+    final x = parse(a), y = parse(b);
+    for (var i = 0; i < 3; i++) {
+      if (x[i] != y[i]) return x[i].compareTo(y[i]);
+    }
+    return 0;
+  }
+
+  final names = notes.map((f) => f.uri.pathSegments.last).toSet();
+  final androidVersions =
+      names
+          .where((n) => n.endsWith('-android.ko.txt'))
+          .map((n) => n.replaceAll('-android.ko.txt', ''))
+          .toList()
+        ..sort(compare);
+  for (final f in notes) {
+    final name = f.uri.pathSegments.last;
+    if (name.contains('-android') || androidVersions.isEmpty) continue;
+    final version = name.replaceAll('.ko.txt', '');
+    if (compare(version, androidVersions.first) < 0) continue;
+    if (names.contains('$version-android.ko.txt')) continue;
+
+    test('$name — 안드로이드 노트가 없으면 Play가 이 파일을 받으므로 $_playMaxChars자 이내', () {
+      final length = f.readAsStringSync().trim().length;
+      expect(
+        length,
+        lessThanOrEqualTo(_playMaxChars),
+        reason:
+            '$version-android.ko.txt가 없어 Play가 $name($length자)을 받는다. '
+            '500자 이내의 $version-android.ko.txt를 따로 쓸 것',
+      );
+    });
+  }
 }
