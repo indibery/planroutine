@@ -49,7 +49,8 @@ flutter test               # 유닛/위젯 전수 통과 (단일 실행, flaky �
 > 삭제됐다). iPad는 share 팝오버 등 iPad 고유 케이스를 볼 때만 보조로.
 >
 > **iOS 27 시뮬레이터 조작은 `driving-ios-simulator` 스킬의 "iOS 27" 절을 따른다**(2026-10-04 실측·공식 문서 조사).
-> - **탭은 AXe 좌표 탭이 된다** — XcodeBuildMCP에 번들된 `axe tap -x <pt> -y <pt> --udid <udid>`
+> - **탭은 AXe 좌표 탭이 된다** — MobileBuildMCP(옛 XcodeBuildMCP)에 번들된 `axe tap -x <pt> -y <pt> --udid <udid>`
+>   (경로 `~/.npm/_npx/*/node_modules/mobilebuildmcp/bundled/axe`)
 >   (`AXE_HID_STABILIZATION_MS=200`, 첫 탭이 버려지는 Xcode 27 버그 회피). 좌표는 포인트(iPhone 17 = 스크린샷 px ÷ 3).
 > - **요소 트리(`snapshot_ui`·`axe describe-ui`)는 맥의 Automation Mode 인증이 있어야 한다** — 꺼져 있으면
 >   `Timed out creating the simulator remote automation session`. 확인은 `automationmodetool`. 원격 작업 중에는

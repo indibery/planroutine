@@ -1,4 +1,9 @@
-# XcodeBuildMCP 워크플로 설정 (워크스페이스 루트에 둔다 — 이 경로가 아니면 조용히 무시된다)
+# MobileBuildMCP 워크플로 설정 (워크스페이스 루트에 둔다 — 이 경로가 아니면 조용히 무시된다)
+#
+# 2.7.1에서 XcodeBuildMCP → MobileBuildMCP로 이름이 바뀌며 설정 폴더도 `.xcodebuildmcp/` →
+# `.mobilebuildmcp/`로 바뀌었다(2026-10-04 옮김). 새 패키지는 옛 폴더를 읽지 않는다 —
+# 패키지 코드에 `.xcodebuildmcp` 참조가 없음을 확인했다. 옛 폴더에 두면 `ui-automation`이 조용히 꺼진다.
+# `.mcp.json`의 서버 키는 `xcodebuild` 그대로다(도구 이름 `mcp__xcodebuild__…`를 유지하려고).
 #
 # `ui-automation`을 켜는 이유:
 #   기본값은 `simulator`만이라 `snapshot_ui`는 나오는데 그것이 참조하는 `tap`이 없다.

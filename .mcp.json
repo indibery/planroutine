@@ -2,7 +2,7 @@
   "mcpServers": {
     "xcodebuild": {
       "command": "npx",
-      "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+      "args": ["-y", "mobilebuildmcp@latest", "mcp"]
     },
     "mobile": {
       "command": "npx",
