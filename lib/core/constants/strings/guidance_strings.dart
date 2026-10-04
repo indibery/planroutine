@@ -6,8 +6,7 @@ class GuidanceStrings {
   static const title = '지도 기록';
   static const tabLabel = '지도 기록';
   static const eyebrow = 'RECORD';
-  static const moduleDescription =
-      '학교 단계의 생활지도·교육활동 침해를 잠금 안에 기록해 둡니다';
+  static const moduleDescription = '학교 단계의 생활지도·교육활동 침해를 잠금 안에 기록해 둡니다';
 
   // 사람 구분
   static const roleStudent = '학생';
@@ -68,7 +67,8 @@ class GuidanceStrings {
 
   /// 녹음 버튼으로 시작한 새 기록의 미리 넣는 제목 — 녹음만 하고 바로 저장해도 구별된다.
   /// [n]은 그날 만든 기록 순번(1부터).
-  static String autoTitle(DateTime day, int n) => '${day.month}월 ${day.day}일 지도 기록 $n';
+  static String autoTitle(DateTime day, int n) =>
+      '${day.month}월 ${day.day}일 지도 기록 $n';
   static const kindAll = '전체';
   static const personAll = '사람: 전체';
   static String personLabel(String name) => '사람: $name';
@@ -135,7 +135,8 @@ class GuidanceStrings {
   static const delete = '삭제';
   static const labelOccurredShort = '사건';
   static const labelCreatedShort = '기록';
-  static String revisionLink(int times, String last) => '수정 $times회 · 마지막 $last';
+  static String revisionLink(int times, String last) =>
+      '수정 $times회 · 마지막 $last';
   static const labelAttachments = '첨부';
   static const deleteTitle = '이 기록을 삭제할까요?';
   static const deleteMessage = '삭제한 기록으로 옮겨집니다. 자동으로 지워지지 않으며, 거기서 되살릴 수 있습니다.';
@@ -165,7 +166,8 @@ class GuidanceStrings {
 
   // 수정 이력
   static const historyTitle = '수정 이력';
-  static const historyIntro = '저장할 때마다 그때 내용이 수정 버전으로 남습니다. 이전 버전은 고치거나 지울 수 없어요.';
+  static const historyIntro =
+      '저장할 때마다 그때 내용이 수정 버전으로 남습니다. 이전 버전은 고치거나 지울 수 없어요.';
 
   /// 화면에서는 `판`이라는 말을 쓰지 않는다(사용자 결정 2026-10-03) — 판 1은 `처음 작성`,
   /// 판 n은 `수정 버전 n-1`. 목록의 `수정 N회`와 번호가 맞는다.
@@ -196,7 +198,8 @@ class GuidanceStrings {
   static const micDenied = '마이크 권한이 꺼져 있어요';
   static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';
   static const openSettings = '설정 열기';
-  static const recordingStartFailed = '녹음을 시작하지 못했어요. 다른 앱이 마이크를 쓰고 있는지 확인해 주세요.';
+  static const recordingStartFailed =
+      '녹음을 시작하지 못했어요. 다른 앱이 마이크를 쓰고 있는지 확인해 주세요.';
   static const recordingClose = '닫기';
 
   // 붙이지 못한 녹음
@@ -217,4 +220,53 @@ class GuidanceStrings {
   static const purgeTitle = '영구 삭제할까요?';
   static const purgeMessage =
       '이 기록의 저장된 내용과 수정 이력, 첨부 파일이 모두 지워집니다. 이 기록에만 나온 이름 추천도 함께 지워집니다. 되돌릴 수 없습니다.';
+
+  // 내보내기
+  static const export = '내보내기';
+  static const exportBundle = '제출용 묶음(ZIP)';
+  static String exportBundleSubtitle(int audio, int image) {
+    final parts = [
+      if (audio > 0) '$attachmentAudio $audio개',
+      if (image > 0) '$attachmentImage $image개',
+    ];
+    return parts.isEmpty ? 'PDF' : 'PDF + ${parts.join(' · ')} 원본';
+  }
+
+  static const exportPdfOnly = 'PDF만';
+  static const exportPdfOnlySubtitle = '인쇄·내부 보고용';
+  static const exportNotice = '학생 이름과 기록 내용이 담깁니다. 받는 사람을 확인하세요.';
+  static const exportShare = '공유';
+  static const exportSaveToDevice = '기기에 저장';
+  static const exportSaved = '다운로드 폴더 등 고른 곳에 저장했어요';
+  static const exportFailed = '내보내지 못했어요. 다시 눌러 주세요.';
+  static const exportPcGuideTitle = 'PC로 옮기는 방법';
+
+  /// 두 기기 모두 메일 → 카카오톡 → 드라이브 순서(사용자 결정 2026-10-04 — 실제로 많이 쓰는 경로가 앞).
+  /// 케이블은 안드로이드 마지막에만 있다. 아이폰은 Windows가 사진 폴더만 보여 줘 앱 파일을 꺼낼 수 없다.
+  static const exportPcGuideIos = [
+    '메일 — 공유에서 메일 앱을 골라 나에게 보내고, PC에서 웹메일로 받아요.',
+    '카카오톡 — 공유에서 카카오톡 나와의 채팅으로 보내고, PC 카카오톡에서 받아요.',
+    '드라이브 — 공유에서 "파일에 저장"(iCloud Drive)이나 구글 드라이브로 보내고, PC 브라우저에서 받아요.',
+  ];
+  static const exportPcGuideAndroid = [
+    '메일 — 공유에서 메일 앱을 골라 나에게 보내고, PC에서 웹메일로 받아요.',
+    '카카오톡 — 공유에서 카카오톡 나와의 채팅으로 보내고, PC 카카오톡에서 받아요.',
+    '드라이브 — 공유에서 구글 드라이브로 보내고, PC 브라우저에서 받아요.',
+    'USB 케이블 — 기기에 저장에서 "다운로드"를 고르고, PC에 꽂아 복사해요.',
+  ];
+
+  // 내보내기 PDF
+  static const pdfTitle = '지도 기록';
+  static const pdfLastEdited = '마지막 수정';
+  static String pdfEdits(int edits) => edits == 0 ? '수정 없음' : '수정 $edits회';
+  static const pdfAttachments = '첨부';
+  static const pdfOriginalsInZip = '원본은 제출용 묶음(ZIP)에 같은 이름으로 들어 있습니다.';
+  static const pdfOriginalsHint = "원본은 앱에서 '제출용 묶음(ZIP)'으로 내보낼 수 있습니다.";
+  static const pdfCertutil = 'Windows에서 대조: certutil -hashfile 파일이름 SHA256';
+  static String pdfAppendixTitle(int n, String no) => '붙임 $n (첨부 $no)';
+  static const pdfPhotoNote = 'PDF에 넣은 사진은 축소본입니다. 해시는 원본 기준입니다.';
+  static const pdfPhotoUnsupported =
+      '이 사진은 PDF에 넣을 수 없는 형식입니다. 원본은 제출용 묶음(ZIP)에 있습니다.';
+  static String pdfFooter(String stamp, int page, int pages) =>
+      '공직플랜에서 $stamp에 만듦 · $page/$pages쪽';
 }
