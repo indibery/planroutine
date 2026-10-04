@@ -34,44 +34,50 @@ class StampSettingsTiles extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(
-          key: styleTileKey,
-          leading: Icon(Icons.approval_outlined, color: AppColors.primary),
-          title: Text(
-            SettingsStrings.stampStyleLabel,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          // 섹션 헤더가 달고 있던 설명이 여기로 내려왔다 — `도장 모양`만으로는
-          // 이 도장이 어디에 찍히는지 알 수 없다.
-          subtitle: Text(
-            SettingsStrings.stampDescription,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                settings.style.label,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
+        // 자기 노드를 갖게 한다. `ListTile`은 스스로 노드를 만들지 않아, 아래 스위치 줄과 한
+        // 목록 항목에 있으면 이 줄의 버튼 표시·이름이 항목 전체로 올라가 스위치 줄을 품었다 —
+        // 자동화가 가운데를 누르면 스위치가 바뀌었다(stamp_tile_semantics_test).
+        Semantics(
+          container: true,
+          child: ListTile(
+            key: styleTileKey,
+            leading: Icon(Icons.approval_outlined, color: AppColors.primary),
+            title: Text(
+              SettingsStrings.stampStyleLabel,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              const SizedBox(width: AppSizes.spacing4),
-              const Icon(Icons.chevron_right),
-            ],
+            ),
+            // 섹션 헤더가 달고 있던 설명이 여기로 내려왔다 — `도장 모양`만으로는
+            // 이 도장이 어디에 찍히는지 알 수 없다.
+            subtitle: Text(
+              SettingsStrings.stampDescription,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  settings.style.label,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.spacing4),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => StampStyleSheet.show(context),
           ),
-          onTap: () => StampStyleSheet.show(context),
         ),
         SwitchListTile(
           key: const Key('stamp_dim_switch'),

@@ -100,6 +100,55 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('시트의 쪽지 색은 이름과 선택 상태를 가진 버튼이다', (tester) async {
+    final handle = tester.ensureSemantics();
+    final memo = await tester.runAsync(() => repo.add('색'));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          memoRepositoryProvider.overrideWithValue(repo),
+          calendarRepositoryProvider.overrideWithValue(
+            CalendarRepository(dbHelper: db),
+          ),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () =>
+                    MemoSheet.show(context, memo ?? const Memo(text: '')),
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('열기'));
+    await tester.pumpAndSettle();
+
+    // 새 쪽지는 노랑이다.
+    for (final (label, selected) in [
+      (MemoStrings.colorYellow, true),
+      (MemoStrings.colorGreen, false),
+      (MemoStrings.colorBlue, false),
+      (MemoStrings.colorPink, false),
+    ]) {
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(label)),
+        isSemantics(isButton: true, hasTapAction: true, isSelected: selected),
+        reason: label,
+      );
+    }
+    tester.semantics.tap(find.semantics.byLabel(MemoStrings.colorGreen));
+    await tester.pump();
+    expect(
+      tester.getSemantics(find.bySemanticsLabel(MemoStrings.colorGreen)),
+      isSemantics(isSelected: true),
+    );
+    handle.dispose();
+  });
+
   testWidgets('시트의 날짜 삭제가 날짜 줄과 따로 누를 수 있는 버튼이다', (tester) async {
     final handle = tester.ensureSemantics();
     final memo = await tester.runAsync(() async {

@@ -43,7 +43,10 @@ class ModulesScreen extends ConsumerWidget {
         if (m.id != ModuleIds.settings) m,
     ];
     final settings = resolved.tabs.last;
-    final optional = [for (final m in catalog) if (!m.fixed) m];
+    final optional = [
+      for (final m in catalog)
+        if (!m.fixed) m,
+    ];
     final tabsFull = resolved.tabs.length >= kMaxTabs;
     final installedIds = resolved.ids.toSet();
 
@@ -113,8 +116,12 @@ class ModulesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _lock() =>
-      Icon(Icons.lock_outline, key: lockIconKey, size: 18, color: AppColors.faint);
+  Widget _lock() => Icon(
+    Icons.lock_outline,
+    key: lockIconKey,
+    size: 18,
+    color: AppColors.faint,
+  );
 
   Widget _header(String title, {String? trailing}) => Padding(
     padding: const EdgeInsets.fromLTRB(
@@ -168,28 +175,33 @@ class ModulesScreen extends ConsumerWidget {
           onChanged: blocked ? null : onChanged,
         ),
         if (route != null)
-          ListTile(
-            key: settingsKey(m.id),
-            // 기능 행의 글자 줄에 맞춰 들여 쓴다 — 이 줄이 위 기능에 속한다는 표시.
-            contentPadding: const EdgeInsets.only(
-              left: AppSizes.moduleSettingsIndent,
-              right: AppSizes.pagePadding,
+          // 자기 노드를 갖게 한다. `ListTile`은 스스로 노드를 만들지 않아 위 스위치 줄과 한 항목에
+          // 있으면 버튼 표시가 항목 전체로 올라가 스위치 줄을 품었다(button_node_nesting_test).
+          Semantics(
+            container: true,
+            child: ListTile(
+              key: settingsKey(m.id),
+              // 기능 행의 글자 줄에 맞춰 들여 쓴다 — 이 줄이 위 기능에 속한다는 표시.
+              contentPadding: const EdgeInsets.only(
+                left: AppSizes.moduleSettingsIndent,
+                right: AppSizes.pagePadding,
+              ),
+              dense: true,
+              title: const Text(SettingsStrings.moduleSettings),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (m.settingsSummary case final summary?)
+                    DefaultTextStyle.merge(
+                      style: TextStyle(fontSize: 14, color: AppColors.sub),
+                      child: summary,
+                    ),
+                  const SizedBox(width: AppSizes.spacing4),
+                  Icon(Icons.chevron_right, key: chevronKey(m.id)),
+                ],
+              ),
+              onTap: () => context.push(route),
             ),
-            dense: true,
-            title: const Text(SettingsStrings.moduleSettings),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (m.settingsSummary case final summary?)
-                  DefaultTextStyle.merge(
-                    style: TextStyle(fontSize: 14, color: AppColors.sub),
-                    child: summary,
-                  ),
-                const SizedBox(width: AppSizes.spacing4),
-                Icon(Icons.chevron_right, key: chevronKey(m.id)),
-              ],
-            ),
-            onTap: () => context.push(route),
           ),
       ],
     );

@@ -157,6 +157,22 @@ void main() {
     expect(result?.durationMs, greaterThanOrEqualTo(0));
   });
 
+  testWidgets('정지 버튼은 이름 있는 버튼이고 시맨틱스 탭으로도 멈춘다', (tester) async {
+    // 시뮬레이터 자동화가 이 버튼을 이름으로 찾아 누른다(ButtonSemantics, 2026-10-04).
+    final handle = tester.ensureSemantics();
+    await pump(tester);
+    // 화면 전환이 끝나야 새 화면의 시맨틱스가 올라온다(녹음 타이머가 돌아 pumpAndSettle은 못 쓴다).
+    await tester.pump(const Duration(seconds: 1));
+    expect(
+      tester.getSemantics(find.bySemanticsLabel(GuidanceStrings.recordingStop)),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+    tester.semantics.tap(find.semantics.byLabel(GuidanceStrings.recordingStop));
+    await waitUntil(tester, () => popped);
+    expect(popped, isTrue);
+    handle.dispose();
+  });
+
   testWidgets('권한이 없으면 안내하고 녹음을 시작하지 않는다', (tester) async {
     await pump(tester, permitted: false);
     expect(find.text(GuidanceStrings.micDenied), findsOneWidget);
