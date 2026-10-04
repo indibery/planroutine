@@ -94,10 +94,27 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     }
     _load();
     if (widget.startRecording) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _record();
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startWithRecording());
     }
+  }
+
+  /// 녹음 버튼 경로: 제목을 `10월 4일 지도 기록 N`으로 미리 넣고 곧바로 녹음한다. 녹음만 하고
+  /// 바로 저장해도 기록끼리 구별되게(사용자 제안 2026-10-04). 순번을 못 세면 제목 없이 녹음한다.
+  Future<void> _startWithRecording() async {
+    if (!mounted) return;
+    try {
+      final now = DateTime.now();
+      final records = await ref.read(guidanceRepositoryProvider).getActive();
+      final today = records.where((r) {
+        final at = DateTime.tryParse(r.createdAt)?.toLocal();
+        return at != null && at.year == now.year && at.month == now.month && at.day == now.day;
+      }).length;
+      if (!mounted) return;
+      _title.text = GuidanceStrings.autoTitle(now, today + 1);
+      // 미리 넣은 제목은 사용자가 쓴 것이 아니다 — 녹음 없이 닫을 때 저장 확인을 묻지 않게 기준에 넣는다.
+      _saved = _current();
+    } catch (_) {}
+    if (mounted) await _record();
   }
 
   void _touch() {

@@ -214,6 +214,23 @@ void main() {
     expect(atts?.single.source, AttachmentSource.recorded);
   });
 
+  testWidgets('녹음으로 시작하면 제목에 날짜와 그날 순번이 미리 들어가 바로 저장할 수 있다', (tester) async {
+    // 녹음만 하고 곧바로 저장하는 경우를 위해서다(사용자 제안 2026-10-04).
+    final now = DateTime.now();
+    await tester.runAsync(() => repo.create(const GuidanceContent(title: '오늘 앞선 기록')));
+    await pump(tester, startRecording: true);
+    await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);
+    await tester.tap(find.byKey(RecordingScreen.stopKey));
+    await waitForTiles(tester, 1);
+    final expected = GuidanceStrings.autoTitle(now, 2);
+    expect(
+      tester.widget<TextField>(find.byKey(GuidanceEditScreen.titleKey)).controller?.text,
+      expected,
+    );
+    final list = await tester.runAsync(repo.getActive);
+    expect(list?.map((r) => r.content.title), contains(expected));
+  });
+
   testWidgets('녹음을 마치면 기록이 저장되고 녹음이 붙는다', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(GuidanceEditScreen.recordKey));

@@ -65,6 +65,10 @@ class GuidanceStrings {
 
   /// 목록의 녹음 버튼 이름 — 누르면 새 기록을 만들고 곧바로 녹음을 시작한다.
   static const newRecordByRecording = '녹음으로 새 기록';
+
+  /// 녹음 버튼으로 시작한 새 기록의 미리 넣는 제목 — 녹음만 하고 바로 저장해도 구별된다.
+  /// [n]은 그날 만든 기록 순번(1부터).
+  static String autoTitle(DateTime day, int n) => '${day.month}월 ${day.day}일 지도 기록 $n';
   static const kindAll = '전체';
   static const personAll = '사람: 전체';
   static String personLabel(String name) => '사람: $name';
