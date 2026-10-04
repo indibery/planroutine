@@ -16,28 +16,24 @@ import '../helpers/source_scan.dart';
 /// 주석은 걷어내고 본다 — 이 리포의 스캐너는 언급을 사용으로 오인한 적이 여러 번 있다.
 List<String> findUnwrapped(String source) {
   final lines = source.split('\n');
+  final code = lines.map(stripLineComment).join('\n');
   final detector = RegExp(
     r'\b(GestureDetector|InkWell|InkResponse|FloatingActionButton)\(',
   );
   final tapArg = RegExp(r'\bon(Tap|LongPress|DoubleTap|Pressed)\s*:');
   final out = <String>[];
-  for (var i = 0; i < lines.length; i++) {
-    if (!detector.hasMatch(stripLineComment(lines[i]))) continue;
-    final after = lines.skip(i).take(10).map(stripLineComment).join('\n');
+  for (final m in detector.allMatches(code)) {
+    final line = '\n'.allMatches(code.substring(0, m.start)).length;
+    final after = lines.skip(line).take(10).map(stripLineComment).join('\n');
     if (!tapArg.hasMatch(after)) continue;
-    final before = lines.skip(i < 10 ? 0 : i - 10).take(i < 10 ? i : 10);
-    // 포맷하지 않은 파일은 `ButtonSemantics(label: …, child: InkWell(`처럼 한 줄에 쓴다.
-    final sameLine = stripLineComment(
-      lines[i],
-    ).substring(0, detector.firstMatch(stripLineComment(lines[i]))?.start ?? 0);
-    final wrapped =
-        sameLine.contains('ButtonSemantics') ||
-        before.map(stripLineComment).any((l) => l.contains('ButtonSemantics'));
+    // 바로 감싸는 호출이 ButtonSemantics이고, 이 감지기가 그 `child:`여야 한다.
+    final wrapper = enclosingChildOf(code, m.start);
+    final wrapped = wrapper != null && wrapper.startsWith('ButtonSemantics');
     final excused = lines
-        .skip(i < 3 ? 0 : i - 3)
-        .take(i < 3 ? i : 3)
+        .skip(line < 3 ? 0 : line - 3)
+        .take(line < 3 ? line : 3)
         .any((l) => l.contains('시맨틱스 예외:'));
-    if (!wrapped && !excused) out.add('${i + 1}: ${lines[i].trim()}');
+    if (!wrapped && !excused) out.add('${line + 1}: ${lines[line].trim()}');
   }
   return out;
 }
@@ -84,6 +80,36 @@ void main() {
       ),
     );'''),
         isEmpty,
+      );
+    });
+
+    test('바로 위에 다른 것을 감싼 ButtonSemantics가 있어도 맨 감지기는 잡는다', () {
+      // 예전 판정은 "앞 10줄 안에 ButtonSemantics라는 글자가 있는가"라 이 경우를 놓쳤다
+      // (verifier가 짚었다, 2026-10-04). 지금은 바로 감싸는 호출이 ButtonSemantics인지 본다.
+      expect(
+        findUnwrapped('''
+    Column(children: [
+      ButtonSemantics(label: '저장', onTap: save, child: const Text('저장')),
+      GestureDetector(
+        onTap: delete,
+        child: const Text('삭제'),
+      ),
+    ]);'''),
+        hasLength(1),
+      );
+    });
+
+    test('ButtonSemantics의 child가 아니라 다른 인자 안에 있으면 잡는다', () {
+      expect(
+        findUnwrapped('''
+    ButtonSemantics(
+      label: '정류장',
+      onTap: pick,
+      child: Row(children: [
+        GestureDetector(onTap: other, child: const Text('x')),
+      ]),
+    );'''),
+        hasLength(1),
       );
     });
 
