@@ -1,6 +1,7 @@
 import 'dart:isolate';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:pdf/pdf.dart';
@@ -79,15 +80,10 @@ Uint8List? _shrinkWithImagePackage(Uint8List bytes, int maxSide) {
   return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
 }
 
-/// 한 위젯이 한 쪽을 넘으면 pdf가 예외를 던진다 — 줄로 나누고, 긴 줄은 다시 자른다.
-List<String> _chunks(String text, {int size = 300}) => [
-  for (final line in text.split('\n'))
-    if (line.length <= size)
-      line
-    else
-      for (var i = 0; i < line.length; i += size)
-        line.substring(i, (i + size).clamp(0, line.length)),
-];
+/// 단락은 줄바꿈에서만 나눈다. 쪽을 넘는 긴 단락은 `TextOverflow.span`이 다음 쪽으로 잇는다 —
+/// 글자 수로 자르면 제출 문서의 문장 한가운데에 줄바꿈이 생긴다(최종 검토 지적).
+@visibleForTesting
+List<String> pdfParagraphs(String text) => text.split('\n');
 
 Future<Uint8List> buildGuidancePdf({
   required GuidanceRecord record,
@@ -123,7 +119,7 @@ Future<Uint8List> buildGuidancePdf({
           pw.SizedBox(height: 12),
           pw.Text(title, style: heading),
           pw.SizedBox(height: 4),
-          for (final line in _chunks(body)) pw.Text(line),
+          for (final line in pdfParagraphs(body)) pw.Text(line, overflow: pw.TextOverflow.span),
         ];
 
   final edits = record.revisionCount - 1;

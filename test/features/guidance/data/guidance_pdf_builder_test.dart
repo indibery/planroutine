@@ -152,4 +152,14 @@ void main() {
     expect(out?.width, 400);
     expect(out?.height, 300);
   });
+  test('단락은 줄바꿈에서만 나눈다 — 제출 문서 문장 중간에 줄이 끊기지 않는다', () {
+    expect(pdfParagraphs('가' * 350), hasLength(1));
+    expect(pdfParagraphs('첫 줄\n둘째 줄'), ['첫 줄', '둘째 줄']);
+  });
+  test('첨부 표에 SHA-256 64자리가 그대로 들어간다 — 받는 쪽이 원본과 대조한다', () async {
+    final plan = buildExportPlan(createdAt: '2026-10-04T15:30:00', attachments: [image(1)], selectedIds: {1});
+    final pdf = await build(record(const GuidanceContent(title: '해시')), plan, {1: null});
+    // Courier(PDF 기본 글꼴)라 압축하지 않은 PDF에 글자가 그대로 남는다.
+    expect(latin1.decode(pdf).contains('b' * 64), isTrue);
+  });
 }

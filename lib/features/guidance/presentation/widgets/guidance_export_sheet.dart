@@ -25,21 +25,31 @@ typedef ShareExport = Future<void> Function(ExportOutput out, Rect? origin);
 /// 저장했으면 true, 저장 창에서 취소했으면 false.
 typedef SaveExport = Future<bool> Function(ExportOutput out);
 
-/// 임시 폴더에 쓰고 공유시트를 연 뒤, 닫히면(결과와 무관) 지운다 — 기록 내용이 담긴 파일이다.
-Future<void> _shareViaSheet(ExportOutput out, Rect? origin) async {
-  final dir = Directory(
-    p.join((await getTemporaryDirectory()).path, 'guidance_export'),
-  );
+/// 임시 폴더에 쓰고 공유시트를 연 뒤, 닫히면(결과·실패와 무관) 지운다 — 기록 내용이 담긴 파일이다.
+/// ⚠️ 안드로이드의 share_plus는 넘긴 파일을 자기 캐시(`cache/share_plus/`)에 한 번 더 복사하고 그 사본은
+/// 다음 공유 때까지 남는다 — 앱 샌드박스 안이라 노출 범위는 DB와 같다.
+@visibleForTesting
+Future<void> shareViaSheet(
+  ExportOutput out,
+  Rect? origin, {
+  Future<Directory> Function()? tempDir,
+  Future<void> Function(String path, Rect? origin)? share,
+}) async {
+  final dir = Directory(p.join((await (tempDir ?? getTemporaryDirectory)()).path, 'guidance_export'));
   await dir.create(recursive: true);
   final file = File(p.join(dir.path, out.fileName));
   await file.writeAsBytes(out.bytes, flush: true);
   try {
-    await Share.shareXFiles([XFile(file.path)], sharePositionOrigin: origin);
+    await (share ?? _shareFile)(file.path, origin);
   } finally {
     try {
       await file.delete();
     } catch (_) {}
   }
+}
+
+Future<void> _shareFile(String path, Rect? origin) async {
+  await Share.shareXFiles([XFile(path)], sharePositionOrigin: origin);
 }
 
 /// 안드로이드 저장 위치 선택 창(SAF). 공유시트에는 "파일로 저장"하는 공통 항목이 없다.
@@ -160,7 +170,7 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
   }
 
   Future<void> _share() => _run((out) async {
-    await (widget.share ?? _shareViaSheet)(out, _origin());
+    await (widget.share ?? shareViaSheet)(out, _origin());
     return null;
   });
 

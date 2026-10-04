@@ -106,4 +106,12 @@ void main() {
     final missing = a.copyWith(id: 2, fileName: 'gone.aac');
     expect(await exporter.availableIds([a, missing]), {1});
   });
+  test('PDF만은 녹음 원본을 읽지 않는다 — PDF에 쓰이지 않는다', () async {
+    final a = await stored(1, 'abc');
+    final ids = await exporter.availableIds([a]);
+    // 고른 뒤 녹음 파일이 사라져도(읽으려 들면 예외) PDF만은 만들어져야 한다.
+    await (await store.fileOf(a.fileName)).delete();
+    final out = await exporter.build(record: record, attachments: [a], selectedIds: ids, kind: ExportKind.pdfOnly);
+    expect(latin1.decode(out.bytes.sublist(0, 5)), '%PDF-');
+  });
 }

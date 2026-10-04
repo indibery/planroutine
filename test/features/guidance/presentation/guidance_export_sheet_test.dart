@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -217,5 +218,32 @@ void main() {
     );
     expect(shareButton(tester).onPressed, isNotNull);
     expect(shared, isEmpty);
+  });
+  testWidgets('첨부 파일이 모두 없으면 ZIP 줄이 꺼지고 PDF만이 기본이다', (tester) async {
+    await pump(tester, attachments: [att(1, AttachmentType.audio)], available: {});
+    final bundle = tester.widget<RadioListTile<ExportKind>>(find.byKey(GuidanceExportSheet.bundleKey));
+    expect(bundle.enabled, isFalse);
+    await tester.tap(find.byKey(GuidanceExportSheet.shareKey));
+    await tester.pumpAndSettle();
+    expect(exporter.calls.single.$2, ExportKind.pdfOnly);
+  });
+
+  test('공유가 끝나면(실패해도) 임시 파일을 지운다 — 기록 내용이 담긴 파일이다', () async {
+    final tmp = await Directory.systemTemp.createTemp('export_share');
+    addTearDown(() => tmp.delete(recursive: true));
+    final out = ExportOutput(fileName: '지도기록_x.zip', bytes: Uint8List.fromList([1, 2, 3]));
+    String? seen;
+    await shareViaSheet(out, null, tempDir: () async => tmp, share: (path, _) async {
+      seen = path;
+      expect(File(path).readAsBytesSync(), [1, 2, 3]);
+    });
+    expect(seen, isNotNull);
+    expect(File(seen ?? '').existsSync(), isFalse);
+
+    await expectLater(
+      shareViaSheet(out, null, tempDir: () async => tmp, share: (path, _) async => throw StateError('취소')),
+      throwsStateError,
+    );
+    expect(tmp.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 }

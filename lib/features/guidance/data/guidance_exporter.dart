@@ -47,11 +47,12 @@ class GuidanceExporter {
       attachments: attachments,
       selectedIds: selectedIds,
     );
+    // PDF만이면 사진만 읽는다 — 녹음은 PDF에 쓰이지 않고, 한 시간짜리면 수십 MB다.
+    // ⚠️ ZIP은 고른 원본 전부와 ZIP 사본을 메모리에 함께 든다(스트리밍은 다음 판, 원장 Ruling).
+    final toRead = kind == ExportKind.pdfOnly ? plan.images : plan.entries;
     final originals = <int, Uint8List>{
-      for (final e in plan.entries)
-        e.no: await (await fileStore.fileOf(
-          e.attachment.fileName,
-        )).readAsBytes(),
+      for (final e in toRead)
+        e.no: await (await fileStore.fileOf(e.attachment.fileName)).readAsBytes(),
     };
     final photos = <int, Uint8List?>{};
     for (final e in plan.images) {
