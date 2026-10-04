@@ -10,6 +10,9 @@ import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_list_screen.dart';
+import 'package:planroutine/features/guidance/presentation/widgets/guidance_record_tile.dart';
+
+import 'package:planroutine/shared/widgets/empty_state.dart';
 
 import '../../../helpers/test_database.dart';
 
@@ -25,8 +28,14 @@ void main() {
   });
   tearDown(() async => db.close());
 
+  /// 목록이 다 읽힐 때까지 기다린다 — 읽는 동안 화면은 빈 칸(`SizedBox.shrink`)이다.
+  /// 고정 대기(50ms × 2)는 전체 실행의 부하에서 모자라 빈 상태 테스트가 간헐적으로 실패했다.
   Future<void> settle(WidgetTester tester) async {
-    for (var i = 0; i < 2; i++) {
+    bool loaded() =>
+        find.byType(EmptyState).evaluate().isNotEmpty ||
+        find.byType(GuidanceRecordTile).evaluate().isNotEmpty ||
+        find.text(GuidanceStrings.noMatch).evaluate().isNotEmpty;
+    for (var i = 0; i < 40 && !loaded(); i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pump();
     }
@@ -46,10 +55,13 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('기록이 없으면 빈 상태와 범위 안내가 보인다', (tester) async {
+  testWidgets('기록이 없으면 다른 탭과 같은 빈 상태(아이콘 + 두 줄)가 보인다', (tester) async {
+    // 범위 안내 문장은 새 기록 화면의 `구분` 아래로 옮겼다(2026-10-04 디자인 점검).
     await pump(tester);
+    expect(find.byType(EmptyState), findsOneWidget);
     expect(find.text(GuidanceStrings.empty), findsOneWidget);
-    expect(find.text(GuidanceStrings.emptyScope), findsOneWidget);
+    expect(find.text(GuidanceStrings.emptyHint), findsOneWidget);
+    expect(find.text(GuidanceStrings.scopeNote), findsNothing);
   });
 
   testWidgets('사건 시각이 최근인 기록이 위에 오고 수정 횟수가 보인다', (tester) async {

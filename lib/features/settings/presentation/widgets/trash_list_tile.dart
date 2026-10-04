@@ -21,10 +21,7 @@ class TrashListTile extends ConsumerWidget {
       title: const Text(TrashStrings.title),
       // **이 부제는 반드시 남아야 한다.** `30일 후 자동 영구 삭제`는 앱 어디에서도
       // 다시 볼 수 없는 규칙인데, 섹션 헤더를 걷어내며 같이 사라질 뻔했다.
-      subtitle: Text(
-        SettingsStrings.trashDescription,
-        style: TextStyle(fontSize: 12, color: AppColors.sub),
-      ),
+      subtitle: const Text(SettingsStrings.trashDescription),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

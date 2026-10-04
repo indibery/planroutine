@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/memo.dart';
 import '../providers/memo_providers.dart';
 import '../widgets/memo_card.dart';
 import '../widgets/memo_sheet.dart';
 import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
+import '../../../../shared/widgets/empty_state.dart';
 
 /// 포스트잇 탭 — 보드형(쪽지 2열 격자). 짧게 누르면 시트, **꾹 누르면 끌어서 순서 바꾸기**.
 ///
@@ -45,13 +46,9 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
     final memos = ref.watch(memosProvider).valueOrNull ?? const <Memo>[];
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(MemoStrings.eyebrow, style: AppTextStyles.eyebrow),
-            const SizedBox(height: 2),
-            Text(MemoStrings.title, style: AppTextStyles.heading),
-          ],
+        title: const TabHeaderTitle(
+          eyebrow: MemoStrings.eyebrow,
+          title: MemoStrings.title,
         ),
       ),
       body: Column(
@@ -145,14 +142,9 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
     );
   }
 
-  Widget _empty() => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(MemoStrings.empty, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.sub)),
-        const SizedBox(height: AppSizes.spacing4),
-        Text(MemoStrings.emptyHint, style: TextStyle(fontSize: 14, color: AppColors.faint)),
-      ],
-    ),
+  Widget _empty() => const EmptyState(
+    icon: Icons.sticky_note_2_outlined,
+    title: MemoStrings.empty,
+    hint: MemoStrings.emptyHint,
   );
 }

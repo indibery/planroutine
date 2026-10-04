@@ -3,6 +3,9 @@ class CalendarStrings {
   CalendarStrings._();
 
   static const title = '캘린더';
+
+  /// 탭 머리 영문 소제목(`TabHeaderTitle`).
+  static const eyebrow = 'CALENDAR';
   static const addEvent = '일정 추가';
   static const editEvent = '일정 수정';
   static const noEvents = '일정이 없습니다';

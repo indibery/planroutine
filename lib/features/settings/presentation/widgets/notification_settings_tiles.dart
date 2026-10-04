@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../notifications/domain/notification_settings.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
@@ -28,12 +29,7 @@ class NotificationSettingsTiles extends ConsumerWidget {
             color: AppColors.primary,
           ),
           title: const Text(NotificationStrings.master),
-          subtitle: summary == null
-              ? null
-              : Text(
-                  summary,
-                  style: TextStyle(fontSize: 12, color: AppColors.sub),
-                ),
+          subtitle: summary == null ? null : Text(summary),
           value: settings.masterEnabled,
           onChanged: (v) => notifier.setMaster(v),
         ),
@@ -41,7 +37,9 @@ class NotificationSettingsTiles extends ConsumerWidget {
           // ExpansionTile 기본 divider 제거 — SettingsSection의 Divider와 중복
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            leading: const SizedBox(width: 40),
+            // 아이콘 자리만큼만 비운다 — 40을 비우면 제목이 위 `알림 사용`보다 더 들어갔다
+            // (2026-10-04 디자인 점검). 펼친 하위 행은 더 들어가 위계를 보인다.
+            leading: const SizedBox(width: AppSizes.iconMedium),
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             childrenPadding: EdgeInsets.zero,
             title: Text(

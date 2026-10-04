@@ -7,6 +7,8 @@ import 'package:planroutine/features/bus/domain/bus_stop.dart';
 import 'package:planroutine/features/bus/domain/commute_direction.dart';
 import 'package:planroutine/features/bus/presentation/widgets/bus_stop_confirm_sheet.dart';
 
+import '../../helpers/text_glyph.dart';
+
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: 'B정류장(길 양쪽)',
@@ -59,6 +61,16 @@ Future<void> _showSheet(
 
 void main() {
   group('확인 시트 — 방향을 노선 번호로 판별하게 한다', () {
+    testWidgets('시트 제목은 일정 편집 시트처럼 가운데 정렬이다', (tester) async {
+      // 2026-10-04 디자인 점검(사용자 결정 A) — 시트 제목 정렬이 시트마다 달랐다.
+      await _showSheet(tester);
+      final screen = tester.getSize(find.byType(MaterialApp));
+      expect(
+        glyphCenterX(tester, find.text('이 정류장이 맞나요?')),
+        moreOrLessEquals(screen.width / 2, epsilon: 1),
+      );
+    });
+
     testWidgets('정류장 이름·번호와 오는 버스를 보여준다', (tester) async {
       await _showSheet(tester);
       expect(find.text('이 정류장이 맞나요?'), findsOneWidget);

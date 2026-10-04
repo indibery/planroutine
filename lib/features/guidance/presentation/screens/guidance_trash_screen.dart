@@ -9,6 +9,7 @@ import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../providers/guidance_providers.dart';
+import '../../../../shared/widgets/empty_state.dart';
 
 /// 탭 안의 휴지통. 공용 휴지통에 두지 않는다 — 거기는 잠금이 없다.
 /// 30일 자동 정리 대상도 아니다(근거 자료가 조용히 사라지면 안 된다).
@@ -56,8 +57,9 @@ class GuidanceTrashScreen extends ConsumerWidget {
           ),
           if (deleted.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(AppSizes.spacing32),
-              child: Center(child: Text(GuidanceStrings.trashEmpty, style: AppTextStyles.bodyM)),
+              // 좌우 여백은 EmptyState가 스스로 갖는다 — 겹치면 이 화면만 좁아진다.
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing32),
+              child: const EmptyState(icon: Icons.delete_outline, title: GuidanceStrings.trashEmpty),
             ),
           for (final r in deleted)
             ListTile(

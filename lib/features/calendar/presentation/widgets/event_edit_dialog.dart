@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/date_utils.dart';
@@ -18,6 +19,7 @@ import '../../domain/calendar_event.dart';
 import '../providers/calendar_providers.dart';
 import '../../../../shared/widgets/segmented_button_semantics.dart';
 import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/picker_field_tile.dart';
 
 /// 이벤트 추가/수정 바텀시트
 class EventEditDialog extends ConsumerStatefulWidget {
@@ -183,12 +185,7 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
         const Spacer(),
         Text(
           _isEditing ? CalendarStrings.editEvent : CalendarStrings.addEvent,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink,
-          ),
+          style: AppTextStyles.heading,
         ),
         const Spacer(),
         // 편집 시에만 우측에 휴지통 노출 (새 이벤트엔 삭제할 게 없음)
@@ -307,51 +304,11 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
   }
 
   Widget _buildDateRow() {
-    return _buildDateTile(
+    return PickerFieldTile(
       label: CalendarStrings.eventDate,
-      date: _eventDate,
+      value: DateFormat('yyyy년 M월 d일', 'ko_KR').format(_eventDate),
+      icon: Icons.calendar_today,
       onTap: _pickDate,
-    );
-  }
-
-  Widget _buildDateTile({
-    required String label,
-    required DateTime date,
-    required VoidCallback onTap,
-  }) {
-    final formatter = DateFormat('yyyy년 M월 d일', 'ko_KR');
-    return ButtonSemantics.gesture(
-      label: '$label, ${formatter.format(date)}',
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.spacing16,
-          vertical: AppSizes.spacing12,
-        ),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppSizes.radius12),
-        ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-            ),
-            const Spacer(),
-            Text(
-              formatter.format(date),
-              style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-            ),
-            const SizedBox(width: AppSizes.spacing8),
-            Icon(
-              Icons.calendar_today,
-              size: AppSizes.iconSmall,
-              color: AppColors.textHint,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -398,30 +355,10 @@ class _EventEditDialogState extends ConsumerState<EventEditDialog> {
               child: SegmentedButton<EntryKind>(
                 key: const Key('kind_selector'),
                 showSelectedIcon: false,
-                style: ButtonStyle(
+                // 색·글자는 테마의 segmentedButtonTheme(골드 채움 규칙)이 정한다.
+                style: const ButtonStyle(
                   visualDensity: VisualDensity.compact,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const WidgetStatePropertyAll(
-                    TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  // 채움은 goldFill + onGold — 라이트에서 gold(딥골드) 채움은 대비가 낮다.
-                  foregroundColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.selected)
-                        ? AppColors.onGold
-                        : AppColors.sub,
-                  ),
-                  backgroundColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.selected)
-                        ? AppColors.goldFill
-                        : Colors.transparent,
-                  ),
-                  side: WidgetStatePropertyAll(
-                    BorderSide(color: AppColors.lineStrong, width: 0.5),
-                  ),
                 ),
                 segments: EntryKind.values
                     .map(

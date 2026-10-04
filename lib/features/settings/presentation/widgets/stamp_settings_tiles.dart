@@ -42,36 +42,14 @@ class StampSettingsTiles extends ConsumerWidget {
           child: ListTile(
             key: styleTileKey,
             leading: Icon(Icons.approval_outlined, color: AppColors.primary),
-            title: Text(
-              SettingsStrings.stampStyleLabel,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            title: const Text(SettingsStrings.stampStyleLabel),
             // 섹션 헤더가 달고 있던 설명이 여기로 내려왔다 — `도장 모양`만으로는
             // 이 도장이 어디에 찍히는지 알 수 없다.
-            subtitle: Text(
-              SettingsStrings.stampDescription,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
+            subtitle: const Text(SettingsStrings.stampDescription),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  settings.style.label,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(settings.style.label),
                 const SizedBox(width: AppSizes.spacing4),
                 const Icon(Icons.chevron_right),
               ],
@@ -86,23 +64,10 @@ class StampSettingsTiles extends ConsumerWidget {
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSizes.spacing16,
           ),
-          title: Text(
-            SettingsStrings.stampDimLabel,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          subtitle: Text(
-            SettingsStrings.stampDimDescription,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
+          // 아이콘이 없으면 제목이 위 `도장 모양`보다 왼쪽으로 붙는다(2026-10-04 디자인 점검).
+          secondary: Icon(Icons.blur_on_outlined, color: AppColors.primary),
+          title: const Text(SettingsStrings.stampDimLabel),
+          subtitle: const Text(SettingsStrings.stampDimDescription),
         ),
       ],
     );

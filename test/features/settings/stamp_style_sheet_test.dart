@@ -9,6 +9,8 @@ import 'package:planroutine/features/settings/presentation/widgets/stamp_style_s
 import 'package:planroutine/features/today/domain/stamp_settings.dart';
 import 'package:planroutine/features/today/presentation/widgets/completion_seal.dart';
 
+import '../../helpers/text_glyph.dart';
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -101,5 +103,15 @@ void main() {
         findsNothing,
       );
     });
+  });
+
+  testWidgets('시트 제목은 일정 시트처럼 가운데 정렬이다', (tester) async {
+    // 2026-10-04 디자인 점검(사용자 결정 A) — 시트 제목 정렬이 시트마다 달랐다.
+    await openSheet(tester);
+    final screen = tester.getSize(find.byType(MaterialApp));
+    expect(
+      glyphCenterX(tester, find.text(SettingsStrings.stampStyleSheetTitle)),
+      moreOrLessEquals(screen.width / 2, epsilon: 1),
+    );
   });
 }

@@ -7,9 +7,9 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_gradients.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/bulk_bar_snack.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
 import '../../../import/presentation/widgets/photo_input_hero.dart';
 import '../../domain/entry_kind.dart';
 import '../../domain/schedule.dart';
@@ -18,6 +18,7 @@ import '../widgets/schedule_edit_sheet.dart';
 import '../widgets/schedule_tile.dart';
 import '../widgets/slide_hint_bar.dart';
 import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/empty_state.dart';
 
 /// 입력 탭 — 넣기가 주인공, **검토 대기**는 그 아래.
 ///
@@ -49,13 +50,9 @@ class ScheduleScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('INPUT', style: AppTextStyles.eyebrow),
-            const SizedBox(height: 2),
-            Text(ScheduleStrings.title, style: AppTextStyles.heading),
-          ],
+        title: const TabHeaderTitle(
+          eyebrow: ScheduleStrings.eyebrow,
+          title: ScheduleStrings.title,
         ),
       ),
       body: Column(
@@ -209,37 +206,10 @@ class ScheduleScreen extends ConsumerWidget {
   /// 대기가 0이면 하단 확정 pill도 스와이프 안내 바도 안 뜬다 — **이 블록이 화면의
   /// 전부**라 상태와 다음 행동을 함께 말한다(오늘 탭·버스 카드와 같은 두 줄 문법).
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.event_note, size: 64, color: AppColors.faint),
-            const SizedBox(height: AppSizes.spacing16),
-            Text(
-              ScheduleStrings.empty,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.sub,
-              ),
-            ),
-            const SizedBox(height: AppSizes.spacing4),
-            Text(
-              ScheduleStrings.emptyHint,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 14,
-                color: AppColors.faint,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const EmptyState(
+      icon: Icons.event_note,
+      title: ScheduleStrings.empty,
+      hint: ScheduleStrings.emptyHint,
     );
   }
 

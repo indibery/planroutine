@@ -10,6 +10,10 @@ final _lineComment = RegExp(r'//.*$');
 /// 줄 주석(`// …`)을 걷어낸 코드 부분.
 String stripLineComment(String line) => line.replaceFirst(_lineComment, '');
 
+/// [path] 파일의 코드에서 줄 주석을 걷어낸 전문.
+String strippedCode(String path) =>
+    File(path).readAsLinesSync().map(stripLineComment).join('\n');
+
 /// lib 아래 모든 `.dart` 파일.
 ///
 /// 경로가 틀려 아무것도 읽지 않으면 가드가 헛통과하므로, 너무 적으면 여기서 바로 실패한다.

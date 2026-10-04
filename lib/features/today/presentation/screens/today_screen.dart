@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/modules/installed_today_cards.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/gold_fab.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
 import '../../../calendar/domain/calendar_event.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../calendar/presentation/widgets/event_edit_dialog.dart';
@@ -29,13 +29,9 @@ class TodayScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('TODAY', style: AppTextStyles.eyebrow),
-            const SizedBox(height: 2),
-            Text(TodayStrings.title, style: AppTextStyles.heading),
-          ],
+        title: const TabHeaderTitle(
+          eyebrow: TodayStrings.eyebrow,
+          title: TodayStrings.title,
         ),
       ),
       body: view.when(

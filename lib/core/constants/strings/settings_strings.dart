@@ -3,6 +3,8 @@ class SettingsStrings {
   SettingsStrings._();
 
   static const title = '설정';
+  /// 탭 머리 영문 소제목(`TabHeaderTitle`).
+  static const eyebrow = 'SETTINGS';
 
   // 화면 테마
   static const appearanceSection = '화면';
@@ -13,7 +15,7 @@ class SettingsStrings {
   static const stampDescription = '오늘 탭에서 체크할 때 찍히는 도장';
   static const stampStyleLabel = '도장 모양';
   static const stampDimLabel = '이미 찍은 도장 흐리게';
-  static const stampDimDescription = '방금 찍은 도장은 진하게, 지난 도장은 잔상으로';
+  static const stampDimDescription = '지난 도장은 잔상으로 남겨요';
 
   /// 도장 모양 시트 제목. 설정 탭의 행 라벨과 **같은 말이어야** 시트가 그 행의
   /// 연장으로 읽힌다 — 다른 말을 쓰면 다른 설정을 연 것처럼 보인다.

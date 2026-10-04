@@ -65,7 +65,10 @@ class GuidanceStrings {
   static const personPickerTitle = '사람으로 찾기';
   static const personPickerEmpty = '기록에 등장한 사람이 아직 없습니다';
   static const empty = '아직 기록이 없습니다';
-  static const emptyScope =
+  static const emptyHint = '+ 를 눌러 첫 기록을 남겨 보세요';
+
+  /// 새 기록 화면 `구분` 아래 범위 안내. 예전에는 목록 빈 상태에 있었다(2026-10-04 옮김).
+  static const scopeNote =
       '학교 단계의 생활지도·교육활동 침해를 남기는 곳입니다. 교육청으로 이관된 뒤의 조사는 전담조사관이 맡습니다.';
   static const noMatch = '조건에 맞는 기록이 없습니다';
   static String revisedTimes(int n) => '수정 $n회';
@@ -101,6 +104,7 @@ class GuidanceStrings {
   static const approxHint = '예: 3월 초~여름방학 전';
   static const pickDate = '날짜';
   static const pickTime = '시각';
+  static const notPicked = '고르기';
   static const participantsInputHint = '이름을 쉼표로 구분해 여러 명 쓸 수 있어요';
   static const suggestionHint = '한 번 쓴 이름이 추천으로 떠요.';
   static const participantsHint =

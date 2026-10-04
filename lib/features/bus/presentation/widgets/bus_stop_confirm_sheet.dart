@@ -9,6 +9,7 @@ import '../../domain/bus_card_view.dart';
 import '../../domain/bus_route.dart';
 import '../../domain/bus_stop.dart';
 import '../../domain/commute_direction.dart';
+import '../../../../shared/widgets/sheet_title.dart';
 
 /// 저장 직전 확인 — 방향이 조용히 틀리는 것을 막는다.
 ///
@@ -162,7 +163,7 @@ class _BusStopConfirmSheetState extends State<BusStopConfirmSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(BusStrings.confirmTitle, style: AppTextStyles.heading),
+            const SheetTitle(BusStrings.confirmTitle),
             const SizedBox(height: AppSizes.spacing8),
             Text(
               '${widget.stop.nodeNm}  ${widget.stop.nodeNo}',

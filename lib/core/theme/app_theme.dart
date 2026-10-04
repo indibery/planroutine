@@ -200,10 +200,12 @@ class AppTheme {
           vertical: AppSizes.spacing12,
         ),
       ),
+      // 저장 버튼도 골드 채움 규칙(goldFill + onGold)을 따른다. 채움에 `gold`를 쓰면 라이트에서
+      // 딥골드 위 네이비 3.57:1이었다(일정 검토 시트·버스 확인 시트, 2026-10-04 디자인 점검).
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.navy,
+          backgroundColor: AppColors.goldFill,
+          foregroundColor: AppColors.onGold,
           minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.radiusFull),
@@ -233,7 +235,23 @@ class AppTheme {
       // `추가한 기능 없음`·`사용 안 함` 같은 한글이 벌어져 보였다(2026-10-03).
       // 메타 글자 규칙(14pt·보조색)을 여기서 한 번에 준다 — 행마다 고치지 않는다.
       // 가드: `list_tile_trailing_text_test.dart`.
+      //
+      // 목록 행 제목·부제도 여기서 정한다 — 제목 15 / 부제 14(오늘 탭 행 기준). 정하지 않으면
+      // bodyLarge(14)·bodyMedium(13)으로 떨어지고, 행마다 12·13을 따로 줘 화면마다 크기가
+      // 달랐다(2026-10-04 디자인 점검). 가드: `design_unify_theme_test.dart`.
       listTileTheme: ListTileThemeData(
+        titleTextStyle: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: AppColors.sub,
+        ),
         leadingAndTrailingTextStyle: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 14,
@@ -252,6 +270,33 @@ class AppTheme {
           (states) => states.contains(WidgetState.selected)
               ? AppColors.gold
               : AppColors.surfaceVariant,
+        ),
+      ),
+      // 세그먼트는 style을 주지 않아도 골드 채움 규칙을 따른다(선택 = goldFill + onGold, 나머지는
+      // 투명 + sub). 예전에는 두 곳(설정 행·일정 시트)만 같은 style을 복사해 두고 나머지 넷이
+      // Material 기본 모양이었다(2026-10-04 디자인 점검). 밀도·탭 영역은 쓰는 곳이 정한다.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.onGold
+                : AppColors.sub,
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.goldFill
+                : Colors.transparent,
+          ),
+          side: WidgetStatePropertyAll(
+            BorderSide(color: AppColors.lineStrong, width: 0.5),
+          ),
         ),
       ),
       chipTheme: ChipThemeData(

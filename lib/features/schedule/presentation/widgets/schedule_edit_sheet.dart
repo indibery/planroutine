@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/schedule.dart';
 import '../providers/schedule_providers.dart';
-import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/picker_field_tile.dart';
+import '../../../../shared/widgets/sheet_title.dart';
 
 /// 일정 편집 바텀시트.
 ///
@@ -120,14 +120,7 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              ScheduleStrings.editTitle,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            const SheetTitle(ScheduleStrings.editTitle),
             const SizedBox(height: AppSizes.spacing16),
             TextField(
               controller: _titleController,
@@ -144,19 +137,12 @@ class _ScheduleEditSheetState extends ConsumerState<ScheduleEditSheet> {
               maxLines: 2,
             ),
             const SizedBox(height: AppSizes.spacing12),
-            ButtonSemantics(
-              label: '${ScheduleStrings.dateLabel}, $dateText',
+            // 일정 편집 시트·지도 기록과 같은 날짜 칸(2026-10-04 디자인 점검).
+            PickerFieldTile(
+              label: ScheduleStrings.dateLabel,
+              value: dateText,
+              icon: Icons.calendar_today,
               onTap: _pickDate,
-              child: InkWell(
-                onTap: _pickDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: ScheduleStrings.dateLabel,
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(dateText),
-                ),
-              ),
             ),
             const SizedBox(height: AppSizes.spacing24),
             Row(

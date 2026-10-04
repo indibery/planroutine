@@ -185,6 +185,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
               Text(MemoStrings.toEventTitle, style: TextStyle(fontSize: 14, color: AppColors.sub)),
               const SizedBox(height: AppSizes.spacing8),
               SegmentedButtonSemantics<EntryKind>(child: SegmentedButton<EntryKind>(
+                showSelectedIcon: false,
                 segments: [
                   for (final k in EntryKind.values)
                     ButtonSegment(value: k, label: Text(k.label, key: MemoSheet.kindKey(k))),

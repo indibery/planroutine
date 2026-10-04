@@ -13,6 +13,7 @@ import 'package:planroutine/features/guidance/presentation/screens/guidance_edit
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_input.dart';
 
 import '../../../helpers/test_database.dart';
+import '../../../helpers/text_glyph.dart';
 
 void main() {
   setUpAll(() async => initializeDateFormatting('ko', null));
@@ -69,6 +70,26 @@ void main() {
     await tester.tap(find.text('열기'));
     await settle(tester);
   }
+
+  testWidgets('구분 바로 아래에 범위 안내가 보인다', (tester) async {
+    // 목록 빈 상태에 있던 문장이다. 빈 상태를 다른 탭과 같은 두 줄로 맞추면서(2026-10-04
+    // 디자인 점검) 지우지 않고, 생활지도·교육활동 침해를 고르는 자리로 옮겼다.
+    await pump(tester);
+    final note = find.text(GuidanceStrings.scopeNote);
+    expect(note, findsOneWidget);
+    final kind = find.text(GuidanceKind.guidance.label);
+    final status = find.text(GuidanceStrings.labelStatus);
+    expect(tester.getTopLeft(note).dy > tester.getTopLeft(kind).dy, isTrue);
+    expect(tester.getTopLeft(note).dy < tester.getTopLeft(status).dy, isTrue);
+  });
+
+  testWidgets('입력칸 이름은 목록 행 부제와 같은 14pt다', (tester) async {
+    await pump(tester);
+    for (final label in [GuidanceStrings.labelKind, GuidanceStrings.labelStatus]) {
+      final style = textStyleOf(tester, find.text(label));
+      expect(style?.fontSize, 14, reason: label);
+    }
+  });
 
   testWidgets('관련인·들은 말·판단·조치 안내 문구가 보인다', (tester) async {
     await pump(tester);

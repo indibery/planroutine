@@ -8,6 +8,7 @@ import '../../../today/domain/stamp_settings.dart';
 import '../../../today/presentation/widgets/completion_seal.dart';
 import '../providers/stamp_settings_provider.dart';
 import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/sheet_title.dart';
 
 /// 도장 모양 고르기 — 2열 그리드 바텀시트.
 ///
@@ -74,15 +75,7 @@ class StampStyleSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSizes.spacing16),
-            Text(
-              SettingsStrings.stampStyleSheetTitle,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
+            const SheetTitle(SettingsStrings.stampStyleSheetTitle),
             const SizedBox(height: AppSizes.spacing12),
             // 2열 고정 — 모양이 늘어도 열은 그대로고 줄만 늘어난다. 폭을 직접
             // 계산해 넘기는 이유는 `Wrap`만 쓰면 칸 폭이 라벨 길이를 따라

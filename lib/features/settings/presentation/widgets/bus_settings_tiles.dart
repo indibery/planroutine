@@ -78,6 +78,7 @@ class BusSettingsTiles extends ConsumerWidget {
     );
   }
 
+  // ListTile 행은 테마(제목 15 / 부제 14)를 따른다. `카드 모양`은 ListTile이 아니라 같은 값을 직접 준다.
   TextStyle get _titleStyle => TextStyle(
     fontFamily: 'Pretendard',
     fontSize: 15,
@@ -86,7 +87,7 @@ class BusSettingsTiles extends ConsumerWidget {
   );
 
   TextStyle get _subStyle =>
-      TextStyle(fontFamily: 'Pretendard', fontSize: 13, color: AppColors.sub);
+      TextStyle(fontFamily: 'Pretendard', fontSize: 14, color: AppColors.sub);
 
   Widget _slotTile(
     BuildContext context, {
@@ -109,8 +110,8 @@ class BusSettingsTiles extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) => ListTile(
         key: key,
-        title: Text(title, style: _titleStyle),
-        subtitle: Text(hint, style: _subStyle),
+        title: Text(title),
+        subtitle: Text(hint),
         trailing: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
           child: Row(
@@ -142,10 +143,11 @@ class BusSettingsTiles extends ConsumerWidget {
   Widget _styleRow(BusSettings settings, BusSettingsNotifier notifier) {
     return Padding(
       key: styleKey,
+      // 위아래 ListTile 행과 같은 좌우 여백(16)이어야 제목 시작선이 맞는다(2026-10-04).
       padding: const EdgeInsets.fromLTRB(
-        AppSizes.pagePadding,
+        AppSizes.spacing16,
         AppSizes.spacing8,
-        AppSizes.pagePadding,
+        AppSizes.spacing16,
         AppSizes.spacing12,
       ),
       child: Column(
@@ -180,8 +182,8 @@ class BusSettingsTiles extends ConsumerWidget {
   }) {
     return ListTile(
       key: key,
-      title: Text(title, style: _titleStyle),
-      subtitle: Text(hint, style: _subStyle),
+      title: Text(title),
+      subtitle: Text(hint),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

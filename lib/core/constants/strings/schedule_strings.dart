@@ -5,6 +5,9 @@ class ScheduleStrings {
   /// 탭 화면 제목. 이 탭은 업무와 행사를 **둘 다** 넣으므로 그냥 '입력'이다.
   static const title = '입력';
 
+  /// 탭 머리 영문 소제목(`TabHeaderTitle`).
+  static const eyebrow = 'INPUT';
+
   static const confirm = '확정';
   static const delete = '삭제';
 

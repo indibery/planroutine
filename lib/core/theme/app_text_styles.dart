@@ -33,6 +33,8 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     color: AppColors.ink,
   );
+  /// 입력칸·보기 칸의 이름(지도 기록 `구분`·`경과` 등). 목록 행 부제와 같은 14pt(2026-10-04).
+  static TextStyle get fieldLabel => bodyL.copyWith(color: AppColors.sub);
   static TextStyle get bodyM => TextStyle(
     fontFamily: 'Pretendard',
     fontSize: 13,

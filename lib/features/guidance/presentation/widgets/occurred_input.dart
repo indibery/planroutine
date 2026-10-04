@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/guidance_types.dart';
+import '../../../../shared/widgets/picker_field_tile.dart';
 import '../../../../shared/widgets/segmented_button_semantics.dart';
 
 class OccurredValue {
@@ -109,24 +110,27 @@ class _OccurredInputState extends State<OccurredInput> {
             onChanged: (_) => _emit(),
           )
         else
-          Wrap(
-            spacing: AppSizes.spacing8,
+          // 일정 편집 시트와 같은 `라벨 … 값` 타일(2026-10-04 디자인 점검). 예전에는 골드 테두리
+          // 알약 버튼이라 한 앱에 날짜 입력이 두 모양이었다.
+          Column(
             children: [
-              OutlinedButton.icon(
+              PickerFieldTile(
                 key: OccurredInput.dateKey,
-                onPressed: _pickDate,
-                icon: const Icon(Icons.event, size: AppSizes.iconSmall),
-                label: Text(
-                  at == null ? GuidanceStrings.pickDate : DateFormat('y. M. d. (E)', 'ko').format(at),
-                ),
+                label: GuidanceStrings.pickDate,
+                value: at == null ? GuidanceStrings.notPicked : DateFormat('y. M. d. (E)', 'ko').format(at),
+                icon: Icons.calendar_today,
+                onTap: _pickDate,
               ),
-              if (widget.precision == OccurredPrecision.exact)
-                OutlinedButton.icon(
+              if (widget.precision == OccurredPrecision.exact) ...[
+                const SizedBox(height: AppSizes.spacing8),
+                PickerFieldTile(
                   key: OccurredInput.timeKey,
-                  onPressed: _pickTime,
-                  icon: const Icon(Icons.schedule, size: AppSizes.iconSmall),
-                  label: Text(at == null ? GuidanceStrings.pickTime : DateFormat('HH:mm').format(at)),
+                  label: GuidanceStrings.pickTime,
+                  value: at == null ? GuidanceStrings.notPicked : DateFormat('HH:mm').format(at),
+                  icon: Icons.schedule,
+                  onTap: _pickTime,
                 ),
+              ],
             ],
           ),
       ],

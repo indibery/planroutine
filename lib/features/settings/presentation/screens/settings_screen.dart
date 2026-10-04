@@ -5,7 +5,7 @@ import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
@@ -54,7 +54,10 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(SettingsStrings.title, style: AppTextStyles.heading),
+        title: const TabHeaderTitle(
+          eyebrow: SettingsStrings.eyebrow,
+          title: SettingsStrings.title,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing24),

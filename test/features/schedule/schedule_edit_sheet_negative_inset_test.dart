@@ -6,6 +6,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/features/schedule/domain/schedule.dart';
 import 'package:planroutine/features/schedule/presentation/widgets/schedule_edit_sheet.dart';
 
+import '../../helpers/text_glyph.dart';
+
 /// 키보드 여백은 **음수 인셋을 그대로 넘기지 않는다.**
 ///
 /// 실기(3.41.6)에서 한 번 관측했다 — `RenderPadding.padding`의
@@ -59,5 +61,39 @@ void main() {
       reason: '음수 인셋을 Padding에 그대로 넘기면 isNonNegative assert가 터진다',
     );
     expect(find.text('일정 수정'), findsOneWidget, reason: '시트가 살아 있어야 한다');
+  });
+
+  testWidgets('시트 제목은 일정 편집 시트처럼 가운데 정렬이다', (tester) async {
+    // 2026-10-04 디자인 점검(사용자 결정 A) — 시트 제목 정렬이 시트마다 달랐다.
+    tester.view.devicePixelRatio = 3.0;
+    tester.view.physicalSize = const Size(402 * 3, 874 * 3);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => ScheduleEditSheet.show(
+                  context,
+                  const Schedule(
+                    id: 1,
+                    title: '학사일정 협의',
+                    scheduledDate: '2026-03-02',
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(
+      glyphCenterX(tester, find.text('일정 수정')),
+      moreOrLessEquals(201, epsilon: 1),
+    );
   });
 }

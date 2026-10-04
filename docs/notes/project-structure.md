@@ -182,7 +182,12 @@ planroutine/
 │       └── widgets/
 │           ├── main_shell.dart         # 하단 탭 Shell
 │           ├── floating_tab_bar.dart   # 이름은 legacy, 현재 화면 폭 불투명 탭바
-│           ├── gold_fab.dart           # 골드 원형 FAB (캘린더·오늘 탭 공유)
+│           ├── gold_fab.dart           # 골드 원형 FAB (오늘·캘린더·지도 기록 공유)
+│           ├── tab_header_title.dart   # 탭 머리: 영문 eyebrow + 제목 (모든 탭)
+│           ├── empty_state.dart        # 빈 상태: 아이콘 + 상태 + 다음 행동
+│           ├── picker_field_tile.dart  # 날짜·시각 고르는 칸 (라벨 … 값 테두리 타일)
+│           ├── sheet_title.dart        # 바텀 시트 제목 (가운데 · heading)
+│           ├── pill_chip.dart          # 테두리형 선택 칩 (입력 히어로·지도 기록 필터·정류장 검색)
 │           ├── brand_logo.dart         # LogoHybrid 디자인 (CustomPainter)
 │           ├── gold_gradient_button.dart  # 좌우 padding 24, 중앙 정렬용 Center 래핑
 │           ├── section_header.dart     # title + optional subtitle

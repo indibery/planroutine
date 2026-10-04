@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
+import '../../../../shared/widgets/sheet_title.dart';
 
 Future<void> showAttachmentInfo(
   BuildContext context,
@@ -22,7 +23,7 @@ Future<void> showAttachmentInfo(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(GuidanceStrings.attachmentInfo, style: AppTextStyles.heading),
+          const SheetTitle(GuidanceStrings.attachmentInfo),
           const SizedBox(height: AppSizes.spacing12),
           _row(GuidanceStrings.infoSource, '${a.type.label} · ${a.source.label}'),
           if (a.originalName case final name?) _row(GuidanceStrings.infoOriginalName, name),
@@ -30,7 +31,7 @@ Future<void> showAttachmentInfo(
           if (a.capturedAt case final at?) _row(GuidanceStrings.infoCaptured, formatStamp(at, now: now)),
           _row(GuidanceStrings.infoAttached, formatStamp(a.attachedAt, now: now)),
           const SizedBox(height: AppSizes.spacing8),
-          Text(GuidanceStrings.infoHash, style: AppTextStyles.label.copyWith(color: AppColors.sub)),
+          Text(GuidanceStrings.infoHash, style: AppTextStyles.fieldLabel),
           SelectableText(a.sha256, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
           const SizedBox(height: AppSizes.spacing4),
           Text(GuidanceStrings.infoHashNote, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),

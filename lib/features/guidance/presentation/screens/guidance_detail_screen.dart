@@ -154,9 +154,10 @@ class GuidanceDetailScreen extends ConsumerWidget {
   Widget _personChip(Participant p) =>
       Chip(label: Text(p.displayName), backgroundColor: AppColors.surfaceVariant, side: BorderSide.none);
 
+  // 편집 화면 입력칸 이름과 같은 14pt(2026-10-04 디자인 점검).
   Widget _heading(String text) => Padding(
     padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
-    child: Text(text, style: AppTextStyles.label.copyWith(color: AppColors.sub)),
+    child: Text(text, style: AppTextStyles.fieldLabel),
   );
 
   Widget _section(String label, String? body, {bool boxed = false}) {

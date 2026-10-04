@@ -12,6 +12,7 @@ import 'package:planroutine/features/guidance/presentation/providers/guidance_pr
 import 'package:planroutine/features/guidance/presentation/screens/guidance_detail_screen.dart';
 
 import '../../../helpers/test_database.dart';
+import '../../../helpers/text_glyph.dart';
 
 void main() {
   setUpAll(() async => initializeDateFormatting('ko', null));
@@ -83,6 +84,17 @@ void main() {
     expect(find.textContaining('명단 밖'), findsNothing);
     // 판이 하나면 수정 링크가 없다
     expect(find.byKey(GuidanceDetailScreen.historyKey), findsNothing);
+  });
+
+  testWidgets('칸 이름은 편집 화면과 같은 14pt다', (tester) async {
+    // 편집 화면 입력칸 이름을 11 → 14로 올리면서(2026-10-04 디자인 점검) 보기 화면만 11로
+    // 남아 있었다(verifier가 짚었다).
+    final id = await tester.runAsync(
+      () => repo.create(const GuidanceContent(title: '복도 다툼', facts: '밀침')),
+    );
+    await pump(tester, id ?? -1);
+    final style = textStyleOf(tester, find.text(GuidanceStrings.labelFacts));
+    expect(style?.fontSize, 14);
   });
 
   testWidgets('고친 기록에는 수정 링크가 보인다', (tester) async {

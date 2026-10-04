@@ -11,6 +11,7 @@ import '../../../memo/domain/memo.dart';
 import '../../../schedule/domain/schedule.dart';
 import '../../domain/trash_entries.dart';
 import '../providers/trash_providers.dart';
+import '../../../../shared/widgets/empty_state.dart';
 
 /// 휴지통 화면 — 설정 탭에서 진입.
 ///
@@ -39,31 +40,10 @@ class TrashScreen extends ConsumerWidget {
   }
 
   Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.delete_outline, size: 64, color: AppColors.faint),
-          const SizedBox(height: AppSizes.spacing16),
-          Text(
-            TrashStrings.empty,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: AppColors.sub,
-            ),
-          ),
-          const SizedBox(height: AppSizes.spacing4),
-          Text(
-            TrashStrings.autoPurgeNotice,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 12,
-              color: AppColors.faint,
-            ),
-          ),
-        ],
-      ),
+    return const EmptyState(
+      icon: Icons.delete_outline,
+      title: TrashStrings.empty,
+      hint: TrashStrings.autoPurgeNotice,
     );
   }
 

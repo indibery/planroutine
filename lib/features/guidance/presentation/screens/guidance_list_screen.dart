@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
@@ -13,7 +12,11 @@ import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
 import '../providers/guidance_providers.dart';
 import '../widgets/guidance_record_tile.dart';
-import '../../../../shared/widgets/button_semantics.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/sheet_title.dart';
+import '../../../../shared/widgets/gold_fab.dart';
+import '../../../../shared/widgets/pill_chip.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
 
 /// 지도 기록 탭 첫 화면. 잠금은 이 화면이 아니라 셸(`GuidanceLockGate`)이 진다.
 class GuidanceListScreen extends ConsumerWidget {
@@ -35,13 +38,9 @@ class GuidanceListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(GuidanceStrings.eyebrow, style: AppTextStyles.eyebrow),
-            const SizedBox(height: 2),
-            Text(GuidanceStrings.title, style: AppTextStyles.heading),
-          ],
+        title: const TabHeaderTitle(
+          eyebrow: GuidanceStrings.eyebrow,
+          title: GuidanceStrings.title,
         ),
         actions: [
           IconButton(
@@ -54,18 +53,12 @@ class GuidanceListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // 이름 있는 잎 노드로 감싼다. FAB에 `Icon(semanticLabel:)`만 주면 mobile MCP가
-      // 합쳐진 노드를 이름 없는 `Button`으로 읽었다(`SegmentedButtonSemantics`와 같은 이유).
-      floatingActionButton: ButtonSemantics(
-        label: GuidanceStrings.newRecord,
-        onTap: () => context.push(AppRoutes.guidanceNew),
-        child: FloatingActionButton(
+      // 오늘·캘린더와 같은 원형 골드 추가 버튼(2026-10-04 디자인 점검). `GoldFab`은 스스로
+      // 이름 있는 잎 노드다 — `FloatingActionButton`은 mobile MCP가 이름을 놓쳤다.
+      floatingActionButton: GoldFab(
         key: addKey,
-        backgroundColor: AppColors.goldFill,
-        foregroundColor: AppColors.onGold,
-        onPressed: () => context.push(AppRoutes.guidanceNew),
-        child: const Icon(Icons.add),
-      ),
+        semanticLabel: GuidanceStrings.newRecord,
+        onTap: () => context.push(AppRoutes.guidanceNew),
       ),
       body: Column(
         children: [
@@ -77,20 +70,20 @@ class GuidanceListScreen extends ConsumerWidget {
               spacing: AppSizes.spacing8,
               runSpacing: AppSizes.spacing8,
               children: [
-                ActionChip(
+                // 입력 히어로와 같은 테두리형 칩(2026-10-04 디자인 점검). 사람을 골라 두면
+                // 그 칩도 선택 모양이 된다 — 걸러 보고 있다는 사실이 보여야 한다.
+                PillChip(
                   key: personFilterKey,
-                  avatar: const Icon(Icons.person_outline, size: AppSizes.iconSmall),
-                  label: Text(
-                    person == null ? GuidanceStrings.personAll : GuidanceStrings.personLabel(person.name),
-                  ),
-                  onPressed: () => _pickPerson(context, ref, all ?? const []),
+                  label: person == null ? GuidanceStrings.personAll : GuidanceStrings.personLabel(person.name),
+                  selected: person != null,
+                  onTap: () => _pickPerson(context, ref, all ?? const []),
                 ),
                 for (final k in <GuidanceKind?>[null, ...GuidanceKind.values])
-                  ChoiceChip(
+                  PillChip(
                     key: kindFilterKey(k),
-                    label: Text(k?.label ?? GuidanceStrings.kindAll),
+                    label: k?.label ?? GuidanceStrings.kindAll,
                     selected: kind == k,
-                    onSelected: (_) => ref.read(guidanceKindFilterProvider.notifier).state = k,
+                    onTap: () => ref.read(guidanceKindFilterProvider.notifier).state = k,
                   ),
               ],
             ),
@@ -124,24 +117,10 @@ class GuidanceListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _empty() => Center(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_outline, size: 48, color: AppColors.faint),
-          const SizedBox(height: AppSizes.spacing12),
-          Text(GuidanceStrings.empty, style: AppTextStyles.bodyL),
-          const SizedBox(height: AppSizes.spacing8),
-          Text(
-            GuidanceStrings.emptyScope,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
-          ),
-        ],
-      ),
-    ),
+  Widget _empty() => const EmptyState(
+    icon: Icons.lock_outline,
+    title: GuidanceStrings.empty,
+    hint: GuidanceStrings.emptyHint,
   );
 
   /// 기록에 등장한 사람 중 하나를 고른다. `(null,)`은 "전체", 시트를 그냥 닫으면 null.
@@ -154,7 +133,10 @@ class GuidanceListScreen extends ConsumerWidget {
         child: ListView(
           shrinkWrap: true,
           children: [
-            ListTile(title: Text(GuidanceStrings.personPickerTitle, style: AppTextStyles.heading)),
+            const Padding(
+              padding: EdgeInsets.all(AppSizes.spacing16),
+              child: SheetTitle(GuidanceStrings.personPickerTitle),
+            ),
             ListTile(
               title: const Text(GuidanceStrings.kindAll),
               onTap: () => Navigator.pop(ctx, (null,)),

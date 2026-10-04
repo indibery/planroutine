@@ -7,8 +7,8 @@ import '../../../../core/config/app_features.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/brand_logo.dart';
+import '../../../../shared/widgets/tab_header_title.dart';
 import '../../../../shared/widgets/gold_fab.dart';
 import '../../../device_calendar/data/device_calendar_service.dart';
 import '../../../device_calendar/presentation/providers/device_calendar_providers.dart';
@@ -51,7 +51,10 @@ class CalendarScreen extends ConsumerWidget {
           padding: EdgeInsets.only(left: AppSizes.spacing12),
           child: Center(child: BrandLogo(size: 28)),
         ),
-        title: Text(CalendarStrings.title, style: AppTextStyles.heading),
+        title: const TabHeaderTitle(
+          eyebrow: CalendarStrings.eyebrow,
+          title: CalendarStrings.title,
+        ),
       ),
       body: Column(
         children: [

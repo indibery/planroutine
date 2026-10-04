@@ -45,7 +45,7 @@ class GuidanceHistoryScreen extends ConsumerWidget {
           if (atts.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(top: AppSizes.spacing8, bottom: AppSizes.spacing8),
-              child: Text(GuidanceStrings.attachmentLog, style: AppTextStyles.label.copyWith(color: AppColors.sub)),
+              child: Text(GuidanceStrings.attachmentLog, style: AppTextStyles.fieldLabel),
             ),
             for (final a in atts) ...[
               _logLine(GuidanceStrings.attachedLog(_what(a)), formatStamp(a.attachedAt, now: now)),

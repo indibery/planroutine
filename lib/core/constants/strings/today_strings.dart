@@ -4,6 +4,9 @@ class TodayStrings {
 
   static const title = '오늘';
 
+  /// 탭 머리 영문 소제목(`TabHeaderTitle`).
+  static const eyebrow = 'TODAY';
+
   // 섹션 헤더
   static const overdueSection = '기한이 지난';
 

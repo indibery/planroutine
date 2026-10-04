@@ -490,6 +490,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                     selected: {_kind},
                     onSelectionChanged: (s) => setState(() => _kind = s.first),
                   )),
+                  _hint(GuidanceStrings.scopeNote),
                   _gap(),
                   _label(GuidanceStrings.labelStatus),
                   SegmentedButtonSemantics<GuidanceStatus>(child: SegmentedButton<GuidanceStatus>(
@@ -611,7 +612,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
 
   Widget _label(String text) => Padding(
     padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
-    child: Text(text, style: AppTextStyles.label.copyWith(color: AppColors.sub)),
+    child: Text(text, style: AppTextStyles.fieldLabel),
   );
 
   Widget _hint(String text) => Padding(
