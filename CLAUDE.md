@@ -1949,9 +1949,11 @@ Edit는 `old_string` 대 `new_string`). 새 파일은 검사 대상이 아니다
   그걸로 분기하면 macOS 호스트에서 도는 위젯 테스트 전체에 Android 전용 UI가 나타난다.
   `Platform.isAndroid`는 위젯 테스트로 직접 못 밟으므로, 새 플랫폼 분기 UI는 기본값이
   `Platform.isAndroid`인 주입점(예: `showXxx: bool?`)을 둬서 테스트 가능하게 만든다.
-- **adaptive 아이콘의 `markScale 0.85`(`test/tools/gen_app_icon.dart`)와
+- **adaptive 아이콘의 `markScale 0.64`(`test/tools/gen_app_icon.dart`)와
   `adaptive_icon_foreground_inset: 0`(`pubspec.yaml`)은 짝이다.** `flutter_launcher_icons`가
-  기본으로 전경에 16% inset을 더 넣는데, `LogoHybridPainter`가 이미 캔버스의 65.2%만
-  실제로 칠하는 것까지 계산해 안전 영역(원형 마스크 기준 66%)을 맞춘 값이 `markScale`이다
-  — 하나만 바꾸면 로고 크기가 안전 영역보다 작거나(이중 축소, 실측: markScale 0.6 +
-  inset 16% → 안전 영역의 44%만 채움) 마스크 가장자리에 닿는 쪽으로 어긋난다.
+  기본으로 전경에 16% inset을 더 넣으므로 inset을 0으로 두고 크기는 `markScale` 하나가 정한다
+  (둘 다 줄이면 이중 축소, 실측: markScale 0.6 + inset 16% → 로고가 너무 작았다).
+  ⚠️ **안전 영역은 원(108dp 중 지름 66dp)이고 로고는 사각형이다** — 폭이 아니라 모서리까지의
+  거리로 잰다. 폭만 보고 0.85로 두었다가 모서리가 42.8dp(반지름 33dp 초과)라 삼성 테스트폰에서
+  네 귀퉁이가 잘렸다(2026-10-05). 가드 `test/deploy/android_icon_safe_zone_test.dart`가 칠해진
+  모든 픽셀이 원 안인지 본다.
