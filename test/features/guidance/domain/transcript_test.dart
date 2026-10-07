@@ -53,6 +53,12 @@ void main() {
       expect(items.whereType<TranscriptGap>(), isEmpty);
       expect(items.whereType<TranscriptParagraph>(), hasLength(2));
     });
+    test('문단은 정리된 순서의 번호를 들고 있다 — 같은 내용의 문단도 번호가 다르다', () {
+      final items = buildTranscriptView([seg(20000, 21000, 'B'), seg(0, 1000, '같음'), seg(0, 1000, '같음')]);
+      final paras = items.whereType<TranscriptParagraph>().toList();
+      expect(paras.map((p) => p.index), [0, 1, 2]);
+      expect(paras.last.segment.text, 'B');
+    });
     test('문단이 0개면 빈 목록', () {
       expect(buildTranscriptView(const []), isEmpty);
     });

@@ -67,4 +67,12 @@ void main() {
       expect(swift, isNot(contains(banned)), reason: banned);
     }
   });
+
+  test('분석이 오류로 끝나도 수집 작업을 취소하고 분석기를 끝낸다 — 다시 시도마다 모델이 쌓이지 않게', () {
+    // 취소 처리기는 취소될 때만 돈다. 손상된 녹음에서 분석기가 던지면 그 경로가 따로 정리해야 한다(최종 검토 지적).
+    final body = swift.substring(swift.indexOf('let collector = Task'));
+    final catchBlock = RegExp(r'\}\s*catch\s*\{([^}]*)\}').firstMatch(body)?.group(1) ?? '';
+    expect(catchBlock, contains('collector.cancel()'));
+    expect(catchBlock, contains('cancelAndFinishNow()'));
+  });
 }

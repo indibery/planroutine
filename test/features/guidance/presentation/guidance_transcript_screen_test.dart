@@ -38,6 +38,7 @@ class FakeService implements TranscriptionService {
 class FakePlayback implements AudioPlayback {
   final playFromCalls = <Duration>[];
   final _pos = StreamController<Duration>.broadcast();
+  void emit(Duration d) => _pos.add(d);
   @override
   Future<void> play(String path) async {}
   @override
@@ -240,5 +241,33 @@ void main() {
     ));
     await flush(tester);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('같은 내용의 문단도 칩이 따로 있다', (tester) async {
+    await pump(tester);
+    service.seg(0, 1000, '네');
+    service.seg(0, 1000, '네');
+    await service.controller.close();
+    await flush(tester);
+    expect(find.byKey(GuidanceTranscriptScreen.chipKey(0)), findsOneWidget);
+    expect(find.byKey(GuidanceTranscriptScreen.chipKey(1)), findsOneWidget);
+  });
+
+  testWidgets('같은 문단 안에서 재생 위치만 바뀌면 문단 목록을 다시 만들지 않는다', (tester) async {
+    // 재생 중에는 위치가 초당 여러 번 온다 — 한 시간 녹음(문단 수백 개)에서 매번 목록을 다시 만들면 버벅인다.
+    await pump(tester);
+    service.seg(0, 5000, '가');
+    service.seg(15000, 20000, '나');
+    await service.controller.close();
+    await flush(tester);
+    await tester.tap(find.byKey(GuidanceTranscriptScreen.chipKey(0)));
+    await flush(tester);
+    playback.emit(const Duration(milliseconds: 1000));
+    await flush(tester);
+    final before = tester.widget(find.byType(SelectableText).first);
+    playback.emit(const Duration(milliseconds: 1200));
+    await flush(tester);
+    expect(identical(tester.widget(find.byType(SelectableText).first), before), isTrue);
+    expect(find.text('00:01 / 01:10'), findsOneWidget, reason: '재생기 시각은 따라간다');
   });
 }

@@ -109,16 +109,23 @@ enum KoreanTranscriber {
           ])
         }
       }
-      try await withTaskCancellationHandler {
-        if let last = try await analyzer.analyzeSequence(from: file) {
-          try await analyzer.finalizeAndFinish(through: last)
-        } else {
-          await analyzer.cancelAndFinishNow()
+      do {
+        try await withTaskCancellationHandler {
+          if let last = try await analyzer.analyzeSequence(from: file) {
+            try await analyzer.finalizeAndFinish(through: last)
+          } else {
+            await analyzer.cancelAndFinishNow()
+          }
+          try await collector.value
+        } onCancel: {
+          collector.cancel()
+          Task { await analyzer.cancelAndFinishNow() }
         }
-        try await collector.value
-      } onCancel: {
+      } catch {
+        // 취소 처리기는 취소될 때만 돈다 — 분석기가 던지면(손상된 녹음 등) 여기서 정리한다.
         collector.cancel()
-        Task { await analyzer.cancelAndFinishNow() }
+        await analyzer.cancelAndFinishNow()
+        throw error
       }
       send(FlutterEndOfEventStream)
     } catch is CancellationError {

@@ -40,6 +40,10 @@ class GuidanceTranscriptScreen extends ConsumerStatefulWidget {
 class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScreen>
     with WidgetsBindingObserver {
   final _segments = <TranscriptSegment>[];
+
+  /// 문단이 들어올 때만 다시 계산한다 — 재생 위치는 초당 여러 번 오므로 그때마다 정렬하지 않는다.
+  var _visible = const <TranscriptSegment>[];
+  var _items = const <TranscriptItem>[];
   StreamSubscription<TranscriptEvent>? _sub;
   AudioPlayback? _player;
   StreamSubscription<Duration>? _posSub;
@@ -50,7 +54,9 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
   var _preparing = false;
   var _done = false;
   TranscriptFailure? _failure;
-  var _positionMs = 0;
+  /// 재생 위치는 플레이어 카드만 다시 그린다. 목록은 재생 중인 문단([_active])이 바뀔 때만.
+  final _position = ValueNotifier<int>(0);
+  int? _active;
   var _playing = false;
 
   /// 첨부 목록은 autoDispose라 `.future`를 읽는 동안 리스너가 없으면 버려진다 — 화면 수명 동안 붙잡는다.
@@ -80,6 +86,7 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     _posSub?.cancel();
     _playingSub?.cancel();
     _player?.dispose();
+    _position.dispose();
     super.dispose();
   }
 
@@ -104,6 +111,8 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     _sub?.cancel();
     setState(() {
       _segments.clear();
+      _visible = const [];
+      _items = const [];
       _done = false;
       _failure = null;
       _preparing = false;
@@ -118,6 +127,9 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
             case TranscriptSegmentArrived(:final segment):
               _preparing = false;
               _segments.add(segment);
+              _visible = cleanSegments(_segments);
+              _items = buildTranscriptView(_segments);
+              _active = activeSegmentIndex(_visible, _position.value);
           }
         });
       },
@@ -140,7 +152,7 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     if (existing != null) return existing;
     final p = ref.read(audioPlaybackFactoryProvider)();
     _posSub = p.position.listen((d) {
-      if (mounted) setState(() => _positionMs = d.inMilliseconds);
+      if (mounted) _moveTo(d.inMilliseconds);
     });
     _playingSub = p.playing.listen((v) {
       if (mounted) setState(() => _playing = v);
@@ -148,10 +160,16 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     return _player = p;
   }
 
+  void _moveTo(int ms) {
+    _position.value = ms;
+    final active = activeSegmentIndex(_visible, ms);
+    if (active != _active) setState(() => _active = active);
+  }
+
   Future<void> _playFrom(int ms) async {
     final file = _file;
     if (file == null || _missing) return;
-    setState(() => _positionMs = ms);
+    _moveTo(ms);
     await _ensurePlayer().playFrom(file.path, Duration(milliseconds: ms));
   }
 
@@ -162,7 +180,7 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     if (_playing) {
       await p.pause();
     } else {
-      await p.playFrom(file.path, Duration(milliseconds: _positionMs));
+      await p.playFrom(file.path, Duration(milliseconds: _position.value));
     }
   }
 
@@ -177,10 +195,26 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
 
   @override
   Widget build(BuildContext context) {
-    final visible = cleanSegments(_segments);
-    final items = buildTranscriptView(_segments);
-    final active = activeSegmentIndex(visible, _positionMs);
+    final visible = _visible;
+    final items = _items;
     final canCopyAll = _done && visible.isNotEmpty;
+    final header = <Widget>[
+      _playerCard(),
+      if (!_done) _progress(visible),
+      if (_preparing) _preparingBox(),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing8),
+        child: Text(GuidanceStrings.transcriptNotice, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
+      ),
+    ];
+    final footer = <Widget>[
+      if (_done && _failure == null && visible.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: AppSizes.spacing20),
+          child: Text(GuidanceStrings.transcriptEmpty, textAlign: TextAlign.center, style: AppTextStyles.bodyM),
+        ),
+      if (_failure case final failure?) _failureBox(failure),
+    ];
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -201,39 +235,25 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
       ),
       body: _missing
           ? Center(child: Text(GuidanceStrings.attachmentMissing, style: AppTextStyles.bodyM))
-          : ListView(
+          : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.spacing16, AppSizes.spacing8, AppSizes.spacing16, AppSizes.spacing20),
-              children: [
-                _playerCard(),
-                if (!_done) _progress(visible),
-                if (_preparing) _preparingBox(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing8),
-                  child: Text(GuidanceStrings.transcriptNotice,
-                      style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
-                ),
-                for (final item in items)
-                  switch (item) {
-                    TranscriptParagraph(:final segment) =>
-                      _paragraph(visible.indexOf(segment), segment, visible.indexOf(segment) == active),
-                    TranscriptGap(:final startMs, :final lengthMs) => _gap(startMs, lengthMs),
-                  },
-                if (_done && _failure == null && visible.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSizes.spacing20),
-                    child: Text(GuidanceStrings.transcriptEmpty,
-                        textAlign: TextAlign.center, style: AppTextStyles.bodyM),
-                  ),
-                if (_failure case final failure?) _failureBox(failure),
-              ],
+              itemCount: header.length + items.length + footer.length,
+              itemBuilder: (context, i) {
+                if (i < header.length) return header[i];
+                final k = i - header.length;
+                if (k >= items.length) return footer[k - items.length];
+                return switch (items[k]) {
+                  TranscriptParagraph(:final segment, :final index) => _paragraph(index, segment, index == _active),
+                  TranscriptGap(:final startMs, :final lengthMs) => _gap(startMs, lengthMs),
+                };
+              },
             ),
     );
   }
 
   Widget _playerCard() {
     final total = _durationMs;
-    final ratio = total == null || total <= 0 ? null : (_positionMs / total).clamp(0.0, 1.0);
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -253,19 +273,25 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
             ),
             const SizedBox(width: AppSizes.spacing12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (ratio != null)
-                    LinearProgressIndicator(value: ratio, color: AppColors.gold, backgroundColor: AppColors.line),
-                  const SizedBox(height: AppSizes.spacing4),
-                  Text(
-                    total == null
-                        ? formatTranscriptTime(_positionMs)
-                        : '${formatTranscriptTime(_positionMs)} / ${formatTranscriptTime(total)}',
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
-                  ),
-                ],
+              child: ValueListenableBuilder<int>(
+                valueListenable: _position,
+                builder: (context, positionMs, _) {
+                  final ratio = total == null || total <= 0 ? null : (positionMs / total).clamp(0.0, 1.0);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (ratio != null)
+                        LinearProgressIndicator(value: ratio, color: AppColors.gold, backgroundColor: AppColors.line),
+                      const SizedBox(height: AppSizes.spacing4),
+                      Text(
+                        total == null
+                            ? formatTranscriptTime(positionMs)
+                            : '${formatTranscriptTime(positionMs)} / ${formatTranscriptTime(total)}',
+                        style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

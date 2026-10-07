@@ -20,8 +20,11 @@ sealed class TranscriptItem {
 }
 
 class TranscriptParagraph extends TranscriptItem {
-  const TranscriptParagraph(this.segment);
+  const TranscriptParagraph(this.segment, this.index);
   final TranscriptSegment segment;
+
+  /// [cleanSegments] 순서의 번호. 화면이 `indexOf`로 찾지 않게 들고 다닌다 — 같은 내용의 문단도 번호가 다르다.
+  final int index;
 }
 
 class TranscriptGap extends TranscriptItem {
@@ -42,11 +45,13 @@ List<TranscriptItem> buildTranscriptView(
 }) {
   final items = <TranscriptItem>[];
   var cursor = 0;
-  for (final s in cleanSegments(segments)) {
+  final visible = cleanSegments(segments);
+  for (var i = 0; i < visible.length; i++) {
+    final s = visible[i];
     if (s.startMs - cursor >= gapMs) {
       items.add(TranscriptGap(startMs: cursor, lengthMs: s.startMs - cursor));
     }
-    items.add(TranscriptParagraph(s));
+    items.add(TranscriptParagraph(s, i));
     // 겹치거나 뒤섞여 와도 커서는 뒤로 가지 않는다 — 음수 길이를 막는다.
     if (s.endMs > cursor) cursor = s.endMs;
   }
