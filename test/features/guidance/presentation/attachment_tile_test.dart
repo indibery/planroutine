@@ -24,6 +24,11 @@ class FakePlayback implements AudioPlayback {
     _playing.add(true);
   }
 
+  final playFromCalls = <(String, Duration)>[];
+  @override
+  Future<void> playFrom(String path, Duration at) async =>
+      playFromCalls.add((path, at));
+
   @override
   Future<void> pause() async {
     pauses++;
@@ -74,7 +79,9 @@ void main() {
 
   Widget host(GuidanceAttachment a, {VoidCallback? onRemove}) => ProviderScope(
     overrides: [
-      guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
+      guidanceFileStoreProvider.overrideWithValue(
+        GuidanceFileStore(baseDir: () async => base),
+      ),
       audioPlaybackFactoryProvider.overrideWithValue(() {
         final p = FakePlayback();
         players.add(p);
@@ -83,7 +90,11 @@ void main() {
     ],
     child: MaterialApp(
       home: Scaffold(
-        body: AttachmentTile(attachment: a, now: DateTime(2026, 10, 3), onRemove: onRemove),
+        body: AttachmentTile(
+          attachment: a,
+          now: DateTime(2026, 10, 3),
+          onRemove: onRemove,
+        ),
       ),
     ),
   );
@@ -92,7 +103,9 @@ void main() {
   /// 고정 시간이 아니라 조건이 될 때까지(상한 40회) 기다린다.
   Future<void> waitUntil(WidgetTester tester, bool Function() done) async {
     for (var i = 0; i < 40 && !done(); i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 25)),
+      );
       await tester.pump();
     }
     expect(done(), isTrue, reason: '기다리던 상태가 되지 않았다');
@@ -100,10 +113,15 @@ void main() {
 
   bool playEnabled(WidgetTester tester, int id) {
     final f = find.byKey(AttachmentTile.playKey(id));
-    return f.evaluate().isNotEmpty && tester.widget<IconButton>(f).onPressed != null;
+    return f.evaluate().isNotEmpty &&
+        tester.widget<IconButton>(f).onPressed != null;
   }
 
-  Future<void> pump(WidgetTester tester, GuidanceAttachment a, {VoidCallback? onRemove}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    GuidanceAttachment a, {
+    VoidCallback? onRemove,
+  }) async {
     await tester.pumpWidget(host(a, onRemove: onRemove));
     if (a.type == AttachmentType.audio) {
       await waitUntil(tester, () => playEnabled(tester, a.id ?? -1));
@@ -114,7 +132,9 @@ void main() {
 
   Future<void> tapPlay(WidgetTester tester, int id) async {
     await tester.tap(find.byKey(AttachmentTile.playKey(id)));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
     await tester.pump();
   }
 
@@ -127,13 +147,22 @@ void main() {
   });
 
   testWidgets('정보를 누르면 해시와 원래 이름이 보인다', (tester) async {
-    await pump(tester, audio.copyWith(source: AttachmentSource.imported, originalName: '통화 녹음 1002.m4a'));
+    await pump(
+      tester,
+      audio.copyWith(
+        source: AttachmentSource.imported,
+        originalName: '통화 녹음 1002.m4a',
+      ),
+    );
     await tester.tap(find.byKey(AttachmentTile.infoKey(1)));
     await tester.pumpAndSettle();
     expect(find.text(audio.sha256), findsOneWidget);
     // 타일 제목에도 같은 이름이 있으므로 시트 안만 본다
     expect(
-      find.descendant(of: find.byType(BottomSheet), matching: find.text('통화 녹음 1002.m4a')),
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('통화 녹음 1002.m4a'),
+      ),
       findsOneWidget,
     );
   });
@@ -163,7 +192,11 @@ void main() {
     await tapPlay(tester, 1);
     players.single.finish();
     await tester.pump();
-    expect(find.byIcon(Icons.play_arrow), findsOneWidget, reason: '끝나면 버튼이 재생으로 돌아온다');
+    expect(
+      find.byIcon(Icons.play_arrow),
+      findsOneWidget,
+      reason: '끝나면 버튼이 재생으로 돌아온다',
+    );
     await tapPlay(tester, 1);
     expect(players.single.played, hasLength(2));
   });
@@ -182,15 +215,30 @@ void main() {
     await tester.pumpWidget(host(other));
     expect(players.first.disposed, isTrue);
     await waitUntil(tester, () => playEnabled(tester, 2));
-    expect(find.byIcon(Icons.play_arrow), findsOneWidget, reason: '재생 상태도 새로 시작한다');
+    expect(
+      find.byIcon(Icons.play_arrow),
+      findsOneWidget,
+      reason: '재생 상태도 새로 시작한다',
+    );
     await tapPlay(tester, 2);
     expect(players.last.played.single.endsWith('b.m4a'), isTrue);
   });
 
   testWidgets('파일이 없으면 안내하고 재생 버튼은 눌리지 않는다', (tester) async {
     await tester.pumpWidget(host(audio.copyWith(fileName: 'gone.m4a')));
-    await waitUntil(tester, () => find.textContaining(GuidanceStrings.attachmentMissing).evaluate().isNotEmpty);
-    expect(tester.widget<IconButton>(find.byKey(AttachmentTile.playKey(1))).onPressed, isNull);
+    await waitUntil(
+      tester,
+      () => find
+          .textContaining(GuidanceStrings.attachmentMissing)
+          .evaluate()
+          .isNotEmpty,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(AttachmentTile.playKey(1)))
+          .onPressed,
+      isNull,
+    );
     expect(players, isEmpty);
   });
 
@@ -198,11 +246,17 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
-          audioPlaybackFactoryProvider.overrideWithValue(() => throw StateError('플러그인 실패')),
+          guidanceFileStoreProvider.overrideWithValue(
+            GuidanceFileStore(baseDir: () async => base),
+          ),
+          audioPlaybackFactoryProvider.overrideWithValue(
+            () => throw StateError('플러그인 실패'),
+          ),
         ],
         child: MaterialApp(
-          home: Scaffold(body: AttachmentTile(attachment: audio, now: DateTime(2026, 10, 3))),
+          home: Scaffold(
+            body: AttachmentTile(attachment: audio, now: DateTime(2026, 10, 3)),
+          ),
         ),
       ),
     );

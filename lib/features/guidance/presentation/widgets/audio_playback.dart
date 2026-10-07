@@ -6,6 +6,9 @@ import 'package:just_audio/just_audio.dart';
 /// 녹음 재생. 위젯 테스트에서 플랫폼 플러그인을 부르지 않으려고 인터페이스로 둔다.
 abstract class AudioPlayback {
   Future<void> play(String path);
+
+  /// [at] 위치부터 재생한다(글로 보기의 시각 칩).
+  Future<void> playFrom(String path, Duration at);
   Future<void> pause();
   Stream<Duration> get position;
   Stream<bool> get playing;
@@ -36,6 +39,17 @@ class JustAudioPlayback implements AudioPlayback {
     }
     // play()는 끝날 때까지 기다리는 Future라 await하지 않는다. 오류는 삼키지 않고
     // 멈춘 상태(playing false)로 돌려 버튼이 `멈춤`에 남지 않게 한다.
+    unawaited(_player.play().catchError((Object _) => _player.pause()));
+  }
+
+  @override
+  Future<void> playFrom(String path, Duration at) async {
+    if (_loaded != path) {
+      await _player.setFilePath(path, initialPosition: at);
+      _loaded = path;
+    } else {
+      await _player.seek(at);
+    }
     unawaited(_player.play().catchError((Object _) => _player.pause()));
   }
 
