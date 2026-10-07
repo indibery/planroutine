@@ -49,6 +49,7 @@ class GuidanceDetailScreen extends ConsumerWidget {
         if (!a.isRemoved) a,
     ];
     final now = DateTime.now();
+    final canTranscribe = ref.watch(transcriptAvailableProvider).valueOrNull ?? false;
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -135,7 +136,14 @@ class GuidanceDetailScreen extends ConsumerWidget {
                   for (final a in attachments)
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
-                      child: AttachmentTile(key: ValueKey(a.id), attachment: a, now: now),
+                      child: AttachmentTile(
+                        key: ValueKey(a.id),
+                        attachment: a,
+                        now: now,
+                        onTranscribe: canTranscribe && a.type == AttachmentType.audio && a.id != null
+                            ? () => context.push(AppRoutes.guidanceTranscript(recordId, a.id ?? -1))
+                            : null,
+                      ),
                     ),
                 ],
               ],

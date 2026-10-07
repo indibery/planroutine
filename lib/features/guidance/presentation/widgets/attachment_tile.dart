@@ -22,16 +22,21 @@ class AttachmentTile extends ConsumerStatefulWidget {
     required this.attachment,
     required this.now,
     this.onRemove,
+    this.onTranscribe,
   });
 
   final GuidanceAttachment attachment;
   final DateTime now;
   final VoidCallback? onRemove;
 
+  /// 녹음을 글로 보기(참고용 전사). 지원 기기의 기록 보기에서만 넘긴다.
+  final VoidCallback? onTranscribe;
+
   static Key playKey(int id) => Key('att_play_$id');
   static Key infoKey(int id) => Key('att_info_$id');
   static Key removeKey(int id) => Key('att_remove_$id');
   static Key imageKey(int id) => Key('att_image_$id');
+  static Key transcribeKey(int id) => Key('att_transcribe_$id');
 
   @override
   ConsumerState<AttachmentTile> createState() => _AttachmentTileState();
@@ -209,44 +214,76 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.spacing8),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            leading,
-            const SizedBox(width: AppSizes.spacing12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    a.originalName ?? a.type.label,
-                    style: AppTextStyles.bodyM,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            Row(
+              children: [
+                leading,
+                const SizedBox(width: AppSizes.spacing12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a.originalName ?? a.type.label,
+                        style: AppTextStyles.bodyM,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+                      ),
+                    ],
                   ),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              key: AttachmentTile.infoKey(id),
-              icon: const Icon(
-                Icons.info_outline,
-                semanticLabel: GuidanceStrings.attachmentInfo,
-              ),
-              onPressed: () => showAttachmentInfo(context, a, now: widget.now),
-            ),
-            if (widget.onRemove != null)
-              IconButton(
-                key: AttachmentTile.removeKey(id),
-                icon: const Icon(
-                  Icons.close,
-                  semanticLabel: GuidanceStrings.removeAttachment,
                 ),
-                onPressed: widget.onRemove,
+                IconButton(
+                  key: AttachmentTile.infoKey(id),
+                  icon: const Icon(
+                    Icons.info_outline,
+                    semanticLabel: GuidanceStrings.attachmentInfo,
+                  ),
+                  onPressed: () => showAttachmentInfo(context, a, now: widget.now),
+                ),
+                if (widget.onRemove != null)
+                  IconButton(
+                    key: AttachmentTile.removeKey(id),
+                    icon: const Icon(
+                      Icons.close,
+                      semanticLabel: GuidanceStrings.removeAttachment,
+                    ),
+                    onPressed: widget.onRemove,
+                  ),
+              ],
+            ),
+            if (widget.onTranscribe != null && file != null && !_missing) ...[
+              const SizedBox(height: AppSizes.spacing4),
+              TextButton.icon(
+                key: AttachmentTile.transcribeKey(id),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  backgroundColor: AppColors.surfaceVariant,
+                  foregroundColor: AppColors.ink,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radius8),
+                  ),
+                ),
+                onPressed: widget.onTranscribe,
+                icon: const Icon(Icons.notes, size: 18),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(GuidanceStrings.transcribe),
+                    const SizedBox(width: AppSizes.spacing8),
+                    Text(
+                      GuidanceStrings.transcribeTag,
+                      style: AppTextStyles.bodyS.copyWith(fontSize: 12, color: AppColors.sub),
+                    ),
+                  ],
+                ),
               ),
+            ],
           ],
         ),
       ),

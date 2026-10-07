@@ -77,7 +77,7 @@ void main() {
     attachedAt: '2026-10-02T15:54:00.000',
   );
 
-  Widget host(GuidanceAttachment a, {VoidCallback? onRemove}) => ProviderScope(
+  Widget host(GuidanceAttachment a, {VoidCallback? onRemove, VoidCallback? onTranscribe}) => ProviderScope(
     overrides: [
       guidanceFileStoreProvider.overrideWithValue(
         GuidanceFileStore(baseDir: () async => base),
@@ -94,6 +94,7 @@ void main() {
           attachment: a,
           now: DateTime(2026, 10, 3),
           onRemove: onRemove,
+          onTranscribe: onTranscribe,
         ),
       ),
     ),
@@ -121,8 +122,9 @@ void main() {
     WidgetTester tester,
     GuidanceAttachment a, {
     VoidCallback? onRemove,
+    VoidCallback? onTranscribe,
   }) async {
-    await tester.pumpWidget(host(a, onRemove: onRemove));
+    await tester.pumpWidget(host(a, onRemove: onRemove, onTranscribe: onTranscribe));
     if (a.type == AttachmentType.audio) {
       await waitUntil(tester, () => playEnabled(tester, a.id ?? -1));
     } else {
@@ -293,5 +295,24 @@ void main() {
     await tester.pump();
     expect(players, isEmpty, reason: '재생기를 만들지도 않는다');
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('onTranscribe가 있고 파일이 있으면 글로 보기 버튼', (tester) async {
+    var tapped = 0;
+    await pump(tester, audio, onTranscribe: () => tapped++);
+    await tester.tap(find.byKey(AttachmentTile.transcribeKey(1)));
+    expect(tapped, 1);
+    expect(find.text(GuidanceStrings.transcribeTag), findsOneWidget);
+  });
+
+  testWidgets('onTranscribe가 없으면(편집 화면·미지원 기기) 버튼이 없다', (tester) async {
+    await pump(tester, audio);
+    expect(find.byKey(AttachmentTile.transcribeKey(1)), findsNothing);
+  });
+
+  testWidgets('파일이 없으면 글로 보기를 숨긴다', (tester) async {
+    await tester.pumpWidget(host(audio.copyWith(id: 9, fileName: 'none.m4a'), onTranscribe: () {}));
+    await waitUntil(tester, () => find.textContaining(GuidanceStrings.attachmentMissing).evaluate().isNotEmpty);
+    expect(find.byKey(AttachmentTile.transcribeKey(9)), findsNothing);
   });
 }

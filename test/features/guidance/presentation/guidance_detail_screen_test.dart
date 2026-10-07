@@ -4,7 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
+import 'dart:io';
+
+import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
 import 'package:planroutine/features/guidance/data/guidance_repository.dart';
+import 'package:planroutine/features/guidance/domain/guidance_models.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
@@ -34,13 +38,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> pump(WidgetTester tester, int id) async {
+  Future<void> pump(WidgetTester tester, int id, {List<Override> overrides = const []}) async {
     tester.view.physicalSize = const Size(390, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [guidanceRepositoryProvider.overrideWithValue(repo)],
+        overrides: [guidanceRepositoryProvider.overrideWithValue(repo), ...overrides],
         child: MaterialApp(
           home: Builder(
             builder: (context) => Scaffold(
@@ -139,5 +143,64 @@ void main() {
     await tester.tap(find.byKey(GuidanceDetailScreen.exportKey));
     await settle(tester);
     expect(find.text(GuidanceStrings.exportPdfOnly), findsOneWidget);
+  });
+
+  group('글로 보기 버튼', () {
+    late Directory base;
+    setUp(() async {
+      base = await Directory.systemTemp.createTemp('detail_transcribe');
+      await Directory('${base.path}/guidance').create();
+      for (final n in ['r.aac', 'p.jpg']) {
+        await File('${base.path}/guidance/$n').writeAsBytes([0]);
+      }
+    });
+    tearDown(() async => base.delete(recursive: true));
+
+    Future<int> seed(WidgetTester tester) async {
+      final id = await tester.runAsync(() => repo.create(const GuidanceContent(title: '상담')));
+      final rid = id ?? -1;
+      await tester.runAsync(() async {
+        for (final (name, type) in [('r.aac', AttachmentType.audio), ('p.jpg', AttachmentType.image)]) {
+          await repo.addAttachment(
+            GuidanceAttachment(
+              recordId: rid,
+              type: type,
+              source: AttachmentSource.recorded,
+              fileName: name,
+              sha256: 'a' * 64,
+              byteSize: 1,
+              attachedAt: '2026-10-07T10:00:00',
+            ),
+          );
+        }
+      });
+      return rid;
+    }
+
+    List<Override> overrides(bool available) => [
+      transcriptAvailableProvider.overrideWith((ref) async => available),
+      guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
+    ];
+
+    Future<void> waitFiles(WidgetTester tester) async {
+      for (var i = 0; i < 20; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester.pump();
+      }
+    }
+
+    testWidgets('지원 기기에서는 녹음 줄에만 글로 보기가 있다', (tester) async {
+      final id = await seed(tester);
+      await pump(tester, id, overrides: overrides(true));
+      await waitFiles(tester);
+      expect(find.text(GuidanceStrings.transcribe), findsOneWidget);
+    });
+
+    testWidgets('지원하지 않는 기기에서는 글로 보기가 없다', (tester) async {
+      final id = await seed(tester);
+      await pump(tester, id, overrides: overrides(false));
+      await waitFiles(tester);
+      expect(find.text(GuidanceStrings.transcribe), findsNothing);
+    });
   });
 }
