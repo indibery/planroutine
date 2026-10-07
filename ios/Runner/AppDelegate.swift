@@ -105,5 +105,12 @@ import UIKit
         }
       }
     }
+
+    // 지도 기록 '글로 보기'(전사). 다른 채널과 같은 자리에서 잡는다.
+    let transcriberRegistrar = engineBridge.pluginRegistry.registrar(
+      forPlugin: "PlanRoutineTranscriber")
+    if let transcriberMessenger = transcriberRegistrar?.messenger() {
+      TranscriberChannels.register(messenger: transcriberMessenger)
+    }
   }
 }
