@@ -251,7 +251,7 @@ class GuidanceStrings {
   }
 
   static const exportAudioOnly = '녹음만';
-  static const exportAudioOnlySubtitle = '원본 파일 그대로 · 받는 쪽에서 바로 들을 수 있어요';
+  static const exportAudioOnlySubtitle = '원본 파일 그대로';
   static const exportAudioOnlyExcluded = '녹음만 보낼 때는 빠져요';
   static const exportAudioSaveOneOnly = '여러 개는 공유로 보내 주세요';
   static const exportPdfOnly = 'PDF만';

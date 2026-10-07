@@ -354,6 +354,15 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    testWidgets('녹음만 부제는 320pt에서 한 줄 — 한 글자만 다음 줄로 넘어가지 않는다', (tester) async {
+      // 한글은 글자 단위로 줄이 바뀐다 — 시뮬레이터에서 `있어/요`로 쪼개진 것을 보고 줄였다(2026-10-07).
+      await pump(tester, attachments: [att(1, AttachmentType.audio)]);
+      tester.view.physicalSize = const Size(320, 1400);
+      await tester.pumpAndSettle();
+      final oneLine = tester.getSize(find.text(GuidanceStrings.exportPdfOnlySubtitle)).height;
+      expect(tester.getSize(find.text(GuidanceStrings.exportAudioOnlySubtitle)).height, oneLine);
+    });
+
     testWidgets('녹음이 없으면 녹음만 선택지가 없다', (tester) async {
       await pump(tester, attachments: [att(1, AttachmentType.image)]);
       expect(find.byKey(GuidanceExportSheet.audioOnlyKey), findsNothing);
