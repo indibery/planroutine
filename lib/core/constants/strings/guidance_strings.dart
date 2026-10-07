@@ -250,6 +250,10 @@ class GuidanceStrings {
     return parts.isEmpty ? 'PDF' : 'PDF + ${parts.join(' · ')} 원본';
   }
 
+  static const exportAudioOnly = '녹음만';
+  static const exportAudioOnlySubtitle = '원본 파일 그대로 · 받는 쪽에서 바로 들을 수 있어요';
+  static const exportAudioOnlyExcluded = '녹음만 보낼 때는 빠져요';
+  static const exportAudioSaveOneOnly = '여러 개는 공유로 보내 주세요';
   static const exportPdfOnly = 'PDF만';
   static const exportPdfOnlySubtitle = '인쇄·내부 보고용';
   static const exportNotice = '학생 이름과 기록 내용이 담깁니다. 받는 사람을 확인하세요.';

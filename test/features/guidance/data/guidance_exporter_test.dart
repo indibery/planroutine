@@ -114,4 +114,35 @@ void main() {
     final out = await exporter.build(record: record, attachments: [a], selectedIds: ids, kind: ExportKind.pdfOnly);
     expect(latin1.decode(out.bytes.sublist(0, 5)), '%PDF-');
   });
+
+  group('copyAudioForShare', () {
+    test('원본 바이트 그대로 새 이름으로 복사한다 — SHA-256이 첨부 정보와 같다', () async {
+      final a = await stored(1, 'abc');
+      final out = Directory('${base.path}/out');
+      final files = await exporter.copyAudioForShare(
+        record: record,
+        attachments: [a],
+        selectedIds: {1},
+        dir: out,
+      );
+      expect(files.single.path.endsWith('지도기록_20261004-1530_01.aac'), isTrue);
+      expect(sha256.convert(files.single.readAsBytesSync()).toString(), a.sha256);
+    });
+
+    test('복사 실패 시 사본을 남기지 않는다', () async {
+      final a = await stored(1, 'abc');
+      final missing = (await stored(2, 'def')).copyWith(fileName: 'gone.aac');
+      final out = Directory('${base.path}/out');
+      await expectLater(
+        exporter.copyAudioForShare(
+          record: record,
+          attachments: [a, missing],
+          selectedIds: {1, 2},
+          dir: out,
+        ),
+        throwsA(anything),
+      );
+      expect(out.listSync(), isEmpty);
+    });
+  });
 }

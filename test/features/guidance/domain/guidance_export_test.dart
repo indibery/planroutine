@@ -120,4 +120,32 @@ void main() {
       expect(s.contains('서버'), isFalse, reason: s);
     }
   });
+
+  group('buildAudioOnlyFiles', () {
+    test('고른 녹음만, 고른 것 사이 순번으로, 지도기록_ 접두 + 원래 확장자', () {
+      final files = buildAudioOnlyFiles(
+        createdAt: '2026-10-04T15:30:00',
+        attachments: [
+          att(1, 'p.heic', '2026-10-04T15:31:00', type: AttachmentType.image),
+          att(2, 'r.aac', '2026-10-04T15:32:00'),
+          att(3, 'r2.M4A', '2026-10-04T15:33:00'),
+        ],
+        selectedIds: {1, 2, 3},
+      );
+      expect(files.map((f) => f.outName), ['지도기록_20261004-1530_01.aac', '지도기록_20261004-1530_02.m4a']);
+    });
+
+    test('뺀 첨부·고르지 않은 녹음은 빠진다', () {
+      final files = buildAudioOnlyFiles(
+        createdAt: '2026-10-04T15:30:00',
+        attachments: [
+          att(2, 'a.aac', '2026-10-04T15:32:00', removedAt: '2026-10-05T00:00:00'),
+          att(3, 'b.aac', '2026-10-04T15:33:00'),
+          att(4, 'c.aac', '2026-10-04T15:34:00'),
+        ],
+        selectedIds: {2, 4},
+      );
+      expect(files.map((f) => f.attachment.id), [4]);
+    });
+  });
 }

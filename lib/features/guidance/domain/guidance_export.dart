@@ -4,8 +4,8 @@ import 'package:path/path.dart' as p;
 import 'guidance_models.dart';
 import 'guidance_types.dart';
 
-/// 무엇을 내보내나 — PDF와 원본을 한 파일로 / PDF 한 장.
-enum ExportKind { bundle, pdfOnly }
+/// 무엇을 내보내나 — PDF와 원본을 한 파일로 / 녹음 원본만 / PDF 한 장.
+enum ExportKind { bundle, audioOnly, pdfOnly }
 
 /// ZIP 안의 이름. Windows에서 한글 이름이 깨지는 일을 원천적으로 없앤다(스펙 "파일 이름").
 final exportInnerNamePattern = RegExp(r'^[A-Za-z0-9._-]+$');
@@ -82,6 +82,33 @@ ExportPlan buildExportPlan({
         ),
     ],
   );
+}
+
+/// 녹음만 보낼 때의 파일 하나. 원본을 그대로 복사해 이 이름을 붙인다(바이트가 같아 SHA-256이 대조된다).
+class AudioExportFile {
+  const AudioExportFile({required this.attachment, required this.outName});
+  final GuidanceAttachment attachment;
+  final String outName;
+}
+
+List<AudioExportFile> buildAudioOnlyFiles({
+  required String createdAt,
+  required List<GuidanceAttachment> attachments,
+  required Set<int> selectedIds,
+}) {
+  final plan = buildExportPlan(
+    createdAt: createdAt,
+    attachments: [
+      for (final a in attachments)
+        if (a.type == AttachmentType.audio) a,
+    ],
+    selectedIds: selectedIds,
+  );
+  // ZIP 안 이름과 같은 규칙에 바깥 접두만 붙인다 — 제목은 넣지 않는다.
+  return [
+    for (final e in plan.entries)
+      AudioExportFile(attachment: e.attachment, outName: '지도기록_${e.innerName}'),
+  ];
 }
 
 String _safeExt(String fileName) {

@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:path/path.dart' as p;
 
 import '../domain/guidance_export.dart';
 import '../domain/guidance_models.dart';
@@ -36,12 +39,43 @@ class GuidanceExporter {
     return ids;
   }
 
+  /// 녹음만 — 메모리에 읽지 않고 [dir]에 복사한다(한 시간 녹음도 메모리를 쓰지 않는다).
+  /// 하나라도 실패하면 이미 만든 사본을 지우고 다시 던진다 — 기록이 담긴 파일을 남기지 않는다.
+  Future<List<File>> copyAudioForShare({
+    required GuidanceRecord record,
+    required List<GuidanceAttachment> attachments,
+    required Set<int> selectedIds,
+    required Directory dir,
+  }) async {
+    await dir.create(recursive: true);
+    final made = <File>[];
+    try {
+      for (final f in buildAudioOnlyFiles(
+        createdAt: record.createdAt,
+        attachments: attachments,
+        selectedIds: selectedIds,
+      )) {
+        final src = await fileStore.fileOf(f.attachment.fileName);
+        made.add(await src.copy(p.join(dir.path, f.outName)));
+      }
+      return made;
+    } catch (_) {
+      for (final f in made) {
+        try {
+          await f.delete();
+        } catch (_) {}
+      }
+      rethrow;
+    }
+  }
+
   Future<ExportOutput> build({
     required GuidanceRecord record,
     required List<GuidanceAttachment> attachments,
     required Set<int> selectedIds,
     required ExportKind kind,
   }) async {
+    assert(kind != ExportKind.audioOnly, '녹음만은 copyAudioForShare를 쓴다');
     final plan = buildExportPlan(
       createdAt: record.createdAt,
       attachments: attachments,

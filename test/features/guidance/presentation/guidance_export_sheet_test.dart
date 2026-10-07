@@ -19,6 +19,23 @@ class FakeExporter extends GuidanceExporter {
   FakeExporter() : super(fileStore: GuidanceFileStore());
   final calls = <(Set<int>, ExportKind)>[];
   var fail = false;
+  final audioCalls = <Set<int>>[];
+  var failAudio = false;
+
+  @override
+  Future<List<File>> copyAudioForShare({
+    required GuidanceRecord record,
+    required List<GuidanceAttachment> attachments,
+    required Set<int> selectedIds,
+    required Directory dir,
+  }) async {
+    audioCalls.add({...selectedIds});
+    if (failAudio) throw StateError('실패');
+    await dir.create(recursive: true);
+    return [
+      for (final id in selectedIds) File('${dir.path}/a$id.aac')..writeAsBytesSync([id]),
+    ];
+  }
 
   @override
   Future<ExportOutput> build({
@@ -64,11 +81,20 @@ void main() {
   late FakeExporter exporter;
   late List<String> shared;
   late List<String> saved;
+  late List<List<int>> savedBytes;
+  late List<List<String>> sharedPaths;
+  late Directory tmp;
 
   setUp(() {
     exporter = FakeExporter();
     shared = [];
     saved = [];
+    savedBytes = [];
+    sharedPaths = [];
+    tmp = Directory.systemTemp.createTempSync('export_sheet');
+  });
+  tearDown(() {
+    if (tmp.existsSync()) tmp.deleteSync(recursive: true);
   });
 
   Future<void> pump(
@@ -100,8 +126,16 @@ void main() {
               },
               save: (out) async {
                 saved.add(out.fileName);
+                savedBytes.add(out.bytes.toList());
                 return true;
               },
+              shareFiles: (paths, _) async {
+                // 공유하는 순간 파일이 있어야 한다 — 끝난 뒤 지워지는지는 따로 본다.
+                expect(paths.every((p) => File(p).existsSync()), isTrue);
+                sharedPaths.add(paths);
+                return true;
+              },
+              tempDir: () async => tmp,
             ),
           ),
         ),
@@ -305,5 +339,82 @@ void main() {
   testWidgets('시트 맨 위에 끌어 내리는 손잡이가 있다 — 닫는 방법이 보인다', (tester) async {
     await pump(tester);
     expect(find.byKey(GuidanceExportSheet.handleKey), findsOneWidget);
+  });
+
+  group('녹음만', () {
+    // 파일 복사·삭제는 실제 I/O라 fake-async 밖에서 끝나야 한다.
+    Future<void> tapAndFinish(WidgetTester tester, Key key) async {
+      await tester.tap(find.byKey(key));
+      await tester.pump();
+      // 만드는 중 진행 막대가 사라질 때까지(상한 40회) — 고정 시간이 아니라 조건으로 기다린다.
+      for (var i = 0; i < 40 && find.byType(LinearProgressIndicator).evaluate().isNotEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('녹음이 없으면 녹음만 선택지가 없다', (tester) async {
+      await pump(tester, attachments: [att(1, AttachmentType.image)]);
+      expect(find.byKey(GuidanceExportSheet.audioOnlyKey), findsNothing);
+    });
+
+    testWidgets('녹음만을 고르면 사진 줄이 꺼지고 고른 녹음만 공유한다', (tester) async {
+      await pump(tester, attachments: [att(1, AttachmentType.audio), att(2, AttachmentType.image)]);
+      await tester.tap(find.byKey(GuidanceExportSheet.audioOnlyKey));
+      await tester.pump();
+      final photo = tester.widget<CheckboxListTile>(find.byKey(GuidanceExportSheet.attachmentKey(2)));
+      expect(photo.onChanged, isNull);
+      expect(photo.value, isFalse);
+      expect(find.text(GuidanceStrings.exportAudioOnlyExcluded), findsOneWidget);
+      await tapAndFinish(tester, GuidanceExportSheet.shareKey);
+      expect(exporter.audioCalls, [
+        {1},
+      ]);
+      expect(sharedPaths.single, hasLength(1));
+      expect(exporter.calls, isEmpty);
+    });
+
+    testWidgets('공유가 끝나면 임시 사본을 지운다', (tester) async {
+      await pump(tester, attachments: [att(1, AttachmentType.audio)]);
+      await tester.tap(find.byKey(GuidanceExportSheet.audioOnlyKey));
+      await tester.pump();
+      await tapAndFinish(tester, GuidanceExportSheet.shareKey);
+      expect(File(sharedPaths.single.single).existsSync(), isFalse);
+    });
+
+    testWidgets('복사 실패는 시트 안 실패 줄', (tester) async {
+      exporter.failAudio = true;
+      await pump(tester, attachments: [att(1, AttachmentType.audio)]);
+      await tester.tap(find.byKey(GuidanceExportSheet.audioOnlyKey));
+      await tester.pump();
+      await tapAndFinish(tester, GuidanceExportSheet.shareKey);
+      expect(find.text(GuidanceStrings.exportFailed), findsOneWidget);
+    });
+
+    testWidgets('안드로이드 녹음만 2개 이상이면 저장이 꺼지고 안내', (tester) async {
+      await pump(
+        tester,
+        attachments: [att(1, AttachmentType.audio), att(2, AttachmentType.audio)],
+        isAndroid: true,
+      );
+      await tester.tap(find.byKey(GuidanceExportSheet.audioOnlyKey));
+      await tester.pump();
+      expect(tester.widget<OutlinedButton>(find.byKey(GuidanceExportSheet.saveKey)).onPressed, isNull);
+      expect(find.byKey(GuidanceExportSheet.saveOneOnlyKey), findsOneWidget);
+    });
+
+    testWidgets('안드로이드 녹음만 1개면 저장에 원본 바이트를 넘긴다', (tester) async {
+      await pump(
+        tester,
+        attachments: [att(1, AttachmentType.audio), att(2, AttachmentType.audio)],
+        isAndroid: true,
+      );
+      await tester.tap(find.byKey(GuidanceExportSheet.audioOnlyKey));
+      await tester.tap(find.byKey(GuidanceExportSheet.attachmentKey(2)));
+      await tester.pump();
+      await tapAndFinish(tester, GuidanceExportSheet.saveKey);
+      expect(savedBytes.single, [1]);
+    });
   });
 }

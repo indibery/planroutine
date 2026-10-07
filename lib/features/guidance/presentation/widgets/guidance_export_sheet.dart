@@ -26,6 +26,17 @@ typedef ShareExport = Future<bool> Function(ExportOutput out, Rect? origin);
 /// 저장했으면 true, 저장 창에서 취소했으면 false.
 typedef SaveExport = Future<bool> Function(ExportOutput out);
 
+/// 여러 파일 공유(녹음만). 보냈으면(또는 결과를 알 수 없으면) true.
+typedef ShareFiles = Future<bool> Function(List<String> paths, Rect? origin);
+
+Future<bool> _shareFilesViaSheet(List<String> paths, Rect? origin) async {
+  final result = await Share.shareXFiles(
+    [for (final p in paths) XFile(p)],
+    sharePositionOrigin: origin,
+  );
+  return result.status != ShareResultStatus.dismissed;
+}
+
 /// 임시 폴더에 쓰고 공유시트를 연 뒤, 닫히면(결과·실패와 무관) 지운다 — 기록 내용이 담긴 파일이다.
 /// ⚠️ 안드로이드의 share_plus는 넘긴 파일을 자기 캐시(`cache/share_plus/`)에 한 번 더 복사하고 그 사본은
 /// 다음 공유 때까지 남는다 — 앱 샌드박스 안이라 노출 범위는 DB와 같다.
@@ -75,6 +86,8 @@ Future<void> showGuidanceExportSheet(
   @visibleForTesting bool? isAndroid,
   @visibleForTesting ShareExport? share,
   @visibleForTesting SaveExport? save,
+  @visibleForTesting ShareFiles? shareFiles,
+  @visibleForTesting Future<Directory> Function()? tempDir,
 }) async {
   final available = await ref
       .read(guidanceExporterProvider)
@@ -92,6 +105,8 @@ Future<void> showGuidanceExportSheet(
       isAndroid: isAndroid,
       share: share,
       save: save,
+      shareFiles: shareFiles,
+      tempDir: tempDir,
     ),
   );
   if (message != null) messenger?.showSnackBar(SnackBar(content: Text(message)));
@@ -107,6 +122,8 @@ class GuidanceExportSheet extends ConsumerStatefulWidget {
     this.isAndroid,
     this.share,
     this.save,
+    this.shareFiles,
+    this.tempDir,
   });
 
   final GuidanceRecord record;
@@ -119,9 +136,13 @@ class GuidanceExportSheet extends ConsumerStatefulWidget {
   final bool? isAndroid;
   final ShareExport? share;
   final SaveExport? save;
+  final ShareFiles? shareFiles;
+  final Future<Directory> Function()? tempDir;
 
   static const bundleKey = Key('guidance_export_bundle');
   static const pdfOnlyKey = Key('guidance_export_pdf_only');
+  static const audioOnlyKey = Key('guidance_export_audio_only');
+  static const saveOneOnlyKey = Key('guidance_export_save_one_only');
   static const shareKey = Key('guidance_export_share');
   static const saveKey = Key('guidance_export_save');
   static const guideKey = Key('guidance_export_guide');
@@ -149,8 +170,23 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
   String? _status;
 
   bool get _android => widget.isAndroid ?? Platform.isAndroid;
+  bool get _audioOnly => _kind == ExportKind.audioOnly;
+  bool get _hasAudio => _visible.any(
+    (a) => a.type == AttachmentType.audio && widget.availableIds.contains(a.id),
+  );
+  int get _pickedAudio => _visible
+      .where((a) => a.type == AttachmentType.audio && _selected.contains(a.id))
+      .length;
   bool get _canSend =>
-      !_busy && (_kind == ExportKind.pdfOnly || _selected.isNotEmpty);
+      !_busy &&
+      switch (_kind) {
+        ExportKind.pdfOnly => true,
+        ExportKind.bundle => _selected.isNotEmpty,
+        ExportKind.audioOnly => _pickedAudio > 0,
+      };
+
+  /// 안드로이드 저장 창(SAF)은 한 번에 파일 하나 — 녹음만은 1개일 때만.
+  bool get _canSave => _canSend && (!_audioOnly || _pickedAudio == 1);
 
   /// 아이패드는 공유 창의 기준 위치가 없으면 예외를 던진다(`export_list_tile.dart`와 같은 이유).
   Rect? _origin() {
@@ -182,13 +218,68 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
     if (done != null && mounted) await Navigator.of(context).maybePop(done);
   }
 
-  Future<void> _share() => _run(
-    (out) async => await (widget.share ?? shareViaSheet)(out, _origin()) ? GuidanceStrings.exportShared : null,
-  );
+  Future<void> _share() => _audioOnly
+      ? _runAudio()
+      : _run(
+          (out) async => await (widget.share ?? shareViaSheet)(out, _origin()) ? GuidanceStrings.exportShared : null,
+        );
 
-  Future<void> _save() => _run(
-    (out) async => await (widget.save ?? _saveViaPicker)(out) ? GuidanceStrings.exportSaved : null,
-  );
+  Future<void> _save() => _audioOnly
+      ? _runAudio(save: true)
+      : _run(
+          (out) async => await (widget.save ?? _saveViaPicker)(out) ? GuidanceStrings.exportSaved : null,
+        );
+
+  /// 녹음만 — 원본을 임시 폴더로 복사해 보내고, 결과와 무관하게 사본을 지운다(기록이 담긴 파일이다).
+  Future<void> _runAudio({bool save = false}) async {
+    if (!(save ? _canSave : _canSend)) return;
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    String? done;
+    var copies = const <File>[];
+    try {
+      final base = await (widget.tempDir ?? getTemporaryDirectory)();
+      copies = await ref
+          .read(guidanceExporterProvider)
+          .copyAudioForShare(
+            record: widget.record,
+            attachments: _visible,
+            // 고른 녹음만 — 사진은 고른 상태로 남아 있어도 보내지 않는다.
+            selectedIds: {
+              for (final a in _visible)
+                if (a.type == AttachmentType.audio && _selected.contains(a.id)) ?a.id,
+            },
+            dir: Directory(p.join(base.path, 'guidance_export')),
+          );
+      if (save) {
+        // SAF 저장 창은 바이트를 요구한다 — 1개일 때만 여기 온다.
+        final f = copies.single;
+        final ok = await (widget.save ?? _saveViaPicker)(
+          ExportOutput(fileName: p.basename(f.path), bytes: await f.readAsBytes()),
+        );
+        done = ok ? GuidanceStrings.exportSaved : null;
+      } else {
+        final ok = await (widget.shareFiles ?? _shareFilesViaSheet)(
+          [for (final f in copies) f.path],
+          _origin(),
+        );
+        done = ok ? GuidanceStrings.exportShared : null;
+      }
+    } catch (_) {
+      // 기록 내용(제목·이름)은 넣지 않는다.
+      if (mounted) setState(() => _status = GuidanceStrings.exportFailed);
+    } finally {
+      for (final f in copies) {
+        try {
+          await f.delete();
+        } catch (_) {}
+      }
+      if (mounted) setState(() => _busy = false);
+    }
+    if (done != null && mounted) await Navigator.of(context).maybePop(done);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,6 +325,13 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
                         GuidanceStrings.exportBundleSubtitle(audio, image),
                       ),
                     ),
+                  if (_hasAudio)
+                    const RadioListTile<ExportKind>(
+                      key: GuidanceExportSheet.audioOnlyKey,
+                      value: ExportKind.audioOnly,
+                      title: Text(GuidanceStrings.exportAudioOnly),
+                      subtitle: Text(GuidanceStrings.exportAudioOnlySubtitle),
+                    ),
                   const RadioListTile<ExportKind>(
                     key: GuidanceExportSheet.pdfOnlyKey,
                     value: ExportKind.pdfOnly,
@@ -277,7 +375,7 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
                   Expanded(
                     child: OutlinedButton(
                       key: GuidanceExportSheet.saveKey,
-                      onPressed: _canSend ? _save : null,
+                      onPressed: _canSave ? _save : null,
                       child: const Text(GuidanceStrings.exportSaveToDevice),
                     ),
                   ),
@@ -296,6 +394,15 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
                 ),
               ],
             ),
+            if (_android && _audioOnly && _pickedAudio > 1)
+              Padding(
+                key: GuidanceExportSheet.saveOneOnlyKey,
+                padding: const EdgeInsets.only(top: AppSizes.spacing4),
+                child: Text(
+                  GuidanceStrings.exportAudioSaveOneOnly,
+                  style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+                ),
+              ),
           ],
         ),
       ),
@@ -305,6 +412,8 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
   Widget _attachmentRow(GuidanceAttachment a, DateTime now) {
     final id = a.id;
     final present = id != null && widget.availableIds.contains(id);
+    // 녹음만 보낼 때 사진은 고를 수 없다 — 고른 상태는 남겨 두어 다른 방식으로 돌아가면 그대로다.
+    final excluded = _audioOnly && a.type == AttachmentType.image;
     final ms = a.durationMs;
     final size = ms == null
         ? GuidanceStrings.sizeLabel(a.byteSize)
@@ -312,8 +421,8 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
     return CheckboxListTile(
       key: GuidanceExportSheet.attachmentKey(id ?? -1),
       contentPadding: EdgeInsets.zero,
-      value: present && _selected.contains(id),
-      onChanged: present
+      value: !excluded && present && _selected.contains(id),
+      onChanged: present && !excluded
           ? (v) => setState(
               () => (v ?? false) ? _selected.add(id) : _selected.remove(id),
             )
@@ -323,7 +432,9 @@ class _GuidanceExportSheetState extends ConsumerState<GuidanceExportSheet> {
       ),
       title: Text('${a.type.label} · $size'),
       subtitle: Text(
-        present
+        excluded
+            ? GuidanceStrings.exportAudioOnlyExcluded
+            : present
             ? formatStamp(a.capturedAt ?? a.attachedAt, now: now)
             : GuidanceStrings.attachmentMissing,
       ),
