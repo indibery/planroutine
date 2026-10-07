@@ -9,6 +9,7 @@ import '../../features/guidance/presentation/screens/guidance_edit_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_history_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_list_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_trash_screen.dart';
+import '../../features/guidance/presentation/screens/guidance_transcript_screen.dart';
 import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -38,6 +39,8 @@ class AppRoutes {
   static String guidanceRecord(int id) => '/guidance/record/$id';
   static String guidanceEdit(int id) => '/guidance/record/$id/edit';
   static String guidanceHistory(int id) => '/guidance/record/$id/history';
+  static String guidanceTranscript(int id, int attachmentId) =>
+      '/guidance/record/$id/transcript/$attachmentId';
   static const settings = '/settings';
   static const trash = '/trash';
   static const import = '/import';
@@ -146,6 +149,19 @@ GoRouter createRouter({
                       builder: (context, state) => GuidanceHistoryScreen(
                         recordId:
                             int.tryParse(state.pathParameters['id'] ?? '') ??
+                            -1,
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'transcript/:attachmentId',
+                      builder: (context, state) => GuidanceTranscriptScreen(
+                        recordId:
+                            int.tryParse(state.pathParameters['id'] ?? '') ??
+                            -1,
+                        attachmentId:
+                            int.tryParse(
+                              state.pathParameters['attachmentId'] ?? '',
+                            ) ??
                             -1,
                       ),
                     ),
