@@ -199,6 +199,7 @@ planroutine/
 │   │   ├── Info.plist                  # GIDClientID, REVERSED_CLIENT_ID, CFBundleDocumentTypes(CSV)
 │   │   ├── AppDelegate.swift           # application(_:open:options:) → planroutine/shared_file 채널
 │   │   ├── SceneDelegate.swift         # scene URL → AppDelegate 포워딩
+│   │   ├── Transcriber.swift           # 지도 기록 글로 보기 — SpeechAnalyzer 기기 안 전사(iOS 26+, 저장 안 함)
 │   │   └── AppIntents/
 │   │       └── PlanRoutineIntents.swift  # 인텐트 둘 + AppShortcutsProvider (openAppWhenRun 안 씀)
 │   ├── fastlane/Fastfile               # beta/release 레인 (IPA glob: Dir.entries)
