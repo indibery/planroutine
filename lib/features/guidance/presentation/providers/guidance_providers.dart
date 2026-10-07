@@ -8,6 +8,7 @@ import '../../data/guidance_file_store.dart';
 import '../../data/guidance_people_repository.dart';
 import '../../data/guidance_repository.dart';
 import '../../data/recording_marker_store.dart';
+import '../../data/transcription_service.dart';
 import '../../domain/adts.dart';
 import '../../domain/guidance_content.dart';
 import '../../domain/guidance_logic.dart';
@@ -28,6 +29,15 @@ final guidanceExporterProvider = Provider<GuidanceExporter>(
 );
 
 /// "녹음 중" 표시 — 방전·강제 종료로 끊긴 녹음을 다음 실행 때 되살린다.
+final transcriptionServiceProvider = Provider<TranscriptionService>(
+  (ref) => ChannelTranscriptionService(),
+);
+
+/// 이 기기에서 `글로 보기`를 보일지. 기기 성능은 실행 중 바뀌지 않으므로 한 번만 묻는다.
+final transcriptAvailableProvider = FutureProvider<bool>(
+  (ref) => ref.watch(transcriptionServiceProvider).isAvailable(),
+);
+
 final recordingMarkerStoreProvider = Provider<RecordingMarkerStore>((ref) => RecordingMarkerStore());
 
 /// 지도 기록이 바뀌었다는 신호. 목록·보기·이력이 watch해 다시 읽는다.

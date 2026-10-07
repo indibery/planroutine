@@ -221,6 +221,24 @@ class GuidanceStrings {
   static const purgeMessage =
       '이 기록의 저장된 내용과 수정 이력, 첨부 파일이 모두 지워집니다. 이 기록에만 나온 이름 추천도 함께 지워집니다. 되돌릴 수 없습니다.';
 
+  // 글로 보기(참고용 전사)
+  static const transcribe = '글로 보기';
+  static const transcribeTag = '참고용';
+  static const transcriptTitle = '글로 보기';
+  static const transcriptCopyAll = '전체 복사';
+  static const transcriptCopy = '복사';
+  static const transcriptCopied = '복사했어요';
+  static const transcriptNotice = '작은 목소리는 빠지거나 틀릴 수 있어요. 기록에 옮기기 전에 들어 보세요.';
+  static const transcriptProgress = '받아 적는 중…';
+  static const transcriptProgressNotice = '이 화면을 닫으면 멈춰요. 녹음은 휴대폰 밖으로 나가지 않아요.';
+  static const transcriptPreparing = '한국어 음성 인식 모델을 준비하는 중이에요. 처음 한 번 Apple에서 내려받아요.';
+  static String transcriptGap(String from, int seconds) => '$from부터 $seconds초 동안 글이 없어요 · 들어 보기';
+  static const transcriptEmpty = '받아 적을 말소리를 찾지 못했어요';
+  static const transcriptModelFailed = '처음 한 번은 인터넷 연결이 필요해요';
+  static const transcriptFailed = '글로 바꾸지 못했어요';
+  static const transcriptRetry = '다시 시도';
+  static String transcriptPlayFrom(String time) => '$time부터 재생';
+
   // 내보내기
   static const export = '내보내기';
   static const exportBundle = '제출용 묶음(ZIP)';
