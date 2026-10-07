@@ -499,6 +499,20 @@ Gson은 **필드 이름을 리플렉션으로 읽어** JSON 키를 만들고 Dar
 - **단위 테스트로는 재현할 수 없다** — R8은 release에서만 돈다. 그래서 가드는
   재현이 아니라 **예방**(규칙 존재)을 검사한다. 실제 동작 확인은 아래 진단 빌드로 한다.
 
+#### 최적화된 리소스 축소(2026-10-07, Play 권고 "R8 최적화")
+
+AGP를 **8.11.1 → 8.13.2**로 올리고 `android/gradle.properties`에
+`android.r8.optimizedResourceShrinking=true`를 넣었다. 이 설정은 **AGP 8.12·8.13에서만** 뜻이 있다 —
+더 낮으면 조용히 무시되고 9부터는 기본값이다. 둘을 짝으로 `android_r8_shrinking_test.dart`가 지킨다.
+
+- 실측(release APK, 같은 소스): 77.38MB → 77.25MB. `resources.arsc` 508→429KB, 리소스 파일 363→321,
+  `classes.dex` −82KB. 엔진·네이티브가 대부분이라 전체 폭은 작다.
+- **release 스모크(api36 에뮬레이터)**: 테스트 알림 발화(아이콘 리소스가 `drawable/ic_notification`인지 aapt2로
+  대조) · 기기 캘린더 저장(로컬 캘린더를 `content insert`로 만들어 둠 — 에뮬레이터엔 캘린더 계정이 없어 그대로면
+  Gson 결함과 같은 증상으로 실패한다) · R8 매핑에서 device_calendar 모델 이름 유지.
+- **AGP 9는 보류**: Flutter 3.44는 AGP 9를 임시 호환(`builtInKotlin=false`·`newDsl=false`)으로만 받고, 내장 Kotlin은
+  Flutter 3.47부터다. Flutter를 올릴 때 함께 본다.
+
 #### 진단용 축소 빌드를 스토어 앱 옆에 깐다
 
 R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다. 그런데 로컬 release APK는
