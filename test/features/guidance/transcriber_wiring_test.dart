@@ -75,4 +75,16 @@ void main() {
     expect(catchBlock, contains('collector.cancel()'));
     expect(catchBlock, contains('cancelAndFinishNow()'));
   });
+
+  test('시각이 NaN·무한이면 정수로 바꾸지 않는다 — Int 변환이 앱을 멈추게 한다', () {
+    expect(swift, contains('isFinite'));
+    expect(swift, isNot(contains('Int(result.range.start.seconds')), reason: '검사 없이 바로 바꾸면 안 된다');
+  });
+
+  test('이전 구독의 늦은 문단은 버린다 — 화면을 떠난 직후 다음 화면에 섞이지 않게', () {
+    // 취소 확인과 메인 큐 전달 사이에 문단이 실려 있으면 다음 구독의 싱크로 갈 수 있었다(최종 검토 지적).
+    expect(swift, contains('generation'));
+    final listen = swift.substring(swift.indexOf('func onListen'), swift.indexOf('func onCancel'));
+    expect(listen, contains('generation'));
+  });
 }

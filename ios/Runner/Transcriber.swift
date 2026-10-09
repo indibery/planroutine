@@ -38,6 +38,10 @@ enum TranscriberChannels {
 final class TranscriberStreamHandler: NSObject, FlutterStreamHandler {
   private var task: Task<Void, Never>?
 
+  /// 구독마다 올린다. 취소 확인과 메인 큐 전달 사이에 실린 문단이 다음 구독으로 가지 않게,
+  /// 싱크에 닿기 직전(메인 스레드)에 자기 세대인지 본다. onListen·onCancel도 메인 스레드라 경합이 없다.
+  private var generation = 0
+
   func onListen(
     withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink
   ) -> FlutterError? {
@@ -48,12 +52,19 @@ final class TranscriberStreamHandler: NSObject, FlutterStreamHandler {
       return FlutterError(code: "unsupported", message: nil, details: nil)
     }
     task?.cancel()
-    task = Task { await KoreanTranscriber.run(path: path, sink: events) }
+    generation += 1
+    let mine = generation
+    let guarded: FlutterEventSink = { [weak self] value in
+      guard let self, self.generation == mine else { return }
+      events(value)
+    }
+    task = Task { await KoreanTranscriber.run(path: path, sink: guarded) }
     return nil
   }
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
-    // 화면을 떠나면 Dart가 구독을 끊는다 → 전사를 멈춘다.
+    // 화면을 떠나면 Dart가 구독을 끊는다 → 전사를 멈추고, 이미 실린 문단도 버린다.
+    generation += 1
     task?.cancel()
     task = nil
     return nil
@@ -67,6 +78,12 @@ enum KoreanTranscriber {
   static func isAvailable() async -> Bool {
     guard SpeechTranscriber.isAvailable else { return false }
     return await SpeechTranscriber.supportedLocale(equivalentTo: wanted) != nil
+  }
+
+  /// NaN·무한(잘못된 CMTime)을 Int로 바꾸면 앱이 멈춘다 — 그때는 0으로 둔다.
+  private static func milliseconds(_ time: CMTime) -> Int {
+    let seconds = time.seconds
+    return seconds.isFinite ? Int(seconds * 1000) : 0
   }
 
   static func run(path: String, sink: @escaping FlutterEventSink) async {
@@ -103,8 +120,8 @@ enum KoreanTranscriber {
         for try await result in transcriber.results {
           send([
             "type": TranscriberChannels.segment,
-            "startMs": Int(result.range.start.seconds * 1000),
-            "endMs": Int(result.range.end.seconds * 1000),
+            "startMs": milliseconds(result.range.start),
+            "endMs": milliseconds(result.range.end),
             "text": String(result.text.characters),
           ])
         }
