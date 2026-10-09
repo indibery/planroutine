@@ -524,15 +524,31 @@ platform :ios do
     # 선택된 빌드는 옛것 그대로 남는다(실측: v124를 넘겼는데 v115 유지).
     # "제출은 사람이 누른다"가 이 레인의 기본값이므로 그 경로가 곧 정상 경로다 —
     # 여기서 직접 붙이지 않으면 release는 사실상 메타데이터만 동기화한다.
-    selected = begin
-      (edit_version(app) || edit).select_build(build_id: target_build.id)
-    rescue StandardError => e
+    #
+    # ⚠️ **제출 경로(submit:true)에서는 다시 붙이지 않는다.** 그때는 deliver가 제출 흐름 안에서 이미
+    # 빌드를 붙였고, 버전은 벌써 심사 대기라 `select_build`가 거부된다 — 제출은 정상인데 레인이
+    # 실패로 끝났다(1.4.0·1.4.1 두 번). 대신 붙은 빌드를 읽어 목표와 같은지만 본다.
+    # 가드: test/deploy/release_lane_submit_test.dart
+    selected = if submit
+      edit_version(app) || edit
+    else
+      begin
+        (edit_version(app) || edit).select_build(build_id: target_build.id)
+      rescue StandardError => e
+        UI.user_error!(
+          "빌드 연결 실패(#{e.class}: #{e.message}) — " \
+          "ASC → 공직플랜 → #{edit.version_string} → '빌드' 에서 직접 고르세요."
+        )
+      end
+    end
+    linked = selected&.build&.version
+    if submit && linked.to_s != target.to_s
       UI.user_error!(
-        "빌드 연결 실패(#{e.class}: #{e.message}) — " \
-        "ASC → 공직플랜 → #{edit.version_string} → '빌드' 에서 직접 고르세요."
+        "제출은 끝났지만 연결된 빌드가 v#{linked || '없음'}입니다(목표 v#{target}) — " \
+        "`asc_state`로 확인하고, 다르면 `withdraw_review` 뒤 다시 승격하세요."
       )
     end
-    UI.success("빌드 연결: v#{selected&.build&.version || target}")
+    UI.success("빌드 연결: v#{linked || target}")
 
     # 의도가 아니라 **실제 상태**를 다시 읽어 보고한다.
     #
