@@ -510,6 +510,11 @@ AGP를 **8.11.1 → 8.13.2**로 올리고 `android/gradle.properties`에
 - **release 스모크(api36 에뮬레이터)**: 테스트 알림 발화(아이콘 리소스가 `drawable/ic_notification`인지 aapt2로
   대조) · 기기 캘린더 저장(로컬 캘린더를 `content insert`로 만들어 둠 — 에뮬레이터엔 캘린더 계정이 없어 그대로면
   Gson 결함과 같은 증상으로 실패한다) · R8 매핑에서 device_calendar 모델 이름 유지.
+- **Play 권고 "비트맵 다운샘플링 누락 `a.a.i`"(1.4.1/165)는 조치하지 않는다.** 165 매핑으로 추적하면
+  `file_picker`의 `FileUtils.compressImage`다(R8이 다른 클래스로 옮겨 이름이 바뀜). 이 메서드는 `image/*` +
+  `allowCompression` + 품질 > 0일 때만 불리는데, 앱은 사진을 `allowCompression: false`로 고른다 — 타지 않는 코드다.
+  난독화 이름은 빌드마다 바뀌므로 다음에 다시 뜨면 **그 빌드의** `build/app/outputs/mapping/release/mapping.txt`로 추적한다
+  (다음 빌드가 덮어쓰기 전에).
 - **AGP 9는 보류**: Flutter 3.44는 AGP 9를 임시 호환(`builtInKotlin=false`·`newDsl=false`)으로만 받고, 내장 Kotlin은
   Flutter 3.47부터다. Flutter를 올릴 때 함께 본다.
 
