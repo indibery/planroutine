@@ -59,10 +59,34 @@ Future<void> _pump(
 }
 
 void main() {
+  group('머리줄 — 이모지 대신 버스 아이콘', () {
+    testWidgets('방향 이름 앞에 버스 아이콘이 있고 이모지는 없다', (tester) async {
+      // 이모지는 기기·OS마다 다른 그림으로 그려지고 테마 색을 따르지 않는다
+      // (2026-10-09 디자인 검토). 골드 선 아이콘으로 바꿨다.
+      await _pump(tester, view: _view());
+      final header = find.byKey(BusArrivalCard.headerKey);
+      expect(
+        find.descendant(
+          of: header,
+          matching: find.byIcon(Icons.directions_bus_outlined),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('🏠'), findsNothing);
+      expect(find.textContaining('🏫'), findsNothing);
+    });
+
+    testWidgets('아이콘은 골드다', (tester) async {
+      await _pump(tester, view: _view());
+      final icon = tester.widget<Icon>(find.byIcon(Icons.directions_bus_outlined));
+      expect(icon.color, AppColors.gold);
+    });
+  });
+
   group('펼침', () {
     testWidgets('방향·정류장·기준시각·본문·방향토글이 모두 보인다', (tester) async {
       await _pump(tester, view: _view(fetchedAt: DateTime(2026, 7, 28, 7, 32)));
-      expect(find.text('🏠→🏫 출근'), findsOneWidget);
+      expect(find.text('출근'), findsOneWidget);
       expect(find.textContaining('B정류장'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(find.byType(BusBodyText), findsOneWidget);
@@ -84,7 +108,7 @@ void main() {
       expect(find.text('07:32 기준'), findsNothing);
       expect(find.textContaining('퇴근 보기'), findsNothing);
 
-      expect(find.text('🏠→🏫 출근'), findsOneWidget);
+      expect(find.text('출근'), findsOneWidget);
       expect(find.textContaining('B정류장'), findsOneWidget);
     });
 
@@ -151,7 +175,7 @@ void main() {
         reason: '제목줄이 `출근   · `로 끝나면 잘린 것처럼 보인다',
       );
       expect(find.textContaining('·'), findsNothing);
-      expect(find.text('🏠→🏫 출근'), findsOneWidget);
+      expect(find.text('출근'), findsOneWidget);
     });
 
     testWidgets('접을 수 없으면 chevron도 탭 대상도 없다', (tester) async {

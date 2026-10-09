@@ -180,7 +180,8 @@ void main() {
     testWidgets('목록과 기준시각이 보인다', (tester) async {
       final n = await _pumpHost(tester, now: inRange, settings: onWithStop);
       expect(find.text('92-1번'), findsOneWidget);
-      expect(find.text('3분'), findsOneWidget);
+      // 간단히 모양은 초까지 쓴다 — 160초는 `2분 40초`다(반올림한 `3분`이 아니다).
+      expect(find.text('2분 40초'), findsOneWidget);
       expect(find.text('07:32 기준'), findsOneWidget);
       expect(n, 1);
     });

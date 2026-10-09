@@ -171,22 +171,28 @@ class BusArrivalCard extends StatelessWidget {
   Widget _header() {
     final toggle = onToggleExpanded;
     final row = Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
       children: [
-        // 이모지만 글자보다 크게 그린다 — 한 `Text`에 담으면 이모지가 13px에 묶여
-        // 작게 보이고, 집·학교를 한눈에 구별하는 것이 이 라벨의 일이다.
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: direction.emoji,
-                style: const TextStyle(fontSize: BusStrings.headerEmojiSize),
-              ),
-              const TextSpan(text: ' '),
-              TextSpan(text: direction.title),
-            ],
+        // **이모지가 아니라 골드 선 아이콘이다**(2026-10-09). 이모지(`🏠→🏫`)는 기기마다
+        // 다른 그림이고 테마 색을 따르지 않았다. 출근·퇴근은 바로 옆 글자가 말한다.
+        ExcludeSemantics(
+          child: Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.directions_bus_outlined,
+              size: AppSizes.iconSmall,
+              color: AppColors.gold,
+            ),
           ),
+        ),
+        const SizedBox(width: AppSizes.spacing8),
+        Text(
+          direction.title,
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 13,

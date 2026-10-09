@@ -34,22 +34,10 @@ class BusStrings {
   static String summaryStops(int n) => '정류장 $n곳';
 
   // ── 카드 ───────────────────────────────────────────────────
-  /// 카드 제목줄의 방향 표시 — **이모지와 글자를 나눠 둔다.**
-  ///
-  /// 카드가 `Text.rich`의 두 span으로 그려 **이모지만 조금 크게** 한다. 한 문자열이면
-  /// 이모지가 글자와 같은 13px에 묶여 작게 보이는데, 집·학교를 한눈에 구별하는 것이
-  /// 이 라벨의 일이다(사용자 요청, 2026-07-29).
-  static const emojiToWork = '🏠→🏫';
-  static const emojiToHome = '🏫→🏠';
+  /// 카드 제목줄의 방향 이름. 앞에 골드 버스 아이콘이 붙는다(이모지는 2026-10-09에 뺐다 —
+  /// 기기마다 그림이 다르고 테마 색을 따르지 않았다).
   static const titleToWork = '출근';
   static const titleToHome = '퇴근';
-
-  /// 제목줄 이모지 크기. 글자는 13px이다.
-  ///
-  /// 상수로 두는 이유는 폭 측정과 묶여 있기 때문이다 — 이 값을 키우면 제목줄이 넓어지고
-  /// 좁은 화면에서 정류장 이름이 밀린다. `test/tools/visual_check.dart`가 실측 폰트로
-  /// 폭을 잰다(폴백 폰트로 재면 1.76배 부풀어 결론이 뒤집힌다).
-  static const headerEmojiSize = 16.0;
 
   /// "720번" — 노선번호에 붙는 조사. **카드와 확인 시트가 같은 함수를 쓴다.**
   ///
@@ -91,6 +79,25 @@ class BusStrings {
 
   static const arrivingNow = '곧 도착';
 
+  /// "2분 14초" — `간단히` 모양만 초까지 쓴다. 초는 두 자리로 채워 1초마다 폭이
+  /// 흔들리지 않게 한다. `시간 축`은 분만 쓴다(사용자 결정 2026-10-09).
+  static String minutesSeconds(int m, int s) =>
+      '$m분 ${s.toString().padLeft(2, '0')}초';
+
+  /// "48초" — 1분 미만.
+  static String seconds(int s) => '$s초';
+
+  /// `간단히` 모양에서 가장 먼저 오는 차 위에 붙는 머리말.
+  static const firstBus = '가장 먼저';
+
+  /// 시간 축 범례 — "3분 미만" · "3~7분" · "여유". 분 값은 도메인 상수에서 받는다.
+  ///
+  /// **칸 경계를 그대로 적는다.** `3분 안`이라고 쓰면 노랑으로 칠한 `3분` 버스와
+  /// 모순돼 보였다(에뮬레이터 실측 2026-10-09 — 반올림 3분은 노랑 칸이다).
+  static String legendUnder(int m) => '$m분 미만';
+  static String legendRange(int from, int to) => '$from~$to분';
+  static const legendFar = '여유';
+
   /// "다음 14분" — **한 대만 보일 때** 그 노선의 그 다음 차.
   ///
   /// 여러 대가 떠 있으면 붙이지 않는다 — 목록 자체가 이미 대안을 보여주고 있고,
@@ -102,6 +109,9 @@ class BusStrings {
 
   /// 시간 축의 0분 눈금. 나머지 눈금은 `minutes(axisRange…)`로 파생된다.
   static const axisNow = '지금';
+
+  /// 시간 축 라벨의 0분 — 라벨 폭이 좁아 `곧 도착`을 줄여 쓴다.
+  static const axisArriving = '곧';
 
   // ── 실패 계약 5상태 (§3) ───────────────────────────────────
   /// 조회 전에만 쓰인다 — 조회 후 빈 목록은 buildBusCardView가 closed로 바꾼다.

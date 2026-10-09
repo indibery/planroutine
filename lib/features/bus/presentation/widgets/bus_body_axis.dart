@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../domain/arrival_text.dart';
 import '../../domain/bus_arrival.dart';
 import '../../domain/axis_label_layout.dart';
 import '../../domain/bus_card_view.dart';
 import '../../domain/next_bus.dart';
 import 'bus_more_count.dart';
+import 'bus_signal_color.dart';
 
-/// `시간 축` 본문 — 0~15분 축에 버스를 점으로 놓는다.
+/// `시간 축` 본문 — 0~15분 축에 버스를 버스 모양 표시로 놓는다.
+///
+/// 표시 아래 라벨은 `노선번호 분`이고 **초는 쓰지 않는다**(사용자 결정 2026-10-09 —
+/// 초는 `간단히`만 쓴다). 라벨은 도착 순으로 **두 줄에 번갈아** 놓아, 가까운 두 대가
+/// 한 줄에서 서로를 밀어내지 않게 한다. 아래에 임박도 범례를 둔다.
 ///
 /// 간격이 공간으로 보여 "이거 놓치면 6분 더"가 숫자 없이 읽힌다. 대신 두 버스가
 /// 3분 안으로 붙으면 점과 라벨이 겹치고 15분 넘는 버스는 오른쪽 끝에 몰린다 —
@@ -64,7 +70,10 @@ class BusBodyAxis extends StatelessWidget {
   /// 확률이 21% 늘지만, **잘린 숫자는 읽기 어려운 것이 아니라 틀린 것**이다 —
   /// `562`도 존재할 수 있는 노선번호이고 사용자는 다른 버스를 보고 있다는 사실조차
   /// 알 수 없다. 겹침(읽기 어려움)보다 잘림(틀림)을 먼저 없앤다.
-  static const labelWidth = 34.0;
+  ///
+  /// **58pt로 넓혔다**(2026-10-09). 라벨에 분(`12분`)이 붙으면서 `5623 12분`이 약 52pt가
+  /// 됐다. 라벨이 두 줄로 엇갈려 같은 줄의 이웃은 한 칸 건너라 넓혀도 덜 부딪힌다.
+  static const labelWidth = 58.0;
 
   /// 라벨이 박스를 넘길 때 남겨야 할 여유. 가드가 이 값으로 검사한다.
   ///
@@ -83,11 +92,10 @@ class BusBodyAxis extends StatelessWidget {
     return raw.clamp(_minFraction, _maxFraction);
   }
 
-  static Color _dotColor(int arrMin) {
-    if (isUrgent(arrMin)) return AppColors.busSignalNear;
-    if (isSoon(arrMin)) return AppColors.busSignalSoon;
-    return AppColors.busSignalFar;
-  }
+  static Color _dotColor(int arrMin) => busSignalColor(busSignalOf(arrMin));
+
+  /// 라벨 한 줄의 높이. 두 줄이 엇갈린다.
+  static const _labelRowHeight = 16.0;
 
   @override
   Widget build(BuildContext context) {
@@ -98,20 +106,23 @@ class BusBodyAxis extends StatelessWidget {
         // 이것까지 읽으면 라벨의 실제 도착 시각과 섞여 숫자가 두 배로 들린다.
         ExcludeSemantics(child: _scale()),
         const SizedBox(height: 2),
-        SizedBox(height: 14, child: _rail()),
+        SizedBox(height: 24, child: _rail()),
         const SizedBox(height: 2),
-        SizedBox(height: 15, child: _labels()),
-        // **라벨 행(Stack) 안에 우측 정렬로 넣지 않는다.** 15분을 넘긴 버스의 라벨은
-        // `dotPosition`이 0.97로 clamp해 오른쪽 끝에 고정되는데, 상한이 걸릴 만큼
-        // 노선이 많은 정류장에서는 보이는 3개 중 하나가 15분 이상인 일이 흔하다
-        // (예: 18·20·22분) — 겹치면 감추려던 정보가 또 안 읽힌다. 별 줄로 둔다.
-        if (view.hiddenCount > 0) ...[
-          const SizedBox(height: 2),
-          Align(
-            alignment: Alignment.centerRight,
-            child: BusMoreCount(hiddenCount: view.hiddenCount),
-          ),
-        ],
+        SizedBox(height: _labelRowHeight * 2, child: _labels()),
+        // 범례와 감춘 개수를 한 줄에 둔다. **라벨 행(Stack) 안에 넣지 않는다** — 15분을
+        // 넘긴 라벨은 오른쪽 끝에 clamp돼 고정되므로, 라벨 행에 두면 겹쳐 감추려던 정보가
+        // 또 안 읽힌다. 라벨 행 아래 별 줄이다.
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            // 범례는 색의 뜻을 **눈으로** 읽게 하는 것이다. 스크린리더는 라벨에서 분을
+            // 이미 듣는다.
+            ExcludeSemantics(child: _legend()),
+            const Spacer(),
+            if (view.hiddenCount > 0)
+              BusMoreCount(hiddenCount: view.hiddenCount),
+          ],
+        ),
         // **`간단히`와 같은 함수로 판정한다.** 한쪽에만 두면 모양을 바꾼 사용자만
         // 조용히 정보를 덜 받는다.
         //
@@ -167,7 +178,7 @@ class BusBodyAxis extends StatelessWidget {
             Positioned(
               left: 0,
               right: 0,
-              top: 6,
+              top: 11,
               child: Container(
                 height: 2,
                 decoration: BoxDecoration(
@@ -199,35 +210,40 @@ class BusBodyAxis extends StatelessWidget {
       for (var m = 1; m < axisRange; m++)
         Positioned(
           left: (m / axisRange) * width,
-          top: 4,
+          top: 9,
           child: Container(width: 1, height: 6, color: AppColors.busSignalOff),
         ),
     ];
   }
 
   Widget _dot(BusArrival arrival, double width) {
-    const size = 12.0;
-    // **`AnimatedPositioned` + `ValueKey(routeId)`가 짝이다.** 키가 없으면 Flutter가
-    // Stack 자식을 순서로 매칭해, 정렬이 바뀌는 순간 A 노선의 점이 B의 자리로
-    // 미끄러진다(색까지 함께 건너간다).
+    const size = 20.0;
+    // **`AnimatedPositioned` + 차량 키가 짝이다.** 키가 없으면 Flutter가 Stack 자식을
+    // 순서로 매칭해, 정렬이 바뀌는 순간 A 노선의 표시가 B의 자리로 미끄러진다.
     return AnimatedPositioned(
       key: dotKeyFor(_idOf(arrival)),
       duration: tick,
       // 등속이어야 흐름으로 읽힌다 — ease를 쓰면 1초마다 가속·감속해 떨린다.
       curve: Curves.linear,
       left: (dotPosition(arrival.arrSec) * width) - (size / 2),
-      top: 1,
+      top: 2,
+      // **버스 모양 표시**(2026-10-09). 동그란 점은 가까운 두 대가 겹치면 하나로
+      // 읽혔다. 둥근 네모 + 아이콘은 겹쳐도 테두리로 갈린다.
       child: Container(
         width: size,
         height: size,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(6),
           color: _dotColor(arrival.arrMin),
-          // 화면 배경색으로 테두리를 둘러 레일과 겹칠 때 형태가 유지된다.
-          // 카드 면 토큰(`glass`)을 쓰지 않는 이유: 다크에서 흰색 6% 반투명이라
-          // 테두리로 쓰면 링으로 레일이 비쳐 형태 유지 목적이 되레 깨진다.
-          // 카드 면에 해당하는 불투명 토큰이 팔레트에 없어 근사치를 쓴다.
-          border: Border.all(color: AppColors.background, width: 2),
+          // 화면 배경색 테두리로 레일·이웃 표시와 겹칠 때 형태를 지킨다. 카드 면
+          // 토큰(`glass`)은 다크에서 반투명이라 테두리로 쓰면 레일이 비친다.
+          border: Border.all(color: AppColors.background, width: 1.5),
+        ),
+        child: Icon(
+          Icons.directions_bus,
+          size: 12,
+          color: AppColors.background,
         ),
       ),
     );
@@ -239,21 +255,58 @@ class BusBodyAxis extends StatelessWidget {
   /// 다음 차까지 그 규칙을 쓰면 "2분 남은 다음 차"가 빨간 점이 돼 지금 오는 차보다
   /// 급해 보인다. 형태(속 빔)가 위계를 말하고 색은 중립으로 둔다.
   Widget _nextDot(int arrSec2, double width, String id) {
-    const size = 10.0;
+    const size = 16.0;
     return AnimatedPositioned(
       key: dotKeyFor(id),
       duration: tick,
       curve: Curves.linear,
       left: (dotPosition(arrSec2) * width) - (size / 2),
-      top: 2,
+      top: 4,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(5),
           border: Border.all(color: AppColors.sub, width: 2),
         ),
       ),
+    );
+  }
+
+  /// `● 3분 미만 ● 3~7분 ● 여유` — 색의 뜻. 칸 경계는 도메인 상수에서 받는다.
+  Widget _legend() {
+    Widget item(BusSignal signal, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(2),
+            color: busSignalColor(signal),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 11,
+            color: AppColors.sub,
+          ),
+        ),
+      ],
+    );
+    return Wrap(
+      spacing: 10,
+      children: [
+        item(BusSignal.near, BusStrings.legendUnder(busUrgentMinutes)),
+        item(
+          BusSignal.soon,
+          BusStrings.legendRange(busUrgentMinutes, busSoonMinutes),
+        ),
+        item(BusSignal.far, BusStrings.legendFar),
+      ],
     );
   }
 
@@ -262,20 +315,24 @@ class BusBodyAxis extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
 
-        // **라벨을 한 목록으로 모아 함께 민다.** 따로 그리면 서로를 못 보고
-        // 겹친다 — 실기기에서 1분·1.5분 두 대가 `55536023`으로 뭉쳐 읽혔다
-        // (2026-07-30). 라벨 폭 34pt는 300pt 축에서 1.7분치라, 점이 떨어져
-        // 있어도 글자는 겹친다.
+        // **라벨을 한 목록으로 모아 도착 순으로 줄을 나눈다.** 따로 그리면 서로를 못
+        // 보고 겹친다 — 실기기에서 1분·1.5분 두 대가 `55536023`으로 뭉쳐 읽혔다
+        // (2026-07-30). 이웃한 두 라벨은 서로 다른 줄에 서고, 같은 줄 안에서만 민다.
         final entries = <_LabelSpec>[
           for (final a in view.visible)
             _LabelSpec(
               key: labelKeyFor(_idOf(a)),
               center: dotPosition(a.arrSec) * width,
               text: a.routeNo,
+              minutes: a.arrMin == 0
+                  ? BusStrings.axisArriving
+                  : BusStrings.minutes(a.arrMin),
               semantics:
                   '${BusStrings.routeLabel(a.routeNo)} '
                   '${a.arrMin == 0 ? BusStrings.arrivingNow : BusStrings.minutes(a.arrMin)}',
-              color: isUrgent(a.arrMin) ? AppColors.ink : AppColors.sub,
+              color: busSignalOf(a.arrMin) == BusSignal.near
+                  ? AppColors.ink
+                  : AppColors.sub,
               weight: FontWeight.w700,
             ),
           if (nextBusOnAxis(view) case final sec?)
@@ -286,17 +343,28 @@ class BusBodyAxis extends StatelessWidget {
               // 그 자리만 다른 규칙이 된다 — 어느 쪽이 먼저인지는 점의 형태가
               // 말한다(채움 = 먼저). 스크린리더에는 위치가 안 보이므로 풀어 준다.
               text: view.visible.single.routeNo,
+              minutes: BusStrings.minutes((sec / 60).round()),
               semantics: BusStrings.nextBus((sec / 60).round()),
               color: AppColors.faint,
               weight: FontWeight.w600,
             ),
         ]..sort((a, b) => a.center.compareTo(b.center));
 
-        final xs = layoutAxisLabels(
-          [for (final e in entries) e.center],
-          labelWidth,
-          width,
-        );
+        // 짝수 번째는 윗줄, 홀수 번째는 아랫줄. 줄마다 따로 밀어 낸다.
+        final xs = List<double>.filled(entries.length, 0);
+        for (final row in [0, 1]) {
+          final idx = [
+            for (var i = row; i < entries.length; i += 2) i,
+          ];
+          final laid = layoutAxisLabels(
+            [for (final i in idx) entries[i].center],
+            labelWidth,
+            width,
+          );
+          for (final (k, i) in idx.indexed) {
+            xs[i] = laid[k];
+          }
+        }
 
         return Stack(
           children: [
@@ -307,7 +375,7 @@ class BusBodyAxis extends StatelessWidget {
                 duration: tick,
                 curve: Curves.linear,
                 left: xs[i] - labelWidth / 2,
-                top: 0,
+                top: (i % 2) * _labelRowHeight,
                 width: labelWidth,
                 // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
                 // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
@@ -323,16 +391,35 @@ class BusBodyAxis extends StatelessWidget {
                   // 주므로 줄바꿈이 허용되면 긴 번호가 두 줄로 눕는다.
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
-                      e.text,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 11,
-                        fontWeight: e.weight,
-                        color: e.color,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          e.text,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 11,
+                            fontWeight: e.weight,
+                            color: e.color,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          e.minutes,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: e.color,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -350,6 +437,7 @@ class _LabelSpec {
     required this.key,
     required this.center,
     required this.text,
+    required this.minutes,
     required this.semantics,
     required this.color,
     required this.weight,
@@ -360,6 +448,9 @@ class _LabelSpec {
   /// 밀어내기 전, 점이 있는 진짜 x.
   final double center;
   final String text;
+
+  /// 노선번호 옆의 `2분` / `곧`. 초는 쓰지 않는다.
+  final String minutes;
   final String semantics;
   final Color color;
   final FontWeight weight;

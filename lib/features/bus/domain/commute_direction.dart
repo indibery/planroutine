@@ -3,15 +3,12 @@ import '../../../core/constants/app_strings.dart';
 /// 카드가 지금 보여주는 방향.
 enum CommuteDirection {
   /// 집 → 학교. 출발지 슬롯을 본다.
-  toWork(BusStrings.emojiToWork, BusStrings.titleToWork, BusStrings.seeToHome),
+  toWork(BusStrings.titleToWork, BusStrings.seeToHome),
 
   /// 학교 → 집. 도착지 슬롯을 본다.
-  toHome(BusStrings.emojiToHome, BusStrings.titleToHome, BusStrings.seeToWork);
+  toHome(BusStrings.titleToHome, BusStrings.seeToWork);
 
-  const CommuteDirection(this.emoji, this.title, this.otherLabel);
-
-  /// 제목줄의 그림 — 집·학교와 방향. 카드가 글자보다 크게 그린다.
-  final String emoji;
+  const CommuteDirection(this.title, this.otherLabel);
 
   /// 제목줄의 글자.
   ///
@@ -21,10 +18,6 @@ enum CommuteDirection {
 
   /// 반대 방향으로 넘어가는 링크 문구.
   final String otherLabel;
-
-  /// 이모지 + 글자를 한 덩어리로. 카드는 이모지만 크게 그리려고 [emoji]·[title]을
-  /// 따로 쓰지만, 한 문자열이 필요한 곳(테스트·디버그 출력)은 이것을 본다.
-  String get label => '$emoji $title';
 
   /// 이 방향이 채우는 슬롯 이름 — `출발지`/`도착지`.
   ///

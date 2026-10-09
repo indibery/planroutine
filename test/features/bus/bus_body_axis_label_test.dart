@@ -93,7 +93,9 @@ void main() {
       // **위치 기반 finder를 쓰지 않는다.** 예전에는 `find.byType(Container).at(1)`로
       // 점을 집었는데, 1분 보조 눈금이 들어오면서 그 인덱스가 밀렸다(레일·눈금·점이
       // 모두 Container다). 이름 있는 키는 그런 이동에 영향받지 않는다.
-      final label = tester.getRect(find.text('5623'));
+      final label = tester.getRect(
+        find.byKey(BusBodyAxis.labelKeyFor('R0')),
+      );
       final dot = tester.getRect(find.byKey(BusBodyAxis.dotKeyFor('R0')));
 
       expect(

@@ -31,51 +31,99 @@ Future<void> _pump(WidgetTester tester, Widget child) {
   );
 }
 
-/// 축의 점 — 원형 `Container`. 레일은 사각(`borderRadius`)이라 걸리지 않는다.
-Finder _dot(int index) => find
-    .descendant(
-      of: find.byType(BusBodyAxis),
-      matching: find.byWidgetPredicate(
-        (w) =>
-            w is Container &&
-            w.decoration is BoxDecoration &&
-            (w.decoration! as BoxDecoration).shape == BoxShape.circle,
-      ),
-    )
-    .at(index);
+
+final _circle = find.byWidgetPredicate(
+  (w) =>
+      w is Container &&
+      w.decoration is BoxDecoration &&
+      (w.decoration! as BoxDecoration).shape == BoxShape.circle,
+);
 
 void main() {
-  group('BusBodyText — 색을 쓰지 않고 굵기·크기로만 위계를 만든다', () {
-    testWidgets('노선번호와 분이 모두 보인다', (tester) async {
+  group('BusBodyText — 첫 차를 크게, 분·초까지, 임박도 색으로', () {
+    testWidgets('첫 차는 강조 줄에, 나머지는 칩에 노선번호와 분·초가 보인다', (tester) async {
       await _pump(
         tester,
         BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])),
       );
-      expect(find.text('720번'), findsOneWidget);
-      expect(find.text('2분'), findsOneWidget);
+      final first = find.byKey(BusBodyText.firstKey);
+      expect(
+        find.descendant(of: first, matching: find.text('720번')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: first, matching: find.text('2분 00초')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: first, matching: find.text('가장 먼저')),
+        findsOneWidget,
+      );
       expect(find.text('150번'), findsOneWidget);
-      expect(find.text('5분'), findsOneWidget);
+      expect(find.text('5분 00초'), findsOneWidget);
+      expect(
+        find.descendant(of: first, matching: find.text('150번')),
+        findsNothing,
+        reason: '둘째 차부터는 강조 줄 밖의 칩이다',
+      );
     });
 
-    testWidgets('0분은 곧 도착으로 쓴다', (tester) async {
-      await _pump(tester, BusBodyText(view: _view([_a('A', '15', 0)])));
+    testWidgets('0초는 곧 도착, 1분 미만은 초만 쓴다', (tester) async {
+      await _pump(
+        tester,
+        BusBodyText(
+          view: _view([
+            _a('A', '15', 0),
+            BusArrival(routeId: 'B', routeNo: '16', arrSec: 48),
+          ]),
+        ),
+      );
       expect(find.text('곧 도착'), findsOneWidget);
+      expect(find.text('48초'), findsOneWidget);
     });
 
-    testWidgets('임박한 행만 w800 18px ink, 나머지는 w600 14px sub', (tester) async {
+    testWidgets('첫 차의 시간은 칩보다 크고 굵다', (tester) async {
       await _pump(
         tester,
         BusBodyText(view: _view([_a('A', '720', 2), _a('B', '150', 5)])),
       );
+      final big = tester.widget<Text>(find.text('2분 00초'));
+      final chip = tester.widget<Text>(find.text('5분 00초'));
+      expect(big.style?.fontWeight, FontWeight.w800);
+      expect(big.style?.fontSize, greaterThanOrEqualTo(24));
+      expect(chip.style?.fontSize, 14);
+    });
 
-      final urgent = tester.widget<Text>(find.text('2분'));
-      final normal = tester.widget<Text>(find.text('5분'));
-      expect(urgent.style?.fontWeight, FontWeight.w800);
-      expect(urgent.style?.fontSize, 18);
-      expect(urgent.style?.color, AppColors.ink);
-      expect(normal.style?.fontWeight, FontWeight.w600);
-      expect(normal.style?.fontSize, 14);
-      expect(normal.style?.color, AppColors.sub);
+    testWidgets('첫 차가 3분 안이면 큰 숫자가 빨강, 줄 배경도 빨강 틴트다', (tester) async {
+      await _pump(tester, BusBodyText(view: _view([_a('A', '720', 2)])));
+      final big = tester.widget<Text>(find.text('2분 00초'));
+      expect(big.style?.color, AppColors.busSignalNear);
+      final box = tester.widget<Container>(find.byKey(BusBodyText.firstKey));
+      final deco = box.decoration! as BoxDecoration;
+      expect(deco.color?.withValues(alpha: 1), AppColors.busSignalNear);
+      expect(deco.color!.a, lessThan(0.3), reason: '배경은 옅은 틴트다');
+    });
+
+    testWidgets('3분 밖이면 큰 숫자는 본문색 — 노랑·초록 글자는 라이트에서 대비가 모자라다', (tester) async {
+      // 라이트 실측: 노랑 #C98A0E는 틴트 위 2.63:1, 초록 #1E9E63은 2.99:1로 큰 글자
+      // 기준(3:1)도 못 넘는다. 색은 틴트와 점이 말하고 글자는 본문색으로 둔다.
+      await _pump(tester, BusBodyText(view: _view([_a('A', '720', 5)])));
+      final big = tester.widget<Text>(find.text('5분 00초'));
+      expect(big.style?.color, AppColors.ink);
+      final box = tester.widget<Container>(find.byKey(BusBodyText.firstKey));
+      final deco = box.decoration! as BoxDecoration;
+      expect(deco.color?.withValues(alpha: 1), AppColors.busSignalSoon);
+    });
+
+    testWidgets('색은 보이는 분(내림)으로 고른다 — 2분 59초는 빨강이다', (tester) async {
+      await _pump(
+        tester,
+        BusBodyText(
+          view: _view([BusArrival(routeId: 'A', routeNo: '7', arrSec: 179)]),
+        ),
+      );
+      final big = tester.widget<Text>(find.text('2분 59초'));
+      expect(big.style?.color, AppColors.busSignalNear);
     });
 
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
@@ -146,12 +194,12 @@ void main() {
 
       final expected = BusBodyAxis.dotPosition(2 * 60) * _axisWidth;
       expect(
-        tester.getCenter(_dot(0)).dx,
+        tester.getCenter(find.byKey(BusBodyAxis.dotKeyFor('A'))).dx,
         closeTo(expected, 0.5),
         reason: '점 중심이 분에 비례한 x다 — size/2 보정이 그 일을 한다',
       );
       expect(
-        tester.getCenter(find.text('720')).dx,
+        tester.getCenter(find.byKey(BusBodyAxis.labelKeyFor('A'))).dx,
         closeTo(expected, 0.5),
         reason: '라벨 중심이 점과 같은 x다 — 폭 28의 -14 보정이 그 일을 한다',
       );
@@ -189,13 +237,67 @@ void main() {
         BusBodyAxis(view: _view([_a('A', '553', 1), _a('B', '5623', 2)])),
       );
 
-      final a = tester.getRect(find.text('553'));
-      final b = tester.getRect(find.text('5623'));
+      // 두 줄로 엇갈리므로 가로만 보지 않고 **사각형 전체**가 겹치지 않는지 본다.
+      final a = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('A')));
+      final b = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('B')));
       expect(
-        a.right <= b.left + 0.5 || b.right <= a.left + 0.5,
-        isTrue,
+        a.deflate(0.5).overlaps(b.deflate(0.5)),
+        isFalse,
         reason: '두 라벨의 사각형이 겹치면 글자가 뭉쳐 읽힌다',
       );
+    });
+
+    testWidgets('점이 버스 모양이다 — 둥근 네모 안에 버스 아이콘', (tester) async {
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
+      final marker = find.byKey(BusBodyAxis.dotKeyFor('A'));
+      expect(
+        find.descendant(of: marker, matching: find.byIcon(Icons.directions_bus)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: marker, matching: _circle),
+        findsNothing,
+        reason: '동그란 점이 아니라 버스 모양 표시다',
+      );
+    });
+
+    testWidgets('라벨에 분이 붙는다 — 시간 축은 초를 쓰지 않는다', (tester) async {
+      await _pump(
+        tester,
+        BusBodyAxis(
+          view: _view([
+            BusArrival(routeId: 'A', routeNo: '720', arrSec: 134),
+            _a('B', '61', 0),
+          ]),
+        ),
+      );
+      final a = find.byKey(BusBodyAxis.labelKeyFor('A'));
+      expect(find.descendant(of: a, matching: find.text('2분')), findsOneWidget);
+      final b = find.byKey(BusBodyAxis.labelKeyFor('B'));
+      expect(find.descendant(of: b, matching: find.text('곧')), findsOneWidget);
+      expect(find.textContaining('초'), findsNothing);
+    });
+
+    testWidgets('가까운 두 라벨은 두 줄로 엇갈린다', (tester) async {
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('A', '553', 1), _a('B', '5623', 2)])),
+      );
+      final a = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('A')));
+      final b = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('B')));
+      expect(b.top, greaterThan(a.top), reason: '둘째 라벨은 아랫줄이다');
+    });
+
+    testWidgets('범례가 임박도 세 칸을 말한다 — 스크린리더는 읽지 않는다', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
+      // `3분 안`이라고 쓰면 노랑으로 칠한 `3분` 버스와 모순돼 보였다(에뮬레이터 실측
+      // 2026-10-09) — 칸 경계를 그대로 적는다.
+      expect(find.text('3분 미만'), findsOneWidget);
+      expect(find.text('3~7분'), findsOneWidget);
+      expect(find.text('여유'), findsOneWidget);
+      expect(find.bySemanticsLabel('여유'), findsNothing);
+      handle.dispose();
     });
 
     testWidgets('감춘 개수가 있으면 N개 더를 그린다', (tester) async {
@@ -233,16 +335,17 @@ void main() {
     });
   });
 
-  test('가드 — 기본 모양 소스가 busSignal 토큰을 참조하지 않는다', () {
-    // 기본 경험의 팔레트 불변을 소스 수준에서 지킨다. 위젯 렌더로는 "색을 쓰지
-    // 않았음"을 증명하기 어렵다.
-    final source = File(
+  test('가드 — 두 모양이 같은 함수로 임박도를 고른다', () {
+    // 2026-10-09 사용자 결정으로 `간단히`도 신호색을 쓴다(예전 가드는 그 반대였다).
+    // 색 칸을 모양마다 따로 계산하면 같은 버스가 두 모양에서 다른 색이 된다.
+    for (final path in [
       'lib/features/bus/presentation/widgets/bus_body_text.dart',
-    ).readAsStringSync();
-    expect(
-      source.contains('busSignal'),
-      isFalse,
-      reason: '간단히 모양은 신호색을 쓰지 않는다 — 팔레트 충돌을 기본값에서 없앤다',
-    );
+      'lib/features/bus/presentation/widgets/bus_body_axis.dart',
+    ]) {
+      final source = File(path).readAsStringSync();
+      expect(source.contains('busSignalOf('), isTrue, reason: path);
+      expect(source.contains('isUrgent('), isFalse,
+          reason: '$path — 임박 판정을 직접 하지 말고 busSignalOf를 거친다');
+    }
   });
 }
