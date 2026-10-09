@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,12 +38,16 @@ class FakeService implements TranscriptionService {
 
 class FakePlayback implements AudioPlayback {
   final playFromCalls = <Duration>[];
+  var failPlay = false;
   final _pos = StreamController<Duration>.broadcast();
   void emit(Duration d) => _pos.add(d);
   @override
   Future<void> play(String path) async {}
   @override
-  Future<void> playFrom(String path, Duration at) async => playFromCalls.add(at);
+  Future<void> playFrom(String path, Duration at) async {
+    if (failPlay) throw StateError('재생 실패');
+    playFromCalls.add(at);
+  }
   @override
   Future<void> pause() async {}
   @override
@@ -89,6 +94,9 @@ void main() {
   });
   tearDown(() async => base.delete(recursive: true));
 
+  var attachmentLoads = 0;
+  var failAttachmentLoad = false;
+
   Future<void> pump(WidgetTester tester, {bool exists = true, int? durationMs = 70000}) async {
     if (!exists) await tester.runAsync(() => File('${base.path}/guidance/a.aac').delete());
     tester.view.physicalSize = const Size(390, 1600);
@@ -100,7 +108,11 @@ void main() {
           transcriptionServiceProvider.overrideWithValue(service),
           audioPlaybackFactoryProvider.overrideWithValue(() => playback),
           guidanceFileStoreProvider.overrideWithValue(GuidanceFileStore(baseDir: () async => base)),
-          guidanceAttachmentsProvider(1).overrideWith((ref) async => [audio(durationMs: durationMs)]),
+          guidanceAttachmentsProvider(1).overrideWith((ref) async {
+            attachmentLoads++;
+            if (failAttachmentLoad) throw StateError('불러오기 실패');
+            return [audio(durationMs: durationMs)];
+          }),
         ],
         child: MaterialApp(
           home: Builder(
@@ -147,7 +159,7 @@ void main() {
     expect(find.text('둘째 문단'), findsOneWidget);
     expect(find.byKey(GuidanceTranscriptScreen.progressKey), findsNothing);
     expect(find.byKey(GuidanceTranscriptScreen.gapKey(5000)), findsOneWidget);
-    expect(find.text(GuidanceStrings.transcriptGap('00:05', 10)), findsOneWidget);
+    expect(find.text(GuidanceStrings.transcriptGap('00:05', GuidanceStrings.gapLength(10000))), findsOneWidget);
   });
 
   testWidgets('시각 칩과 글 없음 줄은 그 위치부터 재생한다', (tester) async {
@@ -269,5 +281,71 @@ void main() {
     await flush(tester);
     expect(identical(tester.widget(find.byType(SelectableText).first), before), isTrue);
     expect(find.text('00:01 / 01:10'), findsOneWidget, reason: '재생기 시각은 따라간다');
+  });
+
+  group('글 없음 줄 문구', () {
+    // 테스트 기본 글꼴은 모든 글자를 정사각형으로 그려 숫자·공백도 한글만큼 넓다 — 실제 앱 글꼴로 잰다.
+    setUpAll(() async {
+      final bytes = File('assets/fonts/PretendardVariable.ttf').readAsBytesSync();
+      await (FontLoader('Pretendard')..addFont(Future.value(ByteData.view(bytes.buffer)))).load();
+    });
+
+    test('길이는 1분 미만이면 초, 넘으면 분(나머지 초)', () {
+      expect(GuidanceStrings.gapLength(12000), '12초');
+      expect(GuidanceStrings.gapLength(60000), '1분');
+      expect(GuidanceStrings.gapLength(90400), '1분 30초');
+      expect(GuidanceStrings.gapLength(1260000), '21분');
+    });
+
+    test('시각 · 길이 글 없음 · 들어 보기', () {
+      expect(GuidanceStrings.transcriptGap('00:38', '12초'), '00:38 · 12초 글 없음 · 들어 보기');
+    });
+
+    testWidgets('가장 긴 경우도 375pt에서 한 줄 — 한글이 글자 단위로 쪼개지지 않게', (tester) async {
+      // iOS 26 기기의 가장 좁은 폭(375pt) · 1시간 넘는 녹음 · 분과 초가 다 붙는 무음.
+      await pump(tester);
+      tester.view.physicalSize = const Size(375, 1600);
+      service.seg(3600000, 3601000, '가');
+      service.seg(3601000 + 1290000, 3601000 + 1291000, '나');
+      await service.controller.close();
+      await flush(tester);
+      final finder = find.text(GuidanceStrings.transcriptGap('1:00:01', GuidanceStrings.gapLength(1290000)));
+      expect(finder, findsOneWidget);
+      final style = tester.widget<Text>(finder).style;
+      final lineHeight = (style?.fontSize ?? 14) * (style?.height ?? 1.0);
+      expect(tester.getSize(finder).height, lessThan(lineHeight * 1.5));
+    });
+  });
+
+  testWidgets('첨부를 불러오다 실패하면 받아 적는 중에 멈추지 않고 다시 시도를 준다', (tester) async {
+    failAttachmentLoad = true;
+    await pump(tester);
+    expect(find.byKey(GuidanceTranscriptScreen.progressKey), findsNothing);
+    expect(find.text(GuidanceStrings.transcriptFailed), findsOneWidget);
+    failAttachmentLoad = false;
+    await tester.tap(find.byKey(GuidanceTranscriptScreen.retryKey));
+    await flush(tester);
+    await flush(tester);
+    expect(service.listened, 1);
+  });
+
+  testWidgets('재생을 열지 못하면 처리되지 않은 오류 대신 파일 없음 안내', (tester) async {
+    await pump(tester);
+    service.seg(0, 1000, '가');
+    await service.controller.close();
+    await flush(tester);
+    playback.failPlay = true;
+    await tester.tap(find.byKey(GuidanceTranscriptScreen.chipKey(0)));
+    await flush(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text(GuidanceStrings.attachmentMissing), findsOneWidget);
+  });
+
+  testWidgets('지원하지 않는 기기 오류에는 다시 시도를 주지 않는다', (tester) async {
+    await pump(tester);
+    service.controller.addError(const TranscriptionException(TranscriptFailure.unsupported));
+    await flush(tester);
+    expect(find.text(GuidanceStrings.transcriptFailed), findsOneWidget);
+    expect(find.byKey(GuidanceTranscriptScreen.retryKey), findsNothing);
   });
 }

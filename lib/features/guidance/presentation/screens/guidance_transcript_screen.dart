@@ -91,13 +91,24 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
   }
 
   Future<void> _start() async {
-    final attachments = await ref.read(guidanceAttachmentsProvider(widget.recordId).future);
-    GuidanceAttachment? a;
-    for (final x in attachments) {
-      if (x.id == widget.attachmentId) a = x;
+    final GuidanceAttachment? a;
+    final File? file;
+    final bool exists;
+    try {
+      final attachments = await ref.read(guidanceAttachmentsProvider(widget.recordId).future);
+      a = attachments.where((x) => x.id == widget.attachmentId).firstOrNull;
+      file = a == null ? null : await ref.read(guidanceFileStoreProvider).fileOf(a.fileName);
+      exists = file != null && await file.exists();
+    } catch (_) {
+      // 불러오기 실패 — `받아 적는 중…`에 멈춰 있지 않게 실패로 보이고 다시 시도를 준다.
+      if (mounted) {
+        setState(() {
+          _done = true;
+          _failure = TranscriptFailure.other;
+        });
+      }
+      return;
     }
-    final file = a == null ? null : await ref.read(guidanceFileStoreProvider).fileOf(a.fileName);
-    final exists = file != null && await file.exists();
     if (!mounted) return;
     setState(() {
       _file = file;
@@ -105,6 +116,16 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
       _missing = !exists;
     });
     if (exists) _listen(file.path);
+  }
+
+  void _restart() {
+    // 실패한 결과를 provider가 기억하고 있다(화면이 붙잡아 둔다) — 버리지 않으면 같은 오류를 다시 받는다.
+    ref.invalidate(guidanceAttachmentsProvider(widget.recordId));
+    setState(() {
+      _done = false;
+      _failure = null;
+    });
+    _start();
   }
 
   void _listen(String path) {
@@ -170,7 +191,19 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     final file = _file;
     if (file == null || _missing) return;
     _moveTo(ms);
-    await _ensurePlayer().playFrom(file.path, Duration(milliseconds: ms));
+    await _guardPlay(() => _ensurePlayer().playFrom(file.path, Duration(milliseconds: ms)));
+  }
+
+  /// 재생을 열지 못하면(가져온 파일 형식 등) 처리되지 않은 오류 대신 첨부 줄과 같은 안내를 띄운다.
+  Future<void> _guardPlay(Future<void> Function() play) async {
+    try {
+      await play();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text(GuidanceStrings.attachmentMissing)),
+      );
+    }
   }
 
   Future<void> _togglePlay() async {
@@ -180,7 +213,7 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     if (_playing) {
       await p.pause();
     } else {
-      await p.playFrom(file.path, Duration(milliseconds: _position.value));
+      await _guardPlay(() => p.playFrom(file.path, Duration(milliseconds: _position.value)));
     }
   }
 
@@ -403,7 +436,7 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
   }
 
   Widget _gap(int startMs, int lengthMs) {
-    final label = GuidanceStrings.transcriptGap(formatTranscriptTime(startMs), lengthMs ~/ 1000);
+    final label = GuidanceStrings.transcriptGap(formatTranscriptTime(startMs), GuidanceStrings.gapLength(lengthMs));
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
       child: OutlinedButton.icon(
@@ -424,7 +457,9 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
     final (text, canRetry) = switch (failure) {
       TranscriptFailure.modelDownload => (GuidanceStrings.transcriptModelFailed, true),
       TranscriptFailure.fileNotFound => (GuidanceStrings.attachmentMissing, false),
-      TranscriptFailure.unsupported || TranscriptFailure.other => (GuidanceStrings.transcriptFailed, true),
+      // 지원하지 않는 기기는 다시 해도 같다 — 다시 시도를 주지 않는다.
+      TranscriptFailure.unsupported => (GuidanceStrings.transcriptFailed, false),
+      TranscriptFailure.other => (GuidanceStrings.transcriptFailed, true),
     };
     final file = _file;
     return Padding(
@@ -433,10 +468,11 @@ class _GuidanceTranscriptScreenState extends ConsumerState<GuidanceTranscriptScr
         children: [
           Text(text, textAlign: TextAlign.center,
               style: AppTextStyles.bodyM.copyWith(color: AppColors.error)),
-          if (canRetry && file != null)
+          if (canRetry)
             TextButton(
               key: GuidanceTranscriptScreen.retryKey,
-              onPressed: () => _listen(file.path),
+              // 파일을 아직 모르면(불러오기 실패) 처음부터, 알면 받아 적기만 다시.
+              onPressed: file == null ? _restart : () => _listen(file.path),
               child: const Text(GuidanceStrings.transcriptRetry),
             ),
         ],

@@ -232,7 +232,17 @@ class GuidanceStrings {
   static const transcriptProgress = '받아 적는 중…';
   static const transcriptProgressNotice = '이 화면을 닫으면 멈춰요. 녹음은 휴대폰 밖으로 나가지 않아요.';
   static const transcriptPreparing = '한국어 음성 인식 모델을 준비하는 중이에요. 처음 한 번 Apple에서 내려받아요.';
-  static String transcriptGap(String from, int seconds) => '$from부터 $seconds초 동안 글이 없어요 · 들어 보기';
+  /// 375pt에서 한 줄이 되게 짧게 — 한글은 글자 단위로 줄이 바뀐다.
+  static String transcriptGap(String from, String length) => '$from · $length 글 없음 · 들어 보기';
+
+  /// 글 없음 구간의 길이 — 1분 미만은 초, 넘으면 분(나머지 초). 긴 무음이 `1260초`로 보이지 않게.
+  static String gapLength(int ms) {
+    final total = ms ~/ 1000;
+    if (total < 60) return '$total초';
+    final m = total ~/ 60;
+    final s = total % 60;
+    return s == 0 ? '$m분' : '$m분 $s초';
+  }
   static const transcriptEmpty = '받아 적을 말소리를 찾지 못했어요';
   static const transcriptModelFailed = '처음 한 번은 인터넷 연결이 필요해요';
   static const transcriptFailed = '글로 바꾸지 못했어요';
