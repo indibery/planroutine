@@ -109,6 +109,11 @@ Play 콘솔에서 트랙이 실제로 `비공개 테스트`(`Alpha`)에 올라�
 최종 '심사를 위해 제출'은 사용자가 ASC에서 누른다. `submit:true`를 사용자가 명시적으로
 요청했을 때만 자동 제출한다.
 
+**`submit:true`는 빌드를 다시 붙이지 않는다**(2026-10-09 수정). 예전에는 제출 뒤 `select_build`를 또 불러
+이미 심사 대기인 버전에서 거부되고 `fastlane finished with errors`로 끝났다 — 제출은 정상인데 실패처럼 보였다(1.4.0·1.4.1).
+이제 제출 경로는 붙은 빌드를 읽어 목표와 다를 때만 실패로 끝낸다. ⚠️ 수정 뒤 **실제 제출로는 아직 확인하지 않았다** —
+다음 제출 때 `빌드 연결: vNN`과 `asc_state`를 함께 본다. 가드: `test/deploy/release_lane_submit_test.dart`.
+
 ⚠️ **예외: 한 번 제출했다가 `withdraw_review`로 내린 버전**(DEVELOPER_REJECTED)에
 빌드를 다시 연결하면 **ASC가 이전 제출을 복원해 스스로 WAITING_FOR_REVIEW가 된다**(실측).
 그래서 release는 마지막에 **실제 상태를 다시 읽어** 보고한다 — 의도가 아니라 결과를 말한다.
@@ -348,6 +353,12 @@ internal 트랙을 쓰는 레인이 **둘**이고 갈리는 지점은 `release_s
 `flutter clean`을 돌려 **`build/`와 `.dart_tool/`을 통째로 지운다**. iOS 레인도 같은
 `build/`에 ipa를 만들므로, 병행하면 한쪽이 조용히 깨진다. **iOS 먼저, Android 나중**
 순서로 돌린다(지우는 쪽이 뒤에 온다).
+
+**`build_aab`는 끝나면(실패해도) Gradle 데몬을 멈춘다**(2026-10-09). 빌드가 끝난 데몬은 약 1.2GB를 쥔 채
+몇 시간 남아, 바로 이어 띄우는 시뮬레이터·에뮬레이터가 메모리 부족으로 죽었다. 힙 상한 `-Xmx`는 8G → 3G로 낮췄지만
+**그것만으로는 효과가 없었다** — release AAB 빌드 중 데몬 최대 RSS가 8G·3G 모두 2.3~2.7GB였다(실측). 효과는 자동 정지에서 나온다.
+레인 밖에서 `flutter run`·`flutter build apk`를 돌렸다면 여전히 `cd android && ./gradlew --stop`을 손으로 한다.
+가드: `test/deploy/android_gradle_memory_test.dart`.
 
 **`reset_android_caches`가 매 빌드 필수다** — `build_aab`가 자동 실행한다. 근거는
 실측 둘:

@@ -146,6 +146,18 @@ def reset_android_caches
   end
 end
 
+# 빌드가 끝난 Gradle 데몬은 약 1.2GB를 쥔 채 몇 시간 남는다(2026-10-09 실측) — 8GB 맥에서
+# 바로 이어 띄우는 시뮬레이터·에뮬레이터가 메모리 부족으로 죽던 원인이다. 실패해도 레인을 막지 않는다.
+def stop_gradle_daemons
+  project_root = File.expand_path("../..", __dir__)
+  Dir.chdir(File.join(project_root, "android")) do
+    system("./gradlew", "--stop", out: File::NULL, err: File::NULL)
+  end
+  UI.message("Gradle 데몬 정지 — 메모리 반환")
+rescue StandardError
+  nil
+end
+
 # pubspec.yaml의 `version: X.Y.Z+N`. iOS Fastfile:67-73의 복제이고, 이유도 같다 —
 # 돌고 있는 iOS 배포 경로를 건드리지 않는다. **값의 출처는 여전히 pubspec 하나다.**
 def pubspec_version
@@ -262,25 +274,30 @@ platform :android do
 
     reset_android_caches
 
-    Dir.mktmpdir do |tmp|
-      # 키를 argv에 실으면 fastlane의 `sh`가 실행 전에 명령 문자열을 그대로 찍는다.
-      # 파일 경로만 넘기면 echo·에러 양쪽에서 키가 사라진다(iOS와 같은 이유).
-      define_file = File.join(tmp, "tago.json")
-      File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
+    begin
+      Dir.mktmpdir do |tmp|
+        # 키를 argv에 실으면 fastlane의 `sh`가 실행 전에 명령 문자열을 그대로 찍는다.
+        # 파일 경로만 넘기면 echo·에러 양쪽에서 키가 사라진다(iOS와 같은 이유).
+        define_file = File.join(tmp, "tago.json")
+        File.write(define_file, JSON.generate({ "TAGO_KEY" => key }))
 
-      Dir.chdir("..") do
-        # ⚠️ --no-pub 을 붙이지 않는다. registrant 재생성이 `if (!shouldRunPub) return;`로
-        #    막혀 있어(flutter_command.dart:1963-1971) dev dependency가 release javac로
-        #    흘러들어간다. 위 (a)를 레인이 스스로 재현하게 되는 플래그다.
-        # ⚠️ --verbose 를 붙이지 않는다. 붙이면 flutter assemble 명령줄이
-        #    ~/.gradle/daemon/<ver>/daemon-<pid>.out.log 에 --DartDefines=<base64>로
-        #    남는다(실측). 권한 0600이라 iOS의 Generated.xcconfig(0644)보다 등급은
-        #    낮지만 로그는 몇 달씩 지워지지 않는다.
-        args = ["flutter", "build", "appbundle", "--release",
-                "--dart-define-from-file=#{define_file}"]
-        args << "--build-number=#{code}" if code
-        sh(*args)
+        Dir.chdir("..") do
+          # ⚠️ --no-pub 을 붙이지 않는다. registrant 재생성이 `if (!shouldRunPub) return;`로
+          #    막혀 있어(flutter_command.dart:1963-1971) dev dependency가 release javac로
+          #    흘러들어간다. 위 (a)를 레인이 스스로 재현하게 되는 플래그다.
+          # ⚠️ --verbose 를 붙이지 않는다. 붙이면 flutter assemble 명령줄이
+          #    ~/.gradle/daemon/<ver>/daemon-<pid>.out.log 에 --DartDefines=<base64>로
+          #    남는다(실측). 권한 0600이라 iOS의 Generated.xcconfig(0644)보다 등급은
+          #    낮지만 로그는 몇 달씩 지워지지 않는다.
+          args = ["flutter", "build", "appbundle", "--release",
+                  "--dart-define-from-file=#{define_file}"]
+          args << "--build-number=#{code}" if code
+          sh(*args)
+        end
       end
+    ensure
+      # 성공·실패와 무관하게 데몬을 내린다 — 가드: test/deploy/android_gradle_memory_test.dart
+      stop_gradle_daemons
     end
 
     UI.success("AAB 준비 완료#{code ? " (versionCode #{code})" : ''}")
