@@ -92,6 +92,8 @@ void main() {
           body: CalendarGrid(
             year: 2026,
             month: 10,
+            // 실제 오늘이 10월 7일인 날에는 그 칸에 `오늘`이 붙어 이 테스트가 깨졌다(2026-10-07) — 오늘을 고정한다.
+            today: DateTime(2026, 10, 20),
             selectedDate: DateTime(2026, 10, 7),
             eventsMap: const {
               '2026-10-07': [
@@ -119,6 +121,26 @@ void main() {
 
     tester.semantics.tap(find.semantics.byLabel('10월 3일 토요일, 개천절'));
     expect(picked, DateTime(2026, 10, 3));
+    handle.dispose();
+  });
+
+  testWidgets('넘긴 오늘 칸에 `오늘`이 붙는다 — 실제 시계가 아니라 넘긴 날짜를 본다', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CalendarGrid(
+            year: 2026,
+            month: 10,
+            today: DateTime(2026, 10, 14),
+            selectedDate: DateTime(2026, 10, 1),
+            eventsMap: const {},
+            onDateSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel('10월 14일 수요일, 오늘'), findsOneWidget);
     handle.dispose();
   });
 }

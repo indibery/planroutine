@@ -18,6 +18,7 @@ class CalendarGrid extends StatelessWidget {
     required this.eventsMap,
     required this.onDateSelected,
     this.memoDates = const {},
+    this.today,
   });
 
   final int year;
@@ -25,6 +26,9 @@ class CalendarGrid extends StatelessWidget {
   final DateTime selectedDate;
   final Map<String, List<CalendarEvent>> eventsMap;
   final ValueChanged<DateTime> onDateSelected;
+
+  /// 오늘 칸을 가르는 기준일. 기본은 지금 — 테스트가 날짜를 고정하려고 넘긴다.
+  final DateTime? today;
 
   /// 날짜 붙은 포스트잇이 있는 날(YYYY-MM-DD) — 셀에 네모 점.
   final Set<String> memoDates;
@@ -152,7 +156,7 @@ class CalendarGrid extends StatelessWidget {
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final firstWeekday =
         DateTime(year, month, 1).weekday % 7; // 일=0, 월=1, ..., 토=6
-    final today = DateTime.now();
+    final today = this.today ?? DateTime.now();
     final cells = <Widget>[];
 
     // 이전 달 빈 셀
