@@ -129,6 +129,29 @@ void main() {
       expect(sha256.convert(files.single.readAsBytesSync()).toString(), a.sha256);
     });
 
+    test('한 파일을 쓰다 실패해도 반쯤 쓴 파일을 남기지 않는다', () async {
+      final a = await stored(1, 'abc');
+      final b = await stored(2, 'def');
+      var calls = 0;
+      final partial = GuidanceExporter(
+        fileStore: store,
+        copyFile: (src, dest) async {
+          calls++;
+          if (calls == 2) {
+            File(dest).writeAsStringSync('반쯤'); // 쓰다가 끊긴 상태
+            throw const FileSystemException('디스크 가득');
+          }
+          return src.copy(dest);
+        },
+      );
+      final out = Directory('${base.path}/out2');
+      await expectLater(
+        partial.copyAudioForShare(record: record, attachments: [a, b], selectedIds: {1, 2}, dir: out),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(out.listSync(), isEmpty);
+    });
+
     test('복사 실패 시 사본을 남기지 않는다', () async {
       final a = await stored(1, 'abc');
       final missing = (await stored(2, 'def')).copyWith(fileName: 'gone.aac');

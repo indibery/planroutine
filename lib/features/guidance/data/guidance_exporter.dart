@@ -21,12 +21,17 @@ class GuidanceExporter {
     required this.fileStore,
     Future<GuidancePdfFonts> Function()? loadFonts,
     DateTime Function()? clock,
+    Future<File> Function(File src, String dest)? copyFile,
   }) : _loadFonts = loadFonts ?? loadGuidancePdfFonts,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _copyFile = copyFile ?? ((src, dest) => src.copy(dest));
 
   final GuidanceFileStore fileStore;
   final Future<GuidancePdfFonts> Function() _loadFonts;
   final DateTime Function() _clock;
+
+  /// 테스트가 "쓰다가 끊긴 복사"를 흉내 내려고 바꿔 끼운다.
+  final Future<File> Function(File src, String dest) _copyFile;
 
   /// 안드로이드 백업 복원은 첨부 폴더를 빼고 DB만 살린다 — 파일이 없는 첨부는 고를 수 없다.
   Future<Set<int>> availableIds(List<GuidanceAttachment> attachments) async {
@@ -56,7 +61,10 @@ class GuidanceExporter {
         selectedIds: selectedIds,
       )) {
         final src = await fileStore.fileOf(f.attachment.fileName);
-        made.add(await src.copy(p.join(dir.path, f.outName)));
+        final dest = File(p.join(dir.path, f.outName));
+        // 쓰는 중에 끊기면 그 파일은 아직 made에 없다 — 미리 넣어 두어 정리 대상에 들게 한다.
+        made.add(dest);
+        await _copyFile(src, dest.path);
       }
       return made;
     } catch (_) {
