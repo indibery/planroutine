@@ -301,7 +301,8 @@ void main() {
       expect(GuidanceStrings.transcriptGap('00:38', '12초'), '00:38 · 12초 글 없음 · 들어 보기');
     });
 
-    testWidgets('가장 긴 경우도 375pt에서 한 줄 — 한글이 글자 단위로 쪼개지지 않게', (tester) async {
+    testWidgets('문구가 길어지지 않게 — 가장 긴 경우도 375pt에서 한 줄', (tester) async {
+      // 회귀 방지용이다: 실제 글꼴로 재면 1.4.1의 긴 문구도 한 줄이었다(이 가드는 그 문구에서도 통과한다).
       // iOS 26 기기의 가장 좁은 폭(375pt) · 1시간 넘는 녹음 · 분과 초가 다 붙는 무음.
       await pump(tester);
       tester.view.physicalSize = const Size(375, 1600);

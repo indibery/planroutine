@@ -232,7 +232,7 @@ class GuidanceStrings {
   static const transcriptProgress = '받아 적는 중…';
   static const transcriptProgressNotice = '이 화면을 닫으면 멈춰요. 녹음은 휴대폰 밖으로 나가지 않아요.';
   static const transcriptPreparing = '한국어 음성 인식 모델을 준비하는 중이에요. 처음 한 번 Apple에서 내려받아요.';
-  /// 375pt에서 한 줄이 되게 짧게 — 한글은 글자 단위로 줄이 바뀐다.
+  /// 시각 · 길이 · 할 일. 375pt 한 줄 가드는 문구가 **길어지는 것**을 막는다 — 실제 글꼴로 재면 옛 문구도 한 줄이었다.
   static String transcriptGap(String from, String length) => '$from · $length 글 없음 · 들어 보기';
 
   /// 글 없음 구간의 길이 — 1분 미만은 초, 넘으면 분(나머지 초). 긴 무음이 `1260초`로 보이지 않게.
