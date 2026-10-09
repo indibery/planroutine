@@ -108,7 +108,10 @@ class BusBodyAxis extends StatelessWidget {
         const SizedBox(height: 2),
         SizedBox(height: 24, child: _rail()),
         const SizedBox(height: 2),
-        SizedBox(height: _labelRowHeight * 2, child: _labels()),
+        SizedBox(
+          height: _labelRowHeight * 2,
+          child: _AxisLabels(view: view),
+        ),
         // 범례와 감춘 개수를 한 줄에 둔다. **라벨 행(Stack) 안에 넣지 않는다** — 15분을
         // 넘긴 라벨은 오른쪽 끝에 clamp돼 고정되므로, 라벨 행에 두면 겹쳐 감추려던 정보가
         // 또 안 읽힌다. 라벨 행 아래 별 줄이다.
@@ -117,8 +120,10 @@ class BusBodyAxis extends StatelessWidget {
           children: [
             // 범례는 색의 뜻을 **눈으로** 읽게 하는 것이다. 스크린리더는 라벨에서 분을
             // 이미 듣는다.
-            ExcludeSemantics(child: _legend()),
-            const Spacer(),
+            // `Flexible`로 폭을 묶어야 큰 글자 설정에서 범례가 줄을 바꾼다 — 묶지 않으면
+            // `Wrap`이 무한 폭을 받아 한 줄로 넘친다.
+            Flexible(child: ExcludeSemantics(child: _legend())),
+            const SizedBox(width: 8),
             if (view.hiddenCount > 0)
               BusMoreCount(hiddenCount: view.hiddenCount),
           ],
@@ -309,8 +314,26 @@ class BusBodyAxis extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _labels() {
+/// 시간 축 라벨 묶음. **줄 배정을 프레임 사이에 기억한다**([assignLabelRows]).
+///
+/// 호스트가 1초마다 본문을 다시 만들어도 이 위젯은 같은 자리라 상태가 산다.
+class _AxisLabels extends StatefulWidget {
+  const _AxisLabels({required this.view});
+
+  final BusCardView view;
+
+  @override
+  State<_AxisLabels> createState() => _AxisLabelsState();
+}
+
+class _AxisLabelsState extends State<_AxisLabels> {
+  /// 직전 프레임의 줄 배정. 빌드 사이의 기억일 뿐이라 `setState`를 거치지 않는다.
+  Map<String, int> _rows = const {};
+
+  @override
+  Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -319,10 +342,11 @@ class BusBodyAxis extends StatelessWidget {
         // 보고 겹친다 — 실기기에서 1분·1.5분 두 대가 `55536023`으로 뭉쳐 읽혔다
         // (2026-07-30). 이웃한 두 라벨은 서로 다른 줄에 서고, 같은 줄 안에서만 민다.
         final entries = <_LabelSpec>[
-          for (final a in view.visible)
+          for (final a in widget.view.visible)
             _LabelSpec(
-              key: labelKeyFor(_idOf(a)),
-              center: dotPosition(a.arrSec) * width,
+              id: BusBodyAxis._idOf(a),
+              key: BusBodyAxis.labelKeyFor(BusBodyAxis._idOf(a)),
+              center: BusBodyAxis.dotPosition(a.arrSec) * width,
               text: a.routeNo,
               minutes: a.arrMin == 0
                   ? BusStrings.axisArriving
@@ -335,14 +359,15 @@ class BusBodyAxis extends StatelessWidget {
                   : AppColors.sub,
               weight: FontWeight.w700,
             ),
-          if (nextBusOnAxis(view) case final sec?)
+          if (nextBusOnAxis(widget.view) case final sec?)
             _LabelSpec(
-              key: labelKeyFor(_nextIdOf(view.visible.single)),
-              center: dotPosition(sec) * width,
+              id: BusBodyAxis._nextIdOf(widget.view.visible.single),
+              key: BusBodyAxis.labelKeyFor(BusBodyAxis._nextIdOf(widget.view.visible.single)),
+              center: BusBodyAxis.dotPosition(sec) * width,
               // **노선번호다.** 두 점 모두 같은 노선이므로 `다음`이라고 쓰면 축에서
               // 그 자리만 다른 규칙이 된다 — 어느 쪽이 먼저인지는 점의 형태가
               // 말한다(채움 = 먼저). 스크린리더에는 위치가 안 보이므로 풀어 준다.
-              text: view.visible.single.routeNo,
+              text: widget.view.visible.single.routeNo,
               minutes: BusStrings.minutes((sec / 60).round()),
               semantics: BusStrings.nextBus((sec / 60).round()),
               color: AppColors.faint,
@@ -350,15 +375,22 @@ class BusBodyAxis extends StatelessWidget {
             ),
         ]..sort((a, b) => a.center.compareTo(b.center));
 
-        // 짝수 번째는 윗줄, 홀수 번째는 아랫줄. 줄마다 따로 밀어 낸다.
+        // 줄은 버스마다 기억해 둔 것을 쓰고, 붙어 있는 이웃과 겹칠 때만 바꾼다.
+        final rows = assignLabelRows(
+          [for (final e in entries) (e.id, e.center)],
+          _rows,
+          BusBodyAxis.labelWidth,
+        );
+        _rows = rows;
         final xs = List<double>.filled(entries.length, 0);
         for (final row in [0, 1]) {
           final idx = [
-            for (var i = row; i < entries.length; i += 2) i,
+            for (final (i, e) in entries.indexed)
+              if (rows[e.id] == row) i,
           ];
           final laid = layoutAxisLabels(
             [for (final i in idx) entries[i].center],
-            labelWidth,
+            BusBodyAxis.labelWidth,
             width,
           );
           for (final (k, i) in idx.indexed) {
@@ -372,11 +404,11 @@ class BusBodyAxis extends StatelessWidget {
               AnimatedPositioned(
                 // 점과 같은 규칙으로 움직여야 라벨이 점을 따라간다.
                 key: e.key,
-                duration: tick,
+                duration: BusBodyAxis.tick,
                 curve: Curves.linear,
-                left: xs[i] - labelWidth / 2,
-                top: (i % 2) * _labelRowHeight,
-                width: labelWidth,
+                left: xs[i] - BusBodyAxis.labelWidth / 2,
+                top: (rows[e.id] ?? 0) * BusBodyAxis._labelRowHeight,
+                width: BusBodyAxis.labelWidth,
                 // **도착 시각을 라벨에 실어 준다.** 이 모양은 분을 화면 위치로만
                 // 인코딩하므로(점은 색뿐이고 라벨은 노선번호뿐이다) 감싸지 않으면
                 // 스크린리더에는 `720`이 맥락 없이 읽혀 정보가 0이 된다.
@@ -434,6 +466,7 @@ class BusBodyAxis extends StatelessWidget {
 /// 라벨 한 개가 그려지는 데 필요한 것 전부. 밀어내기 계산과 렌더를 갈라 두려고 둔다.
 class _LabelSpec {
   const _LabelSpec({
+    required this.id,
     required this.key,
     required this.center,
     required this.text,
@@ -443,6 +476,8 @@ class _LabelSpec {
     required this.weight,
   });
 
+  /// 줄 배정을 기억하는 식별자 — 점의 키와 같은 차량(없으면 노선) 기준.
+  final String id;
   final Key key;
 
   /// 밀어내기 전, 점이 있는 진짜 x.

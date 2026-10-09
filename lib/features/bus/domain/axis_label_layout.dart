@@ -50,3 +50,42 @@ List<double> layoutAxisLabels(
 
   return out;
 }
+
+/// 시간 축 라벨의 줄(0 = 윗줄, 1 = 아랫줄)을 정한다. **순수 함수.**
+///
+/// [sorted]는 도착 순 `(식별자, 점의 x)`이고 [previous]는 직전 프레임의 배정이다.
+///
+/// **버스가 한 번 받은 줄을 지킨다.** 짝·홀 순서로 정하면 맨 앞 버스가 지나가는 순간
+/// 남은 라벨이 전부 줄을 바꿔, `AnimatedPositioned`가 그것을 1초짜리 위아래 미끄러짐으로
+/// 재생했다(2026-10-09 점검). 점을 차량 키로 묶은 것과 같은 이유다 — 목록의 항목이
+/// 교체되는 축과 위치를 세는 축이 같아야 한다.
+///
+/// 줄을 바꾸는 것은 **바로 왼쪽 이웃과 같은 줄이면서 라벨 폭 안으로 붙어 있을 때뿐**이다.
+/// 새로 들어온 버스는 왼쪽 이웃과 다른 줄로 간다. 같은 줄 안의 남은 겹침은
+/// [layoutAxisLabels]가 가로로 밀어 푼다.
+Map<String, int> assignLabelRows(
+  List<(String, double)> sorted,
+  Map<String, int> previous,
+  double labelWidth,
+) {
+  final out = <String, int>{};
+  String? leftId;
+  double leftCenter = 0;
+  for (final (id, center) in sorted) {
+    final remembered = previous[id];
+    final left = leftId == null ? null : out[leftId];
+    final int row;
+    if (left == null) {
+      row = remembered ?? 0;
+    } else {
+      final near = center - leftCenter < labelWidth;
+      row = (remembered != null && !(near && remembered == left))
+          ? remembered
+          : 1 - left;
+    }
+    out[id] = row;
+    leftId = id;
+    leftCenter = center;
+  }
+  return out;
+}

@@ -115,6 +115,25 @@ void main() {
       expect(deco.color?.withValues(alpha: 1), AppColors.busSignalSoon);
     });
 
+    testWidgets('8분 이상이면 여유 — 줄 틴트와 칩 점이 초록이다', (tester) async {
+      await _pump(
+        tester,
+        BusBodyText(view: _view([_a('A', '720', 8), _a('B', '150', 9)])),
+      );
+      final box = tester.widget<Container>(find.byKey(BusBodyText.firstKey));
+      expect(
+        (box.decoration! as BoxDecoration).color?.withValues(alpha: 1),
+        AppColors.busSignalFar,
+      );
+      final chipDot = find.descendant(
+        of: find.ancestor(of: find.text('150번'), matching: find.byType(Row)).first,
+        matching: _circle,
+      );
+      final dot = tester.widget<Container>(chipDot);
+      expect((dot.decoration! as BoxDecoration).color, AppColors.busSignalFar);
+      expect(tester.widget<Text>(find.text('8분 00초')).style?.color, AppColors.ink);
+    });
+
     testWidgets('색은 보이는 분(내림)으로 고른다 — 2분 59초는 빨강이다', (tester) async {
       await _pump(
         tester,
@@ -288,6 +307,32 @@ void main() {
       expect(b.top, greaterThan(a.top), reason: '둘째 라벨은 아랫줄이다');
     });
 
+    testWidgets('맨 앞 버스가 지나가도 남은 라벨은 줄을 바꾸지 않는다', (tester) async {
+      // 짝·홀 순서로 줄을 정하던 판본은 여기서 B·C가 함께 뒤집혀 위아래로 미끄러졌다.
+      await _pump(
+        tester,
+        BusBodyAxis(
+          view: _view([_a('A', '11', 1), _a('B', '22', 2), _a('C', '33', 3)]),
+        ),
+      );
+      final b0 = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('B'))).top;
+      final c0 = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('C'))).top;
+
+      await _pump(
+        tester,
+        BusBodyAxis(view: _view([_a('B', '22', 2), _a('C', '33', 3)])),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('B'))).top,
+        b0,
+      );
+      expect(
+        tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('C'))).top,
+        c0,
+      );
+    });
+
     testWidgets('범례가 임박도 세 칸을 말한다 — 스크린리더는 읽지 않는다', (tester) async {
       final handle = tester.ensureSemantics();
       await _pump(tester, BusBodyAxis(view: _view([_a('A', '720', 2)])));
@@ -337,7 +382,9 @@ void main() {
 
   test('가드 — 두 모양이 같은 함수로 임박도를 고른다', () {
     // 2026-10-09 사용자 결정으로 `간단히`도 신호색을 쓴다(예전 가드는 그 반대였다).
-    // 색 칸을 모양마다 따로 계산하면 같은 버스가 두 모양에서 다른 색이 된다.
+    // **칸 경계**를 한 함수에 둔다. 넘기는 분은 모양마다 다르다 — `간단히`는 화면에 쓴
+    // 내림 분, 시간 축은 반올림 분이라 2분 30초는 빨강/노랑으로 갈린다(의도된 차이:
+    // 각 모양에서 사용자가 읽는 숫자와 색이 맞는다).
     for (final path in [
       'lib/features/bus/presentation/widgets/bus_body_text.dart',
       'lib/features/bus/presentation/widgets/bus_body_axis.dart',

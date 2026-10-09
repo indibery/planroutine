@@ -79,4 +79,55 @@ void main() {
       }
     });
   });
+
+  group('assignLabelRows — 버스가 한 번 받은 줄을 지킨다', () {
+    const w = 58.0;
+
+    test('처음에는 붙어 있는 이웃끼리 줄을 번갈아 쓴다', () {
+      final rows = assignLabelRows(
+        [('A', 20), ('B', 40), ('C', 60)],
+        const {},
+        w,
+      );
+      expect(rows, {'A': 0, 'B': 1, 'C': 0});
+    });
+
+    test('맨 앞 버스가 지나가도 남은 라벨은 줄을 바꾸지 않는다', () {
+      // 짝·홀 순서로 줄을 정하던 판본은 여기서 B·C가 함께 뒤집혀 1초 동안 위아래로
+      // 미끄러졌다(2026-10-09 점검). 점이 차량 키로 정체성을 잇는 것과 같은 이유다.
+      final rows = assignLabelRows(
+        [('B', 40), ('C', 60)],
+        const {'A': 0, 'B': 1, 'C': 0},
+        w,
+      );
+      expect(rows, {'B': 1, 'C': 0});
+    });
+
+    test('새로 들어온 버스는 왼쪽 이웃과 다른 줄로 간다', () {
+      final rows = assignLabelRows(
+        [('B', 40), ('C', 60), ('D', 80)],
+        const {'B': 1, 'C': 0},
+        w,
+      );
+      expect(rows['D'], 1);
+    });
+
+    test('기억한 줄이 붙어 있는 이웃과 같으면 그때만 바꾼다', () {
+      final rows = assignLabelRows(
+        [('A', 20), ('B', 40)],
+        const {'A': 0, 'B': 0},
+        w,
+      );
+      expect(rows, {'A': 0, 'B': 1});
+    });
+
+    test('멀리 떨어져 있으면 같은 줄이어도 그대로 둔다', () {
+      final rows = assignLabelRows(
+        [('A', 20), ('B', 200)],
+        const {'A': 0, 'B': 0},
+        w,
+      );
+      expect(rows, {'A': 0, 'B': 0});
+    });
+  });
 }
