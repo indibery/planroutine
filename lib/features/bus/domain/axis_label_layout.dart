@@ -60,32 +60,30 @@ List<double> layoutAxisLabels(
 /// 재생했다(2026-10-09 점검). 점을 차량 키로 묶은 것과 같은 이유다 — 목록의 항목이
 /// 교체되는 축과 위치를 세는 축이 같아야 한다.
 ///
-/// 줄을 바꾸는 것은 **바로 왼쪽 이웃과 같은 줄이면서 라벨 폭 안으로 붙어 있을 때뿐**이다.
-/// 새로 들어온 버스는 왼쪽 이웃과 다른 줄로 간다. 같은 줄 안의 남은 겹침은
-/// [layoutAxisLabels]가 가로로 밀어 푼다.
+/// 규칙:
+/// - 왼쪽 이웃과 라벨 폭 안으로 붙어 있으면 이웃과 **다른 줄**이다.
+/// - 붙은 묶음의 첫 라벨은 **기억한 줄**을 지킨다(없으면 윗줄) — 맨 앞 버스가 떠나도
+///   남은 묶음이 뒤집히지 않는다.
+/// - **혼자 떨어진 라벨은 늘 윗줄**이다. 아랫줄은 겹침을 피하는 자리일 뿐이라, 겹칠
+///   이웃이 없는데 아랫줄에 두면 까닭 없이 내려간 것으로 보였다(실기기 신고 2026-10-09).
+///
+/// 같은 줄 안의 남은 겹침은 [layoutAxisLabels]가 가로로 밀어 푼다.
 Map<String, int> assignLabelRows(
   List<(String, double)> sorted,
   Map<String, int> previous,
   double labelWidth,
 ) {
   final out = <String, int>{};
-  String? leftId;
-  double leftCenter = 0;
-  for (final (id, center) in sorted) {
-    final remembered = previous[id];
-    final left = leftId == null ? null : out[leftId];
-    final int row;
-    if (left == null) {
-      row = remembered ?? 0;
-    } else {
-      final near = center - leftCenter < labelWidth;
-      row = (remembered != null && !(near && remembered == left))
-          ? remembered
-          : 1 - left;
+  for (var i = 0; i < sorted.length; i++) {
+    final (id, center) = sorted[i];
+    final nearLeft = i > 0 && center - sorted[i - 1].$2 < labelWidth;
+    if (nearLeft) {
+      out[id] = 1 - (out[sorted[i - 1].$1] ?? 0);
+      continue;
     }
-    out[id] = row;
-    leftId = id;
-    leftCenter = center;
+    final nearRight =
+        i + 1 < sorted.length && sorted[i + 1].$2 - center < labelWidth;
+    out[id] = nearRight ? (previous[id] ?? 0) : 0;
   }
   return out;
 }

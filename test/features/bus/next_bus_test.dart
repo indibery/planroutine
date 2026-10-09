@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/bus/domain/bus_arrival.dart';
@@ -85,7 +86,34 @@ void main() {
       expect(find.text(BusStrings.nextBus(14)), findsOneWidget);
     });
 
-    testWidgets('시간 축 — 15분 이내면 속 빈 점이 뜨고 라벨은 노선번호다', (tester) async {
+    testWidgets('시간 축 — 다음 차도 첫 차와 같은 채운 버스 모양이다', (tester) async {
+      // 실기기 요청 2026-10-09: 외곽선만 그린 다음 차를 첫 차와 똑같이 보여 달라.
+      // 색은 자기 남은 시간(14분 → 여유 초록)으로 칠한다.
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
+      final next = find.byKey(BusBodyAxis.dotKeyFor('A_next'));
+      expect(
+        find.descendant(of: next, matching: find.byIcon(Icons.directions_bus)),
+        findsOneWidget,
+      );
+      final box = tester.widget<Container>(
+        find.descendant(of: next, matching: find.byType(Container)).first,
+      );
+      expect(
+        (box.decoration! as BoxDecoration).color,
+        AppColors.busSignalFar,
+      );
+    });
+
+    testWidgets('시간 축 — 멀리 떨어진 다음 차 라벨은 첫 차와 같은 윗줄이다', (tester) async {
+      // 실기기 신고 2026-10-09: `5623 3분`과 `5623 10분`이 겹치지 않는데 다음 차만
+      // 아랫줄로 내려갔다.
+      await _pump(tester, BusBodyAxis(view: _view([_a('A', 180, sec2: 600)])));
+      final first = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('A')));
+      final next = tester.getRect(find.byKey(BusBodyAxis.labelKeyFor('A_next')));
+      expect(next.top, first.top);
+    });
+
+    testWidgets('시간 축 — 15분 이내면 다음 차 표시가 뜨고 라벨은 노선번호다', (tester) async {
       await _pump(tester, BusBodyAxis(view: _view([_a('A', 300, sec2: 840)])));
 
       expect(find.byKey(BusBodyAxis.dotKeyFor('A_next')), findsOneWidget);

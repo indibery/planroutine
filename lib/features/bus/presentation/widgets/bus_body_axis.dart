@@ -221,16 +221,24 @@ class BusBodyAxis extends StatelessWidget {
     ];
   }
 
-  Widget _dot(BusArrival arrival, double width) {
+  Widget _dot(BusArrival arrival, double width) =>
+      _marker(id: _idOf(arrival), arrSec: arrival.arrSec, width: width);
+
+  /// 축 위 버스 표시 하나. 첫 차와 다음 차가 같은 모양을 쓴다.
+  Widget _marker({
+    required String id,
+    required int arrSec,
+    required double width,
+  }) {
     const size = 20.0;
     // **`AnimatedPositioned` + 차량 키가 짝이다.** 키가 없으면 Flutter가 Stack 자식을
     // 순서로 매칭해, 정렬이 바뀌는 순간 A 노선의 표시가 B의 자리로 미끄러진다.
     return AnimatedPositioned(
-      key: dotKeyFor(_idOf(arrival)),
+      key: dotKeyFor(id),
       duration: tick,
       // 등속이어야 흐름으로 읽힌다 — ease를 쓰면 1초마다 가속·감속해 떨린다.
       curve: Curves.linear,
-      left: (dotPosition(arrival.arrSec) * width) - (size / 2),
+      left: (dotPosition(arrSec) * width) - (size / 2),
       top: 2,
       // **버스 모양 표시**(2026-10-09). 동그란 점은 가까운 두 대가 겹치면 하나로
       // 읽혔다. 둥근 네모 + 아이콘은 겹쳐도 테두리로 갈린다.
@@ -240,7 +248,7 @@ class BusBodyAxis extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          color: _dotColor(arrival.arrMin),
+          color: _dotColor((arrSec / 60).round()),
           // 화면 배경색 테두리로 레일·이웃 표시와 겹칠 때 형태를 지킨다. 카드 면
           // 토큰(`glass`)은 다크에서 반투명이라 테두리로 쓰면 레일이 비친다.
           border: Border.all(color: AppColors.background, width: 1.5),
@@ -254,29 +262,13 @@ class BusBodyAxis extends StatelessWidget {
     );
   }
 
-  /// 그 다음 차 — **속 빈 점**. 채운 점(지금 오는 차)과 형태로 갈린다.
+  /// 그 다음 차 — **첫 차와 같은 채운 버스 모양**이고, 색은 자기 남은 시간으로 칠한다.
   ///
-  /// 색으로 가르지 않는 이유: 채운 점은 남은 시간에 따라 빨강·노랑·초록이 되는데
-  /// 다음 차까지 그 규칙을 쓰면 "2분 남은 다음 차"가 빨간 점이 돼 지금 오는 차보다
-  /// 급해 보인다. 형태(속 빔)가 위계를 말하고 색은 중립으로 둔다.
-  Widget _nextDot(int arrSec2, double width, String id) {
-    const size = 16.0;
-    return AnimatedPositioned(
-      key: dotKeyFor(id),
-      duration: tick,
-      curve: Curves.linear,
-      left: (dotPosition(arrSec2) * width) - (size / 2),
-      top: 4,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(color: AppColors.sub, width: 2),
-        ),
-      ),
-    );
-  }
+  /// 예전에는 속 빈 점이었는데 실기기에서 다른 종류의 표시로 읽혀, 첫 차와 똑같이 보여
+  /// 달라는 요청이 있었다(2026-10-09). 다음 차는 늘 첫 차보다 늦으므로 색이 첫 차보다
+  /// 급해 보이는 일은 없다. 어느 쪽이 먼저인지는 축 위의 위치가 말한다.
+  Widget _nextDot(int arrSec2, double width, String id) =>
+      _marker(id: id, arrSec: arrSec2, width: width);
 
   /// `● 3분 미만 ● 3~7분 ● 여유` — 색의 뜻. 칸 경계는 도메인 상수에서 받는다.
   Widget _legend() {
@@ -364,14 +356,17 @@ class _AxisLabelsState extends State<_AxisLabels> {
               id: BusBodyAxis._nextIdOf(widget.view.visible.single),
               key: BusBodyAxis.labelKeyFor(BusBodyAxis._nextIdOf(widget.view.visible.single)),
               center: BusBodyAxis.dotPosition(sec) * width,
-              // **노선번호다.** 두 점 모두 같은 노선이므로 `다음`이라고 쓰면 축에서
-              // 그 자리만 다른 규칙이 된다 — 어느 쪽이 먼저인지는 점의 형태가
-              // 말한다(채움 = 먼저). 스크린리더에는 위치가 안 보이므로 풀어 준다.
+              // **노선번호다.** 두 표시 모두 같은 노선이므로 `다음`이라고 쓰면 축에서
+              // 그 자리만 다른 규칙이 된다 — 표시도 라벨도 첫 차와 같은 모양이고,
+              // 어느 쪽이 먼저인지는 축 위의 위치가 말한다. 스크린리더에는 위치가
+              // 안 보이므로 `다음 N분`으로 풀어 준다.
               text: widget.view.visible.single.routeNo,
               minutes: BusStrings.minutes((sec / 60).round()),
               semantics: BusStrings.nextBus((sec / 60).round()),
-              color: AppColors.faint,
-              weight: FontWeight.w600,
+              color: busSignalOf((sec / 60).round()) == BusSignal.near
+                  ? AppColors.ink
+                  : AppColors.sub,
+              weight: FontWeight.w700,
             ),
         ]..sort((a, b) => a.center.compareTo(b.center));
 
