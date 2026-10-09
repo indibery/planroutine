@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,6 +71,8 @@ GuidanceAttachment audio({int? durationMs = 70000}) => GuidanceAttachment(
 
 void main() {
   late FakeService service;
+  var attachmentLoads = 0;
+  var failAttachmentLoad = false;
   late FakePlayback playback;
   late List<String?> clipboard;
   late Directory base;
@@ -82,6 +83,8 @@ void main() {
     await Directory('${base.path}/guidance').create();
     await File('${base.path}/guidance/a.aac').writeAsBytes([0]);
     service = FakeService();
+    attachmentLoads = 0;
+    failAttachmentLoad = false;
     playback = FakePlayback();
     clipboard = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -93,9 +96,6 @@ void main() {
     });
   });
   tearDown(() async => base.delete(recursive: true));
-
-  var attachmentLoads = 0;
-  var failAttachmentLoad = false;
 
   Future<void> pump(WidgetTester tester, {bool exists = true, int? durationMs = 70000}) async {
     if (!exists) await tester.runAsync(() => File('${base.path}/guidance/a.aac').delete());
@@ -324,8 +324,11 @@ void main() {
     expect(find.text(GuidanceStrings.transcriptFailed), findsOneWidget);
     failAttachmentLoad = false;
     await tester.tap(find.byKey(GuidanceTranscriptScreen.retryKey));
-    await flush(tester);
-    await flush(tester);
+    // 다시 불러오기에 실제 파일 확인(I/O)이 끼어 있다 — 고정 횟수가 아니라 조건으로 기다린다(상한 40회).
+    for (var i = 0; i < 40 && service.listened == 0; i++) {
+      await flush(tester);
+    }
+    expect(attachmentLoads, 2, reason: '다시 시도는 첨부를 다시 불러와야 한다');
     expect(service.listened, 1);
   });
 
