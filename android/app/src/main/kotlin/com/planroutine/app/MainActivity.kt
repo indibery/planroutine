@@ -1,9 +1,11 @@
 package com.planroutine.app
 
 import android.content.Intent
+import android.os.Bundle
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.view.WindowManager
+import androidx.activity.enableEdgeToEdge
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -34,6 +36,18 @@ import java.io.File
  */
 class MainActivity : FlutterFragmentActivity() {
     private var channel: MethodChannel? = null
+
+    /**
+     * Android 14 이하에서도 시스템 바 뒤까지 그린다(15+는 OS가 이미 강제한다).
+     * Flutter 엔진은 3.47.x까지도 `EdgeToEdge.enable()`을 부르지 않아 Play의 edge-to-edge 권고가
+     * 남는다(flutter/flutter#192921) — 그래서 여기서 직접 부른다. **창이 만들어지기 전**이어야 하므로
+     * `super.onCreate`보다 먼저다. 시스템 바 색·아이콘은 첫 프레임부터 Dart의 `SystemOverlayRegion`이
+     * 다시 정한다(인셋 처리는 2026-09-03에 끝났다 — CLAUDE.md "Android 15+ edge-to-edge").
+     */
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+    }
 
     /**
      * 엔진 준비 전에 도착한 경로를 담아 두는 자리. iOS `AppDelegate.pendingPath`와 같은
