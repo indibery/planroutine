@@ -12,7 +12,7 @@ import '../../helpers/text_glyph.dart';
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: 'B정류장(길 양쪽)',
-  nodeNo: 2251,
+  nodeNo: '2251',
   cityCode: 31010,
 );
 
@@ -303,7 +303,7 @@ void main() {
 const _seoulStop = BusStop(
   nodeId: 'GGB111000090',
   nodeNm: '응암역.신사오거리',
-  nodeNo: 13108,
+  nodeNo: '13108',
   cityCode: 0,
   regionName: '서울',
 );

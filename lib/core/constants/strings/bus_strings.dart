@@ -221,7 +221,8 @@ class BusStrings {
   /// **지역명이 여기 있어야 한다.** 도시를 먼저 고르지 않는 경로에서는 화면 어디에도
   /// 지역 정보가 없는데, 같은 이름의 정류장이 여러 시·군에 있다(실측 `A정류장` →
   /// 경기 3개 시·인천). 도시 선택 단계가 조용히 제공하던 정보를 행으로 옮긴 것이다.
-  static String stopRegion(String region, int nodeNo) => '$region · $nodeNo';
+  static String stopRegion(String region, String nodeNo) =>
+      nodeNo.isEmpty ? region : '$region · $nodeNo';
 
   // ── 확인 시트 (§4) ─────────────────────────────────────────
   static const confirmTitle = '이 정류장이 맞나요?';

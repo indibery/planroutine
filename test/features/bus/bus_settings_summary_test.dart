@@ -7,7 +7,7 @@ import 'package:planroutine/features/bus/domain/bus_stop.dart';
 BusStop _stop(String name) => BusStop(
   nodeId: 'GGB$name',
   nodeNm: name,
-  nodeNo: 26044,
+  nodeNo: '26044',
   cityCode: 0,
   regionName: '군포',
 );

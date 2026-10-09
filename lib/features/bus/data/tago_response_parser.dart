@@ -79,7 +79,7 @@ TagoResult<BusStop> parseStops(
           (row) => BusStop(
             nodeId: row['nodeid']?.toString() ?? '',
             nodeNm: row['nodenm']?.toString() ?? '',
-            nodeNo: _int(row['nodeno']),
+            nodeNo: row['nodeno']?.toString().trim() ?? '',
             cityCode: cityCode,
           ),
         )

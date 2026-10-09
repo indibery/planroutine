@@ -811,13 +811,13 @@ void main() {
           departure: BusStop(
             nodeId: 'GGB201000156',
             nodeNm: _longStop,
-            nodeNo: 2251,
+            nodeNo: '2251',
             cityCode: 31010,
           ),
           arrival: BusStop(
             nodeId: 'GGB202000003',
             nodeNm: _longStop,
-            nodeNo: 2252,
+            nodeNo: '2252',
             cityCode: 31010,
           ),
         );
@@ -1217,7 +1217,7 @@ void main() {
             stop: const BusStop(
               nodeId: 'GGB201000156',
               nodeNm: _longStop,
-              nodeNo: 2251,
+              nodeNo: '2251',
               cityCode: 31010,
             ),
             // 행선지가 붙은 뒤로 이 행이 가장 넓다 — 실측에서 가져온 긴 행선지를

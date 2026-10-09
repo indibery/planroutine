@@ -165,7 +165,7 @@ void main() {
         }),
         cityCode: 31010,
       );
-      expect(r.items.single.nodeNo, 2251);
+      expect(r.items.single.nodeNo, '2251');
       expect(r.items.single.cityCode, 31010);
       expect(r.items.single.routeIds, isEmpty);
     });

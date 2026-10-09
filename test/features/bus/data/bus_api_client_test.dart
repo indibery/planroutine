@@ -298,7 +298,7 @@ void main() {
         return _json(_body({'nodeid': 'N1', 'nodenm': 'B정류장', 'nodeno': 2251}));
       });
       final r = await c.searchStops(cityCode: 31010, name: '시청');
-      expect(r.items.single.nodeNo, 2251);
+      expect(r.items.single.nodeNo, '2251');
       expect(seen?.queryParameters['nodeNm'], '시청');
     });
 

@@ -15,8 +15,11 @@ class BusStop {
 
   final String nodeNm;
 
-  /// 정류소번호. `2251` 같은 4자리 정수다(하이픈 형식이 아니다).
-  final int nodeNo;
+  /// 정류소번호 — 정류장 표지판에 적힌 그대로의 **문자열**이다(`02004`). 모르면 빈 문자열.
+  ///
+  /// 정수로 두던 판본은 서울 번호의 앞자리 0을 지워 `02004`를 `2004`로 보였다
+  /// (2026-10-09 실측). 사용자는 이 번호로 표지판과 대조하므로 0도 정보다.
+  final String nodeNo;
 
   /// 도시코드. **시·도가 아니라 시·군 단위**다(경기도는 31010~31380).
   ///
@@ -79,10 +82,21 @@ class BusStop {
     return BusStop(
       nodeId: json['nodeId'] as String? ?? '',
       nodeNm: json['nodeNm'] as String? ?? '',
-      nodeNo: json['nodeNo'] as int? ?? 0,
+      nodeNo: _nodeNoFromJson(json['nodeNo'], json['nodeId']),
       cityCode: json['cityCode'] as int? ?? 0,
       regionName: json['regionName'] as String?,
       routeIds: raw is List ? raw.map((e) => e.toString()).toSet() : const {},
     );
+  }
+
+  /// 옛 저장값(정수)을 읽는다. 지워진 0은 **수도권(GBIS, `GGB`) 번호만** 다섯 자리로
+  /// 되살린다 — 실측 응답의 GBIS 정류소번호는 모두 다섯 자리다. 그 밖(TAGO)은 자릿수
+  /// 규칙을 몰라 숫자 그대로 둔다. `0`은 "번호 없음"이었다.
+  static String _nodeNoFromJson(Object? raw, Object? nodeId) {
+    if (raw is String) return raw;
+    if (raw is! int || raw <= 0) return '';
+    final digits = raw.toString();
+    final capital = nodeId is String && nodeId.startsWith('GGB');
+    return capital ? digits.padLeft(5, '0') : digits;
   }
 }

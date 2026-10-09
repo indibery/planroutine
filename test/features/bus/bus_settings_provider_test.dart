@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: 'B정류장',
-  nodeNo: 2251,
+  nodeNo: '2251',
   cityCode: 31010,
   routeIds: {'R1'},
 );

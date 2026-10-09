@@ -32,13 +32,13 @@ const _hwaseong = 41590;
 const _savedSuwon = BusStop(
   nodeId: 'N2251',
   nodeNm: 'B정류장(길 양쪽)',
-  nodeNo: 2251,
+  nodeNo: '2251',
   cityCode: _suwon,
 );
 const _savedHwaseong = BusStop(
   nodeId: 'N4401',
   nodeNm: 'B정류장(다른 시)',
-  nodeNo: 4401,
+  nodeNo: '4401',
   cityCode: _hwaseong,
 );
 
@@ -348,7 +348,7 @@ void main() {
       await _typeStop(tester, 'A정류장');
       await _tapSearch(tester);
 
-      expect(find.text(BusStrings.stopRegion('군포', 2251)), findsOneWidget);
+      expect(find.text(BusStrings.stopRegion('군포', '2251')), findsOneWidget);
     });
 
     testWidgets('돋보기는 도시 없이도 활성이다', (tester) async {
@@ -458,7 +458,7 @@ void main() {
           departure: const BusStop(
             nodeId: 'N1',
             nodeNm: '끝도시 정류장',
-            nodeNo: 1,
+            nodeNo: '1',
             cityCode: 31025,
           ),
         ),

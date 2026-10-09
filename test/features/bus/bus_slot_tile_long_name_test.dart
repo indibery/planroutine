@@ -16,7 +16,7 @@ import '../../helpers/module_prefs.dart';
 const _longName = '석수체육공원.자동차학원.원태우지사의거지';
 
 BusStop _stop(String name) =>
-    BusStop(nodeId: 'GGB1', nodeNm: name, nodeNo: 1, cityCode: 0);
+    BusStop(nodeId: 'GGB1', nodeNm: name, nodeNo: '1', cityCode: 0);
 
 Future<void> _pump(
   WidgetTester tester,

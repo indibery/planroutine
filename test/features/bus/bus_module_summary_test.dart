@@ -14,7 +14,7 @@ import '../../helpers/module_prefs.dart';
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: '서울역버스환승센터',
-  nodeNo: 2004,
+  nodeNo: '2004',
   cityCode: 0,
 );
 

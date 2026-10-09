@@ -194,8 +194,15 @@ void main() {
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
       final gunpo = r.items.firstWhere((s) => s.regionName == '군포');
 
-      expect(gunpo.nodeNo, 26044);
-      expect(r.items.every((s) => s.nodeNo > 0), isTrue);
+      expect(gunpo.nodeNo, '26044');
+      expect(r.items.every((s) => s.nodeNo.isNotEmpty), isTrue);
+    });
+
+    test('0으로 시작하는 서울 번호를 그대로 지킨다', () {
+      // 실측 `" 02897"`. 숫자로 읽던 판본은 `2897`이 됐다 — 사용자가 정류장 표지판의
+      // 번호와 대조할 수 없다.
+      final r = parseGbisStops(_fixture('stations_jangmi_capital'));
+      expect(r.items.map((s) => s.nodeNo), contains('02897'));
     });
 
     test('경기·서울은 GBIS로 가고 도시코드를 쓰지 않는다', () {
@@ -222,7 +229,7 @@ void main() {
     test('인천 nodeId는 접두만 다르고 숫자는 GBIS stationId와 같다', () {
       final r = parseGbisStops(_fixture('stations_jangmi_capital'));
       final incheon = r.items.firstWhere(
-        (s) => s.regionName == '인천' && s.nodeNo == 37044,
+        (s) => s.regionName == '인천' && s.nodeNo == '37044',
       );
 
       expect(incheon.nodeId, 'ICB163000044');

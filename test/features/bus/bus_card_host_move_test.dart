@@ -19,7 +19,7 @@ import 'package:planroutine/features/bus/presentation/widgets/bus_card_host.dart
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: 'B정류장',
-  nodeNo: 2251,
+  nodeNo: '2251',
   cityCode: 31010,
 );
 

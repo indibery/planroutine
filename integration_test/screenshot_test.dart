@@ -99,7 +99,7 @@ class _ScreenshotBusApi extends BusApiClient {
 const _screenshotStop = BusStop(
   nodeId: 'GGB02004',
   nodeNm: '서울역버스환승센터',
-  nodeNo: 2004,
+  nodeNo: '02004',
   cityCode: 0,
   regionName: '서울',
 );

@@ -136,7 +136,8 @@ BusStop _stop(Map<String, dynamic> row) {
     // `mobileNo`는 **앞에 공백이 붙어** 온다(실측 `" 27302"`). Dart의 `int.tryParse`는
     // 공백을 허용하지 않아 trim 없이는 전부 0이 된다 — 정류소번호가 화면에서 같은
     // 이름을 가진 정류장을 구별하는 둘째 단서인데 조용히 사라진다.
-    nodeNo: _intOrNull(row['mobileNo']?.toString().trim()) ?? 0,
+    // 문자열 그대로 — 숫자로 읽으면 서울 번호의 앞자리 0이 사라진다(실측 `" 02897"`).
+    nodeNo: row['mobileNo']?.toString().trim() ?? '',
     // 인천은 TAGO로 조회하므로 도시코드가 **필요하다.** GBIS 경로(경기·서울)는
     // 쓰지 않으므로 0이다([BusStop.cityCode] 참고).
     cityCode: incheon ? incheonCityCode : 0,

@@ -34,7 +34,7 @@ const _pollAfterFixture = Duration(seconds: 190);
 const _stop = BusStop(
   nodeId: 'GGB201000156',
   nodeNm: 'B정류장',
-  nodeNo: 2251,
+  nodeNo: '2251',
   cityCode: 31010,
 );
 

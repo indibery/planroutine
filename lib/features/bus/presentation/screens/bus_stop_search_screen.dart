@@ -456,7 +456,7 @@ class _BusStopSearchScreenState extends ConsumerState<BusStopSearchScreen> {
   String _subtitleOf(BusStop stop) {
     final region = stop.regionName;
     return region == null
-        ? '${stop.nodeNo}'
+        ? stop.nodeNo
         : BusStrings.stopRegion(region, stop.nodeNo);
   }
 

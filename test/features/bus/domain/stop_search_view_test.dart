@@ -5,7 +5,7 @@ import 'package:planroutine/features/bus/domain/stop_search_view.dart';
 BusStop _stop(String name, String? region, {int no = 1}) => BusStop(
   nodeId: 'GGB$no',
   nodeNm: name,
-  nodeNo: no,
+  nodeNo: '$no',
   cityCode: 0,
   regionName: region,
 );
