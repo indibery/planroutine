@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -34,7 +35,18 @@ void main() {
   Future<String?> saved() async =>
       (await SharedPreferences.getInstance()).getString(schoolbookSettingsPrefsKey);
 
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
+  });
+
+  test('disconnect는 예약 비밀번호도 지운다', () async {
+    final c = containerWith();
+    await c.read(schoolbookSettingsProvider.future);
+    await c.read(schoolbookPasswordStoreProvider).write('1234');
+    await c.read(schoolbookSettingsProvider.notifier).disconnect();
+    expect(await c.read(schoolbookPasswordStoreProvider).read(), isNull);
+  });
 
   test('connect는 코드와 학교 이름을 저장하고 마지막 교실을 비운다', () async {
     final c = containerWith();

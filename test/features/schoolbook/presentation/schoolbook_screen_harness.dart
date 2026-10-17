@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:planroutine/features/schoolbook/presentation/providers/schoolbook_providers.dart';
@@ -32,6 +33,7 @@ Future<FakeSchoolbook> pumpSchoolbook(
   Routes? routes,
   int? lastRoomId,
   String? booker,
+  String? password,
   DateTime? now,
   Size size = const Size(390, 844),
   double textScale = 1.0,
@@ -43,6 +45,9 @@ Future<FakeSchoolbook> pumpSchoolbook(
       'lastRoomId': lastRoomId,
       'booker': booker,
     }),
+  });
+  FlutterSecureStorage.setMockInitialValues({
+    if (password != null) 'schoolbook_password_v1': password,
   });
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;

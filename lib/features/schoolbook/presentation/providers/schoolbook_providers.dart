@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/sb_result.dart';
 import '../../data/schoolbook_api_client.dart';
+import '../../data/schoolbook_password_store.dart';
 import '../../domain/schoolbook_models.dart';
 import '../../domain/schoolbook_settings.dart';
 
@@ -14,7 +15,11 @@ const schoolbookSettingsPrefsKey = 'schoolbook_settings_v1';
 final schoolbookApiClientProvider =
     Provider<SchoolbookApiClient>((ref) => SchoolbookApiClient());
 
-/// 학교 연결 · 마지막 교실 · 예약자 이름. 비밀번호는 없다(입력만 받는다).
+/// 예약 비밀번호 보안 저장소. 설정 JSON과 따로 둔다.
+final schoolbookPasswordStoreProvider =
+    Provider<SchoolbookPasswordStore>((ref) => const SchoolbookPasswordStore());
+
+/// 학교 연결 · 마지막 교실 · 예약자 이름. 비밀번호는 여기 없다 — [schoolbookPasswordStoreProvider].
 final schoolbookSettingsProvider =
     AsyncNotifierProvider<SchoolbookSettingsNotifier, SchoolbookSettings>(
       SchoolbookSettingsNotifier.new,
@@ -41,11 +46,12 @@ class SchoolbookSettingsNotifier extends AsyncNotifier<SchoolbookSettings> {
         _current.copyWith(code: info.code, schoolName: info.name, lastRoomId: null),
       );
 
-  /// 앱의 저장값만 지운다. 스쿨북의 예약은 그대로다.
+  /// 앱의 저장값(예약 비밀번호 포함)만 지운다. 스쿨북의 예약은 그대로다.
   Future<void> disconnect() async {
     state = const AsyncData(SchoolbookSettings.empty);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(schoolbookSettingsPrefsKey);
+    await ref.read(schoolbookPasswordStoreProvider).delete();
   }
 
   Future<void> setLastRoom(int roomId) => _save(_current.copyWith(lastRoomId: roomId));
