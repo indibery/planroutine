@@ -50,6 +50,17 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
     if (mounted) setState(() => _hasPassword = saved != null);
   }
 
+  Future<void> _saveBooker() async {
+    await ref.read(schoolbookSettingsProvider.notifier).setBooker(_booker.text);
+    final saved = ref.read(schoolbookSettingsProvider).valueOrNull?.booker ?? '';
+    _booker.text = saved; // 앞뒤 공백을 정리한 저장값을 그대로 보인다
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(SchoolbookStrings.bookerSaved)),
+    );
+  }
+
   Future<void> _savePassword() async {
     await ref.read(schoolbookPasswordStoreProvider).write(_password.text);
     _password.clear();
@@ -107,6 +118,7 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
                 key: SchoolbookSettingsScreen.bookerKey,
                 controller: _booker,
                 maxLength: 20,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
                   labelText: SchoolbookStrings.defaultBookerLabel,
                   helperText: SchoolbookStrings.defaultBookerHint,
@@ -114,8 +126,9 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
               ),
               button: TextButton(
                 key: SchoolbookSettingsScreen.saveBookerKey,
-                onPressed: () =>
-                    ref.read(schoolbookSettingsProvider.notifier).setBooker(_booker.text),
+                // 저장값과 다를 때만 켠다 — 늘 켜져 있으면 저장됐는지 알 수 없었다(실기기 피드백)
+                onPressed:
+                    _booker.text.trim() != (settings?.booker ?? '') ? _saveBooker : null,
                 child: const Text(SchoolbookStrings.saveBooker),
               ),
             ),

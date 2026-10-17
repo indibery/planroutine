@@ -68,6 +68,7 @@ class SchoolbookStrings {
   static const defaultBookerLabel = '예약자 이름';
   static const defaultBookerHint = '예약할 때 미리 채워 둡니다';
   static const saveBooker = '저장';
+  static const bookerSaved = '예약자 이름을 저장했어요';
   static const passwordFieldLabel = '예약 비밀번호 (숫자 4자리)';
   static const passwordFieldHint = '예약할 때 미리 채웁니다. 취소할 때는 다시 묻습니다';
   static const passwordSaved = '저장한 비밀번호가 있어요';

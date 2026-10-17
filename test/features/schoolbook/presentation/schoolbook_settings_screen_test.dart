@@ -66,9 +66,25 @@ void main() {
   testWidgets('예약자 이름을 고친다', (tester) async {
     await _pump(tester);
     await tester.enterText(find.byKey(SchoolbookSettingsScreen.bookerKey), '체육전담');
+    await tester.pump();
     await tester.tap(find.byKey(SchoolbookSettingsScreen.saveBookerKey));
     await settle(tester);
     expect((await _saved())['booker'], '체육전담');
+  });
+
+  testWidgets('예약자 이름은 바뀌었을 때만 저장할 수 있고, 저장하면 알린다', (tester) async {
+    await _pump(tester);
+    TextButton save() =>
+        tester.widget<TextButton>(find.byKey(SchoolbookSettingsScreen.saveBookerKey));
+    expect(save().onPressed, isNull, reason: '저장값(5-1) 그대로면 꺼져 있다');
+    await tester.enterText(find.byKey(SchoolbookSettingsScreen.bookerKey), '체육전담');
+    await tester.pump();
+    expect(save().onPressed, isNotNull);
+    await tester.tap(find.byKey(SchoolbookSettingsScreen.saveBookerKey));
+    await settle(tester);
+    expect(find.text(SchoolbookStrings.bookerSaved), findsOneWidget);
+    expect((await _saved())['booker'], '체육전담');
+    expect(save().onPressed, isNull, reason: '저장한 뒤에는 다시 꺼진다');
   });
 
   testWidgets('예약 비밀번호를 저장하고 지운다', (tester) async {
