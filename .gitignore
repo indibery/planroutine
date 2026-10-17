@@ -45,3 +45,6 @@ android/play-store-*.json
 
 # 로컬 실험 기록 (experiment 스킬)
 .local/
+
+# 브레인스토밍 시안(visual companion)
+.superpowers/
