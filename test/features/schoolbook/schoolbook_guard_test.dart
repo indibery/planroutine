@@ -38,12 +38,21 @@ void main() {
   });
 
   test('스쿨북 API는 다섯 가지만 부른다 — 설정을 바꾸는 API가 없다', () {
+    // 허용 목록이다 — 금지 낱말 목록은 교실 삭제(DELETE rooms/<id>/) 같은 호출을 놓쳤다
     final code = strippedCode('$_feature/data/schoolbook_api_client.dart');
-    expect(code, isNot(contains('.put(')));
-    expect(code, isNot(contains('.patch(')));
-    for (final word in ['timetables', 'periods/', 'notices', 'tools', 'register']) {
-      expect(code, isNot(contains(word)), reason: word);
-    }
+    final calls = RegExp(r"_client\.(\w+)\(\s*Uri\.parse\('\$schoolbookBaseUrl([^']*)'\)")
+        .allMatches(code)
+        .map((m) => '${m[1]} ${m[2]}')
+        .toList();
+    expect(calls, unorderedEquals([
+      r'get /accounts/login/$code/',
+      'get /rooms/',
+      r'get /rooms/$roomId/bookings/?date=${formatDate(date)}',
+      r'post /rooms/$roomId/bookings/',
+      r'delete /rooms/$roomId/bookings/$bookingId/',
+    ]));
+    // 위 모양을 벗어난 호출(다른 메서드 · 변수 URL)도 남기지 않는다
+    expect(RegExp(r'_client\.\w+\(').allMatches(code).length, 5);
     // 그 밖의 파일은 HTTP를 직접 부르지 않는다
     for (final f in libDartFiles().where((f) => f.path.contains(_feature))) {
       if (f.path.endsWith('schoolbook_api_client.dart')) continue;

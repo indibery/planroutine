@@ -40,6 +40,24 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
   });
 
+  test('설정이 없는데 비밀번호만 남아 있으면(iOS에서 앱을 지웠다 다시 설치) 지운다', () async {
+    // iOS Keychain은 앱을 지워도 남는다 — 비밀번호는 연결 뒤에만 생기므로 설정 없이 남은 것은 옛 설치의 것이다
+    FlutterSecureStorage.setMockInitialValues({'schoolbook_password_v1': '1234'});
+    final c = containerWith();
+    await c.read(schoolbookSettingsProvider.future);
+    expect(await c.read(schoolbookPasswordStoreProvider).read(), isNull);
+  });
+
+  test('연결된 설정이 있으면 비밀번호를 그대로 둔다', () async {
+    SharedPreferences.setMockInitialValues({
+      schoolbookSettingsPrefsKey: '{"code":"abcdefghijk12","schoolName":"플랜테스트"}',
+    });
+    FlutterSecureStorage.setMockInitialValues({'schoolbook_password_v1': '1234'});
+    final c = containerWith();
+    await c.read(schoolbookSettingsProvider.future);
+    expect(await c.read(schoolbookPasswordStoreProvider).read(), '1234');
+  });
+
   test('disconnect는 예약 비밀번호도 지운다', () async {
     final c = containerWith();
     await c.read(schoolbookSettingsProvider.future);

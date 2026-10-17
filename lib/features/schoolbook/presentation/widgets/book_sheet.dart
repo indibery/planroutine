@@ -13,7 +13,8 @@ import '../../data/sb_result.dart';
 /// 시트가 닫힌 이유. `unknown` = 응답을 못 받아 결과를 모른다(서버엔 반영됐을 수 있다).
 enum BookSheetResult { booked, unknown }
 
-typedef BookSubmit = Future<SbResult<void>> Function(String booker, String password);
+typedef BookSubmit =
+    Future<SbResult<void>> Function(String booker, String password);
 
 /// 예약 시트. 예약자와 저장한 비밀번호가 미리 채워져 있어 대개 `예약`만 누른다.
 /// 확인 창은 없다 — 이 버튼이 확인이다.
@@ -28,6 +29,8 @@ Future<BookSheetResult?> showBookSheet(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
+    // 끌어서 닫기는 PopScope를 거치지 않는다 — 요청 중에 닫히면 결과가 조용히 사라진다
+    enableDrag: false,
     builder: (_) => BookSheet(
       title: title,
       initialBooker: initialBooker,
@@ -63,7 +66,9 @@ class BookSheet extends StatefulWidget {
 
 class _BookSheetState extends State<BookSheet> {
   late final _booker = TextEditingController(text: widget.initialBooker ?? '');
-  late final _password = TextEditingController(text: widget.initialPassword ?? '');
+  late final _password = TextEditingController(
+    text: widget.initialPassword ?? '',
+  );
   bool _busy = false;
   String? _error;
 
@@ -76,7 +81,9 @@ class _BookSheetState extends State<BookSheet> {
 
   bool get _valid {
     final booker = _booker.text.trim();
-    return booker.isNotEmpty && booker.length <= 20 && _passwordPattern.hasMatch(_password.text);
+    return booker.isNotEmpty &&
+        booker.length <= 20 &&
+        _passwordPattern.hasMatch(_password.text);
   }
 
   Future<void> _send() async {
@@ -93,9 +100,9 @@ class _BookSheetState extends State<BookSheet> {
       case SbOutcome.network:
         Navigator.of(context).pop(BookSheetResult.unknown);
       case SbOutcome.rejected ||
-            SbOutcome.notFound ||
-            SbOutcome.unauthorized ||
-            SbOutcome.noPeriods:
+          SbOutcome.notFound ||
+          SbOutcome.unauthorized ||
+          SbOutcome.noPeriods:
         setState(() {
           _busy = false;
           _error = result.detail ?? SchoolbookStrings.loadFailed;
@@ -106,46 +113,53 @@ class _BookSheetState extends State<BookSheet> {
   @override
   Widget build(BuildContext context) {
     final error = _error;
-    return Padding(
-      padding: EdgeInsets.only(bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom)),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.pagePadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SheetTitle(widget.title),
-              const SizedBox(height: AppSizes.spacing16),
-              TextField(
-                key: BookSheet.bookerKey,
-                controller: _booker,
-                maxLength: 20,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  labelText: SchoolbookStrings.bookerLabel,
-                  hintText: SchoolbookStrings.bookerHint,
+    // 요청 중에는 닫지 않는다(바깥 누르기 · 뒤로 가기). 닫히면 성공해도 목록·알림이 갱신되지 않아
+    // 다시 누르게 되고, 정원 2 이상인 교실에서는 같은 반이 두 번 예약된다
+    return PopScope(
+      canPop: !_busy,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSizes.pagePadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SheetTitle(widget.title),
+                const SizedBox(height: AppSizes.spacing16),
+                TextField(
+                  key: BookSheet.bookerKey,
+                  controller: _booker,
+                  maxLength: 20,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(
+                    labelText: SchoolbookStrings.bookerLabel,
+                    hintText: SchoolbookStrings.bookerHint,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSizes.spacing8),
-              SheetPasswordField(
-                fieldKey: BookSheet.passwordKey,
-                controller: _password,
-                autofocus: widget.initialPassword == null,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) => _send(),
-              ),
-              if (error != null) SheetError(error),
-              const SizedBox(height: AppSizes.spacing16),
-              Center(
-                child: GoldGradientButton(
-                  key: BookSheet.submitKey,
-                  label: SchoolbookStrings.book,
-                  enabled: _valid && !_busy,
-                  onPressed: _send,
+                const SizedBox(height: AppSizes.spacing8),
+                SheetPasswordField(
+                  fieldKey: BookSheet.passwordKey,
+                  controller: _password,
+                  autofocus: widget.initialPassword == null,
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _send(),
                 ),
-              ),
-            ],
+                if (error != null) SheetError(error),
+                const SizedBox(height: AppSizes.spacing16),
+                Center(
+                  child: GoldGradientButton(
+                    key: BookSheet.submitKey,
+                    label: SchoolbookStrings.book,
+                    enabled: _valid && !_busy,
+                    onPressed: _send,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -172,17 +186,19 @@ class SheetPasswordField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-        key: fieldKey,
-        controller: controller,
-        autofocus: autofocus,
-        obscureText: true,
-        keyboardType: TextInputType.number,
-        maxLength: 4,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        decoration: const InputDecoration(labelText: SchoolbookStrings.passwordLabel),
-      );
+    key: fieldKey,
+    controller: controller,
+    autofocus: autofocus,
+    obscureText: true,
+    keyboardType: TextInputType.number,
+    maxLength: 4,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    onChanged: onChanged,
+    onSubmitted: onSubmitted,
+    decoration: const InputDecoration(
+      labelText: SchoolbookStrings.passwordLabel,
+    ),
+  );
 }
 
 /// 시트 안 오류 한 줄(서버 문구를 그대로).
@@ -193,7 +209,7 @@ class SheetError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: AppSizes.spacing8),
-        child: Text(text, style: TextStyle(color: AppColors.inkRed, fontSize: 14)),
-      );
+    padding: const EdgeInsets.only(top: AppSizes.spacing8),
+    child: Text(text, style: TextStyle(color: AppColors.inkRed, fontSize: 14)),
+  );
 }

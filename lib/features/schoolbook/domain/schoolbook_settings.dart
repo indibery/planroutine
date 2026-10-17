@@ -4,7 +4,7 @@ part 'schoolbook_settings.freezed.dart';
 
 /// 장소 예약 기능의 기기 저장값(`schoolbook_settings_v1`).
 ///
-/// **비밀번호 칸은 없다** — 예약·취소할 때마다 입력받는다(사용자 결정).
+/// **비밀번호 칸은 없다** — 예약 비밀번호는 보안 저장소(`SchoolbookPasswordStore`)에 따로 둔다.
 /// 키 이름은 저장값이라 배포 뒤 바꾸지 않는다.
 @freezed
 abstract class SchoolbookSettings with _$SchoolbookSettings {

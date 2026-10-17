@@ -25,7 +25,10 @@ Future<CancelSheetResult?> showCancelSheet(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
-    builder: (_) => CancelSheet(booker: booker, periodName: periodName, submit: submit),
+    // 끌어서 닫기는 PopScope를 거치지 않는다 — 요청 중에 닫히면 결과가 조용히 사라진다
+    enableDrag: false,
+    builder: (_) =>
+        CancelSheet(booker: booker, periodName: periodName, submit: submit),
   );
 }
 
@@ -90,35 +93,47 @@ class _CancelSheetState extends State<CancelSheet> {
   @override
   Widget build(BuildContext context) {
     final error = _error;
-    return Padding(
-      padding: EdgeInsets.only(bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom)),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.pagePadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SheetTitle(SchoolbookStrings.cancelSheetTitle(widget.booker, widget.periodName)),
-              const SizedBox(height: AppSizes.spacing16),
-              SheetPasswordField(
-                fieldKey: CancelSheet.passwordKey,
-                controller: _password,
-                autofocus: true,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) => _send(),
-              ),
-              if (error != null) SheetError(error),
-              const SizedBox(height: AppSizes.spacing16),
-              Center(
-                child: GoldGradientButton(
-                  key: CancelSheet.submitKey,
-                  label: SchoolbookStrings.cancelBooking,
-                  enabled: _valid && !_busy,
-                  onPressed: _send,
+    // 요청 중에는 닫지 않는다(바깥 누르기 · 뒤로 가기). 닫히면 성공해도 목록·알림이 갱신되지 않아
+    // 다시 누르게 되고, 정원 2 이상인 교실에서는 같은 반이 두 번 예약된다
+    return PopScope(
+      canPop: !_busy,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: math.max(0, MediaQuery.viewInsetsOf(context).bottom),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSizes.pagePadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SheetTitle(
+                  SchoolbookStrings.cancelSheetTitle(
+                    widget.booker,
+                    widget.periodName,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSizes.spacing16),
+                SheetPasswordField(
+                  fieldKey: CancelSheet.passwordKey,
+                  controller: _password,
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _send(),
+                ),
+                if (error != null) SheetError(error),
+                const SizedBox(height: AppSizes.spacing16),
+                Center(
+                  child: GoldGradientButton(
+                    key: CancelSheet.submitKey,
+                    label: SchoolbookStrings.cancelBooking,
+                    enabled: _valid && !_busy,
+                    onPressed: _send,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

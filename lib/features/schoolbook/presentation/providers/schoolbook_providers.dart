@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,13 @@ class SchoolbookSettingsNotifier extends AsyncNotifier<SchoolbookSettings> {
   Future<SchoolbookSettings> build() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(schoolbookSettingsPrefsKey);
-    if (raw == null) return SchoolbookSettings.empty;
+    if (raw == null) {
+      // iOS Keychain은 앱을 지워도 남는다. 비밀번호는 연결 뒤에만 생기므로, 설정 없이 남은
+      // 비밀번호는 지운 설치의 것이다 — 다시 설치한 사람에게 채워 주지 않는다(처리방침 §7)
+      // 기다리지 않는다 — 보안 저장소가 늦어도 화면이 붙잡히지 않게
+      unawaited(ref.read(schoolbookPasswordStoreProvider).delete());
+      return SchoolbookSettings.empty;
+    }
     try {
       return SchoolbookSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {

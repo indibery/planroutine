@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../fake_server.dart';
@@ -27,6 +27,17 @@ Map<String, Object?> _crowdedDay() => {
     };
 
 void main() {
+  testWidgets('학교가 정한 긴 교시 이름도 잘리지 않는다', (tester) async {
+    final day = _crowdedDay();
+    final period = (day['periods'] as List).first as Map<String, Object?>;
+    period['name'] = '4교시(저학년)';
+    final routes = defaultRoutes()
+      ..['GET /api/rooms/1511/bookings/'] = ((_) => jsonResponse(day));
+    await pumpSchoolbook(tester, routes: routes, lastRoomId: 1511, size: const Size(320, 844));
+    final paragraph = tester.renderObject<RenderParagraph>(find.text('4교시(저학년)'));
+    expect(paragraph.didExceedMaxLines, isFalse);
+  });
+
   for (final width in [320.0, 390.0, 430.0]) {
     for (final scale in [1.0, 1.3]) {
       testWidgets('폭 $width · 글자 $scale배에서 넘치지 않는다', (tester) async {

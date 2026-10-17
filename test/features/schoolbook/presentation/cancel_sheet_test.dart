@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -65,6 +66,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CancelSheet), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('취소 요청 중에는 바깥을 눌러도 시트가 닫히지 않는다', (tester) async {
+    final gate = Completer<http.Response>();
+    final routes = defaultRoutes()..[_delete] = (_) => gate.future;
+    await pumpSchoolbook(tester, routes: routes, lastRoomId: 1511);
+    await tester.tap(_person('3교시', '5-1'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(CancelSheet.passwordKey), '1234');
+    await tester.pump();
+    await tester.tap(find.byKey(CancelSheet.submitKey));
+    await tester.pump();
+    await tester.tapAt(const Offset(200, 40));
+    await tester.pumpAndSettle();
+    expect(find.byType(CancelSheet), findsOneWidget);
+    gate.complete(http.Response('', 204));
+    await settle(tester);
+    expect(find.text(SchoolbookStrings.canceled), findsOneWidget);
   });
 
   testWidgets('비밀번호가 틀리면 시트에 서버 문구', (tester) async {

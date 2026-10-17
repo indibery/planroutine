@@ -46,14 +46,15 @@ class PeriodRowTile extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width: 64,
+              // 학교가 정한 교시 이름(`4교시(저학년)`, 최대 20자)이 잘리지 않게 두 줄까지
+              width: 80,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     slot.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),

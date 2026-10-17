@@ -101,6 +101,23 @@ void main() {
     await settle(tester);
   });
 
+  testWidgets('요청 중에는 바깥을 눌러도 시트가 닫히지 않고, 끝나면 결과를 알린다', (tester) async {
+    final gate = Completer<http.Response>();
+    final routes = defaultRoutes()..[_post] = (_) => gate.future;
+    await pumpSchoolbook(tester,
+        routes: routes, lastRoomId: 1511, booker: '체육전담', password: '1234');
+    await _openSheet(tester);
+    await tester.tap(find.byKey(BookSheet.submitKey));
+    await tester.pump();
+    await tester.tapAt(const Offset(200, 40)); // 시트 바깥(어두운 막)
+    await tester.pumpAndSettle();
+    expect(find.byType(BookSheet), findsOneWidget);
+    gate.complete(fixtureResponse('book_ok'));
+    await settle(tester);
+    expect(find.byType(BookSheet), findsNothing);
+    expect(find.text(SchoolbookStrings.booked(['2교시', '4교시'])), findsOneWidget);
+  });
+
   testWidgets('자리가 없으면 시트가 남고 서버 문구를 보인다', (tester) async {
     final routes = defaultRoutes()..[_post] = (_) => fixtureResponse('book_full');
     final server = await pumpSchoolbook(tester,
