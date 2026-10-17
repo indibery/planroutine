@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/features/schoolbook/presentation/widgets/book_sheet.dart';
 import 'package:planroutine/features/schoolbook/presentation/widgets/cancel_sheet.dart';
 import 'package:planroutine/features/schoolbook/presentation/widgets/day_nav.dart';
 import 'package:planroutine/features/schoolbook/presentation/widgets/period_row_tile.dart';
@@ -42,6 +43,28 @@ void main() {
     expect(find.byType(CancelSheet), findsNothing);
     expect(find.text(SchoolbookStrings.canceled), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('시트를 열면 떠 있던 알림을 닫는다 — 시트 안 오류 문구를 가리지 않게', (tester) async {
+    final routes = defaultRoutes()
+      ..['POST /api/rooms/1511/bookings/'] = ((_) => fixtureResponse('book_ok'));
+    await pumpSchoolbook(tester,
+        routes: routes, lastRoomId: 1511, booker: '체육전담', password: '1234');
+    await tester.tap(find.descendant(
+      of: find.byKey(PeriodRowTile.rowKey('2교시')),
+      matching: find.byType(Checkbox),
+    ));
+    await tester.pump();
+    await tester.tap(find.text(SchoolbookStrings.bookButton(['2교시'])));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookSheet.submitKey));
+    await settle(tester);
+    expect(find.byType(SnackBar), findsOneWidget);
+
+    await tester.tap(_person('3교시', '5-1'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CancelSheet), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('비밀번호가 틀리면 시트에 서버 문구', (tester) async {

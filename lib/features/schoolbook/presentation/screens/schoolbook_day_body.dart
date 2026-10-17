@@ -99,6 +99,8 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     final names = [for (final p in chosen) p.name];
     final password = await ref.read(schoolbookPasswordStoreProvider).read();
     if (!mounted) return;
+    // 직전 알림이 시트 위에 떠서 시트 안 오류 문구를 가리지 않게 닫는다
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final result = await showBookSheet(
       context,
       title: SchoolbookStrings.bookSheetTitle(room.name, dayLabel(day), names),
@@ -138,6 +140,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     final bookingId = person.bookingId;
     if (code == null || bookingId == null || !person.cancellable) return;
     final day = _day;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final result = await showCancelSheet(
       context,
       booker: person.label,
