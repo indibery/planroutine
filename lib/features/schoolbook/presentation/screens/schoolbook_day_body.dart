@@ -10,6 +10,8 @@ import '../../domain/booking_dates.dart';
 import '../../domain/period_row.dart';
 import '../../domain/schoolbook_models.dart';
 import '../providers/schoolbook_providers.dart';
+import '../widgets/book_sheet.dart';
+import '../widgets/cancel_sheet.dart';
 import '../widgets/day_nav.dart';
 import '../widgets/period_row_tile.dart';
 import '../widgets/room_bar.dart';
@@ -69,6 +71,79 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
       _selected.clear();
     });
     await ref.read(schoolbookSettingsProvider.notifier).setLastRoom(picked.id);
+  }
+
+  void _reloadDay(int roomId, DateTime day) =>
+      ref.invalidate(roomDayProvider((roomId: roomId, date: day)));
+
+  void _snack(String text) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+
+  Future<void> _book(SchoolbookRoom room, List<PeriodSlot> chosen) async {
+    final settings = ref.read(schoolbookSettingsProvider).valueOrNull;
+    final code = settings?.code;
+    if (code == null) return;
+    final day = _day;
+    final names = [for (final p in chosen) p.name];
+    final password = await ref.read(schoolbookPasswordStoreProvider).read();
+    if (!mounted) return;
+    final result = await showBookSheet(
+      context,
+      title: SchoolbookStrings.bookSheetTitle(room.name, dayLabel(day), names),
+      initialBooker: settings?.booker,
+      initialPassword: password,
+      submit: (booker, password) async {
+        final r = await ref.read(schoolbookApiClientProvider).book(
+              code,
+              room.id,
+              date: day,
+              periodIds: [for (final p in chosen) p.id],
+              booker: booker,
+              password: password,
+            );
+        if (r.outcome == SbOutcome.ok) {
+          // 성공했을 때만 기억한다 — 다음 예약 시트에 미리 채운다
+          await ref.read(schoolbookSettingsProvider.notifier).setBooker(booker);
+          await ref.read(schoolbookPasswordStoreProvider).write(password);
+        } else if (r.outcome == SbOutcome.rejected) {
+          // 그사이 남이 먼저 잡았을 수 있다
+          _reloadDay(room.id, day);
+        }
+        return r;
+      },
+    );
+    if (!mounted || result == null) return;
+    setState(_selected.clear);
+    _reloadDay(room.id, day);
+    _snack(switch (result) {
+      BookSheetResult.booked => SchoolbookStrings.booked(names),
+      BookSheetResult.unknown => SchoolbookStrings.resultUnknown,
+    });
+  }
+
+  Future<void> _cancel(SchoolbookRoom room, PeriodSlot slot, PersonChip person) async {
+    final code = ref.read(schoolbookSettingsProvider).valueOrNull?.code;
+    final bookingId = person.bookingId;
+    if (code == null || bookingId == null || !person.cancellable) return;
+    final day = _day;
+    final result = await showCancelSheet(
+      context,
+      booker: person.label,
+      periodName: slot.name,
+      submit: (password) async {
+        final r = await ref
+            .read(schoolbookApiClientProvider)
+            .cancel(code, room.id, bookingId, password: password);
+        if (r.outcome == SbOutcome.notFound) _reloadDay(room.id, day);
+        return r;
+      },
+    );
+    if (!mounted || result == null) return;
+    _reloadDay(room.id, day);
+    _snack(switch (result) {
+      CancelSheetResult.canceled => SchoolbookStrings.canceled,
+      CancelSheetResult.unknown => SchoolbookStrings.resultUnknown,
+    });
   }
 
   @override
@@ -161,7 +236,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     // 다시 불러온 목록에서 더는 고를 수 없는 교시는 체크를 푼다
     final selectable = {for (final v in views) if (v.selectable) v.slot.id};
     _selected.retainAll(selectable);
-    final chosen = [for (final p in periods) if (_selected.contains(p.id)) p.name];
+    final chosen = [for (final p in periods) if (_selected.contains(p.id)) p];
 
     return Column(
       children: [
@@ -178,7 +253,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
                   onChecked: (on) => setState(() {
                     on ? _selected.add(v.slot.id) : _selected.remove(v.slot.id);
                   }),
-                  onPersonTap: (_) {},
+                  onPersonTap: (person) => _cancel(room, v.slot, person),
                 ),
             ],
           ),
@@ -190,8 +265,8 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
               padding: const EdgeInsets.only(bottom: AppSizes.spacing12),
               child: Center(
                 child: GoldGradientButton(
-                  label: SchoolbookStrings.bookButton(chosen),
-                  onPressed: () {},
+                  label: SchoolbookStrings.bookButton([for (final p in chosen) p.name]),
+                  onPressed: () => _book(room, chosen),
                 ),
               ),
             ),
