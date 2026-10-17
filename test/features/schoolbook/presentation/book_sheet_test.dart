@@ -59,6 +59,21 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
   });
 
+  testWidgets('예약 알림이 떠 있는 동안에도 다음 예약 버튼을 누를 수 있다', (tester) async {
+    final routes = defaultRoutes()..[_post] = (_) => fixtureResponse('book_ok');
+    await pumpSchoolbook(tester,
+        routes: routes, lastRoomId: 1511, booker: '체육전담', password: '1234');
+    await _openSheet(tester);
+    await _submit(tester);
+    await tester.tap(find.descendant(
+      of: find.byKey(PeriodRowTile.rowKey('6교시')),
+      matching: find.byType(Checkbox),
+    ));
+    await tester.pump();
+    expect(find.text(SchoolbookStrings.booked(['2교시', '4교시'])), findsOneWidget);
+    expect(find.text(SchoolbookStrings.bookButton(['6교시'])).hitTestable(), findsOneWidget);
+  });
+
   testWidgets('처음 넣은 예약자와 비밀번호는 성공하면 기억한다', (tester) async {
     final routes = defaultRoutes()..[_post] = (_) => fixtureResponse('book_ok');
     await pumpSchoolbook(tester, routes: routes, lastRoomId: 1511);

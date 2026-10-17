@@ -76,8 +76,20 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   void _reloadDay(int roomId, DateTime day) =>
       ref.invalidate(roomDayProvider((roomId: roomId, date: day)));
 
-  void _snack(String text) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  /// 알림은 아래 예약 버튼 위에 띄운다 — 바닥에 붙이면 4초 동안 버튼을 덮어
+  /// 이어서 다른 교시를 예약할 수 없었다(시뮬레이터 실측 2026-10-17).
+  void _snack(String text) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(text),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(
+            AppSizes.spacing16,
+            0,
+            AppSizes.spacing16,
+            AppSizes.buttonHeight + AppSizes.spacing12 + AppSizes.spacing8,
+          ),
+        ),
+      );
 
   Future<void> _book(SchoolbookRoom room, List<PeriodSlot> chosen) async {
     final settings = ref.read(schoolbookSettingsProvider).valueOrNull;
