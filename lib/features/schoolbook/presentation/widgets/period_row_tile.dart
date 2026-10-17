@@ -3,26 +3,30 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../shared/widgets/button_semantics.dart';
 import '../../domain/period_row.dart';
 
-/// 교시 한 줄 — 이름 · 시각 · 그 칸의 사람들 · 남은 자리 · 체크칸.
-/// 사람 칩은 취소할 수 있을 때만 누를 수 있다(취소 시트).
+/// 교시 한 줄(시안 A) — 이름 · 시각 · 그 칸의 사람들 · 남은 자리 · 줄 끝 버튼 하나.
+/// 버튼 자리는 하나다: 내 예약이 있으면 [취소], 없고 자리가 남았으면 [예약](사용자 결정).
+/// 내 예약은 골드 테두리로 강조하고, 다른 반 예약은 누를 수 없다.
 class PeriodRowTile extends StatelessWidget {
   const PeriodRowTile({
     super.key,
     required this.view,
-    required this.checked,
-    required this.onChecked,
-    required this.onPersonTap,
+    required this.pending,
+    required this.onBook,
+    required this.onCancel,
   });
 
   final PeriodRowView view;
-  final bool checked;
-  final ValueChanged<bool> onChecked;
-  final ValueChanged<PersonChip> onPersonTap;
+
+  /// 이 줄의 예약·취소 요청이 도는 중 — 버튼 대신 `예약 중…`.
+  final bool pending;
+  final VoidCallback onBook;
+  final VoidCallback onCancel;
 
   static Key rowKey(String periodName) => Key('schoolbook_period_$periodName');
+  static Key bookKey(String periodName) => Key('schoolbook_book_$periodName');
+  static Key cancelKey(String periodName) => Key('schoolbook_cancel_$periodName');
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +39,13 @@ class PeriodRowTile extends StatelessWidget {
         key: rowKey(slot.name),
         margin: const EdgeInsets.only(bottom: AppSizes.spacing8),
         padding: const EdgeInsets.fromLTRB(
-          AppSizes.spacing12, AppSizes.spacing8, AppSizes.spacing4, AppSizes.spacing8,
+          AppSizes.spacing12, AppSizes.spacing8, AppSizes.spacing8, AppSizes.spacing8,
         ),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(AppSizes.radius12),
-          border: Border.all(color: checked ? AppColors.gold : Colors.transparent, width: 1.5),
         ),
-        constraints: const BoxConstraints(minHeight: 52),
+        constraints: const BoxConstraints(minHeight: 56),
         child: Row(
           children: [
             SizedBox(
@@ -78,18 +81,58 @@ class PeriodRowTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (view.selectable)
-              Checkbox(
-                value: checked,
-                onChanged: (v) => onChecked(v ?? false),
-                semanticLabel: SchoolbookStrings.selectPeriod(slot.name),
-              )
-            else
-              const SizedBox(width: 48),
+            const SizedBox(width: AppSizes.spacing8),
+            _action(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _action() {
+    final name = view.slot.name;
+    if (pending) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing8),
+        child: Text(
+          view.action == RowAction.cancel ? SchoolbookStrings.canceling : SchoolbookStrings.booking,
+          style: TextStyle(fontSize: 13, color: AppColors.sub),
+        ),
+      );
+    }
+    return switch (view.action) {
+      RowAction.book => FilledButton(
+          key: bookKey(name),
+          onPressed: onBook,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.goldFill,
+            foregroundColor: AppColors.onGold,
+            minimumSize: const Size(64, 40),
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12),
+          ),
+          child: Text(
+            SchoolbookStrings.bookAction,
+            semanticsLabel: SchoolbookStrings.bookPeriod(name),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      RowAction.cancel => OutlinedButton(
+          key: cancelKey(name),
+          onPressed: onCancel,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.inkRed,
+            side: BorderSide(color: AppColors.inkRed),
+            minimumSize: const Size(64, 40),
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12),
+          ),
+          child: Text(
+            SchoolbookStrings.cancelAction,
+            semanticsLabel: SchoolbookStrings.cancelPeriod(name),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      RowAction.none => const SizedBox(width: 64),
+    };
   }
 
   Widget _label(String text, Color color, {bool bold = false}) => Text(
@@ -99,14 +142,22 @@ class PeriodRowTile extends StatelessWidget {
 
   Widget _person(PersonChip p) {
     if (p.fixed) return _label(SchoolbookStrings.fixedPerson(p.label), AppColors.info);
-    final text = _label(p.label, AppColors.inkRed, bold: true);
-    if (!p.cancellable) return text;
-    return ButtonSemantics.gesture(
-      label: SchoolbookStrings.cancelSheetTitle(p.label, view.slot.name),
-      onTap: () => onPersonTap(p),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing4),
-        child: text,
+    if (!p.mine) return _label(p.label, AppColors.inkRed, bold: true);
+    // 내 예약 — 골드 테두리로 다른 반 예약과 가른다
+    return Semantics(
+      label: SchoolbookStrings.mine(p.label),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing8, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.goldFill.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+          border: Border.all(color: AppColors.gold),
+        ),
+        child: Text(
+          p.label,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.gold),
+        ),
       ),
     );
   }

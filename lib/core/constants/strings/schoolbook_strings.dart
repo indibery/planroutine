@@ -27,15 +27,23 @@ class SchoolbookStrings {
   static const noSlots = '이날은 예약할 수 있는 교시가 없어요';
 
   // 하루 보기
-  static const changeRoom = '바꾸기';
-  static const roomPickerTitle = '장소 고르기';
-  static String capacity(int n) => '정원 $n';
-  static const previousDay = '이전 날';
-  static const nextDay = '다음 날';
+  static const previousWeek = '지난주';
+  static const nextWeek = '다음 주';
+  static const _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+  static String weekdayName(DateTime d) => _weekdays[d.weekday - 1];
+
+  /// `10월 20일 (화)`
+  static String dayLabel(DateTime d) => '${d.month}월 ${d.day}일 (${weekdayName(d)})';
   static const free = '비어 있음';
   static String fixedPerson(String booker) => '고정 · $booker';
   static String remaining(int n) => '$n자리 남음';
-  static String selectPeriod(String period) => '$period 고르기';
+  static const bookAction = '예약';
+  static const cancelAction = '취소';
+  static const booking = '예약 중…';
+  static const canceling = '취소 중…';
+  static String bookPeriod(String period) => '$period 예약';
+  static String cancelPeriod(String period) => '$period 내 예약 취소';
+  static String mine(String booker) => '내 예약 $booker';
 
   /// `1교시`·`2교시`면 `1·2교시`, 그 밖의 이름이 섞이면 이름을 `·`로 잇는다.
   static String periodNames(List<String> names) {
@@ -45,7 +53,6 @@ class SchoolbookStrings {
     return names.join('·');
   }
 
-  static String bookButton(List<String> names) => '${periodNames(names)} 예약하기';
 
   // 예약 · 취소 시트
   static const bookerLabel = '예약자';
@@ -61,6 +68,7 @@ class SchoolbookStrings {
   static const canceled = '예약을 취소했어요';
   static const alreadyCanceled = '이미 취소된 예약이에요';
   static const resultUnknown = '결과를 확인하지 못했어요. 목록을 확인해 주세요';
+  static const bookFailed = '예약하지 못했어요';
 
   // 상세 설정
   static const settingsSchool = '연결된 학교';

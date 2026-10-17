@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/empty_state.dart';
-import '../../../../shared/widgets/gold_gradient_button.dart';
 import '../../data/sb_result.dart';
 import '../../domain/booking_dates.dart';
 import '../../domain/period_row.dart';
@@ -12,12 +11,12 @@ import '../../domain/schoolbook_models.dart';
 import '../providers/schoolbook_providers.dart';
 import '../widgets/book_sheet.dart';
 import '../widgets/cancel_sheet.dart';
-import '../widgets/day_nav.dart';
 import '../widgets/period_row_tile.dart';
-import '../widgets/room_bar.dart';
-import '../widgets/room_picker_sheet.dart';
+import '../widgets/room_chips.dart';
+import '../widgets/week_strip.dart';
 
-/// 학교를 연결한 뒤의 본문 — 교실 이름 한 줄 · ◀ 날짜 ▶ · 교시 목록 · 예약 버튼(시안 B).
+/// 학교를 연결한 뒤의 본문 — 교실 칩 · 이번 주 날짜 띠 · 교시 목록(시안 A).
+/// 교시마다 줄 끝 버튼 하나: [예약] 또는 내 예약의 [취소].
 class SchoolbookDayBody extends ConsumerStatefulWidget {
   const SchoolbookDayBody({super.key, required this.clock});
 
@@ -34,7 +33,9 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
 
   /// 하루 예약이 `404`로 온 교실 — 지워진 교실이라 목록을 다시 불러도 고르지 않는다.
   final _gone = <int>{};
-  final _selected = <int>{};
+
+  /// 바로 예약 요청이 도는 교시 — 그동안 버튼 대신 `예약 중…`(두 번 예약되지 않게).
+  final _pending = <int>{};
 
   @override
   void initState() {
@@ -58,65 +59,71 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     }
   }
 
-  void _setDay(DateTime day) => setState(() {
-        _day = day;
-        _selected.clear();
-      });
+  void _setDay(DateTime day) => setState(() => _day = day);
 
-  Future<void> _pickRoom(List<SchoolbookRoom> rooms, int selectedId) async {
-    final picked = await showRoomPicker(context, rooms: rooms, selectedId: selectedId);
-    if (picked == null || !mounted) return;
-    setState(() {
-      _roomId = picked.id;
-      _selected.clear();
-    });
-    await ref.read(schoolbookSettingsProvider.notifier).setLastRoom(picked.id);
+  Future<void> _pickRoom(SchoolbookRoom room) async {
+    setState(() => _roomId = room.id);
+    await ref.read(schoolbookSettingsProvider.notifier).setLastRoom(room.id);
   }
 
   void _reloadDay(int roomId, DateTime day) =>
       ref.invalidate(roomDayProvider((roomId: roomId, date: day)));
 
-  /// 알림은 아래 예약 버튼 위에 띄운다 — 바닥에 붙이면 4초 동안 버튼을 덮어
-  /// 이어서 다른 교시를 예약할 수 없었다(시뮬레이터 실측 2026-10-17).
   void _snack(String text) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(text),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(
-            AppSizes.spacing16,
-            0,
-            AppSizes.spacing16,
-            AppSizes.buttonHeight + AppSizes.spacing12 + AppSizes.spacing8,
-          ),
-        ),
+        SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
       );
 
-  Future<void> _book(SchoolbookRoom room, List<PeriodSlot> chosen) async {
+  /// 예약자와 비밀번호가 저장돼 있으면 **그 자리에서 바로** 예약한다(시트·확인 창 없음).
+  /// 하나라도 없으면 입력 시트를 띄우고, 성공하면 저장해 다음부터 바로 잡힌다.
+  Future<void> _book(SchoolbookRoom room, PeriodSlot slot) async {
     final settings = ref.read(schoolbookSettingsProvider).valueOrNull;
     final code = settings?.code;
-    if (code == null) return;
+    if (code == null || _pending.contains(slot.id)) return;
     final day = _day;
-    final names = [for (final p in chosen) p.name];
+    final booker = settings?.booker;
     final password = await ref.read(schoolbookPasswordStoreProvider).read();
     if (!mounted) return;
+
+    Future<SbResult<void>> send(String booker, String password) =>
+        ref.read(schoolbookApiClientProvider).book(
+              code,
+              room.id,
+              date: day,
+              periodIds: [slot.id],
+              booker: booker,
+              password: password,
+            );
+
+    if (booker != null && password != null) {
+      setState(() => _pending.add(slot.id));
+      final r = await send(booker, password);
+      if (!mounted) return;
+      setState(() => _pending.remove(slot.id));
+      _reloadDay(room.id, day);
+      _snack(switch (r.outcome) {
+        SbOutcome.ok => SchoolbookStrings.booked([slot.name]),
+        SbOutcome.network => SchoolbookStrings.resultUnknown,
+        SbOutcome.rejected => r.detail ?? SchoolbookStrings.bookFailed,
+        _ => SchoolbookStrings.bookFailed,
+      });
+      return;
+    }
+
     // 직전 알림이 시트 위에 떠서 시트 안 오류 문구를 가리지 않게 닫는다
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final result = await showBookSheet(
       context,
-      title: SchoolbookStrings.bookSheetTitle(room.name, dayLabel(day), names),
-      initialBooker: settings?.booker,
+      title: SchoolbookStrings.bookSheetTitle(
+        room.name,
+        SchoolbookStrings.dayLabel(day),
+        [slot.name],
+      ),
+      initialBooker: booker,
       initialPassword: password,
       submit: (booker, password) async {
-        final r = await ref.read(schoolbookApiClientProvider).book(
-              code,
-              room.id,
-              date: day,
-              periodIds: [for (final p in chosen) p.id],
-              booker: booker,
-              password: password,
-            );
+        final r = await send(booker, password);
         if (r.outcome == SbOutcome.ok) {
-          // 성공했을 때만 기억한다 — 다음 예약 시트에 미리 채운다
+          // 성공했을 때만 기억한다 — 다음부터 바로 예약된다
           await ref.read(schoolbookSettingsProvider.notifier).setBooker(booker);
           await ref.read(schoolbookPasswordStoreProvider).write(password);
         } else if (r.outcome == SbOutcome.rejected) {
@@ -127,23 +134,23 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
       },
     );
     if (!mounted || result == null) return;
-    setState(_selected.clear);
     _reloadDay(room.id, day);
     _snack(switch (result) {
-      BookSheetResult.booked => SchoolbookStrings.booked(names),
+      BookSheetResult.booked => SchoolbookStrings.booked([slot.name]),
       BookSheetResult.unknown => SchoolbookStrings.resultUnknown,
     });
   }
 
-  Future<void> _cancel(SchoolbookRoom room, PeriodSlot slot, PersonChip person) async {
+  /// 내 예약 취소 — 비밀번호를 매번 묻는다(사용자 결정).
+  Future<void> _cancel(SchoolbookRoom room, PeriodSlot slot, PersonChip mine) async {
     final code = ref.read(schoolbookSettingsProvider).valueOrNull?.code;
-    final bookingId = person.bookingId;
-    if (code == null || bookingId == null || !person.cancellable) return;
+    final bookingId = mine.bookingId;
+    if (code == null || bookingId == null || !mine.cancellable) return;
     final day = _day;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final result = await showCancelSheet(
       context,
-      booker: person.label,
+      booker: mine.label,
       periodName: slot.name,
       submit: (password) async {
         final r = await ref
@@ -179,41 +186,47 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   Widget _withRooms(List<SchoolbookRoom> all) {
     final rooms = [for (final r in all) if (!_gone.contains(r.id)) r];
     if (rooms.isEmpty) return const _Message(SchoolbookStrings.noRooms);
-    final wanted = _roomId ?? ref.watch(schoolbookSettingsProvider).valueOrNull?.lastRoomId;
+    final settings = ref.watch(schoolbookSettingsProvider).valueOrNull;
+    final wanted = _roomId ?? settings?.lastRoomId;
     final room = rooms.firstWhere((r) => r.id == wanted, orElse: () => rooms.first);
     _roomId = room.id;
 
     final key = (roomId: room.id, date: _day);
     final day = ref.watch(roomDayProvider(key));
     final today = widget.clock();
-    final previous = previousWeekday(_day);
-    final next = nextWeekday(_day, today);
+    final next = nextWeek(_day, today);
 
     return Column(
       children: [
+        const SizedBox(height: AppSizes.spacing8),
+        RoomChips(rooms: rooms, selectedId: room.id, onSelect: _pickRoom),
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSizes.spacing16, AppSizes.spacing8, AppSizes.spacing16, 0,
+          padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing8),
+          child: WeekStrip(
+            day: _day,
+            today: today,
+            onSelect: _setDay,
+            onPreviousWeek: () => _setDay(previousWeek(_day)),
+            onNextWeek: next == null ? null : () => _setDay(next),
           ),
-          child: RoomBar(name: room.name, onTap: () => _pickRoom(rooms, room.id)),
-        ),
-        DayNav(
-          day: _day,
-          onPrevious: () => _setDay(previous),
-          onNext: next == null ? null : () => _setDay(next),
         ),
         Expanded(
           child: day.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, _) => _failed(() => ref.invalidate(roomDayProvider(key))),
-            data: (result) => _dayResult(result, room, today),
+            data: (result) => _dayResult(result, room, today, settings?.booker),
           ),
         ),
       ],
     );
   }
 
-  Widget _dayResult(SbResult<RoomDay> result, SchoolbookRoom room, DateTime today) {
+  Widget _dayResult(
+    SbResult<RoomDay> result,
+    SchoolbookRoom room,
+    DateTime today,
+    String? myBooker,
+  ) {
     switch (result.outcome) {
       case SbOutcome.ok:
         break;
@@ -224,7 +237,6 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
           setState(() {
             _gone.add(room.id);
             _roomId = null;
-            _selected.clear();
           });
           ref.invalidate(schoolbookRoomsProvider);
         });
@@ -244,48 +256,31 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     final todayOnly = DateTime(today.year, today.month, today.day);
     final bookable = isBookableDate(_day, today);
     final past = _day.isBefore(todayOnly);
-    final views = [
-      for (final p in periods)
-        buildPeriodRow(p, capacity: room.capacity, bookableDay: bookable, pastDay: past),
-    ];
-    // 다시 불러온 목록에서 더는 고를 수 없는 교시는 체크를 푼다
-    final selectable = {for (final v in views) if (v.selectable) v.slot.id};
-    _selected.retainAll(selectable);
-    final chosen = [for (final p in periods) if (_selected.contains(p.id)) p];
 
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.spacing16, 0, AppSizes.spacing16, AppSizes.spacing16,
+      ),
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.spacing16, 0, AppSizes.spacing16, AppSizes.spacing16,
-            ),
-            children: [
-              for (final v in views)
-                PeriodRowTile(
-                  view: v,
-                  checked: _selected.contains(v.slot.id),
-                  onChecked: (on) => setState(() {
-                    on ? _selected.add(v.slot.id) : _selected.remove(v.slot.id);
-                  }),
-                  onPersonTap: (person) => _cancel(room, v.slot, person),
-                ),
-            ],
-          ),
-        ),
-        if (chosen.isNotEmpty)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.spacing12),
-              child: Center(
-                child: GoldGradientButton(
-                  label: SchoolbookStrings.bookButton([for (final p in chosen) p.name]),
-                  onPressed: () => _book(room, chosen),
-                ),
-              ),
-            ),
-          ),
+        for (final p in periods)
+          Builder(builder: (context) {
+            final view = buildPeriodRow(
+              p,
+              capacity: room.capacity,
+              bookableDay: bookable,
+              pastDay: past,
+              myBooker: myBooker,
+            );
+            final mine = view.myBooking;
+            return PeriodRowTile(
+              view: view,
+              pending: _pending.contains(p.id),
+              onBook: () => _book(room, p),
+              onCancel: () {
+                if (mine != null) _cancel(room, p, mine);
+              },
+            );
+          }),
       ],
     );
   }
