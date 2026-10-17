@@ -17,6 +17,9 @@ import '../widgets/week_strip.dart';
 
 /// 학교를 연결한 뒤의 본문 — 교실 칩 · 이번 주 날짜 띠 · 교시 목록(시안 A).
 /// 교시마다 줄 끝 버튼 하나: [예약] 또는 내 예약의 [취소].
+/// 요청이 도는 교시. 교시 id는 날짜·교실과 무관하게 같으므로 셋을 함께 키로 쓴다.
+typedef _PendingKey = ({int roomId, DateTime date, int periodId});
+
 class SchoolbookDayBody extends ConsumerStatefulWidget {
   const SchoolbookDayBody({super.key, required this.clock});
 
@@ -35,7 +38,9 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   final _gone = <int>{};
 
   /// 바로 예약 요청이 도는 교시 — 그동안 버튼 대신 `예약 중…`(두 번 예약되지 않게).
-  final _pending = <int>{};
+  /// 비밀번호를 읽기 **전에** 잡고, 다시 불러온 목록이 도착한 **뒤에** 푼다 — 그 사이에
+  /// 버튼이 다시 보이면 같은 교시를 또 보내게 되고 서버에는 중복 방지가 없다(최종 리뷰).
+  final _pending = <_PendingKey>{};
 
   @override
   void initState() {
@@ -78,8 +83,11 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   Future<void> _book(SchoolbookRoom room, PeriodSlot slot) async {
     final settings = ref.read(schoolbookSettingsProvider).valueOrNull;
     final code = settings?.code;
-    if (code == null || _pending.contains(slot.id)) return;
     final day = _day;
+    final pendingKey = (roomId: room.id, date: day, periodId: slot.id);
+    if (code == null || _pending.contains(pendingKey)) return;
+    setState(() => _pending.add(pendingKey));
+    final dayKey = (roomId: room.id, date: day);
     final booker = settings?.booker;
     final password = await ref.read(schoolbookPasswordStoreProvider).read();
     if (!mounted) return;
@@ -95,19 +103,22 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
             );
 
     if (booker != null && password != null) {
-      setState(() => _pending.add(slot.id));
       final r = await send(booker, password);
+      // 다시 불러온 목록이 오기 전에는 옛 목록(그 교시의 [예약])이 그대로 보인다 — 다 받고 푼다
+      ref.invalidate(roomDayProvider(dayKey));
+      await ref.read(roomDayProvider(dayKey).future);
       if (!mounted) return;
-      setState(() => _pending.remove(slot.id));
-      _reloadDay(room.id, day);
+      setState(() => _pending.remove(pendingKey));
       _snack(switch (r.outcome) {
-        SbOutcome.ok => SchoolbookStrings.booked([slot.name]),
+        SbOutcome.ok => SchoolbookStrings.booked(room.name, day, [slot.name]),
         SbOutcome.network => SchoolbookStrings.resultUnknown,
         SbOutcome.rejected => r.detail ?? SchoolbookStrings.bookFailed,
         _ => SchoolbookStrings.bookFailed,
       });
       return;
     }
+    // 시트로 간다 — 시트가 스스로 요청 중 잠금을 한다
+    setState(() => _pending.remove(pendingKey));
 
     // 직전 알림이 시트 위에 떠서 시트 안 오류 문구를 가리지 않게 닫는다
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -136,7 +147,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     if (!mounted || result == null) return;
     _reloadDay(room.id, day);
     _snack(switch (result) {
-      BookSheetResult.booked => SchoolbookStrings.booked([slot.name]),
+      BookSheetResult.booked => SchoolbookStrings.booked(room.name, day, [slot.name]),
       BookSheetResult.unknown => SchoolbookStrings.resultUnknown,
     });
   }
@@ -274,7 +285,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
             final mine = view.myBooking;
             return PeriodRowTile(
               view: view,
-              pending: _pending.contains(p.id),
+              pending: _pending.contains((roomId: room.id, date: _day, periodId: p.id)),
               onBook: () => _book(room, p),
               onCancel: () {
                 if (mine != null) _cancel(room, p, mine);

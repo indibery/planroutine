@@ -40,7 +40,6 @@ class SchoolbookStrings {
   static const bookAction = '예약';
   static const cancelAction = '취소';
   static const booking = '예약 중…';
-  static const canceling = '취소 중…';
   static String bookPeriod(String period) => '$period 예약';
   static String cancelPeriod(String period) => '$period 내 예약 취소';
   static String mine(String booker) => '내 예약 $booker';
@@ -64,7 +63,9 @@ class SchoolbookStrings {
       '$room · $day ${periodNames(names)}';
   static String cancelSheetTitle(String booker, String period) =>
       '$booker · $period 예약 취소';
-  static String booked(List<String> names) => '${periodNames(names)}를 예약했어요';
+  /// 어느 날·어느 교실인지 함께 말한다 — 요청 중에 다른 날로 옮겨도 알림이 헷갈리지 않게.
+  static String booked(String room, DateTime day, List<String> names) =>
+      '${dayLabel(day)} $room ${periodNames(names)}를 예약했어요';
   static const canceled = '예약을 취소했어요';
   static const alreadyCanceled = '이미 취소된 예약이에요';
   static const resultUnknown = '결과를 확인하지 못했어요. 목록을 확인해 주세요';
@@ -74,7 +75,7 @@ class SchoolbookStrings {
   static const settingsSchool = '연결된 학교';
   static const changeLink = '학교 링크 바꾸기';
   static const defaultBookerLabel = '예약자 이름';
-  static const defaultBookerHint = '예약할 때 미리 채워 둡니다';
+  static const defaultBookerHint = '스쿨북 웹에서 쓰는 이름과 똑같이 — 같은 이름의 예약에 [취소]가 붙습니다';
   static const saveBooker = '저장';
   static const bookerSaved = '예약자 이름을 저장했어요';
   static const passwordFieldLabel = '예약 비밀번호 (숫자 4자리)';

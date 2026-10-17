@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:planroutine/features/schoolbook/data/schoolbook_password_store.dart';
 import 'package:planroutine/features/schoolbook/presentation/providers/schoolbook_providers.dart';
 import 'package:planroutine/features/schoolbook/presentation/screens/schoolbook_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +35,7 @@ Future<FakeSchoolbook> pumpSchoolbook(
   int? lastRoomId,
   String? booker,
   String? password,
+  SchoolbookPasswordStore? passwordStore,
   DateTime? now,
   Size size = const Size(390, 844),
   double textScale = 1.0,
@@ -55,7 +57,10 @@ Future<FakeSchoolbook> pumpSchoolbook(
   final server = FakeSchoolbook(routes ?? defaultRoutes());
   final clock = now ?? DateTime(2026, 10, 20, 8);
   await tester.pumpWidget(ProviderScope(
-    overrides: [schoolbookApiClientProvider.overrideWithValue(server.client())],
+    overrides: [
+      schoolbookApiClientProvider.overrideWithValue(server.client()),
+      if (passwordStore != null) schoolbookPasswordStoreProvider.overrideWithValue(passwordStore),
+    ],
     child: MaterialApp(
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),

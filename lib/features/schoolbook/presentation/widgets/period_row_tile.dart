@@ -19,7 +19,7 @@ class PeriodRowTile extends StatelessWidget {
 
   final PeriodRowView view;
 
-  /// 이 줄의 예약·취소 요청이 도는 중 — 버튼 대신 `예약 중…`.
+  /// 이 줄의 바로 예약 요청이 도는 중 — 버튼 대신 `예약 중…`(취소는 시트가 잠근다).
   final bool pending;
   final VoidCallback onBook;
   final VoidCallback onCancel;
@@ -95,7 +95,7 @@ class PeriodRowTile extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing8),
         child: Text(
-          view.action == RowAction.cancel ? SchoolbookStrings.canceling : SchoolbookStrings.booking,
+          SchoolbookStrings.booking,
           style: TextStyle(fontSize: 13, color: AppColors.sub),
         ),
       );
