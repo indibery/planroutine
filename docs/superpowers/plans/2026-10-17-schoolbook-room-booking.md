@@ -15,7 +15,7 @@
 - 기능 id `schoolbook` · prefs 키 `schoolbook_settings_v1` — **저장값이라 배포 뒤 바꾸지 않는다.**
 - 주소 `https://schoolbook.zzolab.com/api`. 인증 헤더 `Authorization: <학교 코드 13자>`.
 - 앱이 부르는 것은 **다섯뿐**: `GET accounts/login/<code>/` · `GET rooms/` · `GET rooms/<id>/bookings/?date=` · `POST rooms/<id>/bookings/` · `DELETE rooms/<id>/bookings/<bid>/`. 설정을 바꾸는 API는 부르지 않는다.
-- **비밀번호는 어디에도 저장하지 않는다**(prefs · 메모리 상태 · 로그). 예약·취소 때마다 입력한다.
+- **예약 비밀번호는 보안 저장소(`flutter_secure_storage`, 키 `schoolbook_password_v1`)에만** 저장하고 예약 시트에 미리 채운다. prefs · 로그 · 스낵바에는 넣지 않는다. **취소 시트는 채우지 않는다**(매번 입력). (사용자 변경 2026-10-17, Task 7 진행 중 — 원장 Ruling 참고)
 - **확인 창 없음.** 비밀번호 입력이 확인이다.
 - 예약·취소 요청은 **자동 재시도하지 않는다**(스쿨북에 중복 방지 키가 없다).
 - 예약 가능한 날: 오늘 ~ 다음 해 2월 말일의 **평일**. 예약자 1~20자, 비밀번호 숫자 4자리.
