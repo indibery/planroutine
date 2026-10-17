@@ -7,7 +7,7 @@ import 'package:planroutine/features/schoolbook/data/schoolbook_api_client.dart'
 
 import 'fixture.dart';
 
-/// 화면 테스트용 가짜 스쿨북. `'GET /api/rooms/'`처럼 `메서드 경로`(쿼리 포함)로 응답을 고른다.
+/// 화면 테스트용 가짜 스쿨북. `'GET /api/rooms/'`처럼 `메서드 경로`(쿼리는 있어도 없어도)로 응답을 고른다.
 /// 없는 요청은 404. 받은 요청은 [requests]에 쌓인다.
 class FakeSchoolbook {
   FakeSchoolbook(this.routes);
@@ -19,7 +19,9 @@ class FakeSchoolbook {
         client: MockClient((req) async {
           requests.add(req);
           final query = req.url.hasQuery ? '?${req.url.query}' : '';
-          final handler = routes['${req.method} ${req.url.path}$query'];
+          // 쿼리까지 맞는 경로가 먼저, 없으면 경로만 맞는 것(날짜와 무관한 응답)
+          final handler = routes['${req.method} ${req.url.path}$query'] ??
+              routes['${req.method} ${req.url.path}'];
           if (handler == null) return http.Response('{"detail":"not found"}', 404);
           return handler(req);
         }),

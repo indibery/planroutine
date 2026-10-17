@@ -10,10 +10,14 @@ import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/tab_header_title.dart';
 import '../providers/schoolbook_providers.dart';
 import '../widgets/schoolbook_connect_view.dart';
+import 'schoolbook_day_body.dart';
 
 /// 장소 예약 탭. 학교를 연결하기 전에는 연결 화면, 뒤에는 교실 하나 × 하루 보기(시안 B).
 class SchoolbookScreen extends ConsumerWidget {
-  const SchoolbookScreen({super.key});
+  const SchoolbookScreen({super.key, this.clock = DateTime.now});
+
+  /// '오늘'을 정한다 — 테스트가 날짜를 고정하는 주입점.
+  final DateTime Function() clock;
 
   static const settingsKey = Key('schoolbook_settings_shortcut');
 
@@ -48,7 +52,7 @@ class SchoolbookScreen extends ConsumerWidget {
       body: switch (settings) {
         null => const SizedBox.shrink(),
         final s when !s.connected => const _ConnectBody(),
-        final s => Center(child: Text(s.schoolName ?? '')),
+        _ => SchoolbookDayBody(clock: clock),
       },
     );
   }
