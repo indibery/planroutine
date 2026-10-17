@@ -1,0 +1,96 @@
+{
+  "status": 200,
+  "body": {
+    "date": "2026-10-20",
+    "periods": [
+      {
+        "id": 1602,
+        "name": "1교시",
+        "start_time": "09:00",
+        "end_time": "09:40",
+        "archived": false,
+        "remaining": 0,
+        "fixed": [
+          {
+            "booker": "3-2"
+          }
+        ],
+        "bookings": []
+      },
+      {
+        "id": 1603,
+        "name": "2교시",
+        "start_time": "09:50",
+        "end_time": "10:30",
+        "archived": false,
+        "remaining": 1,
+        "fixed": [],
+        "bookings": []
+      },
+      {
+        "id": 1604,
+        "name": "3교시",
+        "start_time": "10:40",
+        "end_time": "11:20",
+        "archived": false,
+        "remaining": 0,
+        "fixed": [],
+        "bookings": [
+          {
+            "id": 223116,
+            "booker": "5-1",
+            "cancel_reason": null,
+            "canceled_at": null
+          }
+        ]
+      },
+      {
+        "id": 1605,
+        "name": "4교시",
+        "start_time": "11:30",
+        "end_time": "12:10",
+        "archived": false,
+        "remaining": 1,
+        "fixed": [],
+        "bookings": []
+      },
+      {
+        "id": 1606,
+        "name": "5교시",
+        "start_time": "13:20",
+        "end_time": "14:00",
+        "archived": false,
+        "remaining": 0,
+        "fixed": [],
+        "bookings": [
+          {
+            "id": 223117,
+            "booker": "6-3",
+            "cancel_reason": null,
+            "canceled_at": null
+          }
+        ]
+      },
+      {
+        "id": 1607,
+        "name": "6교시",
+        "start_time": "14:10",
+        "end_time": "14:50",
+        "archived": false,
+        "remaining": 1,
+        "fixed": [],
+        "bookings": []
+      },
+      {
+        "id": 1608,
+        "name": "방과후",
+        "start_time": null,
+        "end_time": null,
+        "archived": false,
+        "remaining": 1,
+        "fixed": [],
+        "bookings": []
+      }
+    ]
+  }
+}
