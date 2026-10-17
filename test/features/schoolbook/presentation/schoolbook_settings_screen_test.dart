@@ -87,6 +87,23 @@ void main() {
     expect(save().onPressed, isNull, reason: '저장한 뒤에는 다시 꺼진다');
   });
 
+  testWidgets('저장한 비밀번호는 가려져 있다가 [보기]를 누르면 보인다', (tester) async {
+    await _pump(tester, password: '4821');
+    expect(find.text('4821'), findsNothing);
+    expect(find.text('••••'), findsOneWidget);
+    await tester.tap(find.byKey(SchoolbookSettingsScreen.revealPasswordKey));
+    await tester.pumpAndSettle();
+    expect(find.text('4821'), findsOneWidget);
+    await tester.tap(find.byKey(SchoolbookSettingsScreen.revealPasswordKey));
+    await tester.pumpAndSettle();
+    expect(find.text('4821'), findsNothing);
+  });
+
+  testWidgets('저장한 비밀번호가 없으면 확인 줄이 없다', (tester) async {
+    await _pump(tester);
+    expect(find.byKey(SchoolbookSettingsScreen.revealPasswordKey), findsNothing);
+  });
+
   testWidgets('예약 비밀번호를 저장하고 지운다', (tester) async {
     await _pump(tester);
     await tester.enterText(find.byKey(SchoolbookSettingsScreen.passwordKey), '4321');

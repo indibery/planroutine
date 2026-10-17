@@ -83,6 +83,9 @@ class SchoolbookStrings {
   static const passwordSaved = '저장한 비밀번호가 있어요';
   static const savePassword = '저장';
   static const clearPassword = '지우기';
+  static const savedPasswordLabel = '저장한 비밀번호';
+  static const revealPassword = '보기';
+  static const hidePassword = '가리기';
   static const disconnect = '연결 끊기';
   static const disconnectNote = '앱에 저장한 학교 연결과 비밀번호만 지웁니다. 스쿨북의 예약은 그대로 남아요';
 }

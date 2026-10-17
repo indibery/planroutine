@@ -19,6 +19,7 @@ class SchoolbookSettingsScreen extends ConsumerStatefulWidget {
   static const passwordKey = Key('schoolbook_settings_password');
   static const savePasswordKey = Key('schoolbook_settings_save_password');
   static const clearPasswordKey = Key('schoolbook_settings_clear_password');
+  static const revealPasswordKey = Key('schoolbook_settings_reveal_password');
   static const disconnectKey = Key('schoolbook_settings_disconnect');
 
   @override
@@ -29,7 +30,10 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
   final _booker = TextEditingController();
   final _password = TextEditingController();
   bool _changingLink = false;
-  bool _hasPassword = false;
+  /// 저장한 비밀번호. 화면에 숫자로 보이는 것은 [보기]를 누른 동안뿐이다 —
+  /// 바로 예약은 비밀번호를 보여 주지 않아, 취소할 때 잊었으면 여기서 확인한다(사용자 결정).
+  String? _savedPassword;
+  bool _revealed = false;
   bool _bookerFilled = false;
 
   @override
@@ -47,7 +51,12 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
 
   Future<void> _loadPassword() async {
     final saved = await ref.read(schoolbookPasswordStoreProvider).read();
-    if (mounted) setState(() => _hasPassword = saved != null);
+    if (mounted) {
+      setState(() {
+        _savedPassword = saved;
+        _revealed = false;
+      });
+    }
   }
 
   Future<void> _saveBooker() async {
@@ -143,7 +152,7 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   labelText: SchoolbookStrings.passwordFieldLabel,
-                  helperText: _hasPassword
+                  helperText: _savedPassword != null
                       ? SchoolbookStrings.passwordSaved
                       : SchoolbookStrings.passwordFieldHint,
                 ),
@@ -154,7 +163,40 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
                 child: const Text(SchoolbookStrings.savePassword),
               ),
             ),
-            if (_hasPassword)
+            if (_savedPassword case final saved?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.spacing16, 0, AppSizes.spacing8, 0,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      SchoolbookStrings.savedPasswordLabel,
+                      style: TextStyle(fontSize: 14, color: AppColors.sub),
+                    ),
+                    const SizedBox(width: AppSizes.spacing12),
+                    Text(
+                      _revealed ? saved : '••••',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                        letterSpacing: 2,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      key: SchoolbookSettingsScreen.revealPasswordKey,
+                      onPressed: () => setState(() => _revealed = !_revealed),
+                      child: Text(
+                        _revealed ? SchoolbookStrings.hidePassword : SchoolbookStrings.revealPassword,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_savedPassword != null)
               Align(
                 alignment: Alignment.centerRight,
                 child: Padding(
