@@ -47,7 +47,7 @@ Future<FakeSchoolbook> pumpSchoolbook(
     }),
   });
   FlutterSecureStorage.setMockInitialValues({
-    if (password != null) 'schoolbook_password_v1': password,
+    'schoolbook_password_v1': ?password,
   });
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
