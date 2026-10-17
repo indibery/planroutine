@@ -68,6 +68,11 @@ class SchoolbookStrings {
   static const defaultBookerLabel = '예약자 이름';
   static const defaultBookerHint = '예약할 때 미리 채워 둡니다';
   static const saveBooker = '저장';
+  static const passwordFieldLabel = '예약 비밀번호 (숫자 4자리)';
+  static const passwordFieldHint = '예약할 때 미리 채웁니다. 취소할 때는 다시 묻습니다';
+  static const passwordSaved = '저장한 비밀번호가 있어요';
+  static const savePassword = '저장';
+  static const clearPassword = '지우기';
   static const disconnect = '연결 끊기';
-  static const disconnectNote = '앱에 저장한 학교 연결만 지웁니다. 스쿨북의 예약은 그대로 남아요';
+  static const disconnectNote = '앱에 저장한 학교 연결과 비밀번호만 지웁니다. 스쿨북의 예약은 그대로 남아요';
 }
