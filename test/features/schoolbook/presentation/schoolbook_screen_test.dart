@@ -41,6 +41,9 @@ void main() {
 
     testWidgets('교실 칩에서 과학실을 고르면 과학실 하루가 뜨고 기억한다', (tester) async {
       await pumpSchoolbook(tester, lastRoomId: 1511);
+      // 최근 순서로 체육관이 앞에 오고 과학실은 긴 이름 칩 뒤 — 밀어서 누른다
+      await tester.ensureVisible(find.byKey(RoomChips.chipKey(1512)));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(RoomChips.chipKey(1512)));
       await settle(tester);
       expect(_chipSelected(tester, 1512), isTrue);

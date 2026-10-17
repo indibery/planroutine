@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planroutine/features/schoolbook/presentation/providers/schoolbook_providers.dart';
+import 'package:planroutine/shared/widgets/pill_chip.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planroutine/features/schoolbook/presentation/widgets/room_chips.dart';
 
 import '../fake_server.dart';
@@ -33,6 +38,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(RoomChips.moreRightKey), findsNothing);
     expect(find.byKey(RoomChips.moreLeftKey), findsOneWidget);
+  });
+
+  testWidgets('최근에 들어간 장소가 앞에 온다', (tester) async {
+    await pumpSchoolbook(tester, recentRoomIds: [1512, 1511]);
+    final chips = tester.widgetList<PillChip>(find.byType(PillChip)).map((c) => c.label).toList();
+    expect(chips, ['과학실', '체육관', '3층 다목적실 겸 방과후 돌봄교실']);
+  });
+
+  testWidgets('칩을 눌러도 지금 화면의 순서는 그대로, 다음에 열 때 앞으로 온다', (tester) async {
+    await pumpSchoolbook(tester, recentRoomIds: [1512, 1511]);
+    await tester.tap(find.byKey(RoomChips.chipKey(1513)));
+    await settle(tester);
+    List<String> labels() =>
+        tester.widgetList<PillChip>(find.byType(PillChip)).map((c) => c.label).toList();
+    expect(labels().first, '과학실');
+    final raw = (await SharedPreferences.getInstance()).getString(schoolbookSettingsPrefsKey);
+    expect((jsonDecode(raw ?? '{}') as Map)['recentRoomIds'], [1513, 1512, 1511]);
   });
 
   testWidgets('교실이 적어 한 줄에 다 들어가면 흐림이 없다', (tester) async {

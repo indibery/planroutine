@@ -7,6 +7,7 @@ import '../../../../shared/widgets/empty_state.dart';
 import '../../data/sb_result.dart';
 import '../../domain/booking_dates.dart';
 import '../../domain/period_row.dart';
+import '../../domain/room_order.dart';
 import '../../domain/schoolbook_models.dart';
 import '../providers/schoolbook_providers.dart';
 import '../widgets/book_sheet.dart';
@@ -33,6 +34,10 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     with WidgetsBindingObserver {
   late DateTime _day;
   int? _roomId;
+
+  /// 이 화면을 연 때의 최근 순서. 칩을 눌러도 지금 화면의 줄은 그대로 두고 다음에 열 때 반영한다 —
+  /// 누르자마자 칩이 앞으로 튀면 손가락 아래에서 줄이 움직인다.
+  List<int>? _recentAtOpen;
 
   /// 하루 예약이 `404`로 온 교실 — 지워진 교실이라 목록을 다시 불러도 고르지 않는다.
   final _gone = <int>{};
@@ -195,9 +200,10 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   }
 
   Widget _withRooms(List<SchoolbookRoom> all) {
-    final rooms = [for (final r in all) if (!_gone.contains(r.id)) r];
-    if (rooms.isEmpty) return const _Message(SchoolbookStrings.noRooms);
     final settings = ref.watch(schoolbookSettingsProvider).valueOrNull;
+    final recent = _recentAtOpen ??= settings?.recentRoomIds ?? const [];
+    final rooms = orderByRecent([for (final r in all) if (!_gone.contains(r.id)) r], recent);
+    if (rooms.isEmpty) return const _Message(SchoolbookStrings.noRooms);
     final wanted = _roomId ?? settings?.lastRoomId;
     final room = rooms.firstWhere((r) => r.id == wanted, orElse: () => rooms.first);
     _roomId = room.id;

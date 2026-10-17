@@ -6,12 +6,29 @@ void main() {
     code: 'abcdefghijk12',
     schoolName: '플랜테스트',
     lastRoomId: 12,
+    recentRoomIds: [12, 7],
     booker: '체육전담',
   );
 
-  test('저장 키는 넷뿐이다', () {
+  test('저장 키는 다섯뿐이다', () {
     expect(full.toJson().keys.toSet(),
-        {'code', 'schoolName', 'lastRoomId', 'booker'});
+        {'code', 'schoolName', 'lastRoomId', 'recentRoomIds', 'booker'});
+  });
+
+  test('최근 들어간 장소 목록을 되읽는다', () {
+    const s = SchoolbookSettings(recentRoomIds: [3, 1, 2]);
+    expect(SchoolbookSettings.fromJson(s.toJson()).recentRoomIds, [3, 1, 2]);
+  });
+
+  test('최근 목록이 없던 저장값은 마지막 교실 하나로 시작한다', () {
+    expect(SchoolbookSettings.fromJson({'lastRoomId': 12}).recentRoomIds, [12]);
+  });
+
+  test('최근 목록에 숫자가 아닌 값이 섞이면 버린다', () {
+    expect(
+      SchoolbookSettings.fromJson({'recentRoomIds': [3, 'x', 1.5, 2]}).recentRoomIds,
+      [3, 2],
+    );
   });
 
   test('되읽으면 같다', () {

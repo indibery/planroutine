@@ -78,6 +78,19 @@ void main() {
     expect(json['lastRoomId'], isNull);
   });
 
+  test('들어간 교실을 최근 목록 맨 앞에 쌓고, 학교를 다시 연결하면 비운다', () async {
+    final c = containerWith();
+    final n = c.read(schoolbookSettingsProvider.notifier);
+    await c.read(schoolbookSettingsProvider.future);
+    await n.setLastRoom(1);
+    await n.setLastRoom(2);
+    await n.setLastRoom(1);
+    expect(c.read(schoolbookSettingsProvider).value?.recentRoomIds, [1, 2]);
+    expect(c.read(schoolbookSettingsProvider).value?.lastRoomId, 1);
+    await n.connect(_info);
+    expect(c.read(schoolbookSettingsProvider).value?.recentRoomIds, isEmpty);
+  });
+
   test('예약자 이름은 앞뒤 공백을 정리하고, 비우면 null', () async {
     final c = containerWith();
     final n = c.read(schoolbookSettingsProvider.notifier);

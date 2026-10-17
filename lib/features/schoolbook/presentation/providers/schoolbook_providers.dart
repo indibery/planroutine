@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/sb_result.dart';
 import '../../data/schoolbook_api_client.dart';
 import '../../data/schoolbook_password_store.dart';
+import '../../domain/room_order.dart';
 import '../../domain/schoolbook_models.dart';
 import '../../domain/schoolbook_settings.dart';
 
@@ -50,7 +51,12 @@ class SchoolbookSettingsNotifier extends AsyncNotifier<SchoolbookSettings> {
 
   /// 학교를 (다시) 연결한다. 다른 학교일 수 있으니 마지막 교실은 비운다.
   Future<void> connect(SchoolInfo info) => _save(
-        _current.copyWith(code: info.code, schoolName: info.name, lastRoomId: null),
+        _current.copyWith(
+          code: info.code,
+          schoolName: info.name,
+          lastRoomId: null,
+          recentRoomIds: const [],
+        ),
       );
 
   /// 앱의 저장값(예약 비밀번호 포함)만 지운다. 스쿨북의 예약은 그대로다.
@@ -61,7 +67,10 @@ class SchoolbookSettingsNotifier extends AsyncNotifier<SchoolbookSettings> {
     await ref.read(schoolbookPasswordStoreProvider).delete();
   }
 
-  Future<void> setLastRoom(int roomId) => _save(_current.copyWith(lastRoomId: roomId));
+  Future<void> setLastRoom(int roomId) => _save(_current.copyWith(
+        lastRoomId: roomId,
+        recentRoomIds: pushRecent(_current.recentRoomIds, roomId),
+      ));
 
   Future<void> setBooker(String booker) {
     final trimmed = booker.trim();

@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SchoolbookSettings {
 
- String? get code; String? get schoolName; int? get lastRoomId; String? get booker;
+ String? get code; String? get schoolName; int? get lastRoomId;/// 최근에 들어간 교실, 앞이 가장 최근(최대 20곳). 교실 칩이 이 순서로 앞에 선다(사용자 결정).
+ List<int> get recentRoomIds; String? get booker;
 /// Create a copy of SchoolbookSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $SchoolbookSettingsCopyWith<SchoolbookSettings> get copyWith => _$SchoolbookSett
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SchoolbookSettings&&(identical(other.code, code) || other.code == code)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.lastRoomId, lastRoomId) || other.lastRoomId == lastRoomId)&&(identical(other.booker, booker) || other.booker == booker));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SchoolbookSettings&&(identical(other.code, code) || other.code == code)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.lastRoomId, lastRoomId) || other.lastRoomId == lastRoomId)&&const DeepCollectionEquality().equals(other.recentRoomIds, recentRoomIds)&&(identical(other.booker, booker) || other.booker == booker));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,code,schoolName,lastRoomId,booker);
+int get hashCode => Object.hash(runtimeType,code,schoolName,lastRoomId,const DeepCollectionEquality().hash(recentRoomIds),booker);
 
 @override
 String toString() {
-  return 'SchoolbookSettings(code: $code, schoolName: $schoolName, lastRoomId: $lastRoomId, booker: $booker)';
+  return 'SchoolbookSettings(code: $code, schoolName: $schoolName, lastRoomId: $lastRoomId, recentRoomIds: $recentRoomIds, booker: $booker)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $SchoolbookSettingsCopyWith<$Res>  {
   factory $SchoolbookSettingsCopyWith(SchoolbookSettings value, $Res Function(SchoolbookSettings) _then) = _$SchoolbookSettingsCopyWithImpl;
 @useResult
 $Res call({
- String? code, String? schoolName, int? lastRoomId, String? booker
+ String? code, String? schoolName, int? lastRoomId, List<int> recentRoomIds, String? booker
 });
 
 
@@ -62,12 +63,13 @@ class _$SchoolbookSettingsCopyWithImpl<$Res>
 
 /// Create a copy of SchoolbookSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? code = freezed,Object? schoolName = freezed,Object? lastRoomId = freezed,Object? booker = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? code = freezed,Object? schoolName = freezed,Object? lastRoomId = freezed,Object? recentRoomIds = null,Object? booker = freezed,}) {
   return _then(_self.copyWith(
 code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String?,schoolName: freezed == schoolName ? _self.schoolName : schoolName // ignore: cast_nullable_to_non_nullable
 as String?,lastRoomId: freezed == lastRoomId ? _self.lastRoomId : lastRoomId // ignore: cast_nullable_to_non_nullable
-as int?,booker: freezed == booker ? _self.booker : booker // ignore: cast_nullable_to_non_nullable
+as int?,recentRoomIds: null == recentRoomIds ? _self.recentRoomIds : recentRoomIds // ignore: cast_nullable_to_non_nullable
+as List<int>,booker: freezed == booker ? _self.booker : booker // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -153,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? code,  String? schoolName,  int? lastRoomId,  String? booker)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? code,  String? schoolName,  int? lastRoomId,  List<int> recentRoomIds,  String? booker)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SchoolbookSettings() when $default != null:
-return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case _:
+return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.recentRoomIds,_that.booker);case _:
   return orElse();
 
 }
@@ -174,10 +176,10 @@ return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? code,  String? schoolName,  int? lastRoomId,  String? booker)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? code,  String? schoolName,  int? lastRoomId,  List<int> recentRoomIds,  String? booker)  $default,) {final _that = this;
 switch (_that) {
 case _SchoolbookSettings():
-return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case _:
+return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.recentRoomIds,_that.booker);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +196,10 @@ return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? code,  String? schoolName,  int? lastRoomId,  String? booker)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? code,  String? schoolName,  int? lastRoomId,  List<int> recentRoomIds,  String? booker)?  $default,) {final _that = this;
 switch (_that) {
 case _SchoolbookSettings() when $default != null:
-return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case _:
+return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.recentRoomIds,_that.booker);case _:
   return null;
 
 }
@@ -209,12 +211,21 @@ return $default(_that.code,_that.schoolName,_that.lastRoomId,_that.booker);case 
 
 
 class _SchoolbookSettings extends SchoolbookSettings {
-  const _SchoolbookSettings({this.code, this.schoolName, this.lastRoomId, this.booker}): super._();
+  const _SchoolbookSettings({this.code, this.schoolName, this.lastRoomId, final  List<int> recentRoomIds = const <int>[], this.booker}): _recentRoomIds = recentRoomIds,super._();
   
 
 @override final  String? code;
 @override final  String? schoolName;
 @override final  int? lastRoomId;
+/// 최근에 들어간 교실, 앞이 가장 최근(최대 20곳). 교실 칩이 이 순서로 앞에 선다(사용자 결정).
+ final  List<int> _recentRoomIds;
+/// 최근에 들어간 교실, 앞이 가장 최근(최대 20곳). 교실 칩이 이 순서로 앞에 선다(사용자 결정).
+@override@JsonKey() List<int> get recentRoomIds {
+  if (_recentRoomIds is EqualUnmodifiableListView) return _recentRoomIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_recentRoomIds);
+}
+
 @override final  String? booker;
 
 /// Create a copy of SchoolbookSettings
@@ -227,16 +238,16 @@ _$SchoolbookSettingsCopyWith<_SchoolbookSettings> get copyWith => __$SchoolbookS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SchoolbookSettings&&(identical(other.code, code) || other.code == code)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.lastRoomId, lastRoomId) || other.lastRoomId == lastRoomId)&&(identical(other.booker, booker) || other.booker == booker));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SchoolbookSettings&&(identical(other.code, code) || other.code == code)&&(identical(other.schoolName, schoolName) || other.schoolName == schoolName)&&(identical(other.lastRoomId, lastRoomId) || other.lastRoomId == lastRoomId)&&const DeepCollectionEquality().equals(other._recentRoomIds, _recentRoomIds)&&(identical(other.booker, booker) || other.booker == booker));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,code,schoolName,lastRoomId,booker);
+int get hashCode => Object.hash(runtimeType,code,schoolName,lastRoomId,const DeepCollectionEquality().hash(_recentRoomIds),booker);
 
 @override
 String toString() {
-  return 'SchoolbookSettings(code: $code, schoolName: $schoolName, lastRoomId: $lastRoomId, booker: $booker)';
+  return 'SchoolbookSettings(code: $code, schoolName: $schoolName, lastRoomId: $lastRoomId, recentRoomIds: $recentRoomIds, booker: $booker)';
 }
 
 
@@ -247,7 +258,7 @@ abstract mixin class _$SchoolbookSettingsCopyWith<$Res> implements $SchoolbookSe
   factory _$SchoolbookSettingsCopyWith(_SchoolbookSettings value, $Res Function(_SchoolbookSettings) _then) = __$SchoolbookSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- String? code, String? schoolName, int? lastRoomId, String? booker
+ String? code, String? schoolName, int? lastRoomId, List<int> recentRoomIds, String? booker
 });
 
 
@@ -264,12 +275,13 @@ class __$SchoolbookSettingsCopyWithImpl<$Res>
 
 /// Create a copy of SchoolbookSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? code = freezed,Object? schoolName = freezed,Object? lastRoomId = freezed,Object? booker = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? code = freezed,Object? schoolName = freezed,Object? lastRoomId = freezed,Object? recentRoomIds = null,Object? booker = freezed,}) {
   return _then(_SchoolbookSettings(
 code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String?,schoolName: freezed == schoolName ? _self.schoolName : schoolName // ignore: cast_nullable_to_non_nullable
 as String?,lastRoomId: freezed == lastRoomId ? _self.lastRoomId : lastRoomId // ignore: cast_nullable_to_non_nullable
-as int?,booker: freezed == booker ? _self.booker : booker // ignore: cast_nullable_to_non_nullable
+as int?,recentRoomIds: null == recentRoomIds ? _self._recentRoomIds : recentRoomIds // ignore: cast_nullable_to_non_nullable
+as List<int>,booker: freezed == booker ? _self.booker : booker // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

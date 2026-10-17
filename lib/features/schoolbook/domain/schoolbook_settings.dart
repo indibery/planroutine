@@ -14,6 +14,9 @@ abstract class SchoolbookSettings with _$SchoolbookSettings {
     String? code,
     String? schoolName,
     int? lastRoomId,
+
+    /// 최근에 들어간 교실, 앞이 가장 최근(최대 20곳). 교실 칩이 이 순서로 앞에 선다(사용자 결정).
+    @Default(<int>[]) List<int> recentRoomIds,
     String? booker,
   }) = _SchoolbookSettings;
 
@@ -27,10 +30,16 @@ abstract class SchoolbookSettings with _$SchoolbookSettings {
       return value is T ? value : null;
     }
 
+    final last = read<int>('lastRoomId');
+    final recent = read<List<dynamic>>('recentRoomIds');
     return SchoolbookSettings(
       code: read<String>('code'),
       schoolName: read<String>('schoolName'),
-      lastRoomId: read<int>('lastRoomId'),
+      lastRoomId: last,
+      // 최근 목록이 생기기 전의 저장값은 마지막 교실 하나로 시작한다
+      recentRoomIds: recent == null
+          ? [?last]
+          : [for (final id in recent) if (id is int) id],
       booker: read<String>('booker'),
     );
   }
@@ -39,6 +48,7 @@ abstract class SchoolbookSettings with _$SchoolbookSettings {
         'code': code,
         'schoolName': schoolName,
         'lastRoomId': lastRoomId,
+        'recentRoomIds': recentRoomIds,
         'booker': booker,
       };
 }

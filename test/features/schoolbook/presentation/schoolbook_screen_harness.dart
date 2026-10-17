@@ -33,6 +33,7 @@ Future<FakeSchoolbook> pumpSchoolbook(
   WidgetTester tester, {
   Routes? routes,
   int? lastRoomId,
+  List<int>? recentRoomIds,
   String? booker,
   String? password,
   SchoolbookPasswordStore? passwordStore,
@@ -45,6 +46,7 @@ Future<FakeSchoolbook> pumpSchoolbook(
       'code': testCode,
       'schoolName': '플랜테스트',
       'lastRoomId': lastRoomId,
+      'recentRoomIds': ?recentRoomIds,
       'booker': booker,
     }),
   });
