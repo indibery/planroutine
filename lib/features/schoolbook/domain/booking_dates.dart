@@ -43,3 +43,34 @@ DateTime previousWeekday(DateTime day) {
   } while (!_isWeekday(d));
   return d;
 }
+
+DateTime _mondayOf(DateTime day) {
+  final d = _dateOnly(day);
+  return DateTime(d.year, d.month, d.day - (d.weekday - DateTime.monday));
+}
+
+/// 그 날이 든 주의 월~금(주간 날짜 띠).
+List<DateTime> weekOf(DateTime day) {
+  final monday = _mondayOf(day);
+  return [for (var i = 0; i < 5; i++) DateTime(monday.year, monday.month, monday.day + i)];
+}
+
+/// 지난주의 같은 요일. 지난 날은 조회만 하므로 하한이 없다.
+DateTime previousWeek(DateTime day) {
+  final d = _dateOnly(day);
+  return DateTime(d.year, d.month, d.day - 7);
+}
+
+/// 다음 주의 같은 요일. 그 주가 통째로 예약 가능 범위 밖이면 null(▶가 멈춘다).
+/// 같은 요일만 범위를 넘으면 그 주의 마지막 예약 가능일로 당긴다.
+DateTime? nextWeek(DateTime day, DateTime today) {
+  final last = lastBookableDate(today);
+  final monday = DateTime(_mondayOf(day).year, _mondayOf(day).month, _mondayOf(day).day + 7);
+  if (monday.isAfter(last)) return null;
+  final d = _dateOnly(day);
+  var next = DateTime(d.year, d.month, d.day + 7);
+  while (next.isAfter(last) || !_isWeekday(next)) {
+    next = DateTime(next.year, next.month, next.day - 1);
+  }
+  return next;
+}

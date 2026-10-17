@@ -22,9 +22,10 @@ PeriodRowView _row(
   int capacity = 1,
   bool bookableDay = true,
   bool pastDay = false,
+  String? myBooker,
 }) =>
     buildPeriodRow(slot,
-        capacity: capacity, bookableDay: bookableDay, pastDay: pastDay);
+        capacity: capacity, bookableDay: bookableDay, pastDay: pastDay, myBooker: myBooker);
 
 void main() {
   test('취소된 예약은 사람 목록에 없다', () {
@@ -40,7 +41,7 @@ void main() {
       remaining: 0,
       fixed: const ['3-2'],
       bookings: const [SlotBooking(id: 9, booker: '5-1', canceled: false)],
-    ), capacity: 2);
+    ), capacity: 2, myBooker: '5-1');
     final fixed = view.people.first;
     expect(fixed.fixed, isTrue);
     expect(fixed.cancellable, isFalse);
@@ -56,6 +57,7 @@ void main() {
       capacity: 2,
       bookableDay: false,
       pastDay: true,
+      myBooker: '5-1',
     );
     expect(view.selectable, isFalse);
     expect(view.people.single.cancellable, isFalse);
@@ -75,6 +77,68 @@ void main() {
 
   test('예약할 수 있으면 체크할 수 있다', () {
     expect(_row(_slot()).selectable, isTrue);
+  });
+
+  group('내 예약 — 저장한 예약자 이름과 같은 예약', () {
+    final slot = _slot(remaining: 1, bookings: const [
+      SlotBooking(id: 1, booker: '5-1', canceled: false),
+      SlotBooking(id: 2, booker: '체육전담', canceled: false),
+    ]);
+
+    test('내 예약만 강조되고 취소할 수 있다', () {
+      final view = _row(slot, capacity: 3, myBooker: '체육전담');
+      final mine = view.people.firstWhere((p) => p.label == '체육전담');
+      final other = view.people.firstWhere((p) => p.label == '5-1');
+      expect(mine.mine, isTrue);
+      expect(mine.cancellable, isTrue);
+      expect(other.mine, isFalse);
+      expect(other.cancellable, isFalse);
+    });
+
+    test('내 예약이 있으면 줄 버튼은 취소 — 자리가 남아도', () {
+      final view = _row(slot, capacity: 3, myBooker: '체육전담');
+      expect(view.action, RowAction.cancel);
+      expect(view.myBooking?.bookingId, 2);
+    });
+
+    test('내 예약이 없고 자리가 남았으면 예약', () {
+      expect(_row(slot, capacity: 3, myBooker: '6-3').action, RowAction.book);
+    });
+
+    test('다 찼으면 버튼 없음', () {
+      expect(_row(_slot(remaining: 0), myBooker: '6-3').action, RowAction.none);
+    });
+
+    test('지난 날의 내 예약은 버튼 없음(취소 불가)', () {
+      expect(
+        _row(slot, capacity: 3, myBooker: '체육전담', bookableDay: false, pastDay: true).action,
+        RowAction.none,
+      );
+    });
+
+    test('예약자를 저장하지 않았으면 내 예약이 없다', () {
+      final view = _row(slot, capacity: 3);
+      expect(view.people.any((p) => p.mine), isFalse);
+      expect(view.action, RowAction.book);
+    });
+
+    test('이름 앞뒤 공백은 같은 사람으로 본다', () {
+      final view = _row(
+        _slot(bookings: const [SlotBooking(id: 7, booker: ' 체육전담 ', canceled: false)]),
+        capacity: 2,
+        myBooker: '체육전담',
+      );
+      expect(view.myBooking?.bookingId, 7);
+    });
+
+    test('설정 때문에 취소된 내 예약은 내 예약이 아니다', () {
+      final view = _row(
+        _slot(remaining: 1, bookings: const [SlotBooking(id: 7, booker: '체육전담', canceled: true)]),
+        myBooker: '체육전담',
+      );
+      expect(view.myBooking, isNull);
+      expect(view.action, RowAction.book);
+    });
   });
 
   group('남은 자리 표기', () {
