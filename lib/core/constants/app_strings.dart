@@ -17,6 +17,7 @@ export 'strings/import_strings.dart';
 export 'strings/memo_strings.dart';
 export 'strings/notification_strings.dart';
 export 'strings/schedule_strings.dart';
+export 'strings/schoolbook_strings.dart';
 export 'strings/settings_strings.dart';
 export 'strings/today_strings.dart';
 export 'strings/trash_strings.dart';

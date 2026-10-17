@@ -14,6 +14,8 @@ import '../../features/memo/presentation/screens/memo_board_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/schedule/presentation/screens/schedule_screen.dart';
+import '../../features/schoolbook/presentation/screens/schoolbook_screen.dart';
+import '../../features/schoolbook/presentation/screens/schoolbook_settings_screen.dart';
 import '../../features/settings/presentation/screens/bus_settings_screen.dart';
 import '../../features/settings/presentation/screens/modules_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -47,6 +49,8 @@ class AppRoutes {
   static const busStops = '/bus/stops';
   static const busSettings = '/bus/settings';
   static const modules = '/modules';
+  static const schoolbook = '/schoolbook';
+  static const schoolbookSettings = '/schoolbook/settings';
 }
 
 /// 외부 앱이 CSV로 앱을 열었을 때 Flutter가 초기 라우트로 넘기는 URL인지.
@@ -111,6 +115,11 @@ GoRouter createRouter({
           path: AppRoutes.memo,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: MemoBoardScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.schoolbook,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SchoolbookScreen()),
         ),
         // 지도 기록(선택 탭). 탭의 모든 화면이 이 **중첩 셸** 아래에 있다 — 다른 탭으로
         // `go`하면 셸은 dispose되지만, 잠금 상태는 guidanceUnlockProvider가 들고 있어
@@ -202,6 +211,12 @@ GoRouter createRouter({
           path: AppRoutes.busSettings,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: BusSettingsScreen()),
+        ),
+        // 장소 예약 상세 설정 — 기능 관리의 `상세 설정`과 탭의 ⚙에서 push.
+        GoRoute(
+          path: AppRoutes.schoolbookSettings,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SchoolbookSettingsScreen()),
         ),
         GoRoute(
           path: AppRoutes.busStops,

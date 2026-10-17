@@ -17,6 +17,7 @@ const _shippedIds = [
   ModuleIds.settings,
   ModuleIds.bus,
   ModuleIds.guidance,
+  ModuleIds.schoolbook,
 ];
 
 List<String> _paths(List<RouteBase> routes) => [

@@ -16,6 +16,7 @@ const _tabScreens = [
   'lib/features/settings/presentation/screens/settings_screen.dart',
   'lib/features/memo/presentation/screens/memo_board_screen.dart',
   'lib/features/guidance/presentation/screens/guidance_list_screen.dart',
+  'lib/features/schoolbook/presentation/screens/schoolbook_screen.dart',
 ];
 
 const _emptyStateScreens = [
@@ -24,6 +25,7 @@ const _emptyStateScreens = [
   'lib/features/memo/presentation/screens/memo_board_screen.dart',
   'lib/features/guidance/presentation/screens/guidance_list_screen.dart',
   'lib/features/guidance/presentation/screens/guidance_trash_screen.dart',
+  'lib/features/schoolbook/presentation/screens/schoolbook_screen.dart',
 ];
 
 /// [open] 바로 뒤(여는 괄호 다음)부터 짝이 맞는 닫는 괄호까지 — 한 호출의 인자 전체.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/bus/presentation/widgets/bus_card_host.dart';
 import '../../features/bus/presentation/widgets/bus_module_summary.dart';
+import '../../features/schoolbook/presentation/widgets/schoolbook_module_summary.dart';
 import '../constants/app_strings.dart';
 import '../router/app_router.dart';
 import 'app_module.dart';
@@ -21,6 +22,13 @@ const guidanceTab = ModuleTab(
   icon: Icons.lock_outline,
   activeIcon: Icons.lock,
   label: GuidanceStrings.tabLabel,
+);
+
+const schoolbookTab = ModuleTab(
+  route: AppRoutes.schoolbook,
+  icon: Icons.meeting_room_outlined,
+  activeIcon: Icons.meeting_room,
+  label: SchoolbookStrings.tabLabel,
 );
 
 /// 기능 등록부. **새 기능은 여기에 한 항목만 더한다.**
@@ -85,5 +93,15 @@ const moduleCatalog = <AppModule>[
     icon: Icons.lock_outline,
     placement: ModulePlacement.tab,
     tab: guidanceTab,
+  ),
+  AppModule(
+    id: ModuleIds.schoolbook,
+    name: SchoolbookStrings.title,
+    description: SchoolbookStrings.moduleDescription,
+    icon: Icons.meeting_room_outlined,
+    placement: ModulePlacement.tab,
+    tab: schoolbookTab,
+    settingsRoute: AppRoutes.schoolbookSettings,
+    settingsSummary: SchoolbookModuleSummary(),
   ),
 ];
