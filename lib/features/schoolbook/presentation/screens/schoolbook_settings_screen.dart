@@ -131,6 +131,7 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
                 decoration: const InputDecoration(
                   labelText: SchoolbookStrings.defaultBookerLabel,
                   helperText: SchoolbookStrings.defaultBookerHint,
+                  helperMaxLines: 2, // 한 줄이면 '같은 이…'로 잘렸다(시뮬레이터)
                 ),
               ),
               button: TextButton(
@@ -155,6 +156,7 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
                   helperText: _savedPassword != null
                       ? SchoolbookStrings.passwordSaved
                       : SchoolbookStrings.passwordFieldHint,
+                  helperMaxLines: 2,
                 ),
               ),
               button: TextButton(
