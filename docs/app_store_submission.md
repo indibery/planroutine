@@ -100,6 +100,9 @@ App Store Connect → App Privacy → "Data Types":
 - 알림 설정: SharedPreferences에 로컬 저장
 - 로그인·계정: 없음 (Google 기능은 이번 버전에서 UI 비활성)
 - 분석/추적: 없음
+- 버스 조회·장소 예약(스쿨북, 1.4.2): 기기에서 공공 API·스쿨북 서버로 직접 요청한다. Apple의 "collect"는
+  개발자나 개발자가 넣은 SDK·벤더(third-party partners)가 접근하는 경우만 뜻하는데, 두 수신처 모두
+  어느 쪽도 아니고 개발자 서버를 거치지 않는다 → "Data Not Collected" 유지 (2026-10-22 판단)
 
 **Tracking**: "No, this app does not track users." 선택
 
