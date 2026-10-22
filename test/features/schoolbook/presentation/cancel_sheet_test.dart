@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:planroutine/core/constants/app_strings.dart';
@@ -33,13 +34,54 @@ Future<void> _submit(WidgetTester tester, String password) async {
 }
 
 void main() {
-  testWidgets('내 예약의 [취소]를 누르면 빈 비밀번호 칸으로 시트가 뜨고, 취소된다', (tester) async {
+  testWidgets('저장한 비밀번호가 있으면 [취소]를 누르는 즉시 시트 없이 취소된다', (tester) async {
     final routes = defaultRoutes()..[_delete] = (_) => http.Response('', 204);
     final server = await pumpSchoolbook(tester,
         routes: routes, lastRoomId: 1511, booker: '5-1', password: '1234');
+    await tester.tap(find.byKey(PeriodRowTile.cancelKey('3교시')));
+    await settle(tester);
+    expect(find.byType(CancelSheet), findsNothing);
+    final req = server.requests.lastWhere((r) => r.method == 'DELETE');
+    expect(jsonDecode(req.body), {'password': '1234'});
+    expect(find.text(SchoolbookStrings.canceled), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('바로 취소하는 동안 그 줄은 `취소 중…`이고 DELETE는 한 번만 나간다', (tester) async {
+    final gate = Completer<http.Response>();
+    final routes = defaultRoutes()..[_delete] = (_) => gate.future;
+    final server = await pumpSchoolbook(tester,
+        routes: routes, lastRoomId: 1511, booker: '5-1', password: '1234');
+    await tester.tap(find.byKey(PeriodRowTile.cancelKey('3교시')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(SchoolbookStrings.canceling), findsOneWidget);
+    expect(find.byKey(PeriodRowTile.cancelKey('3교시')), findsNothing);
+    gate.complete(http.Response('', 204));
+    await settle(tester);
+    expect(server.requests.where((r) => r.method == 'DELETE'), hasLength(1));
+    expect(find.text(SchoolbookStrings.canceled), findsOneWidget);
+  });
+
+  testWidgets('저장한 비밀번호가 틀리면 빈 칸 시트에 서버 문구를 띄운다', (tester) async {
+    final routes = defaultRoutes()..[_delete] = (_) => fixtureResponse('cancel_wrong_password');
+    await pumpSchoolbook(tester,
+        routes: routes, lastRoomId: 1511, booker: '5-1', password: '9999');
+    await tester.tap(find.byKey(PeriodRowTile.cancelKey('3교시')));
+    await settle(tester);
+    expect(find.byType(CancelSheet), findsOneWidget);
+    expect(find.text('비밀번호가 맞지 않습니다.'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byKey(CancelSheet.passwordKey)).controller?.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('저장한 비밀번호가 없으면 빈 칸 시트로 묻고, 성공하면 기억한다', (tester) async {
+    final routes = defaultRoutes()..[_delete] = (_) => http.Response('', 204);
+    final server = await pumpSchoolbook(tester, routes: routes, lastRoomId: 1511, booker: '5-1');
     await _openCancel(tester);
     expect(find.text(SchoolbookStrings.cancelSheetTitle('5-1', '3교시')), findsOneWidget);
-    // 저장한 비밀번호를 채우지 않는다 — 취소는 매번 묻는다(사용자 결정)
     expect(
       tester.widget<TextField>(find.byKey(CancelSheet.passwordKey)).controller?.text,
       isEmpty,
@@ -50,18 +92,21 @@ void main() {
     expect(jsonDecode(req.body), {'password': '1234'});
     expect(find.byType(CancelSheet), findsNothing);
     expect(find.text(SchoolbookStrings.canceled), findsOneWidget);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(await const FlutterSecureStorage().read(key: 'schoolbook_password_v1'), '1234');
   });
 
   testWidgets('시트를 열면 떠 있던 알림을 닫는다 — 시트 안 오류 문구를 가리지 않게', (tester) async {
     final routes = defaultRoutes()
-      ..['POST /api/rooms/1511/bookings/'] = ((_) => fixtureResponse('book_ok'));
+      ..['POST /api/rooms/1511/bookings/'] = ((_) => fixtureResponse('book_ok'))
+      ..[_delete] = (_) => fixtureResponse('cancel_wrong_password');
     await pumpSchoolbook(tester,
         routes: routes, lastRoomId: 1511, booker: '5-1', password: '1234');
     await tester.tap(find.byKey(PeriodRowTile.bookKey('2교시')));
     await settle(tester);
     expect(find.byType(SnackBar), findsOneWidget);
-    await _openCancel(tester);
+    // 저장한 비밀번호가 틀려 시트로 넘어간다
+    await tester.tap(find.byKey(PeriodRowTile.cancelKey('3교시')));
+    await settle(tester);
     expect(find.byType(CancelSheet), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
   });

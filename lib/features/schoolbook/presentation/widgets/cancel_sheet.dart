@@ -14,12 +14,14 @@ enum CancelSheetResult { canceled, unknown }
 
 typedef CancelSubmit = Future<SbResult<void>> Function(String password);
 
-/// 취소 시트. **저장한 비밀번호를 채우지 않는다** — 취소는 매번 묻는다(사용자 결정).
+/// 취소 시트. 저장한 비밀번호가 없거나 틀렸을 때만 뜬다 — **저장값을 채우지 않는다**(틀린 값을 또 보내지 않게).
+/// [initialError]는 바로 취소가 거부된 사유(예: 비밀번호가 맞지 않습니다).
 Future<CancelSheetResult?> showCancelSheet(
   BuildContext context, {
   required String booker,
   required String periodName,
   required CancelSubmit submit,
+  String? initialError,
 }) {
   return showModalBottomSheet<CancelSheetResult>(
     context: context,
@@ -28,7 +30,12 @@ Future<CancelSheetResult?> showCancelSheet(
     // 끌어서 닫기는 PopScope를 거치지 않는다 — 요청 중에 닫히면 결과가 조용히 사라진다
     enableDrag: false,
     builder: (_) =>
-        CancelSheet(booker: booker, periodName: periodName, submit: submit),
+        CancelSheet(
+          booker: booker,
+          periodName: periodName,
+          submit: submit,
+          initialError: initialError,
+        ),
   );
 }
 
@@ -38,11 +45,13 @@ class CancelSheet extends StatefulWidget {
     required this.booker,
     required this.periodName,
     required this.submit,
+    this.initialError,
   });
 
   final String booker;
   final String periodName;
   final CancelSubmit submit;
+  final String? initialError;
 
   static const passwordKey = Key('schoolbook_cancel_password');
   static const submitKey = Key('schoolbook_cancel_submit');
@@ -54,7 +63,7 @@ class CancelSheet extends StatefulWidget {
 class _CancelSheetState extends State<CancelSheet> {
   final _password = TextEditingController();
   bool _busy = false;
-  String? _error;
+  late String? _error = widget.initialError;
 
   @override
   void dispose() {

@@ -42,7 +42,7 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
   /// 하루 예약이 `404`로 온 교실 — 지워진 교실이라 목록을 다시 불러도 고르지 않는다.
   final _gone = <int>{};
 
-  /// 바로 예약 요청이 도는 교시 — 그동안 버튼 대신 `예약 중…`(두 번 예약되지 않게).
+  /// 바로 예약·취소 요청이 도는 교시 — 그동안 버튼 대신 `예약 중…`/`취소 중…`(두 번 보내지 않게).
   /// 비밀번호를 읽기 **전에** 잡고, 다시 불러온 목록이 도착한 **뒤에** 푼다 — 그 사이에
   /// 버튼이 다시 보이면 같은 교시를 또 보내게 되고 서버에는 중복 방지가 없다(최종 리뷰).
   final _pending = <_PendingKey>{};
@@ -157,22 +157,65 @@ class _SchoolbookDayBodyState extends ConsumerState<SchoolbookDayBody>
     });
   }
 
-  /// 내 예약 취소 — 비밀번호를 매번 묻는다(사용자 결정).
+  /// 내 예약 취소 — 저장한 비밀번호가 있으면 **그 자리에서 바로** 취소한다(사용자 결정 2026-10-22,
+  /// 매번 묻던 것이 불편했다). 없거나 거부되면 빈 비밀번호 시트로 묻고, 성공하면 저장한다.
+  /// 잠금은 예약과 같은 키·같은 순서 — 서버에 중복 방지가 없다.
   Future<void> _cancel(SchoolbookRoom room, PeriodSlot slot, PersonChip mine) async {
     final code = ref.read(schoolbookSettingsProvider).valueOrNull?.code;
     final bookingId = mine.bookingId;
-    if (code == null || bookingId == null || !mine.cancellable) return;
     final day = _day;
+    final pendingKey = (roomId: room.id, date: day, periodId: slot.id);
+    if (code == null ||
+        bookingId == null ||
+        !mine.cancellable ||
+        _pending.contains(pendingKey)) {
+      return;
+    }
+    setState(() => _pending.add(pendingKey));
+    final dayKey = (roomId: room.id, date: day);
+    final password = await ref.read(schoolbookPasswordStoreProvider).read();
+    if (!mounted) return;
+
+    Future<SbResult<void>> send(String password) => ref
+        .read(schoolbookApiClientProvider)
+        .cancel(code, room.id, bookingId, password: password);
+
+    String? rejected;
+    if (password != null) {
+      final r = await send(password);
+      if (!mounted) return;
+      if (r.outcome case SbOutcome.ok || SbOutcome.network || SbOutcome.notFound) {
+        ref.invalidate(roomDayProvider(dayKey));
+        await ref.read(roomDayProvider(dayKey).future);
+        if (!mounted) return;
+        setState(() => _pending.remove(pendingKey));
+        _snack(switch (r.outcome) {
+          SbOutcome.ok => SchoolbookStrings.canceled,
+          SbOutcome.notFound => SchoolbookStrings.alreadyCanceled,
+          _ => SchoolbookStrings.resultUnknown,
+        });
+        return;
+      }
+      // 웹에서 비밀번호를 바꿨을 수 있다 — 시트에서 다시 묻는다
+      rejected = r.detail ?? SchoolbookStrings.loadFailed;
+    }
+    // 시트로 간다 — 시트가 스스로 요청 중 잠금을 한다
+    setState(() => _pending.remove(pendingKey));
+
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     final result = await showCancelSheet(
       context,
       booker: mine.label,
       periodName: slot.name,
+      initialError: rejected,
       submit: (password) async {
-        final r = await ref
-            .read(schoolbookApiClientProvider)
-            .cancel(code, room.id, bookingId, password: password);
-        if (r.outcome == SbOutcome.notFound) _reloadDay(room.id, day);
+        final r = await send(password);
+        if (r.outcome == SbOutcome.ok) {
+          // 다음부터 바로 취소·예약된다
+          await ref.read(schoolbookPasswordStoreProvider).write(password);
+        } else if (r.outcome == SbOutcome.notFound) {
+          _reloadDay(room.id, day);
+        }
         return r;
       },
     );

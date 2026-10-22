@@ -40,6 +40,7 @@ class SchoolbookStrings {
   static const bookAction = '예약';
   static const cancelAction = '취소';
   static const booking = '예약 중…';
+  static const canceling = '취소 중…';
   static String bookPeriod(String period) => '$period 예약';
   static String cancelPeriod(String period) => '$period 내 예약 취소';
   static String mine(String booker) => '내 예약 $booker';
@@ -79,7 +80,7 @@ class SchoolbookStrings {
   static const saveBooker = '저장';
   static const bookerSaved = '예약자 이름을 저장했어요';
   static const passwordFieldLabel = '예약 비밀번호 (숫자 4자리)';
-  static const passwordFieldHint = '예약할 때 미리 채웁니다. 취소할 때는 다시 묻습니다';
+  static const passwordFieldHint = '저장해 두면 예약·취소할 때 묻지 않습니다';
   static const passwordSaved = '저장한 비밀번호가 있어요';
   static const savePassword = '저장';
   static const clearPassword = '지우기';
