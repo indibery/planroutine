@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/widgets/button_semantics.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/tab_header_title.dart';
+import '../../domain/schoolbook_link.dart';
 import '../providers/schoolbook_providers.dart';
+import '../widgets/open_schoolbook_url.dart';
 import '../widgets/schoolbook_connect_view.dart';
 import 'schoolbook_day_body.dart';
 
@@ -58,24 +61,62 @@ class SchoolbookScreen extends ConsumerWidget {
   }
 }
 
-class _ConnectBody extends StatelessWidget {
+class _ConnectBody extends ConsumerWidget {
   const _ConnectBody();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.pagePadding,
-        vertical: AppSizes.spacing32,
+        vertical: AppSizes.spacing24,
       ),
-      children: const [
-        EmptyState(
+      children: [
+        // 처음 켠 사람이 실제로 마주치는 자리라 스쿨북 소개와 제작자를 여기 둔다
+        Container(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.spacing16, AppSizes.spacing16, AppSizes.spacing16, AppSizes.spacing4,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(AppSizes.radius14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                SchoolbookStrings.intro,
+                style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.ink),
+              ),
+              TextButton(
+                onPressed: () => openSchoolbookUrl(context, ref, schoolbookSiteUrl),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                child: const Text(SchoolbookStrings.openSite),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSizes.spacing24),
+        const EmptyState(
           icon: Icons.meeting_room_outlined,
           title: SchoolbookStrings.connectTitle,
           hint: SchoolbookStrings.connectHint,
         ),
-        SizedBox(height: AppSizes.spacing24),
-        SchoolbookConnectView(),
+        const SizedBox(height: AppSizes.spacing24),
+        const SchoolbookConnectView(),
+        const SizedBox(height: AppSizes.spacing24),
+        // 학교가 아직 스쿨북을 쓰지 않는 선생님에게 시작하는 길
+        Text(
+          SchoolbookStrings.joinPrompt,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: AppColors.sub),
+        ),
+        Center(
+          child: TextButton(
+            onPressed: () => openSchoolbookUrl(context, ref, schoolbookSiteUrl),
+            child: const Text(SchoolbookStrings.joinAction),
+          ),
+        ),
       ],
     );
   }

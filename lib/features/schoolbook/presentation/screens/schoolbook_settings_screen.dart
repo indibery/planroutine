@@ -6,7 +6,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../domain/schoolbook_link.dart';
 import '../providers/schoolbook_providers.dart';
+import '../widgets/open_schoolbook_url.dart';
 import '../widgets/schoolbook_connect_view.dart';
 
 /// 장소 예약 상세 설정(`기능 관리 › 장소 예약 › 상세 설정`, 탭의 ⚙).
@@ -21,6 +23,7 @@ class SchoolbookSettingsScreen extends ConsumerStatefulWidget {
   static const clearPasswordKey = Key('schoolbook_settings_clear_password');
   static const revealPasswordKey = Key('schoolbook_settings_reveal_password');
   static const disconnectKey = Key('schoolbook_settings_disconnect');
+  static const openWebKey = Key('schoolbook_settings_open_web');
 
   @override
   ConsumerState<SchoolbookSettingsScreen> createState() => _SchoolbookSettingsScreenState();
@@ -220,6 +223,17 @@ class _SchoolbookSettingsScreenState extends ConsumerState<SchoolbookSettingsScr
               subtitle: const Text(SchoolbookStrings.disconnectNote),
               onTap: _disconnect,
             ),
+            // 교시·교실·물품 관리는 웹에서 한다 — 그 웹으로 가는 길
+            if (settings?.code case final code?)
+              ListTile(
+                key: SchoolbookSettingsScreen.openWebKey,
+                title: Text(
+                  SchoolbookStrings.openWeb,
+                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                ),
+                trailing: const Text(SchoolbookStrings.openWebHint),
+                onTap: () => openSchoolbookUrl(context, ref, schoolbookSchoolUrl(code)),
+              ),
           ],
         ],
       ),

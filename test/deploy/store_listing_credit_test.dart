@@ -166,6 +166,17 @@ void main() {
       }
     });
 
+    test('스쿨북이 출처 절에 사이트 주소·제작자·감사와 함께 있다', () {
+      // 장소 예약은 스쿨북 제작자(CODER 승쨩)의 허락과 협조로 붙였다(사용자 결정 2026-10-23).
+      // 앱 안(설정 › 함께 만든 서비스)과 같은 호칭을 스토어에도 쓴다.
+      for (final (store, path) in _docs.entries.map((e) => (e.key, e.value))) {
+        final section = _sourceSection(path);
+        expect(section, contains('https://schoolbook.zzolab.com'), reason: '$store 출처 절에 스쿨북 주소가 없다');
+        expect(section, contains(SchoolbookStrings.maker), reason: '$store 출처 절에 제작자 호칭이 없다');
+        expect(section, contains('감사'), reason: '$store 출처 절에 감사 문장이 없다');
+      }
+    });
+
     test('호출하는 기관이 두 문서의 출처 절에 적혀 있다', () {
       final src = busApiClientSource();
 

@@ -2,6 +2,12 @@
 /// 교실을 고른 채 복사하면 `/<코드>/room/12`처럼 뒤에 경로가 붙는다.
 const schoolbookHost = 'schoolbook.zzolab.com';
 
+/// 스쿨북 첫 화면 — 소개와 `우리 학교 가입`이 여기 있다.
+const schoolbookSiteUrl = 'https://$schoolbookHost';
+
+/// 연결한 학교의 스쿨북 웹 주소(교시·교실·물품 관리는 웹에서 한다).
+String schoolbookSchoolUrl(String code) => '$schoolbookSiteUrl/$code';
+
 final _codePattern = RegExp(r'^[a-z0-9]{13}$');
 
 /// 붙여 넣은 글에서 학교 코드(13자)를 뽑는다. 코드만 붙여 넣어도 된다.

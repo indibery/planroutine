@@ -17,6 +17,25 @@ class SchoolbookStrings {
   static String connected(String school) => '$school에 연결했어요';
   static const summaryNotConnected = '학교를 연결해 주세요';
 
+  // 스쿨북 안내 · 제작자 감사(호칭은 제작자가 사이트에서 쓰는 이름 — 사용자 결정 2026-10-23)
+  static const maker = 'CODER 승쨩';
+  static const intro =
+      '스쿨북은 $maker 선생님이 만든 학교 장소·물품 예약 서비스예요. 아이디·비밀번호 없이 학교 링크 하나로 함께 씁니다.';
+  static const openSite = '스쿨북 사이트 열기';
+  static const joinPrompt = '우리 학교가 아직 스쿨북을 쓰지 않나요?';
+  static const joinAction = '스쿨북에서 학교 가입하기';
+  static const openWeb = '스쿨북 웹에서 열기';
+  static const openWebHint = '교시·교실·물품 관리';
+  static const openFailed = '사이트를 열지 못했어요';
+  static const creditTitle = '함께 만든 서비스';
+  static const creditSubtitle = '장소 예약 — 스쿨북 · $maker 선생님';
+  static const creditService = '스쿨북 — 학교의 모든 예약';
+  static const creditMaker = '만든 사람 · $maker 선생님';
+  static const creditThanks =
+      '공직플랜의 장소 예약은 스쿨북을 만든 $maker 선생님이 연결을 허락하고 도와주셔서 만들 수 있었습니다. 고맙습니다.';
+  static const creditContact =
+      '스쿨북 자체에 대한 문의·제보는 스쿨북 사이트로, 앱 사용 문의는 공직플랜으로 보내 주세요.';
+
   // 오류 · 빈 상태
   static const loadFailed = '불러오지 못했어요';
   static const retry = '다시 시도';

@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../shared/widgets/tab_header_title.dart';
+import '../../../schoolbook/presentation/widgets/schoolbook_credit_tile.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/app_info_list_tile.dart';
 import '../widgets/data_source_list_tile.dart';
@@ -83,6 +84,8 @@ class SettingsScreen extends ConsumerWidget {
           // 법적 표시(Play User Data 정책)라 탭 가능한 별 섹션으로 둔다 —
           // 아래 앱 정보 Column(정보성, 탭 없음)에 섞지 않는다.
           const SettingsSection(child: PrivacyPolicyListTile()),
+          // 장소 예약이 기대는 스쿨북과 제작자에게 남기는 감사 — 탭이 있는 행이라 아래 정보 블록과 따로 둔다
+          const SettingsSection(child: SchoolbookCreditTile()),
           const SettingsSection(
             showDivider: false,
             // 출처 표시는 앱 정보 아래에 붙인다 — 둘 다 정보성이고 탭이 없다.

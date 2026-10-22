@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/sb_result.dart';
 import '../../data/schoolbook_api_client.dart';
@@ -16,6 +17,15 @@ const schoolbookSettingsPrefsKey = 'schoolbook_settings_v1';
 
 final schoolbookApiClientProvider =
     Provider<SchoolbookApiClient>((ref) => SchoolbookApiClient());
+
+/// 스쿨북 웹을 바깥 브라우저로 연다. 열지 못하면 던진다(호출부가 알림을 띄운다).
+/// `launchUrl`은 위젯 테스트에서 부를 수 없어 provider로 감쌌다.
+final schoolbookUrlOpenerProvider = Provider<Future<void> Function(String url)>(
+  (ref) => (url) async {
+    final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    if (!opened) throw Exception('launchUrl returned false: $url');
+  },
+);
 
 /// 예약 비밀번호 보안 저장소. 설정 JSON과 따로 둔다.
 final schoolbookPasswordStoreProvider =
