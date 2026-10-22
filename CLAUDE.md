@@ -1845,6 +1845,8 @@ Android 16(API 36) 에뮬레이터 실측 — 3버튼 내비게이션에서 **ba
   `TestFlight 최신 + 1`로 둔다. 계산식·정렬 마모·거부된 빌드가 번호를 먹는 함정은 런북.
 - **Android `beta`는 업로드 즉시 Play 심사로 들어간다**(`release_status: "completed"`).
   트랙 `internal`은 비공개 테스트 14일 요건을 **하루도 세지 않는다** — 착각하면 되돌릴 수 없다.
+- **안드로이드 출시는 `internal` → 실기기 확인 → `production`(출처 internal, 재빌드 없음)이다**(사용자 결정 2026-10-22).
+  비공개 테스트(`beta`)는 거치지 않는다 — 프로덕션 액세스 뒤로 14일 요건이 없고, 거치면 같은 바이너리로 심사만 두 번 기다린다.
 - **실기기 확인은 `internal` 레인이다**(iOS `beta`=TestFlight 자리). 심사를 기다리지 않아
   반복해도 심사를 소모하지 않는다. 대가는 **versionCode를 영구히 소비**하는 것 —
   Play는 앱 단위로 유일성을 요구해 트랙별 번호 공간이 없고, `VERSION_SCAN_TRACKS`에

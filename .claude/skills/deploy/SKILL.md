@@ -301,10 +301,10 @@ fastlane 5개 레인(`check_tago_key`/`check_play_key`/`build_aab`/`bootstrap`/`
 | `bootstrap` | `build_aab` + internal 트랙 draft 업로드(패키지명 확정용, 최초 1회만) | 필요 | `internal`(draft) | clean |
 | `internal` | 가드 → versionCode 계산 → `build_aab` → **내부 테스트** 업로드 | 필요 | `internal` | clean |
 | `beta` | 가드 → versionCode 계산 → `build_aab` → **비공개 테스트** 업로드 | 필요 | `Alpha`(비공개 테스트) | clean |
-| `production` | 비공개 테스트 빌드를 **프로덕션으로 승격**(재빌드 없음) | 필요 | `production` | **되돌릴 수 없음** |
+| `production` | 내부 테스트 빌드를 **프로덕션으로 승격**(재빌드 없음, `from:alpha`로 옛 경로) | 필요 | `production` | **되돌릴 수 없음** |
 
 ```bash
-./android/bin/fastlane.sh production                    # 최신 alpha 빌드를 draft로 승격 (기본)
+./android/bin/fastlane.sh production                    # 최신 internal 빌드를 draft로 승격 (기본)
 ./android/bin/fastlane.sh production code:151           # 승격할 versionCode 지정
 ./android/bin/fastlane.sh production status:completed   # 실제 출시 (전체 사용자)
 ./android/bin/fastlane.sh production rollout:0.1        # 10%부터 단계적 출시
@@ -427,17 +427,22 @@ flutter drive --driver=test_driver/integration_test.dart \
 
 ### 프로덕션 승격 (`production`)
 
-**재빌드하지 않는다.** 비공개 테스트에서 12명·14일을 통과한 그 바이너리를 그대로 올린다.
-여기서 새로 빌드하면 **검증한 것과 다른 것을 출시**하게 된다 — 같은 소스라도 산출물이
-같다는 보장이 없고, 무엇보다 그 AAB로는 아무도 14일을 쓰지 않았다.
+**안드로이드 출시 흐름은 `internal` → 실기기 확인 → `production`이다**(사용자 결정 2026-10-22).
+비공개 테스트(`beta`)는 거치지 않는다 — 프로덕션 액세스(2026-08-25) 뒤로는 12명·14일 요건이 없고,
+거치면 같은 바이너리로 심사만 두 번 기다린다(비공개 테스트도 심사를 받는다, 내부 테스트만 없다).
+`beta` 레인은 지우지 않았다 — 비공개 테스터에게 미리 줄 일이 생기면 쓴다.
+
+**재빌드하지 않는다.** 내부 테스트에서 실기기로 확인한 그 바이너리를 그대로 올린다.
+여기서 새로 빌드하면 **확인한 것과 다른 것을 출시**하게 된다 — 같은 소스라도 산출물이
+같다는 보장이 없다.
 
 - **기본은 `draft`다.** iOS `release`가 심사 제출을 하지 않는 것과 같은 규율 — 되돌릴 수
   없는 바깥 작업은 마지막 한 걸음을 사람에게 남긴다. 레인이 끝나면 콘솔
   `프로덕션 › 버전 검토`에서 **'출시 시작'을 사람이 누른다.**
 - 실제 출시는 `status:completed`를 **명시해야만** 한다. 단계적 출시는 `rollout:0.1`
   (자동으로 `inProgress`가 된다 — Play는 rollout과 completed를 함께 받지 않는다).
-- **가드 A**: 승격할 versionCode가 `alpha` 트랙에 실제로 있어야 한다. 검증하지 않은 번호를
-  손으로 넘기는 사고를 막는다.
+- **가드 A**: 승격할 versionCode가 출처 트랙(기본 `internal`, `from:alpha`)에 실제로 있어야 한다.
+  확인하지 않은 번호를 손으로 넘기는 사고를 막는다. 가드: `test/deploy/production_lane_source_test.dart`.
 - **가드 B**: 프로덕션에 이미 같거나 높은 versionCode가 있으면 중단한다(versionCode는 감소 불가).
 - 릴리즈 노트는 `beta`와 같은 파일을 쓴다(`<버전>-android.ko.txt` → 없으면 `<버전>.ko.txt`).
   없어도 막지 않고 경고만 한다.
