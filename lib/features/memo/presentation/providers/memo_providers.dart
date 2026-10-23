@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/modules/app_module.dart';
@@ -8,12 +10,16 @@ import '../../../calendar/presentation/providers/calendar_providers.dart';
 import '../../../schedule/domain/entry_kind.dart';
 import '../../data/memo_repository.dart';
 import '../../domain/memo.dart';
+import '../../domain/memo_color.dart';
 import '../../domain/memo_to_event.dart';
 import '../../domain/memo_order.dart';
 
 final memoRepositoryProvider = Provider<MemoRepository>(
   (ref) => MemoRepository(),
 );
+
+/// 새 쪽지 색을 고르는 난수 — 테스트가 씨앗을 고정해 바꿔 끼운다.
+final memoColorRandomProvider = Provider<math.Random>((ref) => math.Random());
 
 /// 쪽지가 바뀌었다는 신호. 캘린더·휴지통이 watch해 다시 읽는다 — 서로를 직접
 /// invalidate하지 않으려고(`eventsRevisionProvider`와 같은 이유).
@@ -38,11 +44,11 @@ class MemosNotifier extends AsyncNotifier<List<Memo>> {
   /// 부를 때 `ref`가 "의존성이 바뀌었는데 아직 재빌드 전" assert에 걸린다.
   Future<void> _settled() => future;
 
-  Future<void> add(String text) async {
+  Future<void> add(String text, {MemoColor color = MemoColor.yellow, DateTime? memoDate}) async {
     await _settled();
     final t = text.trim();
     if (t.isEmpty) return;
-    await _repo.add(t);
+    await _repo.add(t, color: color, memoDate: memoDate);
     _changed();
   }
 

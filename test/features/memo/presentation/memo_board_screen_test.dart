@@ -1,4 +1,6 @@
 // test/features/memo/presentation/memo_board_screen_test.dart
+import 'dart:math' as math;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/memo/data/memo_repository.dart';
+import 'package:planroutine/features/memo/domain/memo_color.dart';
 import 'package:planroutine/features/memo/presentation/providers/memo_providers.dart';
 import 'package:planroutine/features/memo/presentation/screens/memo_board_screen.dart';
 import 'package:planroutine/features/memo/presentation/widgets/memo_card.dart';
@@ -26,13 +29,16 @@ void main() {
   });
   tearDown(() async => db.close());
 
-  Future<void> pump(WidgetTester tester, {double width = 390}) async {
+  Future<void> pump(WidgetTester tester, {double width = 390, math.Random? random}) async {
     tester.view.physicalSize = Size(width, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [memoRepositoryProvider.overrideWithValue(repo)],
+        overrides: [
+          memoRepositoryProvider.overrideWithValue(repo),
+          if (random != null) memoColorRandomProvider.overrideWithValue(random),
+        ],
         child: const MaterialApp(home: MemoBoardScreen()),
       ),
     );
@@ -47,32 +53,56 @@ void main() {
     expect(find.text(MemoStrings.emptyHint), findsOneWidget);
   });
 
-  testWidgets('빠른 입력으로 붙이면 맨 앞에 쪽지가 생긴다', (tester) async {
+  Future<void> settleDb(WidgetTester tester) async {
+    // 저장 → 신호 → 다시 읽기, DB I/O가 두 번이라 여러 번 비워 준다
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 60)));
+      await tester.pumpAndSettle();
+    }
+  }
+
+  testWidgets('오른쪽 아래 +로 시트를 열어 쓰고 저장하면 맨 앞에 쪽지가 생긴다', (tester) async {
     await tester.runAsync(() => repo.add('예전 것'));
     await pump(tester);
-    await tester.enterText(find.byKey(MemoBoardScreen.quickFieldKey), '새 메모');
-    await tester.tap(find.byKey(MemoBoardScreen.quickAddKey));
-    // 저장 → 신호 → 다시 읽기, DB I/O가 두 번이라 한 번 더 비워 준다
-    for (var i = 0; i < 2; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await tester.pump();
-    }
+    await tester.tap(find.byKey(MemoBoardScreen.addKey));
     await tester.pumpAndSettle();
+    expect(find.byType(MemoSheet), findsOneWidget);
+    await tester.enterText(find.byKey(MemoSheet.textKey), '새 메모');
+    await tester.tap(find.byKey(MemoSheet.saveKey));
+    await settleDb(tester);
+    expect(find.byType(MemoSheet), findsNothing, reason: '저장하면 닫힌다');
     final first = tester.getTopLeft(find.text('새 메모'));
     final old = tester.getTopLeft(find.text('예전 것'));
     expect(first.dx < old.dx || first.dy < old.dy, isTrue);
-    // 입력 칸은 비워진다
-    final field = tester.widget<TextField>(find.byKey(MemoBoardScreen.quickFieldKey));
-    expect(field.controller?.text, isEmpty);
   });
 
-  testWidgets('빈 글은 붙지 않는다', (tester) async {
+  testWidgets('빈 글로 저장하면 쪽지가 생기지 않는다', (tester) async {
     await pump(tester);
-    await tester.enterText(find.byKey(MemoBoardScreen.quickFieldKey), '   ');
-    await tester.tap(find.byKey(MemoBoardScreen.quickAddKey));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.tap(find.byKey(MemoBoardScreen.addKey));
     await tester.pumpAndSettle();
-    expect(find.byType(MemoCard), findsNothing);
+    await tester.enterText(find.byKey(MemoSheet.textKey), '   ');
+    await tester.tap(find.byKey(MemoSheet.saveKey));
+    await settleDb(tester);
+    expect(await tester.runAsync(() => repo.getActive()), isEmpty);
+  });
+
+  testWidgets('보드에는 줄글 입력칸이 없다 — 쓰기는 +로 여는 쪽지에서 한다', (tester) async {
+    await pump(tester);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byKey(MemoBoardScreen.addKey), findsOneWidget);
+  });
+
+  testWidgets('+로 연 새 쪽지는 맨 앞 쪽지와 다른 색으로 저장된다', (tester) async {
+    await tester.runAsync(() => repo.add('맨 앞 노랑')); // 저장소 기본은 노랑
+    await pump(tester, random: math.Random(5));
+    await tester.tap(find.byKey(MemoBoardScreen.addKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(MemoSheet.textKey), '새 색');
+    await tester.tap(find.byKey(MemoSheet.saveKey));
+    await settleDb(tester);
+    final saved = await tester.runAsync(() => repo.getActive());
+    final created = saved?.firstWhere((m) => m.text == '새 색');
+    expect(created?.color, isNot(MemoColor.yellow));
   });
 
   testWidgets('짧게 누르면 쪽지 시트가 열린다', (tester) async {

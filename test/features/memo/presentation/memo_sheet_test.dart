@@ -1,5 +1,6 @@
 // test/features/memo/presentation/memo_sheet_test.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -108,10 +109,10 @@ void main() {
       return (await repo.getActive()).single;
     });
     await open(tester, m ?? const Memo(text: ''));
-    await tester.tap(find.byKey(MemoSheet.kindKey(EntryKind.event)));
-    await tester.pump();
-    await tester.ensureVisible(find.byKey(MemoSheet.toEventKey));
+    // [일정으로 등록 ▾]이 업무·행사 메뉴를 연다 — 고르는 순간 등록된다
     await tester.tap(find.byKey(MemoSheet.toEventKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(MemoSheet.kindKey(EntryKind.event)));
     await settleDb(tester);
     final events = await tester.runAsync(
       () => CalendarRepository(dbHelper: db).getEventsByMonth(2026, 10),
@@ -142,15 +143,72 @@ void main() {
       return (await repo.getActive()).single;
     });
     await open(tester, m ?? const Memo(text: ''));
-    await tester.ensureVisible(find.byKey(MemoSheet.toEventKey));
     await tester.tap(find.byKey(MemoSheet.toEventKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(MemoSheet.kindKey(EntryKind.task)));
     await tester.pump();
+    // 등록이 도는 동안 다시 메뉴를 열어 한 번 더 고른다
     await tester.tap(find.byKey(MemoSheet.toEventKey), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    if (find.byKey(MemoSheet.kindKey(EntryKind.task)).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(MemoSheet.kindKey(EntryKind.task)), warnIfMissed: false);
+    }
     await settleDb(tester);
     final events = await tester.runAsync(
       () => CalendarRepository(dbHelper: db).getEventsByMonth(2026, 10),
     );
     expect(events, hasLength(1));
+  });
+
+  testWidgets('저장 전 새 쪽지에는 삭제와 일정으로 등록이 없다 — 저장만 있다', (tester) async {
+    await open(tester, const Memo(text: '', color: MemoColor.blue));
+    expect(find.byKey(MemoSheet.saveKey), findsOneWidget);
+    expect(find.byKey(MemoSheet.removeKey), findsNothing);
+    expect(find.byKey(MemoSheet.toEventKey), findsNothing);
+  });
+
+  testWidgets('삭제와 저장이 맨 아래 한 줄에 함께 보인다', (tester) async {
+    final m = await tester.runAsync(() => repo.add('보이기'));
+    await open(tester, m ?? const Memo(text: ''));
+    final save = tester.getRect(find.byKey(MemoSheet.saveKey));
+    final remove = tester.getRect(find.byKey(MemoSheet.removeKey));
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(save.bottom, lessThanOrEqualTo(screen.height), reason: '스크롤하지 않아도 보인다');
+    expect((save.center.dy - remove.center.dy).abs(), lessThan(4), reason: '같은 줄');
+    expect(remove.left, lessThan(save.left));
+  });
+
+  testWidgets('키보드가 올라와도 저장 버튼이 키보드 위에 보인다', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 346);
+    addTearDown(tester.view.reset);
+    final m = await tester.runAsync(() => repo.add('키보드'));
+    await open(tester, m ?? const Memo(text: ''));
+    expect(tester.takeException(), isNull);
+    final save = tester.getRect(find.byKey(MemoSheet.saveKey));
+    expect(save.bottom, lessThanOrEqualTo(844 - 346 + 0.5));
+    final text = tester.getRect(find.byKey(MemoSheet.textKey));
+    expect(text.height, greaterThanOrEqualTo(120), reason: '키보드가 있어도 쓰는 칸이 넉넉하다');
+  });
+
+  testWidgets('날짜가 있으면 320·390pt에서 날짜 글자가 잘리지 않고 다 보인다', (tester) async {
+    // 날짜 칩과 색 점이 남은 폭을 나눠 가지면 칩이 줄어 글자가 0폭이 됐다(시뮬레이터에서 발견).
+    for (final width in [320.0, 390.0]) {
+      tester.view.physicalSize = Size(width, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final m = await tester.runAsync(() => repo.add('날짜 $width', memoDate: DateTime(2026, 10, 23)));
+      await open(tester, m ?? const Memo(text: ''));
+      expect(tester.takeException(), isNull);
+      final label = find.descendant(of: find.byKey(MemoSheet.dateRowKey), matching: find.byType(Text));
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: label, matching: find.byType(RichText)),
+      );
+      expect(paragraph.didExceedMaxLines, isFalse, reason: '$width pt에서 날짜가 말줄임됐다');
+      expect(tester.getSize(label).width, greaterThan(60), reason: '$width pt에서 날짜 칸이 너무 좁다');
+      await tester.pumpWidget(const SizedBox());
+    }
   });
 
   testWidgets('키보드 인셋이 음수여도 터지지 않는다', (tester) async {

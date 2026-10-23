@@ -1,6 +1,7 @@
 import '../../../core/database/database_helper.dart';
 import '../../../core/utils/date_utils.dart';
 import '../domain/memo.dart';
+import '../domain/memo_color.dart';
 
 /// `memos` 저장소. 삭제는 soft-delete(휴지통)이고 활성 조회는 늘 `deleted_at IS NULL`이다.
 class MemoRepository {
@@ -11,14 +12,14 @@ class MemoRepository {
 
   static const _active = 'deleted_at IS NULL';
 
-  /// 새 쪽지는 노랑이고 **맨 앞**이다 — 활성 최소 `sort_order`보다 하나 작게.
-  Future<Memo> add(String text) async {
+  /// 새 쪽지는 **맨 앞**이다 — 활성 최소 `sort_order`보다 하나 작게. 색을 안 주면 노랑.
+  Future<Memo> add(String text, {MemoColor color = MemoColor.yellow, DateTime? memoDate}) async {
     final db = await _dbHelper.database;
     final row = await db.rawQuery(
       'SELECT MIN(sort_order) AS m FROM ${DatabaseHelper.tableMemos} WHERE $_active',
     );
     final min = row.first['m'] as int?;
-    final memo = Memo(text: text, sortOrder: min == null ? 0 : min - 1);
+    final memo = Memo(text: text, color: color, memoDate: memoDate, sortOrder: min == null ? 0 : min - 1);
     final id = await db.insert(DatabaseHelper.tableMemos, memo.toMap());
     return memo.copyWith(id: id);
   }
