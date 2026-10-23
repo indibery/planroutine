@@ -12,7 +12,6 @@ class MemoStrings {
   static const empty = '붙여 둔 포스트잇이 없습니다';
   static const emptyHint = '오른쪽 아래 + 를 누르면 쪽지를 붙일 수 있어요';
 
-  static const sheetTextLabel = '메모';
   static const colorYellow = '노랑';
   static const colorGreen = '초록';
   static const colorBlue = '파랑';

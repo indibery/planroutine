@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
@@ -49,6 +48,9 @@ class MemoSheet extends ConsumerStatefulWidget {
   @override
   ConsumerState<MemoSheet> createState() => _MemoSheetState();
 }
+
+/// 시트 위로 남겨 두는 빈 높이(상태 표시줄 아래) — 뒤 화면이 조금 보여 시트임을 알린다.
+const _sheetTopGap = 64.0;
 
 class _MemoSheetState extends ConsumerState<MemoSheet> {
   late final _text = TextEditingController(text: widget.memo.text);
@@ -122,24 +124,27 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
     // 두 편집 시트와 같은 규칙 — 음수 인셋을 걸러내고 홈 인디케이터를 비켜 간다.
     final bottom = math.max(
       0.0,
-      math.max(mq.viewInsets.bottom, mq.viewPadding.bottom),
+      math.max(
+        MediaQuery.viewInsetsOf(context).bottom,
+        MediaQuery.viewPaddingOf(context).bottom,
+      ),
     );
-    // 쪽지는 남은 높이를 거의 다 쓴다. 키보드가 올라오면 줄어들고 맨 아래 줄은 키보드 바로 위에 붙는다.
-    final room =
-        mq.size.height - bottom - mq.viewPadding.top - AppSizes.spacing24;
-    final noteHeight = (room - 140).clamp(140.0, 460.0);
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottom),
+    // 시트는 상태 표시줄 아래로 64pt를 비워 두고, 그 안에서 쪽지가 남은 높이를 다 쓴다(최대 460).
+    // 키보드가 올라오면 쪽지가 줄어들고 맨 아래 줄은 키보드 바로 위에 붙는다.
+    final maxSheet = MediaQuery.sizeOf(context).height -
+        MediaQuery.viewPaddingOf(context).top -
+        _sheetTopGap;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: math.max(0.0, maxSheet)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSizes.spacing16,
           AppSizes.spacing12,
           AppSizes.spacing16,
-          AppSizes.spacing16,
+          AppSizes.spacing16 + bottom,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -156,7 +161,12 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
               ),
             ),
             const SizedBox(height: AppSizes.spacing12),
-            SizedBox(height: noteHeight, child: _note()),
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 460),
+                child: _note(),
+              ),
+            ),
             const SizedBox(height: AppSizes.spacing12),
             _actions(),
           ],
@@ -250,7 +260,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
             child: ButtonSemantics(
               label: date == null
                   ? MemoStrings.dateLabel
-                  : '${MemoStrings.dateLabel} ${DateFormat('M월 d일 (E)', 'ko').format(date)}',
+                  : '${MemoStrings.dateLabel} ${memoLongDate.format(date)}',
               onTap: _pickDate,
               child: InkWell(
                 key: MemoSheet.dateRowKey,
@@ -274,7 +284,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
                         child: Text(
                           date == null
                               ? MemoStrings.dateLabel
-                              : DateFormat('M월 d일 (E)', 'ko').format(date),
+                              : memoLongDate.format(date),
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(fontSize: 14, color: AppColors.ink),
                         ),

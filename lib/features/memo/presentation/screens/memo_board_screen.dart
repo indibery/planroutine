@@ -27,9 +27,6 @@ class MemoBoardScreen extends ConsumerStatefulWidget {
   ConsumerState<MemoBoardScreen> createState() => _MemoBoardScreenState();
 }
 
-/// 쪽지 칸 높이 — 격자와 끌 때 뜨는 쪽지가 같은 값을 쓴다(쪽지 안 날짜가 아래에 붙으려면 높이가 정해져야 한다).
-const _cardHeight = 168.0;
-
 class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
   /// 오른쪽 아래 +(다른 탭과 같은 자리) — 빈 쪽지 시트를 연다. 보드 위의 줄글 입력칸은 없앴다
   /// (사용자 결정 2026-10-23: 줄글 칸은 포스트잇을 쓰는 느낌이 나지 않는다).
@@ -60,7 +57,7 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSizes.spacing12,
                 crossAxisSpacing: AppSizes.spacing12,
-                mainAxisExtent: _cardHeight,
+                mainAxisExtent: 168,
               ),
               itemCount: memos.length,
               itemBuilder: (context, i) => _slot(memos, i),
@@ -82,13 +79,13 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
       onWillAcceptWithDetails: (d) => d.data != id,
       onAcceptWithDetails: (d) =>
           ref.read(memosProvider.notifier).move(d.data, index),
-      builder: (context, candidates, _) => LongPressDraggable<int>(
+      // 끌 때 뜨는 쪽지는 칸이 실제로 받은 크기를 그대로 쓴다 — 격자 설정을 여기서 다시 계산하지 않는다.
+      builder: (context, candidates, _) => LayoutBuilder(builder: (context, cell) => LongPressDraggable<int>(
         data: id,
         feedback: Material(
           color: Colors.transparent,
-          child: SizedBox(
-            width: (MediaQuery.sizeOf(context).width - AppSizes.spacing16 * 2 - AppSizes.spacing12) / 2,
-            height: _cardHeight,
+          child: SizedBox.fromSize(
+            size: cell.biggest,
             child: Transform.scale(scale: 1.05, child: MemoCard(memo: memo)),
           ),
         ),
@@ -105,7 +102,7 @@ class _MemoBoardScreenState extends ConsumerState<MemoBoardScreen> {
             ),
             child: card,
           )),
-      ),
+      )),
     );
   }
 
