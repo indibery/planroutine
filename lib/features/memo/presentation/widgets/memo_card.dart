@@ -36,7 +36,6 @@ class MemoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = memo.memoDate;
-    final created = DateTime.tryParse(memo.createdAt ?? '');
     return Container(
       constraints: const BoxConstraints(minHeight: 132),
       padding: const EdgeInsets.fromLTRB(
@@ -58,10 +57,10 @@ class MemoCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           // 칸 높이가 고정이라 큰 글자 설정에서는 남은 높이만큼만 그리고 말줄임한다.
-          Flexible(
+          // 글이 남은 높이를 다 가져가 붙인 날짜는 늘 왼쪽 아래에 선다(실기기 피드백 2026-10-24).
+          Expanded(
             child: Text(
               memo.text,
               maxLines: 5,
@@ -74,8 +73,9 @@ class MemoCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppSizes.spacing8),
-          if (date != null)
+          // 만든 날은 보이지 않는다 — 뜻이 없다(실기기 피드백 2026-10-24).
+          if (date != null) ...[
+            const SizedBox(height: AppSizes.spacing8),
             Row(
               children: [
                 Icon(
@@ -98,16 +98,8 @@ class MemoCard extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-          else if (created != null)
-            Text(
-              DateFormat('M.d').format(created),
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 12,
-                color: AppColors.sub,
-              ),
             ),
+          ],
         ],
       ),
     );
