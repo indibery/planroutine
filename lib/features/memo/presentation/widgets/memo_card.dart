@@ -59,7 +59,7 @@ class MemoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 칸 높이가 고정이라 큰 글자 설정에서는 남은 높이만큼만 그리고 말줄임한다.
-          // 글이 남은 높이를 다 가져가 붙인 날짜는 늘 왼쪽 아래에 선다(실기기 피드백 2026-10-24).
+          // 글이 남은 높이를 다 가져가 붙인 날짜는 늘 오른쪽 아래에 선다(실기기 피드백 2026-10-24).
           Expanded(
             child: Text(
               memo.text,
@@ -77,6 +77,7 @@ class MemoCard extends StatelessWidget {
           if (date != null) ...[
             const SizedBox(height: AppSizes.spacing8),
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Icon(
                   Icons.calendar_today_outlined,

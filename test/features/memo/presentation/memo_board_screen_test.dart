@@ -64,8 +64,8 @@ void main() {
     expect(find.byIcon(Icons.calendar_today_outlined), findsOneWidget);
   });
 
-  testWidgets('만든 날은 보이지 않고, 붙인 날짜는 쪽지 왼쪽 아래에 붙는다', (tester) async {
-    // 실기기 피드백(2026-10-24): 쪽지 밑의 만든 날(10.13)은 뜻이 없고, 붙인 날짜는 왼쪽 아래에 고정.
+  testWidgets('만든 날은 보이지 않고, 붙인 날짜는 쪽지 오른쪽 아래에 붙는다', (tester) async {
+    // 실기기 피드백(2026-10-24): 쪽지 밑의 만든 날(10.13)은 뜻이 없고, 붙인 날짜는 오른쪽 아래에 고정.
     await tester.runAsync(() => repo.add('날짜 없음'));
     await tester.runAsync(() => repo.add('날짜 있음', memoDate: DateTime(2026, 10, 23)));
     await pump(tester);
@@ -74,9 +74,8 @@ void main() {
     final date = find.text('10.23 (금)');
     expect(date, findsOneWidget);
     final card = tester.getRect(find.ancestor(of: date, matching: find.byType(MemoCard)));
-    final icon = tester.getRect(find.byIcon(Icons.calendar_today_outlined));
     expect(card.bottom - tester.getRect(date).bottom, lessThan(16), reason: '날짜가 아래에 붙지 않았다');
-    expect(icon.left - card.left, lessThan(16), reason: '날짜가 왼쪽에 붙지 않았다');
+    expect(card.right - tester.getRect(date).right, lessThan(16), reason: '날짜가 오른쪽에 붙지 않았다');
   });
 
   Future<void> settleDb(WidgetTester tester) async {
