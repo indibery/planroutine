@@ -95,6 +95,30 @@ void main() {
       expect(r.items.length, 2);
       expect(r.items.first.title, '[중요] 입학식');
     });
+
+    // 실사용(2026-10-24): ChatGPT가 배열 괄호 없이 객체만 쉼표로 이어 줬다 → 0건으로 실패했다.
+    test('배열 괄호 없이 객체만 쉼표로 이어져도 모두 읽는다', () {
+      final r = parseAiScheduleJson(
+        '{ "title": "에세이 3쪽 안으로 줄이기", "date": "2026-10-24", "description": "월별 계획" }, '
+        '{ "title": "연구년 서류 접수", "date": "2026-11-06", "description": "17:00 마감. [중요] 직접 제출" }, '
+        '{ "title": "연구년", "date": "2027-03-01" }',
+      );
+      expect(r.items.map((e) => e.title), ['에세이 3쪽 안으로 줄이기', '연구년 서류 접수', '연구년']);
+      expect(r.items[1].description, '17:00 마감. [중요] 직접 제출');
+      expect(r.invalidCount, 0);
+    });
+
+    test('괄호 없는 객체가 하나뿐이어도 읽는다', () {
+      final r = parseAiScheduleJson('답: {"title":"최종 선발명단 발표","date":"2026-12-04"}');
+      expect(r.items.single.date, '2026-12-04');
+    });
+
+    test('배열이 있으면 배열을 쓴다 — 배열 밖 객체를 덧붙이지 않는다', () {
+      final r = parseAiScheduleJson(
+        '예시 {"title":"예시","date":"2026-01-01"}\n[{"title":"진짜","date":"2026-03-02"}]',
+      );
+      expect(r.items.map((e) => e.title), ['진짜']);
+    });
   });
 
   group('buildAiPhotoPrompt — 학년도 연도 주입', () {

@@ -37,7 +37,9 @@ ParsedAiSchedules parseAiScheduleJson(String text) {
       .replaceAll('”', '"') // ”
       .replaceAll('‘', "'") // ‘
       .replaceAll('’', "'"); // ’
-  final decoded = _extractFirstJsonArray(normalized);
+  // 배열이 없으면 괄호 없이 이어 준 객체들을 모은다 — ChatGPT가 `{…}, {…}`만 준 실사례(2026-10-24).
+  final decoded =
+      _extractFirstJsonArray(normalized) ?? _extractJsonObjects(normalized);
   if (decoded == null) {
     return const ParsedAiSchedules(items: [], invalidCount: 0);
   }
@@ -95,41 +97,72 @@ List<dynamic>? _extractFirstJsonArray(String text) {
   while (true) {
     final start = text.indexOf('[', searchFrom);
     if (start == -1) return null;
-
-    var depth = 0;
-    var inString = false;
-    var escaped = false;
-    for (var i = start; i < text.length; i++) {
-      final ch = text[i];
-      if (inString) {
-        if (escaped) {
-          escaped = false;
-        } else if (ch == r'\') {
-          escaped = true;
-        } else if (ch == '"') {
-          inString = false;
-        }
-        continue;
-      }
-      if (ch == '"') {
-        inString = true;
-      } else if (ch == '[') {
-        depth++;
-      } else if (ch == ']') {
-        depth--;
-        if (depth == 0) {
-          try {
-            final decoded = jsonDecode(text.substring(start, i + 1));
-            if (decoded is List) return decoded;
-          } catch (_) {
-            // 유효한 JSON이 아니면 다음 '['부터 재시도
-          }
-          break;
-        }
+    final end = _balancedEnd(text, start, '[', ']');
+    if (end != -1) {
+      try {
+        final decoded = jsonDecode(text.substring(start, end + 1));
+        if (decoded is List) return decoded;
+      } catch (_) {
+        // 유효한 JSON이 아니면 다음 '['부터 재시도
       }
     }
     searchFrom = start + 1;
   }
+}
+
+/// 배열 괄호 없이 `{…}, {…}`로 이어진 객체들을 앞에서부터 모은다. 하나도 없으면 null.
+/// 유효한 객체 뒤에서 다음 `{`를 찾으므로 객체 안의 중괄호를 따로 세지 않는다.
+List<dynamic>? _extractJsonObjects(String text) {
+  final objects = <dynamic>[];
+  var searchFrom = 0;
+  while (true) {
+    final start = text.indexOf('{', searchFrom);
+    if (start == -1) break;
+    final end = _balancedEnd(text, start, '{', '}');
+    if (end != -1) {
+      try {
+        final decoded = jsonDecode(text.substring(start, end + 1));
+        if (decoded is Map) {
+          objects.add(decoded);
+          searchFrom = end + 1;
+          continue;
+        }
+      } catch (_) {
+        // 유효한 JSON이 아니면 다음 '{'부터 재시도
+      }
+    }
+    searchFrom = start + 1;
+  }
+  return objects.isEmpty ? null : objects;
+}
+
+/// [start]의 여는 괄호와 짝이 맞는 닫는 괄호 위치. 문자열 안의 괄호는 세지 않는다. 없으면 -1.
+int _balancedEnd(String text, int start, String open, String close) {
+  var depth = 0;
+  var inString = false;
+  var escaped = false;
+  for (var i = start; i < text.length; i++) {
+    final ch = text[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch == r'\') {
+        escaped = true;
+      } else if (ch == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch == '"') {
+      inString = true;
+    } else if (ch == open) {
+      depth++;
+    } else if (ch == close) {
+      depth--;
+      if (depth == 0) return i;
+    }
+  }
+  return -1;
 }
 
 /// 사진 변환용 프롬프트. 고정 문구 — 사용자가 포맷을 몰라도 복사 한 번으로 AI가
