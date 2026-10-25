@@ -111,9 +111,11 @@ iPhone 6.7" (1290×2796) · 6.1"(1170×2532) 필수. iPad는 선택.
       올린다(그러면 양쪽이 같은 번호가 되고 레인 수정은 필요 없다). ⚠️ 손으로 올린 값은
       **다음 안드로이드 업로드에 그대로 쓰이고 versionCode는 감소할 수 없다** — 상세는
       CLAUDE.md "배포 › 명령" 참고.
-- [ ] **iOS 빌드가 SPM + CocoaPods 혼합임을 감안한다**(Flutter 3.44 기본값). 플러그인 일부가
-      pod에서 빠졌으므로, 빌드가 실패하면 `ios/Pods`만 지우지 말고 `flutter clean`까지 한다.
-      CocoaPods 전용으로 되돌리려면 `flutter config --no-enable-swift-package-manager`.
+- [ ] **iOS 빌드는 CocoaPods만 쓴다 — SPM은 끈다**(`flutter config --no-enable-swift-package-manager`).
+      Flutter 3.44는 SPM이 기본으로 켜져 있어, 새 Mac에서 그대로 빌드하면 플러그인 일부가
+      `Podfile.lock`에서 빠지고 `project.pbxproj`에 SPM 설정이 붙는다. 그런 변경은 커밋하지 말고
+      SPM을 끈 뒤 `git checkout ios/` → `flutter clean` → 다시 빌드한다. SPM 빌드는 Apple이
+      거부했다(`v143`, 카메라 purpose string) — 경위는 `/deploy` 런북 "알려진 빌드 이슈".
 - [ ] **TAGO 일일 호출량 확인** — data.go.kr 마이페이지 → 오픈API → 활용 현황.
       6,000회/일(개발계정 10,000의 60%)을 넘긴 날이 있으면 프록시 승격을 검토한다
       (스펙 §5). **버스 기능이 포함된 릴리즈마다 + 이후 월 1회** 확인 — 이 앱은

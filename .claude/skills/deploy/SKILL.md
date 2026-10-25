@@ -560,7 +560,10 @@ R8 전용 결함은 **축소된 빌드를 실기기에서 돌려야** 보인다.
 
 ## 알려진 빌드 이슈
 
-- **iOS 플러그인은 SPM + CocoaPods 혼합이다**(Flutter 3.44의 기본값, 2026-08-03 전환).
+- **iOS는 CocoaPods만 쓴다 — SPM은 끈다**(`flutter config --no-enable-swift-package-manager`,
+  Mac마다 한 번). 이유는 아래 `v143` 거부다. 새 Mac에서 끄지 않고 빌드하면 아래 기록과 같은
+  변경이 다시 생긴다 — 커밋하지 말고 `git checkout ios/` → `flutter clean` → 다시 빌드한다.
+  아래는 2026-08-03에 잠깐 SPM으로 옮겼던 기록이다.
   `ios/Podfile.lock`의 pod이 **52 → 10개**로 줄고 SPM을 지원하지 않는 플러그인만 pod으로
   남는다(`charset_converter`·`device_calendar`·`flutter_local_notifications` 등).
   `project.pbxproj`에 `FlutterGeneratedPluginSwiftPackage` 로컬 패키지 참조,
