@@ -1,6 +1,6 @@
 ---
 name: store-listing
-description: 스토어 등록정보(Play·App Store 설명)를 제출 직전에 점검한다. 출처 URL 생존 확인, 두 문서 문안 동기화, 기준 버전·릴리즈 노트·스크린샷 확인. 가드 테스트가 못 하는 몫(네트워크·판단)을 맡는다. iOS release·Android beta 전, 또는 심사 거부 대응 시 사용.
+description: 스토어 등록정보(Play·App Store 설명)를 제출 직전에 점검한다. 출처 URL 생존 확인, 두 문서 문안 동기화, 기준 버전·릴리즈 노트·스크린샷 확인. 가드 테스트가 못 하는 몫(네트워크·판단)을 맡는다. iOS release·Android production 승격 전, 또는 심사 거부 대응 시 사용.
 ---
 
 # 스토어 등록정보 점검

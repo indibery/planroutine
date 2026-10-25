@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: 공직플랜 배포 — iOS는 게이트 검사(analyze/test) 후 fastlane.sh 실행(TestFlight/App Store), green이면 승인 없이 바로 진행. Android는 게이트(analyze/test + release AAB 스모크) 후 `./android/bin/fastlane.sh <레인>` 실행 — 비공개 테스트는 `beta`(트랙 `Alpha`), 첫 업로드는 `bootstrap`(트랙 `internal`·draft). "배포", "release", "beta", "fastlane 올려줘", "안드로이드/Play Store 배포" 요청 시 사용.
+description: 공직플랜 배포 — iOS는 게이트 검사(analyze/test) 후 fastlane.sh 실행(TestFlight/App Store), green이면 승인 없이 바로 진행. Android는 게이트(analyze/test + release AAB 스모크) 후 `./android/bin/fastlane.sh <레인>` 실행 — 실기기 확인은 `internal`(심사 없음), 출시는 `production`(internal 빌드를 재빌드 없이 승격, 출시 전 사용자 확인). 비공개 테스트 `beta`는 거치지 않고, `bootstrap`은 소진돼 훅이 막는다. "배포", "release", "beta", "fastlane 올려줘", "안드로이드/Play Store 배포" 요청 시 사용.
 ---
 
 # 공직플랜 배포 런북
