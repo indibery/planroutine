@@ -77,6 +77,18 @@ void main() {
       expect(ImportStrings.aiParseEmptyFor(EntryKind.event), contains('행사'));
     });
 
+    test('못 찾았을 때 문구는 조사를 병기하지 않는다(`행사을(를)` X)', () {
+      // 두 라벨 모두 받침이 없어 `를`이다. 라벨이 받침 있는 말로 바뀌면 여기서 깨진다.
+      expect(
+        ImportStrings.aiParseEmptyFor(EntryKind.task),
+        startsWith('붙여넣은 내용에서 업무를 찾지 못했어요.'),
+      );
+      expect(
+        ImportStrings.aiParseEmptyFor(EntryKind.event),
+        startsWith('붙여넣은 내용에서 행사를 찾지 못했어요.'),
+      );
+    });
+
     test('종류 이름을 여기 다시 박지 않는다 — EntryKind.label에서 온다', () {
       // 용어가 바뀌면 배지·칩만 따라가고 이 문구만 옛 이름으로 남는 사고가
       // 이 리포에 있었다(일괄 확정 pill).
