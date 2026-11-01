@@ -143,6 +143,28 @@ rescue StandardError
   nil
 end
 
+# 제출 직후 편집 버전에 연결된 빌드 번호를 읽는다. 목표와 같아질 때까지 다시 읽는다.
+#
+# 1.4.2 재제출(2026-10-22, 철회 뒤 DEVELOPER_REJECTED 버전)에서 제출 2초 뒤 한 번 읽은 값이 옛 빌드
+# v183이었고, 아무것도 쓰지 않았는데 14초 뒤 같은 조회는 v184였다. v183이 나온 경로는 둘 중 하나다 —
+# ASC가 연결을 늦게 반영했거나, `edit_version`이 예외를 삼켜 레인 시작 때 읽은 옛 객체로 떨어졌다.
+# 그래서 여기서는 ① 옛 객체로 대신하지 않고 ② 조회 예외를 숨기지 않고 로그에 남기며 ③ 다시 읽는다.
+# 다음에 재현되면 이 로그가 어느 쪽인지 말해 준다.
+def read_linked_build(app, target, attempts: 12, interval: 5)
+  linked = nil
+  attempts.times do |i|
+    linked = app.get_edit_app_store_version&.build&.version
+    return linked if linked.to_s == target.to_s
+
+    UI.message("연결된 빌드 v#{linked || '없음'}(목표 v#{target}) — #{interval}초 뒤 다시 읽습니다 (#{i + 1}/#{attempts})")
+    sleep(interval)
+  rescue StandardError => e
+    UI.important("연결된 빌드 조회 실패(#{e.class}: #{e.message}) — #{interval}초 뒤 다시 읽습니다 (#{i + 1}/#{attempts})")
+    sleep(interval)
+  end
+  linked
+end
+
 # 편집 가능한 버전 페이지를 보장한다(없으면 생성).
 #
 # minor/major를 올릴 때는 항상 없다 — 자동화하지 않으면 매번 사람이 ASC에서
@@ -528,9 +550,10 @@ platform :ios do
     # ⚠️ **제출 경로(submit:true)에서는 다시 붙이지 않는다.** 그때는 deliver가 제출 흐름 안에서 이미
     # 빌드를 붙였고, 버전은 벌써 심사 대기라 `select_build`가 거부된다 — 제출은 정상인데 레인이
     # 실패로 끝났다(1.4.0·1.4.1 두 번). 대신 붙은 빌드를 읽어 목표와 같은지만 본다.
+    # 한 번만 읽으면 철회 뒤 재제출에서 옛 빌드를 보고 실패로 끝난다(1.4.2) — `read_linked_build` 참고.
     # 가드: test/deploy/release_lane_submit_test.dart
-    selected = if submit
-      edit_version(app) || edit
+    linked = if submit
+      read_linked_build(app, target)
     else
       begin
         (edit_version(app) || edit).select_build(build_id: target_build.id)
@@ -539,12 +562,11 @@ platform :ios do
           "빌드 연결 실패(#{e.class}: #{e.message}) — " \
           "ASC → 공직플랜 → #{edit.version_string} → '빌드' 에서 직접 고르세요."
         )
-      end
+      end&.build&.version
     end
-    linked = selected&.build&.version
     if submit && linked.to_s != target.to_s
       UI.user_error!(
-        "제출은 끝났지만 연결된 빌드가 v#{linked || '없음'}입니다(목표 v#{target}) — " \
+        "제출은 끝났지만 다시 읽어도 연결된 빌드가 v#{linked || '없음'}입니다(목표 v#{target}) — " \
         "`asc_state`로 확인하고, 다르면 `withdraw_review` 뒤 다시 승격하세요."
       )
     end

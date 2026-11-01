@@ -49,4 +49,44 @@ void main() {
   test('제출 경로는 연결된 빌드가 목표와 다르면 실패로 끝낸다 — 조용히 넘어가지 않는다', () {
     expect(release, contains('submit && linked'));
   });
+
+  // 1.4.2 재제출(2026-10-22): 제출 2초 뒤 한 번 읽은 값이 옛 빌드 v183이었고 14초 뒤엔 v184였다.
+  // 옛 객체로 떨어지는 길(`|| edit`)과 예외를 삼키는 `edit_version`을 제출 확인에서 빼고, 다시 읽는다.
+  group('제출 확인은 한 번 읽고 끝내지 않는다', () {
+    final helperStart = fastfile.indexOf('def read_linked_build');
+    // `_codeOnly`를 쓰지 않는다 — `#{e.class}` 같은 문자열 보간의 `#`부터 잘라 낸다. 본문에 주석은 없다.
+    final helper = helperStart < 0
+        ? ''
+        : fastfile.substring(
+            helperStart,
+            fastfile.indexOf('\nend\n', helperStart),
+          );
+
+    test('제출 경로는 read_linked_build로 읽는다', () {
+      final start = release.indexOf('if submit');
+      final submitBranch = release.substring(
+        start,
+        release.indexOf('else', start),
+      );
+      expect(submitBranch, contains('read_linked_build'));
+      expect(
+        submitBranch,
+        isNot(contains('|| edit')),
+        reason: '레인 시작 때 읽은 옛 객체는 철회 전 빌드를 들고 있다',
+      );
+    });
+
+    test('다시 읽기를 반복하고 사이에 기다린다', () {
+      expect(helper, isNotEmpty, reason: 'read_linked_build가 없다');
+      expect(helper, contains('attempts.times'));
+      expect(helper, contains('sleep('));
+    });
+
+    test('조회 예외를 삼키는 edit_version을 쓰지 않고 예외를 로그에 남긴다', () {
+      expect(helper, isNot(contains('edit_version(')));
+      expect(helper, contains('get_edit_app_store_version'));
+      expect(helper, contains('rescue StandardError => e'));
+      expect(helper, contains('e.class'));
+    });
+  });
 }
