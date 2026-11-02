@@ -20,7 +20,12 @@ if [ "$BUILD" = 1 ]; then
 fi
 [ -d "$VERIFY_APP" ] || { echo "빌드 산출물이 없다: $VERIFY_APP" >&2; exit 1; }
 
-if [ "$KEEP" = 0 ]; then wt 60 xcrun simctl uninstall "$VERIFY_UDID" "$VERIFY_BUNDLE" 2>/dev/null || [ $? -ne 124 ] || exit 124; fi
+# 설치돼 있지 않으면 uninstall이 실패하는데 그건 괜찮다. 시간 초과(124)만 멈춘다.
+# simctl 오류만 버리고 wt의 시간 초과 안내는 남긴다(2>/dev/null을 wt 밖에 두면 안내까지 사라진다).
+if [ "$KEEP" = 0 ]; then
+  rc=0; wt 60 sh -c 'xcrun simctl uninstall "$1" "$2" 2>/dev/null' _ "$VERIFY_UDID" "$VERIFY_BUNDLE" || rc=$?
+  [ $rc -ne 124 ] || exit 124
+fi
 wt 120 xcrun simctl install "$VERIFY_UDID" "$VERIFY_APP"
 wt 60 xcrun simctl launch "$VERIFY_UDID" "$VERIFY_BUNDLE"
 echo "준비 신호: 화면에 온보딩(새 설치) 또는 탭바가 보이면 준비된 것이다 → doctor.sh로 확인"
