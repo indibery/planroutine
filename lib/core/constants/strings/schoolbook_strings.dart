@@ -19,8 +19,9 @@ class SchoolbookStrings {
 
   // 스쿨북 안내 · 제작자 감사(호칭은 제작자가 사이트에서 쓰는 이름 — 사용자 결정 2026-10-23)
   static const maker = 'CODER 승쨩';
+  // 제작자 이름·감사는 설정의 감사 시트 한 곳에 모은다(사용자 결정 2026-11-03 — 너무 자주 나왔다)
   static const intro =
-      '스쿨북은 $maker 선생님이 만든 학교 장소·물품 예약 서비스예요. 아이디·비밀번호 없이 학교 링크 하나로 함께 씁니다.';
+      '스쿨북은 학교 장소·물품 예약 서비스예요. 아이디·비밀번호 없이 학교 링크 하나로 함께 씁니다.';
   static const openSite = '스쿨북 사이트 열기';
   static const joinPrompt = '우리 학교가 아직 스쿨북을 쓰지 않나요?';
   static const joinAction = '스쿨북에서 학교 가입하기';
@@ -28,7 +29,7 @@ class SchoolbookStrings {
   static const openWebHint = '교시·교실·물품 관리';
   static const openFailed = '사이트를 열지 못했어요';
   static const creditTitle = '함께 만든 서비스';
-  static const creditSubtitle = '장소 예약 — 스쿨북 · $maker 선생님';
+  static const creditSubtitle = '장소 예약 — 스쿨북';
   static const creditService = '스쿨북 — 학교의 모든 예약';
   static const creditMaker = '만든 사람 · $maker 선생님';
   static const creditThanks =

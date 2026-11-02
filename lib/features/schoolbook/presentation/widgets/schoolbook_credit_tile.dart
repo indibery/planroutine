@@ -12,7 +12,7 @@ import 'open_schoolbook_url.dart';
 /// 설정 › `함께 만든 서비스` — 장소 예약이 기대는 스쿨북과 그 제작자에게 고마움을 남기는 행.
 ///
 /// 공공데이터 [DataSourceListTile]과 따로 둔다 — 그쪽은 라이선스 의무 표시이고, 이쪽은
-/// 제작자의 허락과 협조로 붙인 서비스다. 기능을 꺼도 보인다(감사는 켜짐과 무관하다).
+/// 제작자의 허락과 협조로 붙인 서비스다. 장소 예약을 켠 사람에게만 보인다(설정 화면이 정한다).
 class SchoolbookCreditTile extends StatelessWidget {
   const SchoolbookCreditTile({super.key});
 

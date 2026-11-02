@@ -177,6 +177,18 @@ void main() {
       }
     });
 
+    test('제작자 이름은 설명 전체에서 한 번만 — 출처 절의 감사 문장', () {
+      // 기능 소개·출처 목록·감사 문장 세 곳에 나와 너무 잦았다(사용자 결정 2026-11-03).
+      for (final (store, path) in _docs.entries.map((e) => (e.key, e.value))) {
+        final doc = File(path).readAsStringSync();
+        expect(
+          SchoolbookStrings.maker.allMatches(doc).length,
+          1,
+          reason: '$store 설명에 제작자 이름이 여러 번 나온다 — 출처 절 감사 문장 한 곳에만 둔다',
+        );
+      }
+    });
+
     test('호출하는 기관이 두 문서의 출처 절에 적혀 있다', () {
       final src = busApiClientSource();
 

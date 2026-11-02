@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
+import 'package:planroutine/core/modules/app_module.dart';
+import 'package:planroutine/core/modules/installed_modules_provider.dart';
+import 'package:planroutine/features/settings/presentation/screens/settings_screen.dart';
 import 'package:planroutine/features/schoolbook/domain/schoolbook_link.dart';
 import 'package:planroutine/features/schoolbook/presentation/providers/schoolbook_providers.dart';
 import 'package:planroutine/features/schoolbook/presentation/screens/schoolbook_screen.dart';
@@ -45,10 +49,11 @@ void main() {
   });
 
   group('연결 화면', () {
-    testWidgets('스쿨북 소개와 제작자를 보여 주고 사이트를 연다', (tester) async {
+    // 제작자 이름·감사는 설정의 감사 시트 한 곳에 모은다(사용자 결정 2026-11-03 — 너무 자주 나왔다).
+    testWidgets('스쿨북 소개를 보여 주고 사이트를 연다 — 제작자 이름은 넣지 않는다', (tester) async {
       final opened = await _pumpWith(tester, const SchoolbookScreen());
       expect(find.text(SchoolbookStrings.intro), findsOneWidget);
-      expect(SchoolbookStrings.intro, contains('CODER 승쨩'));
+      expect(SchoolbookStrings.intro, isNot(contains(SchoolbookStrings.maker)));
       await tester.tap(find.text(SchoolbookStrings.openSite));
       await tester.pump();
       expect(opened, [schoolbookSiteUrl]);
@@ -90,6 +95,8 @@ void main() {
       );
       expect(find.text(SchoolbookStrings.creditTitle), findsOneWidget);
       expect(find.text(SchoolbookStrings.creditSubtitle), findsOneWidget);
+      // 이름은 시트 안에만 둔다(사용자 결정 2026-11-03)
+      expect(SchoolbookStrings.creditSubtitle, isNot(contains(SchoolbookStrings.maker)));
 
       await tester.tap(find.text(SchoolbookStrings.creditTitle));
       await tester.pumpAndSettle();
@@ -101,6 +108,37 @@ void main() {
       await tester.tap(find.byKey(SchoolbookCreditTile.openSiteKey));
       await tester.pump();
       expect(opened, [schoolbookSiteUrl]);
+    });
+  });
+
+  // 장소 예약을 켠 사람에게만 감사 행을 보인다(사용자 결정 2026-11-03). 끈 사람에게는 상관없는 기능이다.
+  group('설정 탭의 감사 행은 장소 예약을 켰을 때만', () {
+    Future<void> pumpSettings(WidgetTester tester, {required bool installed}) async {
+      SharedPreferences.setMockInitialValues({
+        installedModulesPrefsKey: jsonEncode([
+          ModuleIds.today, ModuleIds.calendar, ModuleIds.schedule, ModuleIds.settings,
+          if (installed) ModuleIds.schoolbook,
+        ]),
+      });
+      PackageInfo.setMockInitialValues(
+        appName: '공직플랜', packageName: 'com.planroutine.app',
+        version: '1.4.4', buildNumber: '1', buildSignature: '',
+      );
+      tester.view.physicalSize = const Size(402, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: SettingsScreen())));
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    testWidgets('꺼져 있으면 없다', (tester) async {
+      await pumpSettings(tester, installed: false);
+      expect(find.byType(SchoolbookCreditTile), findsNothing);
+    });
+
+    testWidgets('켜져 있으면 있다', (tester) async {
+      await pumpSettings(tester, installed: true);
+      expect(find.byType(SchoolbookCreditTile), findsOneWidget);
     });
   });
 }
