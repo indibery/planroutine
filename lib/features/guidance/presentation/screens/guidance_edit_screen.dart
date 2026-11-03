@@ -410,7 +410,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
             ),
             onPressed: _record,
             icon: Icon(Icons.fiber_manual_record, color: AppColors.error, size: 18),
-            label: const Text(GuidanceStrings.recordShort, maxLines: 1, softWrap: false),
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(GuidanceStrings.recordShort, maxLines: 1, softWrap: false),
+            ),
           ),
         ),
         gap,
@@ -420,7 +423,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
             style: OutlinedButton.styleFrom(padding: pad),
             onPressed: () => _import(AttachmentType.image),
             icon: const Icon(Icons.image_outlined, size: 18),
-            label: const Text(GuidanceStrings.importImageShort, maxLines: 1, softWrap: false),
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(GuidanceStrings.importImageShort, maxLines: 1, softWrap: false),
+            ),
           ),
         ),
         gap,
@@ -430,7 +436,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
             style: OutlinedButton.styleFrom(padding: pad),
             onPressed: () => _import(AttachmentType.audio),
             icon: const Icon(Icons.audio_file_outlined, size: 18),
-            label: const Text(GuidanceStrings.importAudioShort, maxLines: 1, softWrap: false),
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(GuidanceStrings.importAudioShort, maxLines: 1, softWrap: false),
+            ),
           ),
         ),
       ],
@@ -625,6 +634,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                         filled: false,
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
                         focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
+                        errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.error)),
+                        focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.error, width: 2)),
                         errorText: _titleError && _title.text.trim().isEmpty
                             ? GuidanceStrings.titleRequired
                             : null,
@@ -713,7 +724,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
               now: now,
               createdLine: createdLine,
               precision: _precision,
-              occurredAt: _occurredAt ?? now,
+              occurredAt: _occurredAt,
               occurredText: _occurredText,
               onPrecision: (p) => setState(() => _precision = p),
               onAt: (d) => setState(() => _occurredAt = d),
@@ -763,7 +774,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 52, child: Text(name, style: AppTextStyles.fieldLabel)),
+        SizedBox(width: OccurredRow.nameColumnWidth, child: Text(name, style: AppTextStyles.fieldLabel)),
         Expanded(child: value),
         ?trailing,
       ],

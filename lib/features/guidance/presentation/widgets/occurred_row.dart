@@ -32,11 +32,16 @@ class OccurredRow extends StatelessWidget {
   final DateTime now;
   final String createdLine;
   final OccurredPrecision precision;
-  final DateTime occurredAt;
+
+  /// 부모가 들고 있는 값 그대로(대략으로 적은 기록은 null).
+  final DateTime? occurredAt;
   final String? occurredText;
   final ValueChanged<OccurredPrecision> onPrecision;
   final ValueChanged<DateTime> onAt;
   final ValueChanged<String> onText;
+
+  /// 정리표 행 이름 칸 폭 — 모든 행의 값이 같은 세로선에서 시작하게 화면 표와 나눠 쓴다.
+  static const nameColumnWidth = 52.0;
 
   static const rowKey = Key('occurred_row');
 
@@ -49,6 +54,7 @@ class OccurredRow extends StatelessWidget {
         createdLine: createdLine,
         precision: precision,
         occurredAt: occurredAt,
+        now: now,
         occurredText: occurredText,
         onPrecision: onPrecision,
         onAt: onAt,
@@ -70,13 +76,25 @@ class OccurredRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing12),
           child: Row(
             children: [
-              Text(GuidanceStrings.labelWhen, style: AppTextStyles.fieldLabel),
-              const SizedBox(width: AppSizes.spacing12),
+              SizedBox(
+                width: nameColumnWidth,
+                child: Text(
+                  GuidanceStrings.labelWhen,
+                  style: AppTextStyles.fieldLabel,
+                ),
+              ),
               Expanded(
-                child: Text(summary, style: AppTextStyles.bodyL, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  summary,
+                  style: AppTextStyles.bodyL,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: AppSizes.spacing8),
-              Text(precision.label, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
+              Text(
+                precision.label,
+                style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+              ),
               Icon(Icons.chevron_right, size: 20, color: AppColors.sub),
             ],
           ),
@@ -91,6 +109,7 @@ class _OccurredSheet extends StatefulWidget {
     required this.createdLine,
     required this.precision,
     required this.occurredAt,
+    required this.now,
     required this.occurredText,
     required this.onPrecision,
     required this.onAt,
@@ -99,7 +118,8 @@ class _OccurredSheet extends StatefulWidget {
 
   final String createdLine;
   final OccurredPrecision precision;
-  final DateTime occurredAt;
+  final DateTime? occurredAt;
+  final DateTime now;
   final String? occurredText;
   final ValueChanged<OccurredPrecision> onPrecision;
   final ValueChanged<DateTime> onAt;
@@ -111,17 +131,21 @@ class _OccurredSheet extends StatefulWidget {
 
 class _OccurredSheetState extends State<_OccurredSheet> {
   late OccurredPrecision _precision = widget.precision;
-  late DateTime _at = widget.occurredAt;
+  // 부모가 가진 값(null 가능)과 시트에 보이는 값을 따로 든다 — 대략 기록은 시트가 지금으로 시작하는데,
+  // 그 값이 부모에 올라가지 않으면 저장 때 사라진다.
+  late DateTime? _parentAt = widget.occurredAt;
+  late DateTime _at = widget.occurredAt ?? widget.now;
   late String? _text = widget.occurredText;
 
   void _changed(OccurredValue v) {
     // 정밀도·시각·글 중 실제로 바뀐 것만 부모에 올린다.
     if (v.precision != _precision) widget.onPrecision(v.precision);
     final at = v.at;
-    if (at != null && at != _at) widget.onAt(at);
+    if (at != null && at != _parentAt) widget.onAt(at);
     if (v.text != _text) widget.onText(v.text ?? '');
     setState(() {
       _precision = v.precision;
+      _parentAt = at ?? _parentAt;
       _at = at ?? _at;
       _text = v.text;
     });
@@ -151,7 +175,10 @@ class _OccurredSheetState extends State<_OccurredSheet> {
                 onChanged: _changed,
               ),
               const SizedBox(height: AppSizes.spacing12),
-              Text(widget.createdLine, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
+              Text(
+                widget.createdLine,
+                style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
+              ),
             ],
           ),
         ),

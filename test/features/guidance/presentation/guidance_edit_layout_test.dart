@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -10,6 +11,7 @@ import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
+import 'package:planroutine/features/guidance/presentation/widgets/occurred_input.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
@@ -243,4 +245,62 @@ void main() {
       expect(contrastRatio(fg!, fill!), greaterThanOrEqualTo(4.5));
     });
   }
+
+  testWidgets('대략으로 적은 기록을 정확히로 바꾸면 시트에 보인 날짜가 저장된다', (tester) async {
+    final id = await tester.runAsync(
+      () => repo.create(
+        const GuidanceContent(
+          title: '대략 기록',
+          precision: OccurredPrecision.approx,
+          occurredText: '초여름',
+        ),
+      ),
+    );
+    await pump(tester, recordId: id);
+    await tester.tap(find.byKey(OccurredRow.rowKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.exact)));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(5, 5)); // 시트를 닫는다
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await settle(tester);
+    final c = (await tester.runAsync(repo.getActive))?.single.content;
+    expect(c?.precision, OccurredPrecision.exact);
+    expect(c?.occurredAt, isNotNull);
+    final n = DateTime.now();
+    expect(c!.occurredAt!.difference(n).abs() < const Duration(minutes: 2), isTrue);
+  });
+
+  testWidgets('320pt에서 첨부 버튼 글자가 잘리지 않는다', (tester) async {
+    await pump(tester, width: 320);
+    for (final k in [
+      GuidanceEditScreen.recordKey,
+      GuidanceEditScreen.importImageKey,
+      GuidanceEditScreen.importAudioKey,
+    ]) {
+      final label = find.descendant(of: find.byKey(k), matching: find.byType(Text));
+      final box = tester.getRect(find.byKey(k));
+      final text = tester.getRect(label);
+      expect(text.left >= box.left && text.right <= box.right, isTrue, reason: '$k $text $box');
+      final para = tester.renderObject<RenderParagraph>(label);
+      expect(para.didExceedMaxLines, isFalse, reason: '$k');
+    }
+  });
+
+  testWidgets('언제 행 값도 다른 행과 같은 세로선에서 시작한다', (tester) async {
+    await pump(tester);
+    final when = tester.getTopLeft(find.descendant(of: find.byKey(OccurredRow.rowKey), matching: find.byType(Expanded))).dx;
+    final where = tester.getTopLeft(find.byKey(GuidanceEditScreen.placeKey)).dx;
+    expect((when - where).abs() < 1, isTrue, reason: '$when vs $where');
+  });
+
+  testWidgets('제목 오류 테두리는 밑줄형이다', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
+    await settle(tester);
+    final field = tester.widget<TextField>(find.byKey(GuidanceEditScreen.titleKey));
+    expect(field.decoration?.errorBorder, isA<UnderlineInputBorder>());
+    expect(field.decoration?.focusedErrorBorder, isA<UnderlineInputBorder>());
+  });
 }
