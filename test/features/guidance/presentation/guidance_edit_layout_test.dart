@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/core/database/database_helper.dart';
 import 'package:planroutine/features/guidance/data/guidance_people_repository.dart';
@@ -13,6 +14,7 @@ import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
 
+import '../../../helpers/contrast.dart';
 import '../../../helpers/test_database.dart';
 import '../../../helpers/text_glyph.dart';
 
@@ -226,4 +228,19 @@ void main() {
     expect(find.text(GuidanceStrings.discardTitle), findsNothing);
     expect(find.byType(GuidanceEditScreen), findsNothing);
   });
+
+  for (final b in [Brightness.light, Brightness.dark]) {
+    testWidgets('${b.name} 테마에서 녹음 버튼은 배경과 구별되는 채움이고 글자 대비 4.5 이상이다', (tester) async {
+      AppColors.applyBrightness(b);
+      addTearDown(() => AppColors.applyBrightness(Brightness.light));
+      await pump(tester);
+      final button = tester.widget<FilledButton>(find.byKey(GuidanceEditScreen.recordKey));
+      final fill = button.style?.backgroundColor?.resolve({});
+      final fg = button.style?.foregroundColor?.resolve({});
+      expect(fill, isNotNull);
+      expect(fg, isNotNull);
+      expect(fill, isNot(AppColors.background));
+      expect(contrastRatio(fg!, fill!), greaterThanOrEqualTo(4.5));
+    });
+  }
 }

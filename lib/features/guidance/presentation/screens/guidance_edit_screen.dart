@@ -404,8 +404,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
           child: FilledButton.icon(
             key: GuidanceEditScreen.recordKey,
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.navy,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.ink,
+              foregroundColor: AppColors.background,
               padding: pad,
             ),
             onPressed: _record,
