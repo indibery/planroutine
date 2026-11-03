@@ -107,6 +107,15 @@ class GuidanceStrings {
   static const labelKind = '구분';
   static const labelStatus = '진행 상태';
   static const labelOccurred = '사건 시각';
+  static const labelStatusShort = '상태';
+  static const labelWhen = '언제';
+  static const labelWhere = '어디서';
+  static const labelWho = '누가';
+  static const recordShort = '녹음';
+  static const importImageShort = '사진';
+  static const importAudioShort = '녹음 파일';
+  static const kindInfoLabel = '구분 안내';
+  static const participantsInfoLabel = '관련인 안내';
   static const labelCreated = '기록 시각';
   static const createdOnSave = '저장할 때 자동으로 남아요';
   static const labelTitle = '제목';
