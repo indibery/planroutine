@@ -68,6 +68,17 @@ void main() {
     expect(auth.calls, 2);
   });
 
+  test('authenticate: 인증기가 동기로 던져도 영구히 잠기지 않는다', () async {
+    final auth = _Auth((n) {
+      if (n == 1) throw StateError('동기 예외');
+      return Future.value(AuthOutcome.success);
+    });
+    expect(await unlock.authenticate(auth, '이유'), AuthOutcome.failed);
+    expect(await unlock.authenticate(auth, '이유'), AuthOutcome.success);
+    expect(auth.calls, 2);
+    expect(unlock.isUnlocked, isTrue);
+  });
+
   test('authenticate: 이미 풀려 있으면 인증기를 부르지 않고 success', () async {
     unlock.markUnlocked();
     final auth = _Auth((_) async => AuthOutcome.failed);

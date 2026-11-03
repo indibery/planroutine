@@ -45,7 +45,15 @@ class GuidanceUnlock extends ChangeNotifier {
   /// 예상 밖 예외는 실패로 친다. `noCredentials`는 상태를 바꾸지 않고 그대로 돌려준다.
   Future<AuthOutcome> authenticate(DeviceAuthenticator auth, String reason) {
     if (_unlocked) return Future.value(AuthOutcome.success);
-    return _inFlight ??= _run(auth, reason);
+    final running = _inFlight;
+    if (running != null) return running;
+    // _run이 첫 await 전에 끝나도(인증기가 동기로 던짐) 대입 뒤에 비우도록 whenComplete를 따로 건다.
+    final f = _run(auth, reason);
+    _inFlight = f;
+    f.whenComplete(() {
+      if (identical(_inFlight, f)) _inFlight = null;
+    });
+    return f;
   }
 
   Future<AuthOutcome> _run(DeviceAuthenticator auth, String reason) async {
@@ -53,9 +61,7 @@ class GuidanceUnlock extends ChangeNotifier {
     try {
       outcome = await auth.authenticate(reason);
     } catch (_) {
-      // 예상 밖 예외도 실패 — _inFlight가 남아 영구히 못 푸는 일이 없도록 아래에서 비운다.
-    } finally {
-      _inFlight = null;
+      // 예상 밖 예외도 실패 — _inFlight는 authenticate가 완료 뒤에 비운다.
     }
     if (outcome == AuthOutcome.success) markUnlocked();
     return outcome;
