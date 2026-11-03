@@ -35,7 +35,6 @@ class GuidanceLockGate extends ConsumerStatefulWidget {
 class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     with WidgetsBindingObserver {
   var _noCredentials = false;
-  var _authing = false;
 
   /// 화면을 가리기만 하는 면(잠금 상태와 무관). 풀린 상태에서 `inactive`가 오면 켠다 —
   /// 15분이 지나 돌아오면 `resumed`에서야 만료를 아는데, 그때 덮개를 올리면 그려지기 전 몇 프레임
@@ -98,29 +97,18 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
   }
 
   Future<void> _authenticate() async {
-    if (_authing || _unlocked || !mounted) return;
-    _authing = true;
-    var outcome = AuthOutcome.failed;
-    try {
-      outcome = await ref
-          .read(deviceAuthenticatorProvider)
-          .authenticate(GuidanceStrings.unlockReason);
-    } catch (_) {
-      // 예상 밖 예외도 실패로 취급한다 — `_authing`이 true로 남으면 잠금 해제 버튼과
-      // 복귀 재인증이 모두 조용히 무시되어 영구히 못 푼다.
-    } finally {
-      _authing = false;
-    }
+    if (_unlocked || !mounted) return;
+    // 중복 호출은 GuidanceUnlock이 같은 Future로 합친다.
+    final outcome = await _unlock.authenticate(
+      ref.read(deviceAuthenticatorProvider),
+      GuidanceStrings.unlockReason,
+    );
     if (!mounted) return;
     setState(() {
-      switch (outcome) {
-        case AuthOutcome.success:
-          _unlock.markUnlocked();
-          _noCredentials = false;
-        case AuthOutcome.noCredentials:
-          _noCredentials = true;
-        case AuthOutcome.failed:
-          break;
+      if (outcome == AuthOutcome.noCredentials) {
+        _noCredentials = true;
+      } else if (outcome == AuthOutcome.success) {
+        _noCredentials = false;
       }
     });
   }
