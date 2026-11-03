@@ -20,6 +20,15 @@ if [ "$BUILD" = 1 ]; then
 fi
 [ -d "$VERIFY_APP" ] || { echo "빌드 산출물이 없다: $VERIFY_APP" >&2; exit 1; }
 
+# 부팅 직후 폭주가 가라앉기를 기다린다. 이 상태에서는 시뮬 안 설치가 1초에 끝나도 simctl이 응답을 못 받고 멈춘다.
+ncpu=$(sysctl -n hw.ncpu)
+for i in $(seq 1 60); do
+  load=$(sysctl -n vm.loadavg | awk '{print int($2)}')
+  [ "$load" -le "$ncpu" ] && break
+  [ $((i % 4)) = 1 ] && echo "CPU 부하 ${load} — 부팅 직후 폭주가 가라앉기를 기다린다 (코어 ${ncpu} 이하까지, 최대 15분)"
+  sleep 15
+done
+
 # 설치돼 있지 않으면 uninstall이 실패하는데 그건 괜찮다. 시간 초과(124)만 멈춘다.
 # simctl 오류만 버리고 wt의 시간 초과 안내는 남긴다(2>/dev/null을 wt 밖에 두면 안내까지 사라진다).
 if [ "$KEEP" = 0 ]; then
