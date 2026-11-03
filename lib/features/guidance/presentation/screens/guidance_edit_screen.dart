@@ -17,6 +17,7 @@ import '../recording/recording_screen.dart';
 import '../../../../shared/widgets/button_semantics.dart';
 import '../widgets/attachment_tile.dart';
 import '../widgets/occurred_row.dart';
+import '../widgets/occurred_input.dart';
 import '../widgets/participant_chips_field.dart';
 import '../../../../shared/widgets/pill_chip.dart';
 
@@ -396,53 +397,65 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
 
   /// 녹음(채움 네이비 + 빨간 점) · 사진 · 녹음 파일 — 한 줄에 같은 폭으로.
   Widget _attachButtons() {
-    const pad = EdgeInsets.symmetric(horizontal: AppSizes.spacing8);
-    const gap = SizedBox(width: AppSizes.spacing8);
     return Row(
+      spacing: AppSizes.spacing8,
       children: [
-        Expanded(
-          child: FilledButton.icon(
-            key: GuidanceEditScreen.recordKey,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.ink,
-              foregroundColor: AppColors.background,
-              padding: pad,
-            ),
-            onPressed: _record,
-            icon: Icon(Icons.fiber_manual_record, color: AppColors.error, size: 18),
-            label: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(GuidanceStrings.recordShort, maxLines: 1, softWrap: false),
-            ),
-          ),
+        _attachButton(
+          key: GuidanceEditScreen.recordKey,
+          icon: Icon(Icons.fiber_manual_record, color: AppColors.error, size: 18),
+          label: GuidanceStrings.recordShort,
+          onPressed: _record,
+          filled: true,
         ),
-        gap,
-        Expanded(
-          child: OutlinedButton.icon(
-            key: GuidanceEditScreen.importImageKey,
-            style: OutlinedButton.styleFrom(padding: pad),
-            onPressed: () => _import(AttachmentType.image),
-            icon: const Icon(Icons.image_outlined, size: 18),
-            label: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(GuidanceStrings.importImageShort, maxLines: 1, softWrap: false),
-            ),
-          ),
+        _attachButton(
+          key: GuidanceEditScreen.importImageKey,
+          icon: const Icon(Icons.image_outlined, size: 18),
+          label: GuidanceStrings.importImageShort,
+          onPressed: () => _import(AttachmentType.image),
         ),
-        gap,
-        Expanded(
-          child: OutlinedButton.icon(
-            key: GuidanceEditScreen.importAudioKey,
-            style: OutlinedButton.styleFrom(padding: pad),
-            onPressed: () => _import(AttachmentType.audio),
-            icon: const Icon(Icons.audio_file_outlined, size: 18),
-            label: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(GuidanceStrings.importAudioShort, maxLines: 1, softWrap: false),
-            ),
-          ),
+        _attachButton(
+          key: GuidanceEditScreen.importAudioKey,
+          icon: const Icon(Icons.audio_file_outlined, size: 18),
+          label: GuidanceStrings.importAudioShort,
+          onPressed: () => _import(AttachmentType.audio),
         ),
       ],
+    );
+  }
+
+  /// 첨부 버튼 하나 — 라벨은 폭에 맞춰 줄어든다. [filled]면 채움(테마 ink/background), 아니면 테두리.
+  Widget _attachButton({
+    required Key key,
+    required Widget icon,
+    required String label,
+    required VoidCallback onPressed,
+    bool filled = false,
+  }) {
+    const pad = EdgeInsets.symmetric(horizontal: AppSizes.spacing8);
+    final text = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(label, maxLines: 1, softWrap: false),
+    );
+    return Expanded(
+      child: filled
+          ? FilledButton.icon(
+              key: key,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.ink,
+                foregroundColor: AppColors.background,
+                padding: pad,
+              ),
+              onPressed: onPressed,
+              icon: icon,
+              label: text,
+            )
+          : OutlinedButton.icon(
+              key: key,
+              style: OutlinedButton.styleFrom(padding: pad),
+              onPressed: onPressed,
+              icon: icon,
+              label: text,
+            ),
     );
   }
 
@@ -461,59 +474,71 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     ),
   );
 
-  void _expand({required bool quotes}) {
-    setState(() => quotes ? _showQuotes = true : _showActions = true);
+  void _expand(_Extra item) {
+    setState(item.expand);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) (quotes ? _quotesFocus : _actionsFocus).requestFocus();
+      if (mounted) item.focus.requestFocus();
     });
   }
 
+  /// 들은 말 · 판단·조치 — 비었으면 점선 버튼, 열렸으면 입력칸. 열린 것은 다시 접지 않는다.
   List<Widget> _quotesActionsSection() {
-    Widget field(Key key, TextEditingController c, FocusNode f, String label, String hint) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _label(label),
-        Semantics(
-          label: label,
-          child: TextField(
-            key: key,
-            controller: c,
-            focusNode: f,
-            minLines: 3,
-            maxLines: null,
-            decoration: InputDecoration(hintText: hint),
+    final items = [
+      _Extra(
+        fieldKey: GuidanceEditScreen.quotesKey,
+        addKey: GuidanceEditScreen.addQuotesKey,
+        controller: _quotes,
+        focus: _quotesFocus,
+        label: GuidanceStrings.labelQuotes,
+        hint: GuidanceStrings.quotesHint,
+        addLabel: GuidanceStrings.addQuotes,
+        shown: _showQuotes,
+        expand: () => _showQuotes = true,
+      ),
+      _Extra(
+        fieldKey: GuidanceEditScreen.actionsKey,
+        addKey: GuidanceEditScreen.addActionsKey,
+        controller: _actions,
+        focus: _actionsFocus,
+        label: GuidanceStrings.labelActions,
+        hint: GuidanceStrings.actionsHint,
+        addLabel: GuidanceStrings.addActions,
+        shown: _showActions,
+        expand: () => _showActions = true,
+      ),
+    ];
+    final collapsed = [for (final i in items) if (!i.shown) i];
+    return [
+      for (final i in items)
+        if (i.shown) ...[
+          _gap(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _label(i.label),
+              Semantics(
+                label: i.label,
+                child: TextField(
+                  key: i.fieldKey,
+                  controller: i.controller,
+                  focusNode: i.focus,
+                  minLines: 3,
+                  maxLines: null,
+                  decoration: InputDecoration(hintText: i.hint),
+                ),
+              ),
+            ],
           ),
+        ],
+      if (collapsed.isNotEmpty) ...[
+        _gap(),
+        Row(
+          spacing: AppSizes.spacing8,
+          children: [
+            for (final i in collapsed) Expanded(child: _addButton(i.addKey, i.addLabel, () => _expand(i))),
+          ],
         ),
       ],
-    );
-    if (_showQuotes && _showActions) {
-      return [
-        _gap(),
-        field(GuidanceEditScreen.quotesKey, _quotes, _quotesFocus, GuidanceStrings.labelQuotes, GuidanceStrings.quotesHint),
-        _gap(),
-        field(GuidanceEditScreen.actionsKey, _actions, _actionsFocus, GuidanceStrings.labelActions, GuidanceStrings.actionsHint),
-      ];
-    }
-    return [
-      _gap(),
-      if (_showQuotes)
-        field(GuidanceEditScreen.quotesKey, _quotes, _quotesFocus, GuidanceStrings.labelQuotes, GuidanceStrings.quotesHint),
-      if (_showActions)
-        field(GuidanceEditScreen.actionsKey, _actions, _actionsFocus, GuidanceStrings.labelActions, GuidanceStrings.actionsHint),
-      if (_showQuotes != _showActions) _gap(),
-      Row(
-        children: [
-          if (!_showQuotes)
-            Expanded(
-              child: _addButton(GuidanceEditScreen.addQuotesKey, GuidanceStrings.addQuotes, () => _expand(quotes: true)),
-            ),
-          if (!_showQuotes && !_showActions) const SizedBox(width: AppSizes.spacing8),
-          if (!_showActions)
-            Expanded(
-              child: _addButton(GuidanceEditScreen.addActionsKey, GuidanceStrings.addActions, () => _expand(quotes: false)),
-            ),
-        ],
-      ),
     ];
   }
 
@@ -723,12 +748,12 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
               current: _current(),
               now: now,
               createdLine: createdLine,
-              precision: _precision,
-              occurredAt: _occurredAt,
-              occurredText: _occurredText,
-              onPrecision: (p) => setState(() => _precision = p),
-              onAt: (d) => setState(() => _occurredAt = d),
-              onText: (t) => setState(() => _occurredText = t),
+              value: OccurredValue(precision: _precision, at: _occurredAt, text: _occurredText),
+              onChanged: (v) => setState(() {
+                _precision = v.precision;
+                _occurredAt = v.at;
+                _occurredText = v.text;
+              }),
             ),
             divider,
             _tableRow(
@@ -742,15 +767,13 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                   decoration: InputDecoration(
                     hintText: GuidanceStrings.labelPlace,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.spacing12,
-                      vertical: AppSizes.spacing12,
+                    contentPadding: ParticipantChipsField.boxPadding.copyWith(
+                      top: AppSizes.spacing12,
+                      bottom: AppSizes.spacing12,
                     ),
                   ),
                 ),
               ),
-              // 누가 행의 ⓘ 자리만큼 비워 두 상자의 오른쪽 끝을 맞춘다.
-              trailing: const SizedBox(width: _infoSlotWidth),
             ),
             divider,
             _tableRow(
@@ -772,6 +795,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     );
   }
 
+  /// 정리표 한 행 — 이름 · 값 · 오른쪽 자리. 오른쪽 자리는 늘 비워 두지 않고 [_infoSlotWidth]만큼 잡아
+  /// 모든 행의 상자 오른쪽 끝이 맞는다.
   Widget _tableRow(String name, Widget value, {Widget? trailing}) => Padding(
     padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing12),
     child: Row(
@@ -779,33 +804,33 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       children: [
         SizedBox(width: OccurredRow.nameColumnWidth, child: Text(name, style: AppTextStyles.fieldLabel)),
         Expanded(child: value),
-        ?trailing,
+        trailing ?? const SizedBox(width: _infoSlotWidth),
       ],
     ),
   );
 
-  /// 설명 문장을 뒤로 보내는 ⓘ — 누르면 단순 대화상자로 보여 준다.
-  /// ⓘ 자리 폭 — 누가 행의 ⓘ와 어디서 행의 빈 자리가 같은 폭이라 두 상자의 양 끝이 맞는다.
+  /// 오른쪽 자리(ⓘ 또는 빈 자리) 폭.
   static const _infoSlotWidth = 40.0;
 
+  /// 설명 문장을 뒤로 보내는 ⓘ — 누르면 단순 대화상자로 보여 준다.
   Widget _infoButton(Key key, String semanticLabel, String message) => SizedBox(
     width: _infoSlotWidth,
     child: IconButton(
-    key: key,
-    visualDensity: VisualDensity.compact,
-    padding: EdgeInsets.zero,
-    constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
-    icon: Icon(Icons.info_outline, size: 20, color: AppColors.sub, semanticLabel: semanticLabel),
-    onPressed: () => showDialog<void>(
-      context: context,
-      useRootNavigator: false,
-      builder: (ctx) => AlertDialog(
-        content: Text(message, style: AppTextStyles.bodyL),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text(GuidanceStrings.recordingClose)),
-        ],
+      key: key,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
+      icon: Icon(Icons.info_outline, size: 20, color: AppColors.sub, semanticLabel: semanticLabel),
+      onPressed: () => showDialog<void>(
+        context: context,
+        useRootNavigator: false,
+        builder: (ctx) => AlertDialog(
+          content: Text(message, style: AppTextStyles.bodyL),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text(GuidanceStrings.recordingClose)),
+          ],
+        ),
       ),
-    ),
     ),
   );
 
@@ -844,4 +869,29 @@ class _DashedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
+}
+
+/// 들은 말·판단·조치 칸 하나의 조립 값 — 펼침 상태는 화면이 들고 [expand]로 켠다.
+class _Extra {
+  const _Extra({
+    required this.fieldKey,
+    required this.addKey,
+    required this.controller,
+    required this.focus,
+    required this.label,
+    required this.hint,
+    required this.addLabel,
+    required this.shown,
+    required this.expand,
+  });
+
+  final Key fieldKey;
+  final Key addKey;
+  final TextEditingController controller;
+  final FocusNode focus;
+  final String label;
+  final String hint;
+  final String addLabel;
+  final bool shown;
+  final VoidCallback expand;
 }

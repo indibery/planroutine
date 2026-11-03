@@ -105,7 +105,6 @@ class GuidanceStrings {
   static const untitled = '제목 없음';
   static const titleRequired = '제목을 적어 주세요';
   static const labelKind = '구분';
-  static const labelStatus = '진행 상태';
   static const labelOccurred = '사건 시각';
   static const labelStatusShort = '상태';
   static const labelWhen = '언제';
@@ -194,9 +193,6 @@ class GuidanceStrings {
   static String removedLog(String what) => '$what 삭제';
 
   // 첨부 넣기
-  static const record = '녹음하기';
-  static const importAudio = '녹음 파일 가져오기';
-  static const importImage = '사진 가져오기';
   static const importHintSchoolPhone = '학부모 통화는 학교 전화 사용이 원칙입니다.';
   static const removeAttachmentTitle = '첨부를 삭제할까요?';
   static const removeAttachmentMessage = '목록에서는 사라지지만 파일과 수정 이력은 남습니다.';

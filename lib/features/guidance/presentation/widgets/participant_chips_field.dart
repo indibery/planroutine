@@ -38,6 +38,12 @@ class ParticipantChipsField extends ConsumerStatefulWidget {
   /// 칩이 있을 때 입력칸이 칩과 같은 줄에서 차지하는 폭. 이름은 대개 3~6글자다.
   static const inputWidthWithChips = 120.0;
 
+  /// 입력 상자 안쪽 여백 — 정리표의 어디서 칸이 좌우를 같게 쓴다.
+  static const boxPadding = EdgeInsets.symmetric(
+    horizontal: AppSizes.spacing12,
+    vertical: AppSizes.spacing8,
+  );
+
   @override
   ConsumerState<ParticipantChipsField> createState() =>
       _ParticipantChipsFieldState();
@@ -143,10 +149,7 @@ class _ParticipantChipsFieldState extends ConsumerState<ParticipantChipsField>
               key: ParticipantChipsField.boxKey,
               isFocused: _focus.hasFocus,
               decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: AppSizes.spacing12,
-                  vertical: AppSizes.spacing8,
-                ),
+                contentPadding: ParticipantChipsField.boxPadding,
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) => Wrap(

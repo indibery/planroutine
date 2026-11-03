@@ -32,12 +32,11 @@ void main() {
           current: GuidanceContent(precision: precision, occurredAt: at, occurredText: text),
           now: now,
           createdLine: '기록 시각 · 저장할 때 자동으로 남아요',
-          precision: precision,
-          occurredAt: at,
-          occurredText: text,
-          onPrecision: (p) => precisions?.add(p),
-          onAt: (_) {},
-          onText: (t) => texts?.add(t),
+          value: OccurredValue(precision: precision, at: at, text: text),
+          onChanged: (v) {
+            precisions?.add(v.precision);
+            texts?.add(v.text ?? '');
+          },
         ),
       ),
     ));

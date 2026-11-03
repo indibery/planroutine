@@ -8,7 +8,6 @@ import '../../../../shared/widgets/button_semantics.dart';
 import '../../../../shared/widgets/sheet_title.dart';
 import '../../domain/guidance_content.dart';
 import '../../domain/guidance_logic.dart';
-import '../../domain/guidance_types.dart';
 import 'occurred_input.dart';
 
 /// 정리표의 `언제` 행 — 요약 한 줄 + 오른쪽 정밀도. 누르면 시트에서 [OccurredInput]으로 고친다.
@@ -19,26 +18,20 @@ class OccurredRow extends StatelessWidget {
     required this.current,
     required this.now,
     required this.createdLine,
-    required this.precision,
-    required this.occurredAt,
-    required this.occurredText,
-    required this.onPrecision,
-    required this.onAt,
-    required this.onText,
+    required this.value,
+    required this.onChanged,
   });
 
   /// 요약 글용 현재 내용.
   final GuidanceContent current;
   final DateTime now;
   final String createdLine;
-  final OccurredPrecision precision;
 
-  /// 부모가 들고 있는 값 그대로(대략으로 적은 기록은 null).
-  final DateTime? occurredAt;
-  final String? occurredText;
-  final ValueChanged<OccurredPrecision> onPrecision;
-  final ValueChanged<DateTime> onAt;
-  final ValueChanged<String> onText;
+  /// 부모가 들고 있는 값 그대로(대략으로 적은 기록은 `at`이 null).
+  final OccurredValue value;
+
+  /// 시트 안에서 바뀔 때마다 새 값 전체를 올린다.
+  final ValueChanged<OccurredValue> onChanged;
 
   /// 정리표 행 이름 칸 폭 — 모든 행의 값이 같은 세로선에서 시작하게 화면 표와 나눠 쓴다.
   static const nameColumnWidth = 52.0;
@@ -52,13 +45,9 @@ class OccurredRow extends StatelessWidget {
       isScrollControlled: true,
       builder: (_) => _OccurredSheet(
         createdLine: createdLine,
-        precision: precision,
-        occurredAt: occurredAt,
+        value: value,
         now: now,
-        occurredText: occurredText,
-        onPrecision: onPrecision,
-        onAt: onAt,
-        onText: onText,
+        onChanged: onChanged,
       ),
     );
   }
@@ -67,7 +56,7 @@ class OccurredRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = formatOccurred(current, now: now);
     return ButtonSemantics(
-      label: '${GuidanceStrings.labelWhen} $summary ${precision.label}',
+      label: '${GuidanceStrings.labelWhen} $summary ${value.precision.label}',
       onTap: () => _open(context),
       child: InkWell(
         key: rowKey,
@@ -92,7 +81,7 @@ class OccurredRow extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spacing8),
               Text(
-                precision.label,
+                value.precision.label,
                 style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
               ),
               Icon(Icons.chevron_right, size: 20, color: AppColors.sub),
@@ -107,48 +96,32 @@ class OccurredRow extends StatelessWidget {
 class _OccurredSheet extends StatefulWidget {
   const _OccurredSheet({
     required this.createdLine,
-    required this.precision,
-    required this.occurredAt,
+    required this.value,
     required this.now,
-    required this.occurredText,
-    required this.onPrecision,
-    required this.onAt,
-    required this.onText,
+    required this.onChanged,
   });
 
   final String createdLine;
-  final OccurredPrecision precision;
-  final DateTime? occurredAt;
+  final OccurredValue value;
   final DateTime now;
-  final String? occurredText;
-  final ValueChanged<OccurredPrecision> onPrecision;
-  final ValueChanged<DateTime> onAt;
-  final ValueChanged<String> onText;
+  final ValueChanged<OccurredValue> onChanged;
 
   @override
   State<_OccurredSheet> createState() => _OccurredSheetState();
 }
 
 class _OccurredSheetState extends State<_OccurredSheet> {
-  late OccurredPrecision _precision = widget.precision;
-  // 부모가 가진 값(null 가능)과 시트에 보이는 값을 따로 든다 — 대략 기록은 시트가 지금으로 시작하는데,
-  // 그 값이 부모에 올라가지 않으면 저장 때 사라진다.
-  late DateTime? _parentAt = widget.occurredAt;
-  late DateTime _at = widget.occurredAt ?? widget.now;
-  late String? _text = widget.occurredText;
+  // 시트에 보이는 값 — 시각이 비어 있는 기록(대략)은 지금으로 시작한다. 바뀔 때 이 값 그대로 부모에
+  // 올라가야 저장 때 시트에서 본 날짜가 남는다.
+  late OccurredValue _v = OccurredValue(
+    precision: widget.value.precision,
+    at: widget.value.at ?? widget.now,
+    text: widget.value.text,
+  );
 
   void _changed(OccurredValue v) {
-    // 정밀도·시각·글 중 실제로 바뀐 것만 부모에 올린다.
-    if (v.precision != _precision) widget.onPrecision(v.precision);
-    final at = v.at;
-    if (at != null && at != _parentAt) widget.onAt(at);
-    if (v.text != _text) widget.onText(v.text ?? '');
-    setState(() {
-      _precision = v.precision;
-      _parentAt = at ?? _parentAt;
-      _at = at ?? _at;
-      _text = v.text;
-    });
+    widget.onChanged(v);
+    setState(() => _v = v);
   }
 
   @override
@@ -169,9 +142,9 @@ class _OccurredSheetState extends State<_OccurredSheet> {
               const SheetTitle(GuidanceStrings.labelOccurred),
               const SizedBox(height: AppSizes.spacing12),
               OccurredInput(
-                precision: _precision,
-                at: _at,
-                text: _text,
+                precision: _v.precision,
+                at: _v.at,
+                text: _v.text,
                 onChanged: _changed,
               ),
               const SizedBox(height: AppSizes.spacing12),
