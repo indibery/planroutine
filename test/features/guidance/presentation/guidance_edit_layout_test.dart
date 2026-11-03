@@ -13,6 +13,7 @@ import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_input.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.dart';
+import 'package:planroutine/features/guidance/presentation/widgets/participant_chips_field.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
 
@@ -35,13 +36,19 @@ void main() {
 
   Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 3; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
       await tester.pump();
     }
     await tester.pumpAndSettle();
   }
 
-  Future<void> pump(WidgetTester tester, {double width = 390, int? recordId}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    double width = 390,
+    int? recordId,
+  }) async {
     tester.view.physicalSize = Size(width, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -50,14 +57,18 @@ void main() {
       ProviderScope(
         overrides: [
           guidanceRepositoryProvider.overrideWithValue(repo),
-          guidancePeopleRepositoryProvider.overrideWithValue(GuidancePeopleRepository(dbHelper: db)),
+          guidancePeopleRepositoryProvider.overrideWithValue(
+            GuidancePeopleRepository(dbHelper: db),
+          ),
         ],
         child: MaterialApp(
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => GuidanceEditScreen(recordId: recordId)),
+                  MaterialPageRoute<void>(
+                    builder: (_) => GuidanceEditScreen(recordId: recordId),
+                  ),
                 ),
                 child: const Text('열기'),
               ),
@@ -73,7 +84,11 @@ void main() {
   testWidgets('제목이 정리표(구분 행)보다 위에 있다', (tester) async {
     await pump(tester);
     final title = tester.getTopLeft(find.byKey(GuidanceEditScreen.titleKey)).dy;
-    final kind = tester.getTopLeft(find.byKey(GuidanceEditScreen.kindKey(GuidanceKind.guidance))).dy;
+    final kind = tester
+        .getTopLeft(
+          find.byKey(GuidanceEditScreen.kindKey(GuidanceKind.guidance)),
+        )
+        .dy;
     expect(title < kind, isTrue);
   });
 
@@ -95,8 +110,12 @@ void main() {
   testWidgets('구분·상태 칩을 누르면 저장값에 반영된다', (tester) async {
     await pump(tester);
     await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
-    await tester.tap(find.byKey(GuidanceEditScreen.kindKey(GuidanceKind.infringement)));
-    await tester.tap(find.byKey(GuidanceEditScreen.statusKey(GuidanceStatus.closedAtSchool)));
+    await tester.tap(
+      find.byKey(GuidanceEditScreen.kindKey(GuidanceKind.infringement)),
+    );
+    await tester.tap(
+      find.byKey(GuidanceEditScreen.statusKey(GuidanceStatus.closedAtSchool)),
+    );
     await tester.pump();
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
     await settle(tester);
@@ -130,7 +149,11 @@ void main() {
       GuidanceStrings.labelWhere,
       GuidanceStrings.labelWho,
     ]) {
-      expect(textStyleOf(tester, find.text(label))?.fontSize, 14, reason: label);
+      expect(
+        textStyleOf(tester, find.text(label))?.fontSize,
+        14,
+        reason: label,
+      );
     }
   });
 
@@ -151,10 +174,18 @@ void main() {
       expect(find.text(t), findsOneWidget, reason: t);
     }
     final w = [
-      for (final k in [GuidanceEditScreen.recordKey, GuidanceEditScreen.importImageKey, GuidanceEditScreen.importAudioKey])
+      for (final k in [
+        GuidanceEditScreen.recordKey,
+        GuidanceEditScreen.importImageKey,
+        GuidanceEditScreen.importAudioKey,
+      ])
         tester.getSize(find.byKey(k)).width,
     ];
-    expect((w[0] - w[1]).abs() < 1 && (w[1] - w[2]).abs() < 1, isTrue, reason: '$w');
+    expect(
+      (w[0] - w[1]).abs() < 1 && (w[1] - w[2]).abs() < 1,
+      isTrue,
+      reason: '$w',
+    );
   });
 
   testWidgets('새 기록은 들은 말·판단·조치 칸이 없고 버튼을 누르면 칸이 열리며 포커스가 간다', (tester) async {
@@ -166,7 +197,9 @@ void main() {
     expect(find.byKey(GuidanceEditScreen.quotesKey), findsOneWidget);
     expect(find.byKey(GuidanceEditScreen.addQuotesKey), findsNothing);
     expect(find.text(GuidanceStrings.quotesHint), findsOneWidget);
-    final field = tester.widget<TextField>(find.byKey(GuidanceEditScreen.quotesKey));
+    final field = tester.widget<TextField>(
+      find.byKey(GuidanceEditScreen.quotesKey),
+    );
     expect(field.focusNode?.hasFocus ?? false, isTrue);
     expect(find.byKey(GuidanceEditScreen.actionsKey), findsNothing);
     await tester.tap(find.byKey(GuidanceEditScreen.addActionsKey));
@@ -211,7 +244,11 @@ void main() {
       () => repo.create(
         const GuidanceContent(
           title: '복도',
-          participants: [Participant(name: '김하늘'), Participant(name: '박서준(5반)'), Participant(name: '이도윤')],
+          participants: [
+            Participant(name: '김하늘'),
+            Participant(name: '박서준(5반)'),
+            Participant(name: '이도윤'),
+          ],
         ),
       ),
     );
@@ -232,11 +269,15 @@ void main() {
   });
 
   for (final b in [Brightness.light, Brightness.dark]) {
-    testWidgets('${b.name} 테마에서 녹음 버튼은 배경과 구별되는 채움이고 글자 대비 4.5 이상이다', (tester) async {
+    testWidgets('${b.name} 테마에서 녹음 버튼은 배경과 구별되는 채움이고 글자 대비 4.5 이상이다', (
+      tester,
+    ) async {
       AppColors.applyBrightness(b);
       addTearDown(() => AppColors.applyBrightness(Brightness.light));
       await pump(tester);
-      final button = tester.widget<FilledButton>(find.byKey(GuidanceEditScreen.recordKey));
+      final button = tester.widget<FilledButton>(
+        find.byKey(GuidanceEditScreen.recordKey),
+      );
       final fill = button.style?.backgroundColor?.resolve({});
       final fg = button.style?.foregroundColor?.resolve({});
       expect(fill, isNotNull);
@@ -259,7 +300,9 @@ void main() {
     await pump(tester, recordId: id);
     await tester.tap(find.byKey(OccurredRow.rowKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.exact)));
+    await tester.tap(
+      find.byKey(OccurredInput.precisionKey(OccurredPrecision.exact)),
+    );
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(5, 5)); // 시트를 닫는다
     await tester.pumpAndSettle();
@@ -269,7 +312,10 @@ void main() {
     expect(c?.precision, OccurredPrecision.exact);
     expect(c?.occurredAt, isNotNull);
     final n = DateTime.now();
-    expect(c!.occurredAt!.difference(n).abs() < const Duration(minutes: 2), isTrue);
+    expect(
+      c!.occurredAt!.difference(n).abs() < const Duration(minutes: 2),
+      isTrue,
+    );
   });
 
   testWidgets('320pt에서 첨부 버튼 글자가 잘리지 않는다', (tester) async {
@@ -279,10 +325,17 @@ void main() {
       GuidanceEditScreen.importImageKey,
       GuidanceEditScreen.importAudioKey,
     ]) {
-      final label = find.descendant(of: find.byKey(k), matching: find.byType(Text));
+      final label = find.descendant(
+        of: find.byKey(k),
+        matching: find.byType(Text),
+      );
       final box = tester.getRect(find.byKey(k));
       final text = tester.getRect(label);
-      expect(text.left >= box.left && text.right <= box.right, isTrue, reason: '$k $text $box');
+      expect(
+        text.left >= box.left && text.right <= box.right,
+        isTrue,
+        reason: '$k $text $box',
+      );
       final para = tester.renderObject<RenderParagraph>(label);
       expect(para.didExceedMaxLines, isFalse, reason: '$k');
     }
@@ -290,16 +343,49 @@ void main() {
 
   testWidgets('언제 행 값도 다른 행과 같은 세로선에서 시작한다', (tester) async {
     await pump(tester);
-    final when = tester.getTopLeft(find.descendant(of: find.byKey(OccurredRow.rowKey), matching: find.byType(Expanded))).dx;
+    final when = tester
+        .getTopLeft(
+          find.descendant(
+            of: find.byKey(OccurredRow.rowKey),
+            matching: find.byType(Expanded),
+          ),
+        )
+        .dx;
     final where = tester.getTopLeft(find.byKey(GuidanceEditScreen.placeKey)).dx;
     expect((when - where).abs() < 1, isTrue, reason: '$when vs $where');
+  });
+
+  testWidgets('어디서 칸도 누가 칸과 같은 채움 상자이고 양 끝이 맞는다', (tester) async {
+    await pump(tester);
+    final place = tester.getRect(find.byKey(GuidanceEditScreen.placeKey));
+    final who = tester.getRect(find.byKey(ParticipantChipsField.boxKey));
+    expect(
+      (place.left - who.left).abs() < 1,
+      isTrue,
+      reason: '왼쪽 $place vs $who',
+    );
+    expect(
+      (place.right - who.right).abs() < 1,
+      isTrue,
+      reason: '오른쪽 $place vs $who',
+    );
+    final field = tester.widget<TextField>(
+      find.byKey(GuidanceEditScreen.placeKey),
+    );
+    expect(
+      field.decoration?.filled,
+      isNot(false),
+      reason: '어디서 칸은 채움 상자여야 한다(테마 기본 채움)',
+    );
   });
 
   testWidgets('제목 오류 테두리는 밑줄형이다', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
     await settle(tester);
-    final field = tester.widget<TextField>(find.byKey(GuidanceEditScreen.titleKey));
+    final field = tester.widget<TextField>(
+      find.byKey(GuidanceEditScreen.titleKey),
+    );
     expect(field.decoration?.errorBorder, isA<UnderlineInputBorder>());
     expect(field.decoration?.focusedErrorBorder, isA<UnderlineInputBorder>());
   });

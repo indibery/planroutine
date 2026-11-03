@@ -738,16 +738,19 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                 child: TextField(
                   key: GuidanceEditScreen.placeKey,
                   controller: _place,
+                  // 누가 칸(`ParticipantChipsField`)과 같은 테마 채움 상자·안쪽 여백 — 정리표 안 입력칸 모양을 하나로.
                   decoration: InputDecoration(
                     hintText: GuidanceStrings.labelPlace,
-                    filled: false,
                     isDense: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.spacing12,
+                      vertical: AppSizes.spacing12,
+                    ),
                   ),
                 ),
               ),
+              // 누가 행의 ⓘ 자리만큼 비워 두 상자의 오른쪽 끝을 맞춘다.
+              trailing: const SizedBox(width: _infoSlotWidth),
             ),
             divider,
             _tableRow(
@@ -782,7 +785,12 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   );
 
   /// 설명 문장을 뒤로 보내는 ⓘ — 누르면 단순 대화상자로 보여 준다.
-  Widget _infoButton(Key key, String semanticLabel, String message) => IconButton(
+  /// ⓘ 자리 폭 — 누가 행의 ⓘ와 어디서 행의 빈 자리가 같은 폭이라 두 상자의 양 끝이 맞는다.
+  static const _infoSlotWidth = 40.0;
+
+  Widget _infoButton(Key key, String semanticLabel, String message) => SizedBox(
+    width: _infoSlotWidth,
+    child: IconButton(
     key: key,
     visualDensity: VisualDensity.compact,
     padding: EdgeInsets.zero,
@@ -797,6 +805,7 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text(GuidanceStrings.recordingClose)),
         ],
       ),
+    ),
     ),
   );
 
