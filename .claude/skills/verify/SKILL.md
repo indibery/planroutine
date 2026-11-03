@@ -44,9 +44,10 @@ $V/doctor.sh    # ✓/✗ 줄, 하나라도 ✗면 exit 1
 
 도구는 `driving-ios-simulator` 스킬의 "두 도구 함께 쓰기"를 따른다. 요약:
 
-- **읽기와 누르기는 MobileBuildMCP `snapshot_ui` + `tap`(elementRef)** 를 기준으로 쓴다. 세션 기본값이 비어 있으면 `session_set_defaults`로 시뮬 UDID를 준다.
+- **iOS 27에서는 `scripts/ax.sh`를 쓴다**(`ls`·`tap <라벨>`·`xy`·`ko <한글>`). 2026-11-03에 MobileBuildMCP `snapshot_ui`가 `remote automation session` 시간 초과로 실패했다. 함정은 `features/memo.md` 끝.
+- MobileBuildMCP `snapshot_ui` + `tap`(elementRef)이 되는 환경이면 그것을 쓴다. 세션 기본값이 비어 있으면 `session_set_defaults`로 시뮬 UDID를 준다.
 - `snapshot_ui`에 안 나오는 곳은 번들 AXe로 좌표를 누른다(포인트 단위, iPhone 17 폭 402pt): `AXE=$(ls ~/.npm/_npx/*/node_modules/mobilebuildmcp/bundled/axe | head -1); AXE_HID_STABILIZATION_MS=200 $AXE tap -x <x> -y <y> --udid $UDID`.
-- 스와이프: `$AXE swipe --start-x … --start-y … --end-x … --end-y … --udid $UDID`. 한글 입력은 AXe로 안 된다(US 키보드만) → 붙여넣기나 mobile MCP.
+- 스와이프: `$AXE swipe --start-x … --start-y … --end-x … --end-y … --udid $UDID`. 한글은 `ax.sh ko`(두벌식 키로 바꿔 AXe `type`). mobile MCP `type_keys`는 공직플랜을 뒤로 민다.
 - 좌표보다 **화면 글자 라벨**을 손잡이로 쓴다. 앱의 누르는 요소는 `ButtonSemantics`로 이름이 붙어 있어(가드가 지킨다) `snapshot_ui`에 버튼으로 나온다.
 - 일정 넣기의 표준 경로는 **사진 AI 붙여넣기**다(`features/ai-paste.md`). 대량 입력을 손으로 치지 않는다.
 - 꺼진 선택 기능(포스트잇·지도 기록·장소 예약·버스)은 `설정 › 기능 관리`에서 켜고 본다. 지도 기록 잠금은 시뮬 Face ID로 푼다(`driving-ios-simulator` "잠금·꺼진 기능 열기"). 잠금·꺼짐을 이유로 미확인 처리하지 않는다.
@@ -89,6 +90,7 @@ $V/cleanup.sh --uninstall    # 앱과 데이터까지 지운다
 | `env.sh` | UDID·번들 ID·빌드 경로·증거 위치. `VERIFY_UDID`로 다른 기기를 줄 수 있다 |
 | `launch.sh` | 부팅·빌드·설치·실행 |
 | `doctor.sh` | 읽기 전용 점검 |
+| `ax.sh` | AXe로 화면 읽기·짧은 탭·한글 입력 |
 | `db.sh "<SQL>"` | 샌드박스 `planroutine.db` 읽기 전용 조회 |
 | `evidence.sh <id>` | 증거 폴더 생성 |
 | `shot.sh <폴더> <이름>` | 스크린샷 |
