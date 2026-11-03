@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../../domain/participant.dart';
+import '../lock/guidance_unlock.dart';
 import '../providers/guidance_providers.dart';
 
 /// 관련인 칸 — 이름을 바로 쓴다. 쉼표(`,`·`，`)나 엔터에서 앞의 이름이 칩이 되고,
@@ -75,8 +76,10 @@ class _ParticipantChipsFieldState extends ConsumerState<ParticipantChipsField>
   bool get _showingSuggestions =>
       suggestPeople(_roster, widget.controller.text, _participants).isNotEmpty;
 
-  List<GuidancePerson> get _roster =>
-      ref.read(guidancePeopleProvider).valueOrNull ?? const <GuidancePerson>[];
+  /// 잠긴 동안은 명단을 읽지 않는다 — 새 기록은 인증 없이 열리므로 추천이 예전 학생 이름을 드러내면 안 된다.
+  List<GuidancePerson> get _roster => !ref.read(guidanceUnlockedProvider)
+      ? const <GuidancePerson>[]
+      : ref.read(guidancePeopleProvider).valueOrNull ?? const <GuidancePerson>[];
 
   void _scheduleReveal() {
     if (!_focus.hasFocus || !_showingSuggestions) return;
@@ -119,9 +122,11 @@ class _ParticipantChipsFieldState extends ConsumerState<ParticipantChipsField>
 
   @override
   Widget build(BuildContext context) {
-    final roster =
-        ref.watch(guidancePeopleProvider).valueOrNull ??
-        const <GuidancePerson>[];
+    final unlocked = ref.watch(guidanceUnlockedProvider);
+    final roster = !unlocked
+        ? const <GuidancePerson>[]
+        : ref.watch(guidancePeopleProvider).valueOrNull ??
+              const <GuidancePerson>[];
     final suggestions = suggestPeople(roster, widget.controller.text, _participants);
     _scheduleReveal();
     // 추천·칩을 누르는 것을 칸 밖 탭으로 보지 않게 — 키보드가 내려가지 않는다.

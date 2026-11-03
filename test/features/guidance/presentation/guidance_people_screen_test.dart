@@ -13,6 +13,7 @@ import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
+import 'package:planroutine/features/guidance/presentation/lock/guidance_unlock.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_list_screen.dart';
@@ -74,6 +75,8 @@ void main() {
           guidancePeopleRepositoryProvider.overrideWithValue(
             peopleRepo ?? people,
           ),
+          // 추천은 풀린 뒤에만 뜬다 — 이 파일의 추천 테스트는 풀린 상태를 전제로 한다.
+          guidanceUnlockProvider.overrideWithValue(GuidanceUnlock()..markUnlocked()),
         ],
         child: MaterialApp(
           home: Builder(
