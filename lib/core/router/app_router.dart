@@ -4,6 +4,7 @@ import '../../features/bus/domain/commute_direction.dart';
 import '../../features/bus/presentation/screens/bus_stop_search_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/guidance/presentation/lock/guidance_lock_gate.dart';
+import '../../features/guidance/presentation/lock/guidance_lock_routes.dart';
 import '../../features/guidance/presentation/screens/guidance_detail_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_edit_screen.dart';
 import '../../features/guidance/presentation/screens/guidance_history_screen.dart';
@@ -125,7 +126,13 @@ GoRouter createRouter({
         // `go`하면 셸은 dispose되지만, 잠금 상태는 guidanceUnlockProvider가 들고 있어
         // 셸과 함께 사라지지 않는다(15분 규칙).
         ShellRoute(
-          builder: (context, state, child) => GuidanceLockGate(child: child),
+          // 목록·새 기록 등 열린 경로는 묻지 않고, 예전 기록을 여는 경로만 덮개 + 인증이다
+          // (`guidanceRouteRequiresUnlock`). 덮개의 뒤로는 목록으로 보낸다.
+          builder: (context, state, child) => GuidanceLockGate(
+            requiresUnlock: guidanceRouteRequiresUnlock(state.uri.path),
+            onBack: () => context.go(AppRoutes.guidance),
+            child: child,
+          ),
           routes: [
             GoRoute(
               path: AppRoutes.guidance,

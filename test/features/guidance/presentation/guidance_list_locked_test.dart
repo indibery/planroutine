@@ -272,4 +272,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GuidanceRecordTile), findsOneWidget);
   });
+
+  testWidgets('사람 고르기 시트가 열린 채 다시 잠기면 시트가 닫혀 이름이 사라진다', (tester) async {
+    unlock.markUnlocked();
+    await seed(tester);
+    await pump(tester);
+    await tester.tap(find.byKey(GuidanceListScreen.personFilterKey));
+    await tester.pumpAndSettle();
+    expect(find.text(GuidanceStrings.personPickerTitle), findsOneWidget);
+    expect(find.text('박서준'), findsWidgets);
+
+    unlock.markLeft();
+    clock = clock.add(const Duration(minutes: 16));
+    unlock.markBack();
+    await tester.pumpAndSettle();
+    expect(find.text(GuidanceStrings.personPickerTitle), findsNothing);
+    expect(find.textContaining('박서준'), findsNothing);
+    expect(find.textContaining('김하늘'), findsNothing);
+  });
 }

@@ -189,8 +189,16 @@ class _GuidanceListScreenState extends ConsumerState<GuidanceListScreen> {
     final picked = await showModalBottomSheet<(Participant?,)>(
       context: context,
       useSafeArea: true,
-      builder: (ctx) => SafeArea(
-        child: ListView(
+      builder: (ctx) => Consumer(
+        builder: (ctx, sheetRef, child) {
+          // 시트가 열린 채 다시 잠기면(앱을 떠났다 15분 뒤 복귀) 저장된 이름이 남지 않게 닫는다.
+          sheetRef.listen<bool>(guidanceUnlockedProvider, (_, unlocked) {
+            if (!unlocked && ctx.mounted) Navigator.of(ctx).maybePop();
+          });
+          return child!;
+        },
+        child: SafeArea(
+          child: ListView(
           shrinkWrap: true,
           children: [
             const Padding(
@@ -209,6 +217,7 @@ class _GuidanceListScreenState extends ConsumerState<GuidanceListScreen> {
                 onTap: () => Navigator.pop(ctx, (p,)),
               ),
           ],
+        ),
         ),
       ),
     );
