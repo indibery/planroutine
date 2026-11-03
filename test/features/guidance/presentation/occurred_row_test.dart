@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:planroutine/core/constants/app_colors.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_logic.dart';
@@ -56,6 +57,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('날짜만'), findsOneWidget);
     expect(find.text('기록 시각 · 저장할 때 자동으로 남아요'), findsOneWidget);
+    final t = tester.widget<Text>(find.text('기록 시각 · 저장할 때 자동으로 남아요'));
+    expect(t.style?.color, AppColors.sub);
   });
 
   testWidgets('날짜만을 누르면 콜백 1회, 시트 안이 즉시 바뀐다', (tester) async {
