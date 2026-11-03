@@ -11,6 +11,7 @@ import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_input.dart';
+import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.dart';
 
 import '../../../helpers/test_database.dart';
 import '../../../helpers/text_glyph.dart';
@@ -74,18 +75,17 @@ void main() {
   testWidgets('구분 바로 아래에 범위 안내가 보인다', (tester) async {
     // 목록 빈 상태에 있던 문장이다. 빈 상태를 다른 탭과 같은 두 줄로 맞추면서(2026-10-04
     // 디자인 점검) 지우지 않고, 생활지도·교육활동 침해를 고르는 자리로 옮겼다.
+    // B안(2026-11-03)에서는 구분 행 끝 ⓘ를 누르면 보인다.
     await pump(tester);
-    final note = find.text(GuidanceStrings.scopeNote);
-    expect(note, findsOneWidget);
-    final kind = find.text(GuidanceKind.guidance.label);
-    final status = find.text(GuidanceStrings.labelStatus);
-    expect(tester.getTopLeft(note).dy > tester.getTopLeft(kind).dy, isTrue);
-    expect(tester.getTopLeft(note).dy < tester.getTopLeft(status).dy, isTrue);
+    expect(find.text(GuidanceStrings.scopeNote), findsNothing);
+    await tester.tap(find.byKey(GuidanceEditScreen.kindInfoKey));
+    await tester.pumpAndSettle();
+    expect(find.text(GuidanceStrings.scopeNote), findsOneWidget);
   });
 
   testWidgets('입력칸 이름은 목록 행 부제와 같은 14pt다', (tester) async {
     await pump(tester);
-    for (final label in [GuidanceStrings.labelKind, GuidanceStrings.labelStatus]) {
+    for (final label in [GuidanceStrings.labelKind, GuidanceStrings.labelStatusShort]) {
       final style = textStyleOf(tester, find.text(label));
       expect(style?.fontSize, 14, reason: label);
     }
@@ -93,10 +93,18 @@ void main() {
 
   testWidgets('관련인·들은 말·판단·조치 안내 문구가 보인다', (tester) async {
     await pump(tester);
+    // 관련인 안내는 ⓘ 뒤로, 기록 시각은 언제 시트 안으로 갔다(들은 말·조치는 Task 3에서 마저).
+    expect(find.text(GuidanceStrings.participantsHint), findsNothing);
+    await tester.tap(find.byKey(GuidanceEditScreen.participantsInfoKey));
+    await tester.pumpAndSettle();
     expect(find.text(GuidanceStrings.participantsHint), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
     expect(find.text(GuidanceStrings.quotesHint), findsOneWidget);
     expect(find.text(GuidanceStrings.actionsHint), findsOneWidget);
-    expect(find.text(GuidanceStrings.createdOnSave), findsOneWidget);
+    await tester.tap(find.byKey(OccurredRow.rowKey));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(GuidanceStrings.createdOnSave), findsOneWidget);
   });
 
   testWidgets('제목 없이 저장하면 막고 안내한다', (tester) async {
@@ -151,9 +159,13 @@ void main() {
   testWidgets('대략을 고르면 글로 적고, 그대로 저장된다', (tester) async {
     await pump(tester);
     await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '반복된 놀림');
+    await tester.tap(find.byKey(OccurredRow.rowKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.approx)));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(OccurredInput.approxKey), '3월 초~여름방학 전');
+    await tester.tapAt(const Offset(5, 5)); // 시트를 닫는다
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
     await settle(tester);
     final c = (await tester.runAsync(repo.getActive))?.single.content;
@@ -203,11 +215,15 @@ void main() {
       () => repo.create(GuidanceContent(title: '처음', occurredAt: at)),
     );
     await pump(tester, recordId: id);
+    await tester.tap(find.byKey(OccurredRow.rowKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.approx)));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(OccurredInput.precisionKey(OccurredPrecision.exact)));
     await tester.pumpAndSettle();
     expect(find.text('12:40'), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5)); // 시트를 닫는다
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));
     await settle(tester);
     final revs = await tester.runAsync(() => repo.getRevisions(id ?? -1));

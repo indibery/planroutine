@@ -19,6 +19,7 @@ import 'package:planroutine/features/guidance/presentation/recording/attachment_
 import 'package:planroutine/features/guidance/presentation/recording/guidance_recorder.dart';
 import 'package:planroutine/features/guidance/presentation/recording/recording_screen.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_edit_screen.dart';
+import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/attachment_tile.dart';
 
 import '../../../helpers/test_database.dart';
@@ -413,7 +414,11 @@ void main() {
     expect(await tester.runAsync(repo.getActive), isEmpty);
     expect(find.byType(GuidanceEditScreen), findsOneWidget);
     // 화면은 저장 전인 새 기록으로 돌아왔다 — 기록 시각 표시도 `저장하면 정해져요` 쪽이다.
-    expect(find.text(GuidanceStrings.createdOnSave), findsOneWidget);
+    await tester.tap(find.byKey(OccurredRow.rowKey));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(GuidanceStrings.createdOnSave), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5)); // 언제 시트를 닫는다
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));

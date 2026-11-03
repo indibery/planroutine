@@ -192,6 +192,9 @@ void main() {
     ]) {
       expect(find.text(label), findsNothing, reason: label);
     }
+    // 관련인 안내는 B안(2026-11-03)부터 ⓘ를 눌러야 보인다.
+    await tester.tap(find.byKey(GuidanceEditScreen.participantsInfoKey));
+    await tester.pumpAndSettle();
     expect(find.text(GuidanceStrings.participantsHint), findsOneWidget);
   });
 }

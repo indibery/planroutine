@@ -15,9 +15,9 @@ import '../providers/guidance_providers.dart';
 import '../recording/attachment_importer.dart';
 import '../recording/recording_screen.dart';
 import '../widgets/attachment_tile.dart';
-import '../widgets/occurred_input.dart';
+import '../widgets/occurred_row.dart';
 import '../widgets/participant_chips_field.dart';
-import '../../../../shared/widgets/segmented_button_semantics.dart';
+import '../../../../shared/widgets/pill_chip.dart';
 
 /// 새 기록·고치기 공용 전체 화면. 저장은 판을 하나 더한다(같은 내용이면 더하지 않는다).
 class GuidanceEditScreen extends ConsumerStatefulWidget {
@@ -44,6 +44,8 @@ class GuidanceEditScreen extends ConsumerStatefulWidget {
   static const importAudioKey = Key('guidance_edit_import_audio');
   static const importImageKey = Key('guidance_edit_import_image');
   static const retryAttachKey = Key('guidance_edit_retry_attach');
+  static const kindInfoKey = Key('guidance_edit_kind_info');
+  static const participantsInfoKey = Key('guidance_edit_participants_info');
   static Key kindKey(GuidanceKind k) => Key('guidance_edit_kind_${k.dbValue}');
   static Key statusKey(GuidanceStatus s) => Key('guidance_edit_status_${s.dbValue}');
 
@@ -506,104 +508,28 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                   AppSizes.spacing48,
                 ),
                 children: [
-                  _label(GuidanceStrings.labelKind),
-                  SegmentedButtonSemantics<GuidanceKind>(child: SegmentedButton<GuidanceKind>(
-                    showSelectedIcon: false,
-                    segments: [
-                      for (final k in GuidanceKind.values)
-                        ButtonSegment(
-                          value: k,
-                          label: Text(k.label, key: GuidanceEditScreen.kindKey(k)),
-                        ),
-                    ],
-                    selected: {_kind},
-                    onSelectionChanged: (s) => setState(() => _kind = s.first),
-                  )),
-                  _hint(GuidanceStrings.scopeNote),
-                  _gap(),
-                  _label(GuidanceStrings.labelStatus),
-                  SegmentedButtonSemantics<GuidanceStatus>(child: SegmentedButton<GuidanceStatus>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(
-                        value: GuidanceStatus.open,
-                        label: Text(
-                          GuidanceStrings.statusOpen,
-                          key: GuidanceEditScreen.statusKey(GuidanceStatus.open),
-                        ),
+                  // 칸 위의 글자는 따로 된 텍스트라 입력칸 자체에는 이름이 없다 — 겉모양은 그대로 두고
+                  // 이름만 붙인다(text_field_name_guard_test).
+                  Semantics(
+                    label: GuidanceStrings.labelTitle,
+                    child: TextField(
+                      key: GuidanceEditScreen.titleKey,
+                      controller: _title,
+                      textInputAction: TextInputAction.next,
+                      style: AppTextStyles.titleM.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+                      decoration: InputDecoration(
+                        hintText: GuidanceStrings.labelTitle,
+                        filled: false,
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
+                        errorText: _titleError && _title.text.trim().isEmpty
+                            ? GuidanceStrings.titleRequired
+                            : null,
                       ),
-                      ButtonSegment(
-                        value: GuidanceStatus.closedAtSchool,
-                        label: Text(
-                          GuidanceStrings.statusClosedShort,
-                          key: GuidanceEditScreen.statusKey(GuidanceStatus.closedAtSchool),
-                        ),
-                      ),
-                      ButtonSegment(
-                        value: GuidanceStatus.transferred,
-                        label: Text(
-                          GuidanceStrings.statusTransferredShort,
-                          key: GuidanceEditScreen.statusKey(GuidanceStatus.transferred),
-                        ),
-                      ),
-                    ],
-                    selected: {_status},
-                    onSelectionChanged: (s) => setState(() => _status = s.first),
-                  )),
-                  _gap(),
-                  _label(GuidanceStrings.labelOccurred),
-                  OccurredInput(
-                    precision: _precision,
-                    at: _occurredAt,
-                    text: _occurredText,
-                    onChanged: (v) => setState(() {
-                      _precision = v.precision;
-                      _occurredAt = v.at;
-                      _occurredText = v.text;
-                    }),
-                  ),
-                  const SizedBox(height: AppSizes.spacing8),
-                  Row(
-                    children: [
-                      Text(
-                        '${GuidanceStrings.labelCreated} · ',
-                        style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
-                      ),
-                      Flexible(
-                        child: Text(
-                          created == null
-                              ? GuidanceStrings.createdOnSave
-                              : formatStamp(created, now: now),
-                          style: AppTextStyles.bodyS.copyWith(color: AppColors.sub),
-                        ),
-                      ),
-                    ],
-                  ),
-                  _gap(),
-                  // 칸 위의 글자는 따로 된 텍스트라 입력칸 자체에는 이름이 없다 — 자동화가 칸을
-                  // 위치로만 가렸다. 겉모양은 그대로 두고 이름만 붙인다(text_field_name_guard_test).
-                  _label(GuidanceStrings.labelTitle),
-                  Semantics(label: GuidanceStrings.labelTitle, child: TextField(
-                    key: GuidanceEditScreen.titleKey,
-                    controller: _title,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      errorText: _titleError && _title.text.trim().isEmpty
-                          ? GuidanceStrings.titleRequired
-                          : null,
                     ),
-                  )),
-                  _gap(),
-                  _label(GuidanceStrings.labelPlace),
-                  Semantics(label: GuidanceStrings.labelPlace, child: TextField(key: GuidanceEditScreen.placeKey, controller: _place)),
-                  _gap(),
-                  _label(GuidanceStrings.labelParticipants),
-                  ParticipantChipsField(
-                    participants: _participants,
-                    controller: _personInput,
-                    onChanged: (list) => setState(() => _participants = list),
                   ),
-                  _hint(GuidanceStrings.participantsHint),
+                  const SizedBox(height: AppSizes.spacing16),
+                  _summaryCard(now, created),
                   _gap(),
                   _label(GuidanceStrings.labelFacts),
                   Semantics(label: GuidanceStrings.labelFacts, child: TextField(
@@ -636,6 +562,146 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       ),
     );
   }
+
+  /// 정리표 카드 — 구분·상태·언제·어디서·누가를 한 장에. 행 사이는 구분선.
+  Widget _summaryCard(DateTime now, String? created) {
+    final createdLine =
+        '${GuidanceStrings.labelCreated} · ${created == null ? GuidanceStrings.createdOnSave : formatStamp(created, now: now)}';
+    final divider = Divider(height: 1, thickness: 1, color: AppColors.line);
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radius14),
+        side: BorderSide(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing8),
+        child: Column(
+          children: [
+            _tableRow(
+              GuidanceStrings.labelKind,
+              Wrap(
+                spacing: AppSizes.spacing8,
+                runSpacing: AppSizes.spacing8,
+                children: [
+                  for (final k in GuidanceKind.values)
+                    PillChip(
+                      key: GuidanceEditScreen.kindKey(k),
+                      label: k.label,
+                      selected: _kind == k,
+                      onTap: () => setState(() => _kind = k),
+                    ),
+                ],
+              ),
+              trailing: _infoButton(
+                GuidanceEditScreen.kindInfoKey,
+                GuidanceStrings.kindInfoLabel,
+                GuidanceStrings.scopeNote,
+              ),
+            ),
+            divider,
+            _tableRow(
+              GuidanceStrings.labelStatusShort,
+              Wrap(
+                spacing: AppSizes.spacing8,
+                runSpacing: AppSizes.spacing8,
+                children: [
+                  for (final (s, label) in [
+                    (GuidanceStatus.open, GuidanceStrings.statusOpen),
+                    (GuidanceStatus.closedAtSchool, GuidanceStrings.statusClosedShort),
+                    (GuidanceStatus.transferred, GuidanceStrings.statusTransferredShort),
+                  ])
+                    PillChip(
+                      key: GuidanceEditScreen.statusKey(s),
+                      label: label,
+                      selected: _status == s,
+                      onTap: () => setState(() => _status = s),
+                    ),
+                ],
+              ),
+            ),
+            divider,
+            OccurredRow(
+              current: _current(),
+              now: now,
+              createdLine: createdLine,
+              precision: _precision,
+              occurredAt: _occurredAt ?? now,
+              occurredText: _occurredText,
+              onPrecision: (p) => setState(() => _precision = p),
+              onAt: (d) => setState(() => _occurredAt = d),
+              onText: (t) => setState(() => _occurredText = t),
+            ),
+            divider,
+            _tableRow(
+              GuidanceStrings.labelWhere,
+              Semantics(
+                label: GuidanceStrings.labelPlace,
+                child: TextField(
+                  key: GuidanceEditScreen.placeKey,
+                  controller: _place,
+                  decoration: InputDecoration(
+                    hintText: GuidanceStrings.labelPlace,
+                    filled: false,
+                    isDense: true,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+            divider,
+            _tableRow(
+              GuidanceStrings.labelWho,
+              ParticipantChipsField(
+                participants: _participants,
+                controller: _personInput,
+                onChanged: (list) => setState(() => _participants = list),
+              ),
+              trailing: _infoButton(
+                GuidanceEditScreen.participantsInfoKey,
+                GuidanceStrings.participantsInfoLabel,
+                GuidanceStrings.participantsHint,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tableRow(String name, Widget value, {Widget? trailing}) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSizes.spacing12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(width: 52, child: Text(name, style: AppTextStyles.fieldLabel)),
+        Expanded(child: value),
+        ?trailing,
+      ],
+    ),
+  );
+
+  /// 설명 문장을 뒤로 보내는 ⓘ — 누르면 단순 대화상자로 보여 준다.
+  Widget _infoButton(Key key, String semanticLabel, String message) => IconButton(
+    key: key,
+    visualDensity: VisualDensity.compact,
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
+    icon: Icon(Icons.info_outline, size: 20, color: AppColors.sub, semanticLabel: semanticLabel),
+    onPressed: () => showDialog<void>(
+      context: context,
+      useRootNavigator: false,
+      builder: (_) => AlertDialog(
+        content: Text(message, style: AppTextStyles.bodyL),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(GuidanceStrings.recordingClose)),
+        ],
+      ),
+    ),
+  );
 
   Widget _gap() => const SizedBox(height: AppSizes.spacing20);
 
