@@ -100,6 +100,11 @@ void main() {
     expect(find.text(GuidanceStrings.participantsHint), findsOneWidget);
     await tester.tapAt(const Offset(5, 5));
     await tester.pumpAndSettle();
+    // 들은 말·판단·조치는 버튼을 눌러 펼친 뒤 입력칸 안내로 보인다.
+    await tester.tap(find.byKey(GuidanceEditScreen.addQuotesKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(GuidanceEditScreen.addActionsKey));
+    await tester.pumpAndSettle();
     expect(find.text(GuidanceStrings.quotesHint), findsOneWidget);
     expect(find.text(GuidanceStrings.actionsHint), findsOneWidget);
     await tester.tap(find.byKey(OccurredRow.rowKey));
@@ -120,6 +125,10 @@ void main() {
     await tester.enterText(find.byKey(GuidanceEditScreen.titleKey), '복도 다툼');
     await tester.tap(find.byKey(GuidanceEditScreen.kindKey(GuidanceKind.infringement)));
     await tester.enterText(find.byKey(GuidanceEditScreen.factsKey), '밀침');
+    await tester.tap(find.byKey(GuidanceEditScreen.addQuotesKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(GuidanceEditScreen.addActionsKey));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(GuidanceEditScreen.quotesKey), '"먼저 걸었어요"');
     await tester.enterText(find.byKey(GuidanceEditScreen.actionsKey), '분리 지도');
     await tester.tap(find.byKey(GuidanceEditScreen.saveKey));

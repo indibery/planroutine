@@ -263,6 +263,8 @@ void main() {
 
   testWidgets('첨부를 빼면 묻고, 빼면 목록에서 사라지되 행은 남는다', (tester) async {
     await pump(tester);
+    // 맨 오른쪽 버튼이라 화면 전환이 끝나기 전에는 화면 밖에 있다.
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(GuidanceEditScreen.importAudioKey));
     await waitForTiles(tester, 1);
     final id = (await tester.runAsync(repo.getActive))?.single.id ?? -1;
@@ -321,7 +323,7 @@ void main() {
     await pump(tester);
     final button = find.byKey(GuidanceEditScreen.recordKey);
     // 탭은 첫 번째가 화면을 덮은 뒤라 두 번째가 닿지 않는다 — 콜백을 같은 프레임에 두 번 부른다.
-    final onPressed = tester.widget<OutlinedButton>(button).onPressed!;
+    final onPressed = tester.widget<FilledButton>(button).onPressed!;
     onPressed();
     onPressed();
     await waitUntil(tester, () => find.byKey(RecordingScreen.stopKey).evaluate().isNotEmpty);

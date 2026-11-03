@@ -14,6 +14,7 @@ import '../../domain/participant.dart';
 import '../providers/guidance_providers.dart';
 import '../recording/attachment_importer.dart';
 import '../recording/recording_screen.dart';
+import '../../../../shared/widgets/button_semantics.dart';
 import '../widgets/attachment_tile.dart';
 import '../widgets/occurred_row.dart';
 import '../widgets/participant_chips_field.dart';
@@ -40,6 +41,8 @@ class GuidanceEditScreen extends ConsumerStatefulWidget {
   static const factsKey = Key('guidance_edit_facts');
   static const quotesKey = Key('guidance_edit_quotes');
   static const actionsKey = Key('guidance_edit_actions');
+  static const addQuotesKey = Key('guidance_edit_add_quotes');
+  static const addActionsKey = Key('guidance_edit_add_actions');
   static const recordKey = Key('guidance_edit_record');
   static const importAudioKey = Key('guidance_edit_import_audio');
   static const importImageKey = Key('guidance_edit_import_image');
@@ -86,6 +89,12 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
   /// 녹음은 끝났는데 기록 저장·첨부가 실패해 아직 붙지 못한 것. 파일은 첨부 폴더에 있다.
   final _unattached = <RecordingResult>[];
   var _retrying = false;
+
+  /// 들은 말·판단·조치 칸이 펼쳐졌는가. 내용이 있으면 처음부터, 아니면 버튼으로 펼치고 한 번 펼치면 접지 않는다.
+  var _showQuotes = false;
+  var _showActions = false;
+  final _quotesFocus = FocusNode();
+  final _actionsFocus = FocusNode();
 
   @override
   void initState() {
@@ -147,6 +156,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
       _participants = [...c.participants];
       _createdAt = record.createdAt;
       _saved = c.normalized();
+      _showQuotes = _quotes.text.isNotEmpty;
+      _showActions = _actions.text.isNotEmpty;
       _loaded = true;
     });
   }
@@ -156,6 +167,8 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     for (final c in [_title, _place, _facts, _quotes, _actions, _personInput]) {
       c.dispose();
     }
+    _quotesFocus.dispose();
+    _actionsFocus.dispose();
     super.dispose();
   }
 
@@ -345,10 +358,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
           ];
     return [
       _gap(),
-      _label(GuidanceStrings.labelAttachments),
+      _attachButtons(),
       if (_unattached.isNotEmpty)
         Container(
-          margin: const EdgeInsets.only(bottom: AppSizes.spacing8),
+          margin: const EdgeInsets.only(top: AppSizes.spacing8),
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing12, vertical: AppSizes.spacing8),
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.error),
@@ -374,34 +387,124 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
         ),
       for (final a in attachments)
         Padding(
-          padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
+          padding: const EdgeInsets.only(top: AppSizes.spacing8),
           child: AttachmentTile(key: ValueKey(a.id), attachment: a, now: now, onRemove: () => _removeAttachment(a)),
         ),
-      Wrap(
-        spacing: AppSizes.spacing8,
-        runSpacing: AppSizes.spacing8,
-        children: [
-          OutlinedButton.icon(
+      _hint(GuidanceStrings.importHintSchoolPhone),
+    ];
+  }
+
+  /// 녹음(채움 네이비 + 빨간 점) · 사진 · 녹음 파일 — 한 줄에 같은 폭으로.
+  Widget _attachButtons() {
+    const pad = EdgeInsets.symmetric(horizontal: AppSizes.spacing8);
+    const gap = SizedBox(width: AppSizes.spacing8);
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
             key: GuidanceEditScreen.recordKey,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.navy,
+              foregroundColor: Colors.white,
+              padding: pad,
+            ),
             onPressed: _record,
-            icon: Icon(Icons.fiber_manual_record, color: AppColors.error),
-            label: const Text(GuidanceStrings.record),
+            icon: Icon(Icons.fiber_manual_record, color: AppColors.error, size: 18),
+            label: const Text(GuidanceStrings.recordShort, maxLines: 1, softWrap: false),
           ),
-          OutlinedButton.icon(
-            key: GuidanceEditScreen.importAudioKey,
-            onPressed: () => _import(AttachmentType.audio),
-            icon: const Icon(Icons.audio_file_outlined),
-            label: const Text(GuidanceStrings.importAudio),
-          ),
-          OutlinedButton.icon(
+        ),
+        gap,
+        Expanded(
+          child: OutlinedButton.icon(
             key: GuidanceEditScreen.importImageKey,
+            style: OutlinedButton.styleFrom(padding: pad),
             onPressed: () => _import(AttachmentType.image),
-            icon: const Icon(Icons.image_outlined),
-            label: const Text(GuidanceStrings.importImage),
+            icon: const Icon(Icons.image_outlined, size: 18),
+            label: const Text(GuidanceStrings.importImageShort, maxLines: 1, softWrap: false),
           ),
+        ),
+        gap,
+        Expanded(
+          child: OutlinedButton.icon(
+            key: GuidanceEditScreen.importAudioKey,
+            style: OutlinedButton.styleFrom(padding: pad),
+            onPressed: () => _import(AttachmentType.audio),
+            icon: const Icon(Icons.audio_file_outlined, size: 18),
+            label: const Text(GuidanceStrings.importAudioShort, maxLines: 1, softWrap: false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 비었을 때만 보이는 점선 테두리 버튼 — 누르면 그 자리에 입력칸이 열린다.
+  Widget _addButton(Key key, String label, VoidCallback onTap) => ButtonSemantics.gesture(
+    label: label,
+    onTap: onTap,
+    child: CustomPaint(
+      key: key,
+      painter: _DashedBorderPainter(AppColors.sub),
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        child: Text(label, style: AppTextStyles.bodyM.copyWith(color: AppColors.sub)),
+      ),
+    ),
+  );
+
+  void _expand({required bool quotes}) {
+    setState(() => quotes ? _showQuotes = true : _showActions = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) (quotes ? _quotesFocus : _actionsFocus).requestFocus();
+    });
+  }
+
+  List<Widget> _quotesActionsSection() {
+    Widget field(Key key, TextEditingController c, FocusNode f, String label, String hint) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(label),
+        Semantics(
+          label: label,
+          child: TextField(
+            key: key,
+            controller: c,
+            focusNode: f,
+            minLines: 3,
+            maxLines: null,
+            decoration: InputDecoration(hintText: hint),
+          ),
+        ),
+      ],
+    );
+    if (_showQuotes && _showActions) {
+      return [
+        _gap(),
+        field(GuidanceEditScreen.quotesKey, _quotes, _quotesFocus, GuidanceStrings.labelQuotes, GuidanceStrings.quotesHint),
+        _gap(),
+        field(GuidanceEditScreen.actionsKey, _actions, _actionsFocus, GuidanceStrings.labelActions, GuidanceStrings.actionsHint),
+      ];
+    }
+    return [
+      _gap(),
+      if (_showQuotes)
+        field(GuidanceEditScreen.quotesKey, _quotes, _quotesFocus, GuidanceStrings.labelQuotes, GuidanceStrings.quotesHint),
+      if (_showActions)
+        field(GuidanceEditScreen.actionsKey, _actions, _actionsFocus, GuidanceStrings.labelActions, GuidanceStrings.actionsHint),
+      if (_showQuotes != _showActions) _gap(),
+      Row(
+        children: [
+          if (!_showQuotes)
+            Expanded(
+              child: _addButton(GuidanceEditScreen.addQuotesKey, GuidanceStrings.addQuotes, () => _expand(quotes: true)),
+            ),
+          if (!_showQuotes && !_showActions) const SizedBox(width: AppSizes.spacing8),
+          if (!_showActions)
+            Expanded(
+              child: _addButton(GuidanceEditScreen.addActionsKey, GuidanceStrings.addActions, () => _expand(quotes: false)),
+            ),
         ],
       ),
-      _hint(GuidanceStrings.importHintSchoolPhone),
     ];
   }
 
@@ -530,33 +633,16 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
                   ),
                   const SizedBox(height: AppSizes.spacing16),
                   _summaryCard(now, created),
+                  ..._attachmentsSection(now),
                   _gap(),
                   _label(GuidanceStrings.labelFacts),
                   Semantics(label: GuidanceStrings.labelFacts, child: TextField(
                     key: GuidanceEditScreen.factsKey,
                     controller: _facts,
-                    minLines: 5,
+                    minLines: 4,
                     maxLines: null,
                   )),
-                  _gap(),
-                  _label(GuidanceStrings.labelQuotes),
-                  Semantics(label: GuidanceStrings.labelQuotes, child: TextField(
-                    key: GuidanceEditScreen.quotesKey,
-                    controller: _quotes,
-                    minLines: 3,
-                    maxLines: null,
-                  )),
-                  _hint(GuidanceStrings.quotesHint),
-                  _gap(),
-                  _label(GuidanceStrings.labelActions),
-                  Semantics(label: GuidanceStrings.labelActions, child: TextField(
-                    key: GuidanceEditScreen.actionsKey,
-                    controller: _actions,
-                    minLines: 3,
-                    maxLines: null,
-                  )),
-                  _hint(GuidanceStrings.actionsHint),
-                  ..._attachmentsSection(now),
+                  ..._quotesActionsSection(),
                 ],
               ),
       ),
@@ -694,10 +780,10 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     onPressed: () => showDialog<void>(
       context: context,
       useRootNavigator: false,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         content: Text(message, style: AppTextStyles.bodyL),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(GuidanceStrings.recordingClose)),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text(GuidanceStrings.recordingClose)),
         ],
       ),
     ),
@@ -714,4 +800,28 @@ class _GuidanceEditScreenState extends ConsumerState<GuidanceEditScreen> {
     padding: const EdgeInsets.only(top: AppSizes.spacing8),
     child: Text(text, style: AppTextStyles.bodyS.copyWith(color: AppColors.sub)),
   );
+}
+
+/// 점선 둥근 테두리 — 비어 있어 "여기에 더할 수 있다"를 말하는 버튼용.
+class _DashedBorderPainter extends CustomPainter {
+  _DashedBorderPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(AppSizes.radius8)));
+    for (final m in path.computeMetrics()) {
+      for (var d = 0.0; d < m.length; d += 8) {
+        canvas.drawPath(m.extractPath(d, (d + 4).clamp(0, m.length)), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
 }

@@ -124,6 +124,8 @@ class GuidanceStrings {
   static const labelFacts = '경과';
   static const labelQuotes = '들은 말';
   static const labelActions = '판단·조치';
+  static const addQuotes = '+ 들은 말';
+  static const addActions = '+ 판단·조치';
   static const approxHint = '예: 3월 초~여름방학 전';
   static const pickDate = '날짜';
   static const pickTime = '시각';
