@@ -72,7 +72,11 @@ class MainShell extends StatelessWidget {
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
-      body: child,
+      // 탭 화면의 스낵바를 탭 화면 Scaffold가 띄우게 한다. Flutter는 Scaffold가
+      // 겹치면 가장 바깥 것에만 스낵바를 띄우는데(`_isRoot`), 바깥인 이 Scaffold에
+      // 뜨면 탭 화면의 + 버튼이 비키지 않고 4초 동안 덮였다(2026-11-03).
+      // 여기 메신저가 있으면 탭 화면 Scaffold가 그 메신저의 가장 바깥이 된다.
+      body: ScaffoldMessenger(child: child),
       bottomNavigationBar: FloatingTabBar(
         currentIndex: currentIndex,
         onTap: (index) => context.go(tabs[index].route),

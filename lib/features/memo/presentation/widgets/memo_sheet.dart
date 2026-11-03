@@ -17,9 +17,12 @@ import '../../../../shared/widgets/button_semantics.dart';
 /// (E안, 사용자 결정 2026-10-23). 보드의 +(새 쪽지, `memo.id == null`)와 쪽지 누르기·캘린더가 같은 시트를 연다.
 /// 새 쪽지에는 삭제·일정으로 등록이 없다 — 아직 붙지 않은 쪽지다.
 class MemoSheet extends ConsumerStatefulWidget {
-  const MemoSheet({super.key, required this.memo});
+  const MemoSheet({super.key, required this.memo, this.messenger});
 
   final Memo memo;
+
+  /// 떼기·일정으로 등록 뒤 알림을 띄울 곳. 없으면 시트 자리의 메신저를 쓴다.
+  final ScaffoldMessengerState? messenger;
 
   static const textKey = Key('memo_sheet_text');
   static Key colorKey(MemoColor c) => Key('memo_sheet_color_${c.dbValue}');
@@ -42,7 +45,12 @@ class MemoSheet extends ConsumerStatefulWidget {
             top: Radius.circular(AppSizes.radius28),
           ),
         ),
-        builder: (_) => MemoSheet(memo: memo),
+        builder: (_) => MemoSheet(
+          memo: memo,
+          // 시트는 탭바 위(루트 내비게이터)에 떠서 시트 안에서 찾으면 앱 최상단
+          // 메신저가 나온다. 연 화면의 메신저로 알려야 그 화면의 + 버튼이 비킨다.
+          messenger: ScaffoldMessenger.maybeOf(context),
+        ),
       );
 
   @override
@@ -100,7 +108,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
     final id = widget.memo.id;
     if (_busy || id == null) return;
     _busy = true;
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final messenger = widget.messenger ?? ScaffoldMessenger.maybeOf(context);
     await ref.read(memosProvider.notifier).remove(id);
     if (mounted) Navigator.of(context).pop();
     messenger?.showSnackBar(
@@ -112,7 +120,7 @@ class _MemoSheetState extends ConsumerState<MemoSheet> {
   Future<void> _toEvent(EntryKind kind) async {
     if (_busy || _text.text.trim().isEmpty) return;
     _busy = true;
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final messenger = widget.messenger ?? ScaffoldMessenger.maybeOf(context);
     await ref
         .read(memosProvider.notifier)
         .convertToEvent(_edited, kind: kind, date: _date ?? DateTime.now());
