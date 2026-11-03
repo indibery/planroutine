@@ -6,7 +6,6 @@ import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_logic.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_input.dart';
-import 'package:planroutine/shared/widgets/picker_field_tile.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/occurred_row.dart';
 
 void main() {
