@@ -39,6 +39,7 @@ class RecordingScreen extends ConsumerStatefulWidget {
   static const stopKey = Key('recording_stop');
   static const settingsKey = Key('recording_settings');
   static const closeKey = Key('recording_close');
+  static const liveDotKey = Key('recording_live_dot');
 
   /// 녹음 화면은 테마와 무관하게 어둡다 — 시스템 바 아이콘은 앱 테마가 아니라 이 화면 기준으로 밝게 둔다.
   static const overlayStyle = SystemUiOverlayStyle(
@@ -275,18 +276,6 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
                 ),
                 _Phase.recording => Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.circle, size: 10, color: AppColors.recordingLive),
-                        const SizedBox(width: AppSizes.spacing8),
-                        Text(
-                          GuidanceStrings.recordingLive,
-                          style: TextStyle(color: AppColors.recordingLive, fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSizes.spacing8),
                     Text(
                       widget.title,
                       style: TextStyle(color: on, fontSize: 15),
@@ -294,14 +283,42 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
-                    Text(
-                      _clock,
-                      style: TextStyle(
-                        color: on,
-                        fontSize: 64,
-                        fontWeight: FontWeight.w300,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                    // 상담 중 상대가 화면을 봐도 눈에 덜 띄게, 녹음 중 표시는 글자 없이 시계 앞 작은 점 하나다.
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Semantics(
+                          container: true,
+                          label: GuidanceStrings.recordingLive,
+                          child: Container(
+                            key: RecordingScreen.liveDotKey,
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: on.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.spacing12),
+                        // 좁은 화면이나 한 시간이 넘은 시계(`1:00:00`)는 줄여서 한 줄에 둔다.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _clock,
+                              style: TextStyle(
+                                color: on,
+                                fontSize: 64,
+                                fontWeight: FontWeight.w300,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 점 폭만큼 오른쪽을 비워 시계가 화면 가운데에 남게 한다.
+                        const SizedBox(width: 8 + AppSizes.spacing12),
+                      ],
                     ),
                     const Spacer(),
                     ButtonSemantics(
@@ -338,18 +355,6 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> with WidgetsB
                       GuidanceStrings.recordingLegal,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: on, fontSize: 14, height: 1.5),
-                    ),
-                    const SizedBox(height: AppSizes.spacing12),
-                    Text(
-                      GuidanceStrings.recordingScreenOn,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: on, fontSize: 13),
-                    ),
-                    const SizedBox(height: AppSizes.spacing4),
-                    Text(
-                      GuidanceStrings.recordingSavesOnLeave,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: on, fontSize: 13),
                     ),
                   ],
                 ),

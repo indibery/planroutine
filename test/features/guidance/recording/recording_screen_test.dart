@@ -139,8 +139,11 @@ void main() {
     await tester.tap(find.text('열기'));
     await waitUntil(
       tester,
-      () => find
-          .text(readyText ?? (permitted ? GuidanceStrings.recordingLive : GuidanceStrings.micDenied))
+      () => (readyText != null
+              ? find.text(readyText)
+              : permitted
+              ? find.byKey(RecordingScreen.stopKey)
+              : find.text(GuidanceStrings.micDenied))
           .evaluate()
           .isNotEmpty,
     );
@@ -148,7 +151,7 @@ void main() {
 
   testWidgets('허락하면 첨부 폴더 안에 녹음하고, 멈추면 결과를 돌려준다', (tester) async {
     await pump(tester);
-    expect(find.text(GuidanceStrings.recordingLive), findsOneWidget);
+    expect(find.byKey(RecordingScreen.stopKey), findsOneWidget);
     expect(find.text(GuidanceStrings.recordingLegal), findsOneWidget);
     // 사전 고지 문구는 뺐다(사용자 결정 2026-10-04) — 대화 당사자 녹음은 불법이 아니고, 상대를 불쾌하게 할 수 있다.
     expect(find.textContaining('먼저 알려'), findsNothing);
@@ -215,7 +218,7 @@ void main() {
 
   testWidgets('시작이 실패하면 안내를 보이고, 결과 없이 닫을 수 있다', (tester) async {
     await pump(tester, recorder: FakeRecorder(failStart: true), readyText: GuidanceStrings.recordingStartFailed);
-    expect(find.text(GuidanceStrings.recordingLive), findsNothing);
+    expect(find.byKey(RecordingScreen.stopKey), findsNothing);
     await tester.tap(find.byKey(RecordingScreen.closeKey));
     await waitUntil(tester, () => popped);
     expect(result, isNull);
@@ -295,8 +298,7 @@ void main() {
     await pump(tester);
     for (final text in [
       GuidanceStrings.recordingLegal,
-      GuidanceStrings.recordingScreenOn,
-      GuidanceStrings.recordingSavesOnLeave,
+      GuidanceStrings.recordingStopHint,
     ]) {
       final finder = find.text(text);
       expect(finder, findsOneWidget, reason: text);
@@ -304,5 +306,29 @@ void main() {
       final lineHeight = (style?.fontSize ?? 14) * (style?.height ?? 1.0);
       expect(tester.getSize(finder).height, lessThan(lineHeight * 1.5), reason: '한 줄이어야 한다: $text');
     }
+  });
+
+  testWidgets('녹음 중 표시는 글자 없이 시계 앞 작은 점이고, 안내는 한 문장이다', (tester) async {
+    // 상담 중 상대가 화면을 봐도 눈에 덜 띄게(실기기 피드백 2026-11-04).
+    await pump(tester);
+    expect(find.text(GuidanceStrings.recordingLive), findsNothing);
+    // 글자는 없지만 화면 읽기 프로그램은 `녹음 중`을 읽는다.
+    expect(
+      find.ancestor(
+        of: find.byKey(RecordingScreen.liveDotKey),
+        matching: find.byWidgetPredicate((w) => w is Semantics && w.properties.label == GuidanceStrings.recordingLive),
+      ),
+      findsOneWidget,
+    );
+    final dot = tester.getRect(find.byKey(RecordingScreen.liveDotKey));
+    expect(dot.width, lessThanOrEqualTo(10));
+    final clock = tester.getRect(find.text('00:00'));
+    expect(dot.right, lessThanOrEqualTo(clock.left));
+    expect((dot.center.dy - clock.center.dy).abs(), lessThan(4));
+    expect(find.text(GuidanceStrings.recordingStopHint), findsOneWidget);
+    expect(GuidanceStrings.recordingStopHint, isNot(contains('붙')));
+    // 안내는 법적 안내 한 문장만 남긴다.
+    expect(find.textContaining('화면이 켜져'), findsNothing);
+    expect(find.textContaining('앱을 나가면'), findsNothing);
   });
 }

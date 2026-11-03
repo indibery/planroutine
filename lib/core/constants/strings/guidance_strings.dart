@@ -201,11 +201,9 @@ class GuidanceStrings {
   // 녹음 화면
   static const recordingLive = '녹음 중';
   static const recordingStop = '녹음 멈추기';
-  static const recordingStopHint = '멈추면 이 기록에 붙어요';
+  static const recordingStopHint = '멈추기';
   // 한글은 글자 단위로 줄이 바뀌므로 녹음 화면 안내는 한 줄에 들어가게 짧게 쓴다(320pt 가드).
   static const recordingLegal = '직접 참여한 대화만 녹음하세요.';
-  static const recordingScreenOn = '녹음 중에는 화면이 켜져 있어요.';
-  static const recordingSavesOnLeave = '앱을 나가면 그때까지 저장돼요.';
   static const micDenied = '마이크 권한이 꺼져 있어요';
   static const micDeniedBody = '설정에서 공직플랜의 마이크를 켜면 녹음할 수 있습니다.';
   static const openSettings = '설정 열기';
