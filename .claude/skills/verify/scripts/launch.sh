@@ -8,8 +8,9 @@ KEEP=0; BUILD=1
 for a in "$@"; do case "$a" in --keep-data) KEEP=1;; --no-build) BUILD=0;; esac; done
 
 state=$(xcrun simctl list devices | grep "$VERIFY_UDID" | grep -o '(Booted)\|(Shutdown)' || true)
+BOOTED_NOW=0
 if [ "$state" != "(Booted)" ]; then
-  wt 60 xcrun simctl boot "$VERIFY_UDID"
+  wt 60 xcrun simctl boot "$VERIFY_UDID"; BOOTED_NOW=1
   mkdir -p "$VERIFY_EVIDENCE_ROOT" && touch "$VERIFY_EVIDENCE_ROOT/.booted-by-verify"   # cleanup.sh가 이 표시를 보고 끈다
 fi
 open -a "Device Hub" 2>/dev/null || open -a Simulator 2>/dev/null || true
@@ -21,7 +22,9 @@ fi
 [ -d "$VERIFY_APP" ] || { echo "빌드 산출물이 없다: $VERIFY_APP" >&2; exit 1; }
 
 # 부팅 직후 폭주가 가라앉기를 기다린다. 이 상태에서는 시뮬 안 설치가 1초에 끝나도 simctl이 응답을 못 받고 멈춘다.
+# 부팅 명령이 끝난 직후에는 폭주가 아직 시작되지 않아 부하가 낮다 — 그 틈에 통과하면 곧 설치가 멈춘다(2026-11-03 실측).
 ncpu=$(sysctl -n hw.ncpu)
+[ "$BOOTED_NOW" = 1 ] && { echo "방금 부팅했다 — 폭주가 올라올 시간을 90초 준다"; sleep 90; }
 for i in $(seq 1 60); do
   load=$(sysctl -n vm.loadavg | awk '{print int($2)}')
   [ "$load" -le "$ncpu" ] && break
