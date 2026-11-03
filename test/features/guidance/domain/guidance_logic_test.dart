@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_logic.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
@@ -102,6 +103,42 @@ void main() {
         formatOccurred(c.copyWith(occurredText: null), now: now),
         '시각 모름',
       );
+    });
+  });
+
+  group('formatOccurredLocked', () {
+    test('대략 + 날짜 있음 — 적은 글(이름이 들어 있을 수 있다) 대신 날짜만', () {
+      final c = GuidanceContent(
+        title: 't',
+        precision: OccurredPrecision.approx,
+        occurredText: '점심 박서준 다툼',
+        occurredAt: DateTime(2026, 11, 3),
+      );
+      final s = formatOccurredLocked(c, now: now);
+      expect(s, '11.3 (화)');
+      expect(s, isNot(contains('박서준')));
+    });
+
+    test('대략 + 날짜 없음 — 시각 대략', () {
+      const c = GuidanceContent(
+        title: 't',
+        precision: OccurredPrecision.approx,
+        occurredText: '점심 박서준 다툼',
+      );
+      final s = formatOccurredLocked(c, now: now);
+      expect(s, GuidanceStrings.occurredApproxHidden);
+      expect(s, isNot(contains('박서준')));
+    });
+
+    test('정확히·날짜만은 formatOccurred와 같다', () {
+      final exact = GuidanceContent(title: 't', occurredAt: DateTime(2026, 10, 2, 15, 30));
+      final date = GuidanceContent(
+        title: 't',
+        precision: OccurredPrecision.date,
+        occurredAt: DateTime(2026, 10, 2),
+      );
+      expect(formatOccurredLocked(exact, now: now), formatOccurred(exact, now: now));
+      expect(formatOccurredLocked(date, now: now), formatOccurred(date, now: now));
     });
   });
 

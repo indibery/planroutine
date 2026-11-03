@@ -10,6 +10,7 @@ import 'package:planroutine/features/guidance/data/guidance_repository.dart';
 import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/domain/participant.dart';
+import 'package:planroutine/features/guidance/presentation/lock/guidance_unlock.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 import 'package:planroutine/features/guidance/presentation/screens/guidance_list_screen.dart';
 import 'package:planroutine/features/guidance/presentation/widgets/guidance_record_tile.dart';
@@ -50,7 +51,11 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [guidanceRepositoryProvider.overrideWithValue(repo)],
+        overrides: [
+          guidanceRepositoryProvider.overrideWithValue(repo),
+          // 풀린 목록의 기존 동작을 본다 — 잠긴 목록은 guidance_list_locked_test.dart가 맡는다.
+          guidanceUnlockProvider.overrideWithValue(GuidanceUnlock()..markUnlocked()),
+        ],
         child: const MaterialApp(home: GuidanceListScreen()),
       ),
     );
@@ -172,7 +177,11 @@ void main() {
     );
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [guidanceRepositoryProvider.overrideWithValue(repo)],
+        overrides: [
+          guidanceRepositoryProvider.overrideWithValue(repo),
+          // 풀린 목록의 기존 동작을 본다 — 잠긴 목록은 guidance_list_locked_test.dart가 맡는다.
+          guidanceUnlockProvider.overrideWithValue(GuidanceUnlock()..markUnlocked()),
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );

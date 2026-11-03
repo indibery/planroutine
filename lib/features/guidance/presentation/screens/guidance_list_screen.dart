@@ -10,7 +10,10 @@ import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
+import '../lock/device_authenticator.dart';
+import '../lock/guidance_unlock.dart';
 import '../providers/guidance_providers.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../widgets/guidance_record_tile.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/sheet_title.dart';
@@ -21,7 +24,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/button_semantics.dart';
 
 /// 지도 기록 탭 첫 화면. 잠금은 이 화면이 아니라 셸(`GuidanceLockGate`)이 진다.
-class GuidanceListScreen extends ConsumerWidget {
+class GuidanceListScreen extends ConsumerStatefulWidget {
   const GuidanceListScreen({super.key});
 
   static const addKey = Key('guidance_add');
@@ -32,12 +35,21 @@ class GuidanceListScreen extends ConsumerWidget {
   static Key rowKey(int id) => Key('guidance_row_$id');
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GuidanceListScreen> createState() => _GuidanceListScreenState();
+}
+
+class _GuidanceListScreenState extends ConsumerState<GuidanceListScreen> {
+  /// 열기 요청이 진행 중이면 다른 누름을 무시한다 — 빠른 두 번 탭이 화면을 두 번 열지 않게.
+  var _opening = false;
+
+  @override
+  Widget build(BuildContext context) {
     final all = ref.watch(guidanceRecordsProvider).valueOrNull;
     final visible = ref.watch(visibleGuidanceRecordsProvider).valueOrNull ?? const <GuidanceRecord>[];
     final kind = ref.watch(guidanceKindFilterProvider);
     final person = ref.watch(guidancePersonFilterProvider);
     final now = DateTime.now();
+    final locked = !ref.watch(guidanceUnlockedProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,8 +59,8 @@ class GuidanceListScreen extends ConsumerWidget {
         ),
         actions: [
           _TrashShortcut(
-            key: trashKey,
-            onTap: () => context.push(AppRoutes.guidanceTrash),
+            key: GuidanceListScreen.trashKey,
+            onTap: () => _open(AppRoutes.guidanceTrash),
           ),
         ],
       ),
@@ -59,12 +71,12 @@ class GuidanceListScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _RecordFab(
-            key: recordFabKey,
+            key: GuidanceListScreen.recordFabKey,
             onTap: () => context.push(AppRoutes.guidanceNewRecording),
           ),
           const SizedBox(height: AppSizes.spacing12),
           GoldFab(
-            key: addKey,
+            key: GuidanceListScreen.addKey,
             semanticLabel: GuidanceStrings.newRecord,
             onTap: () => context.push(AppRoutes.guidanceNew),
           ),
@@ -82,15 +94,17 @@ class GuidanceListScreen extends ConsumerWidget {
               children: [
                 // 입력 히어로와 같은 테두리형 칩(2026-10-04 디자인 점검). 사람을 골라 두면
                 // 그 칩도 선택 모양이 된다 — 걸러 보고 있다는 사실이 보여야 한다.
-                PillChip(
-                  key: personFilterKey,
-                  label: person == null ? GuidanceStrings.personAll : GuidanceStrings.personLabel(person.name),
-                  selected: person != null,
-                  onTap: () => _pickPerson(context, ref, all ?? const []),
-                ),
+                // 잠긴 동안은 사람 칩을 그리지 않는다 — 이름 목록이 시트에 열린다.
+                if (!locked)
+                  PillChip(
+                    key: GuidanceListScreen.personFilterKey,
+                    label: person == null ? GuidanceStrings.personAll : GuidanceStrings.personLabel(person.name),
+                    selected: person != null,
+                    onTap: () => _pickPerson(context, ref, all ?? const []),
+                  ),
                 for (final k in <GuidanceKind?>[null, ...GuidanceKind.values])
                   PillChip(
-                    key: kindFilterKey(k),
+                    key: GuidanceListScreen.kindFilterKey(k),
                     label: k?.label ?? GuidanceStrings.kindAll,
                     selected: kind == k,
                     onTap: () => ref.read(guidanceKindFilterProvider.notifier).state = k,
@@ -114,10 +128,11 @@ class GuidanceListScreen extends ConsumerWidget {
                             itemBuilder: (context, i) {
                               final r = visible[i];
                               return GuidanceRecordTile(
-                                key: rowKey(r.id),
+                                key: GuidanceListScreen.rowKey(r.id),
                                 record: r,
                                 now: now,
-                                onTap: () => context.push(AppRoutes.guidanceRecord(r.id)),
+                                locked: locked,
+                                onTap: () => _open(AppRoutes.guidanceRecord(r.id)),
                               );
                             },
                           ),
@@ -125,6 +140,41 @@ class GuidanceListScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// 풀렸으면 바로, 잠겼으면 그 자리에서 기기 인증 뒤에 연다. 기기 암호가 없으면 안내 후 잠금 없이 연다.
+  Future<void> _open(String location) async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      final unlock = ref.read(guidanceUnlockProvider);
+      if (!unlock.isUnlocked) {
+        final outcome = await unlock.authenticate(
+          ref.read(deviceAuthenticatorProvider),
+          GuidanceStrings.unlockReason,
+        );
+        if (!mounted) return;
+        switch (outcome) {
+          case AuthOutcome.success:
+            break;
+          case AuthOutcome.failed:
+            return;
+          case AuthOutcome.noCredentials:
+            final ok = await ConfirmDialog.show(
+              context: context,
+              useRootNavigator: false,
+              title: GuidanceStrings.noCredentialsTitle,
+              message: GuidanceStrings.noCredentialsBody,
+              confirmLabel: GuidanceStrings.openWithoutLock,
+            );
+            if (!ok || !mounted) return;
+            unlock.markUnlocked();
+        }
+      }
+      if (mounted) context.push(location);
+    } finally {
+      _opening = false;
+    }
   }
 
   Widget _empty() => const EmptyState(

@@ -72,6 +72,14 @@ String formatOccurred(GuidanceContent c, {required DateTime now}) {
   };
 }
 
+/// 잠긴 목록용 사건 시각. 대략은 적은 글에 이름이 들어 있을 수 있어 글을 쓰지 않는다 —
+/// 날짜가 있으면 날짜만, 없으면 [GuidanceStrings.occurredApproxHidden]. 그 밖은 [formatOccurred]와 같다.
+String formatOccurredLocked(GuidanceContent c, {required DateTime now}) {
+  if (c.precision != OccurredPrecision.approx) return formatOccurred(c, now: now);
+  final at = c.occurredAt;
+  return at == null ? GuidanceStrings.occurredApproxHidden : _day(at, now);
+}
+
 /// 기록 시각·저장 시각처럼 ISO 문자열로 저장된 시각 한 줄.
 String formatStamp(String iso, {required DateTime now}) {
   final d = DateTime.tryParse(iso);

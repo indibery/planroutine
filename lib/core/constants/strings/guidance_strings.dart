@@ -30,6 +30,9 @@ class GuidanceStrings {
   static const precisionDate = '날짜만';
   static const precisionApprox = '대략';
   static const occurredUnknown = '시각 모름';
+  /// 잠긴 목록 — 대략 시각 글에는 이름이 들어 있을 수 있어 날짜도 없으면 이 글만 보인다.
+  static const occurredApproxHidden = '시각 대략';
+  static const lockedRecordTitle = '잠긴 기록';
 
   // 첨부
   static const attachmentAudio = '녹음';

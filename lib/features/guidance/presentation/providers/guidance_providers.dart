@@ -15,6 +15,7 @@ import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../../domain/guidance_types.dart';
 import '../../domain/participant.dart';
+import '../lock/guidance_unlock.dart';
 
 final guidanceRepositoryProvider = Provider<GuidanceRepository>((ref) => GuidanceRepository());
 
@@ -84,7 +85,10 @@ final guidancePersonFilterProvider = StateProvider.autoDispose<Participant?>((re
 final visibleGuidanceRecordsProvider =
     Provider.autoDispose<AsyncValue<List<GuidanceRecord>>>((ref) {
       final kind = ref.watch(guidanceKindFilterProvider);
-      final person = ref.watch(guidancePersonFilterProvider);
+      // 잠긴 동안은 사람 필터를 적용하지 않는다 — 걸러진 결과가 이름을 알려 주므로. 골라 둔 값은 지우지 않는다.
+      final person = ref.watch(guidanceUnlockedProvider)
+          ? ref.watch(guidancePersonFilterProvider)
+          : null;
       return ref
           .watch(guidanceRecordsProvider)
           .whenData((list) => filterRecords(sortRecords(list), kind: kind, person: person));
