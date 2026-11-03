@@ -88,6 +88,7 @@ class GuidanceStrings {
   static const lockedTitle = '지도 기록은 잠겨 있어요';
   static const lockedBody = '지도 기록을 떠난 지 15분이 지나면 다시 잠깁니다.';
   static const unlock = '잠금 해제';
+  static const backToList = '목록으로';
   static const noCredentialsTitle = '기기 암호가 설정되어 있지 않아요';
   static const noCredentialsBody =
       '기기 암호나 Face ID·지문을 설정해야 기록이 보호됩니다. 설정하지 않아도 쓸 수는 있습니다.';

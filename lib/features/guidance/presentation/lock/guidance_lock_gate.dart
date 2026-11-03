@@ -19,14 +19,27 @@ import 'secure_window.dart';
 /// 그대로다. 잠긴 동안에는 아래 화면이 눌리지 않고(`IgnorePointer`) 스크린리더도
 /// 읽지 않는다(`ExcludeSemantics`).
 class GuidanceLockGate extends ConsumerStatefulWidget {
-  const GuidanceLockGate({super.key, required this.child});
+  const GuidanceLockGate({
+    super.key,
+    required this.child,
+    this.requiresUnlock = true,
+    this.onBack,
+  });
 
   final Widget child;
+
+  /// false면 열린 화면(목록·새 기록)이다 — 덮개도 자동 인증도 없다. 잠금 상태 추적·가림 면·
+  /// `attach`/`detach`·보안 창은 그대로라, 열린 채 15분을 넘기면 조용히 잠기기만 한다.
+  final bool requiresUnlock;
+
+  /// 덮개의 `목록으로` 버튼 동작. 없으면 버튼도 없다.
+  final VoidCallback? onBack;
 
   static const coverKey = Key('guidance_lock_cover');
   static const veilKey = Key('guidance_lock_veil');
   static const unlockKey = Key('guidance_unlock');
   static const openWithoutLockKey = Key('guidance_open_without_lock');
+  static const backKey = Key('guidance_lock_back');
 
   @override
   ConsumerState<GuidanceLockGate> createState() => _GuidanceLockGateState();
@@ -56,7 +69,16 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
     _unlock = ref.read(guidanceUnlockProvider);
     _unlock.attach();
     // 15분 안에 돌아왔으면 덮개 없이 연다. 처음 들어왔거나 만료됐으면 덮개 + 자동 인증.
-    if (!_unlocked) {
+    if (widget.requiresUnlock && !_unlocked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
+    }
+  }
+
+  @override
+  void didUpdateWidget(GuidanceLockGate old) {
+    super.didUpdateWidget(old);
+    // 열린 화면에서 잠금이 필요한 화면으로 옮겨 왔다 — 잠겨 있으면 바로 묻는다.
+    if (!old.requiresUnlock && widget.requiresUnlock && !_unlocked) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
     }
   }
@@ -80,7 +102,7 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
         // 그러지 않으면 Face ID 창을 닫을 때마다 다시 떠 무한 반복된다.
         final was = _unlocked;
         _unlock.markBack();
-        if (!was || _unlocked) {
+        if (!was || _unlocked || !widget.requiresUnlock) {
           // 15분 안에 돌아왔다(또는 이미 잠긴 채였다) — 가림 면만 걷는다.
           if (_veiled) setState(() => _veiled = false);
           return;
@@ -115,7 +137,9 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
 
   @override
   Widget build(BuildContext context) {
-    final locked = !_unlocked;
+    // 잠금 변화(목록에서 줄을 눌러 푼 것 포함)에 다시 그린다.
+    final unlocked = ref.watch(guidanceUnlockedProvider);
+    final locked = widget.requiresUnlock && !unlocked;
     final hidden = locked || _veiled;
     return Stack(
       fit: StackFit.expand,
@@ -131,6 +155,7 @@ class _GuidanceLockGateState extends ConsumerState<GuidanceLockGate>
             noCredentials: _noCredentials,
             onUnlock: _authenticate,
             onOpenAnyway: () => setState(_unlock.markUnlocked),
+            onBack: widget.onBack,
           ),
       ],
     );
@@ -155,11 +180,13 @@ class _LockCover extends StatelessWidget {
     required this.noCredentials,
     required this.onUnlock,
     required this.onOpenAnyway,
+    this.onBack,
   });
 
   final bool noCredentials;
   final VoidCallback onUnlock;
   final VoidCallback onOpenAnyway;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -200,6 +227,14 @@ class _LockCover extends StatelessWidget {
                 icon: const Icon(Icons.lock_open),
                 label: const Text(GuidanceStrings.unlock),
               ),
+              if (onBack != null) ...[
+                const SizedBox(height: AppSizes.spacing8),
+                TextButton(
+                  key: GuidanceLockGate.backKey,
+                  onPressed: onBack,
+                  child: const Text(GuidanceStrings.backToList),
+                ),
+              ],
               if (noCredentials) ...[
                 const SizedBox(height: AppSizes.spacing8),
                 TextButton(
