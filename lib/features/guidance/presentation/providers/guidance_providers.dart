@@ -10,6 +10,7 @@ import '../../data/guidance_repository.dart';
 import '../../data/recording_marker_store.dart';
 import '../../data/transcription_service.dart';
 import '../../domain/adts.dart';
+import '../../domain/exif_date.dart';
 import '../../domain/guidance_content.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
@@ -152,9 +153,9 @@ class GuidanceActions {
     _changed();
   }
 
-  /// 가져온 파일을 첨부 폴더로 그대로 복사하고 해시를 남긴다.
-  /// `captured_at`은 비운다 — 고르기 창이 넘겨주는 것은 임시 사본이라 그 파일의 시각은
-  /// 원본의 시각이 아니다. 원래 파일 이름은 남긴다.
+  /// 가져온 파일을 첨부 폴더로 그대로 복사하고 해시를 남긴다. 원래 파일 이름은 남긴다.
+  /// `captured_at`은 사진 안에 적힌 EXIF 촬영 시각만 쓴다 — 고르기 창이 넘겨주는 것은 임시 사본이라
+  /// 파일 시스템의 시각은 원본의 시각이 아니다. 녹음 파일·EXIF 없는 사진(스크린샷 등)은 비운다.
   Future<GuidanceAttachment> attachImported({
     required int recordId,
     required String sourcePath,
@@ -162,6 +163,9 @@ class GuidanceActions {
     String? originalName,
   }) async {
     final stored = await _files.importCopy(sourcePath);
+    final taken = type == AttachmentType.image
+        ? exifTakenAt(await File(sourcePath).readAsBytes())
+        : null;
     final a = await _repo.addAttachment(
       GuidanceAttachment(
         recordId: recordId,
@@ -171,6 +175,7 @@ class GuidanceActions {
         originalName: originalName,
         sha256: stored.sha256,
         byteSize: stored.byteSize,
+        capturedAt: taken?.toIso8601String(),
         attachedAt: DateTime.now().toIso8601String(),
       ),
     );

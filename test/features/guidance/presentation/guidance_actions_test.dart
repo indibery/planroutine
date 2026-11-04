@@ -10,6 +10,7 @@ import 'package:planroutine/features/guidance/domain/guidance_content.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
 
+import '../../../helpers/exif_bytes.dart';
 import '../../../helpers/test_database.dart';
 
 void main() {
@@ -51,6 +52,19 @@ void main() {
     expect(a.sha256, 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     expect(a.source, AttachmentSource.imported);
     expect(a.capturedAt, isNull);
+  });
+
+  test('가져온 사진에 EXIF 촬영 시각이 있으면 captured_at으로 남긴다', () async {
+    final actions = c.read(guidanceActionsProvider);
+    final id = await actions.create(const GuidanceContent(title: 't'));
+    final src = File('${base.path}/IMG_0002.JPG')
+      ..writeAsBytesSync(jpegWithExif(tiffWithDates(original: '2026:11:02 09:12:30')));
+    final a = await actions.attachImported(
+      recordId: id,
+      sourcePath: src.path,
+      type: AttachmentType.image,
+    );
+    expect(a.capturedAt, DateTime(2026, 11, 2, 9, 12, 30).toIso8601String());
   });
 
   test('녹음은 첨부 폴더 안의 파일로 붙고 시작 시각을 남긴다', () async {

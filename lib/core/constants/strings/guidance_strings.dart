@@ -39,6 +39,8 @@ class GuidanceStrings {
   static const attachmentImage = '사진';
   static const sourceRecorded = '앱에서 녹음';
   static const sourceImported = '가져옴';
+  /// 사진 첨부 줄 부제 — 제목의 시각이 EXIF 촬영 시각일 때
+  static const sourceTaken = '촬영';
 
   // 바뀐 칸 이름(수정 이력)
   static const fieldKind = '구분';
@@ -166,6 +168,7 @@ class GuidanceStrings {
   static const infoOriginalName = '원래 이름';
   static const infoSize = '크기';
   static const infoCaptured = '녹음 시작';
+  static const infoTaken = '찍은 시각';
   static const infoAttached = '붙인 시각';
   static const infoHash = 'SHA-256';
   static const infoHashNote = '파일이 바뀌지 않았음을 확인할 때 쓰는 값입니다.';

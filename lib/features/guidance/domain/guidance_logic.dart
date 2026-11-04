@@ -87,6 +87,22 @@ String formatStamp(String iso, {required DateTime now}) {
   return '${_day(d, now)} ${_time(d)}';
 }
 
+/// 첨부 한 줄의 두 글. 제목은 **언제**(녹음 시작·촬영 시각, 없으면 붙인 시각),
+/// 부제는 **무엇인지**. 원래 파일 이름은 넣지 않는다 — 길어서 첨부 정보 시트에서만 보여 준다.
+({String when, String what}) attachmentLines(GuidanceAttachment a, {required DateTime now}) {
+  final when = formatStamp(a.capturedAt ?? a.attachedAt, now: now);
+  final amount = a.type == AttachmentType.audio && a.durationMs != null
+      ? GuidanceStrings.durationLabel(a.durationMs ?? 0)
+      : GuidanceStrings.sizeLabel(a.byteSize);
+  final what = switch ((a.type, a.source)) {
+    (AttachmentType.audio, AttachmentSource.recorded) => GuidanceStrings.sourceRecorded,
+    (AttachmentType.image, _) when a.capturedAt != null =>
+      '${a.type.label} · ${GuidanceStrings.sourceTaken}',
+    _ => '${a.type.label} · ${a.source.label}',
+  };
+  return (when: when, what: '$what · $amount');
+}
+
 DateTime _sortKey(GuidanceRecord r) =>
     r.content.occurredAt ?? DateTime.tryParse(r.createdAt) ?? DateTime(1970);
 

@@ -8,6 +8,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
 import '../../domain/guidance_types.dart';
 import '../providers/guidance_providers.dart';
@@ -164,12 +165,10 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
     final a = widget.attachment;
     final id = a.id ?? -1;
     final file = _file;
-    final base = a.type == AttachmentType.audio && a.durationMs != null
-        ? '${a.source.label} · ${GuidanceStrings.durationLabel(a.durationMs ?? 0)}'
-        : '${a.source.label} · ${GuidanceStrings.sizeLabel(a.byteSize)}';
+    final lines = attachmentLines(a, now: widget.now);
     final subtitle = _missing
-        ? '$base · ${GuidanceStrings.attachmentMissing}'
-        : base;
+        ? '${lines.what} · ${GuidanceStrings.attachmentMissing}'
+        : lines.what;
     final openImage = file == null || _missing ? null : () => _openImage(file);
     final leading = a.type == AttachmentType.audio
         ? IconButton.filled(
@@ -226,7 +225,7 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> with WidgetsBin
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        a.originalName ?? a.type.label,
+                        lines.when,
                         style: AppTextStyles.bodyM,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

@@ -233,4 +233,59 @@ void main() {
       expect(suggestPeople(roster, '김', const [], limit: 1).map((p) => p.name), ['김하늘']);
     });
   });
+
+  group('attachmentLines — 첨부 줄은 언제가 제목, 무엇이 부제', () {
+    final now = DateTime(2026, 11, 4, 20);
+    const base = GuidanceAttachment(
+      recordId: 1,
+      type: AttachmentType.audio,
+      source: AttachmentSource.recorded,
+      fileName: 'r.aac',
+      originalName: 'image_1B7F8EB4-9915-4518-8017-3C2A9D41E0F2.jpg',
+      sha256: 'x',
+      byteSize: 197632,
+      durationMs: 8000,
+      capturedAt: '2026-11-04T18:05:00.000',
+      attachedAt: '2026-11-04T18:06:00.000',
+    );
+
+    test('앱에서 녹음: 녹음 시작 시각 · 출처와 길이', () {
+      final l = attachmentLines(base, now: now);
+      expect(l.when, formatStamp('2026-11-04T18:05:00.000', now: now));
+      expect(l.what, '${GuidanceStrings.sourceRecorded} · ${GuidanceStrings.durationLabel(8000)}');
+    });
+
+    test('가져온 녹음 파일: 시각이 없으면 붙인 시각, 부제는 녹음 · 가져옴 · 길이', () {
+      final l = attachmentLines(
+        base.copyWith(source: AttachmentSource.imported, capturedAt: null),
+        now: now,
+      );
+      expect(l.when, formatStamp('2026-11-04T18:06:00.000', now: now));
+      expect(l.what,
+          '${GuidanceStrings.attachmentAudio} · ${GuidanceStrings.sourceImported} · ${GuidanceStrings.durationLabel(8000)}');
+    });
+
+    test('사진: 촬영 시각이 있으면 그 시각과 촬영, 없으면 붙인 시각과 가져옴', () {
+      final photo = base.copyWith(
+        type: AttachmentType.image,
+        source: AttachmentSource.imported,
+        durationMs: null,
+        capturedAt: '2026-11-02T09:12:00.000',
+      );
+      final taken = attachmentLines(photo, now: now);
+      expect(taken.when, formatStamp('2026-11-02T09:12:00.000', now: now));
+      expect(taken.what,
+          '${GuidanceStrings.attachmentImage} · ${GuidanceStrings.sourceTaken} · ${GuidanceStrings.sizeLabel(197632)}');
+
+      final noExif = attachmentLines(photo.copyWith(capturedAt: null), now: now);
+      expect(noExif.when, formatStamp('2026-11-04T18:06:00.000', now: now));
+      expect(noExif.what,
+          '${GuidanceStrings.attachmentImage} · ${GuidanceStrings.sourceImported} · ${GuidanceStrings.sizeLabel(197632)}');
+    });
+
+    test('원래 파일 이름은 두 줄 어디에도 없다 — i 시트에서만 본다', () {
+      final l = attachmentLines(base.copyWith(type: AttachmentType.image, durationMs: null), now: now);
+      expect('${l.when}${l.what}', isNot(contains('image_1B7F8EB4')));
+    });
+  });
 }

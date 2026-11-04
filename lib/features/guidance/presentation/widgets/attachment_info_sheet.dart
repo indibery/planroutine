@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/guidance_logic.dart';
 import '../../domain/guidance_models.dart';
+import '../../domain/guidance_types.dart';
 import '../../../../shared/widgets/sheet_title.dart';
 
 Future<void> showAttachmentInfo(
@@ -28,7 +29,11 @@ Future<void> showAttachmentInfo(
           _row(GuidanceStrings.infoSource, '${a.type.label} · ${a.source.label}'),
           if (a.originalName case final name?) _row(GuidanceStrings.infoOriginalName, name),
           _row(GuidanceStrings.infoSize, GuidanceStrings.sizeLabel(a.byteSize)),
-          if (a.capturedAt case final at?) _row(GuidanceStrings.infoCaptured, formatStamp(at, now: now)),
+          if (a.capturedAt case final at?)
+            _row(
+              a.type == AttachmentType.image ? GuidanceStrings.infoTaken : GuidanceStrings.infoCaptured,
+              formatStamp(at, now: now),
+            ),
           _row(GuidanceStrings.infoAttached, formatStamp(a.attachedAt, now: now)),
           const SizedBox(height: AppSizes.spacing8),
           Text(GuidanceStrings.infoHash, style: AppTextStyles.fieldLabel),

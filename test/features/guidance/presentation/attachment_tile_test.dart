@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planroutine/core/constants/app_strings.dart';
 import 'package:planroutine/features/guidance/data/guidance_file_store.dart';
+import 'package:planroutine/features/guidance/domain/guidance_logic.dart';
 import 'package:planroutine/features/guidance/domain/guidance_models.dart';
 import 'package:planroutine/features/guidance/domain/guidance_types.dart';
 import 'package:planroutine/features/guidance/presentation/providers/guidance_providers.dart';
@@ -314,5 +315,31 @@ void main() {
     await tester.pumpWidget(host(audio.copyWith(id: 9, fileName: 'none.m4a'), onTranscribe: () {}));
     await waitUntil(tester, () => find.textContaining(GuidanceStrings.attachmentMissing).evaluate().isNotEmpty);
     expect(find.byKey(AttachmentTile.transcribeKey(9)), findsNothing);
+  });
+
+  testWidgets('제목 줄은 언제(녹음 시작 시각), 원래 파일 이름은 줄에 없고 i 시트에만 있다', (tester) async {
+    const long = 'image_1B7F8EB4-9915-4518-8017-3C2A9D41E0F2.jpg';
+    await pump(tester, audio.copyWith(originalName: long));
+    expect(find.text(formatStamp(audio.capturedAt ?? '', now: DateTime(2026, 10, 3))), findsOneWidget);
+    expect(find.text(long), findsNothing);
+    await tester.tap(find.byKey(AttachmentTile.infoKey(1)));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: find.byType(BottomSheet), matching: find.text(long)), findsOneWidget);
+  });
+
+  testWidgets('사진의 촬영 시각은 i 시트에서 찍은 시각으로 보인다', (tester) async {
+    final photo = audio.copyWith(
+      type: AttachmentType.image,
+      source: AttachmentSource.imported,
+      fileName: 'x.png',
+      durationMs: null,
+      capturedAt: '2026-10-01T09:12:00.000',
+    );
+    await pump(tester, photo);
+    expect(find.text(formatStamp('2026-10-01T09:12:00.000', now: DateTime(2026, 10, 3))), findsOneWidget);
+    await tester.tap(find.byKey(AttachmentTile.infoKey(1)));
+    await tester.pumpAndSettle();
+    expect(find.text(GuidanceStrings.infoTaken), findsOneWidget);
+    expect(find.text(GuidanceStrings.infoCaptured), findsNothing);
   });
 }
