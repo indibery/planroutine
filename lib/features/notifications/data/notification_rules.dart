@@ -1,5 +1,6 @@
 import '../../../core/constants/strings/notification_strings.dart';
 import '../../calendar/domain/calendar_event.dart';
+import '../../schedule/domain/entry_kind.dart';
 import '../domain/notification_settings.dart';
 import '../domain/pending_notification.dart';
 
@@ -27,6 +28,8 @@ int _dailyDigestId(DateTime date) =>
 ///     이번 주(월요일)·당일 아침 알림을 하나로 통합한다.
 ///   - 각 알림 본문은 `오늘 → 이번 주` 섹션 순서, 섹션당 제목 최대
 ///     [_maxTitlesPerSection]개 + "외 N건"
+///   - 섹션 안 제목은 **중요 → 업무 → 행사** 순(같은 등급은 가까운 날짜 → 제목순).
+///     제목이 두 개까지만 보이므로 처리할 업무가 행사에 밀려 "외 N건"으로 숨지 않게 한다
 ///   - 생성 수가 [kMaxPendingNotifications]를 초과하면 가까운 시각 우선 정렬 후 절단
 List<PendingNotification> computeNotifications({
   required List<CalendarEvent> events,
@@ -63,13 +66,13 @@ List<PendingNotification> computeNotifications({
     if (settings.weeklyEnabled && !coveredByToday) {
       final monday = eventStart.subtract(Duration(days: weekday - 1));
       if (monday.isAfter(now)) {
-        digestAt(monday).week.add(_Entry(eventStart, event.title));
+        digestAt(monday).week.add(_Entry.of(eventStart, event));
       }
     }
     if (settings.dayOfEnabled) {
       // 이벤트 당일 아침 발송 ('오늘 X 있어요').
       if (eventStart.isAfter(now)) {
-        digestAt(eventStart).today.add(_Entry(eventStart, event.title));
+        digestAt(eventStart).today.add(_Entry.of(eventStart, event));
       }
     }
   }
@@ -97,11 +100,16 @@ List<PendingNotification> computeNotifications({
   return pendings;
 }
 
-/// 발송 시각에 얹히는 개별 항목 — 제목과 임박순 정렬용 이벤트 날짜.
+/// 발송 시각에 얹히는 개별 항목 — 제목과 정렬용 등급·이벤트 날짜.
 class _Entry {
-  const _Entry(this.date, this.title);
+  _Entry.of(this.date, CalendarEvent event)
+    : title = event.title,
+      // 0 중요 업무 · 1 중요 행사 · 2 업무 · 3 행사
+      rank =
+          (event.isImportant ? 0 : 2) + (event.kind == EntryKind.task ? 0 : 1);
   final DateTime date;
   final String title;
+  final int rank;
 }
 
 /// 한 발송 시각에 통합될 알림 본문의 누적 버퍼.
@@ -140,14 +148,16 @@ class _Digest {
     if (entries.isEmpty) return;
     out.add(
       '${_sectionHeader(emoji, label)}'
-      '${_formatTitles(_titlesByImminence(entries))}',
+      '${_formatTitles(_titlesByPriority(entries))}',
     );
   }
 
-  /// 이벤트 날짜 오름차순(가장 임박한 순), 같은 날은 제목순으로 제목 리스트 반환.
-  List<String> _titlesByImminence(List<_Entry> entries) {
+  /// 등급(중요 → 업무 → 행사) → 이벤트 날짜(임박순) → 제목순으로 제목 리스트 반환.
+  List<String> _titlesByPriority(List<_Entry> entries) {
     final sorted = [...entries]
       ..sort((a, b) {
+        final byRank = a.rank.compareTo(b.rank);
+        if (byRank != 0) return byRank;
         final byDate = a.date.compareTo(b.date);
         return byDate != 0 ? byDate : a.title.compareTo(b.title);
       });

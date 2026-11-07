@@ -2,12 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planroutine/features/calendar/domain/calendar_event.dart';
 import 'package:planroutine/features/notifications/data/notification_rules.dart';
 import 'package:planroutine/features/notifications/domain/notification_settings.dart';
+import 'package:planroutine/features/schedule/domain/entry_kind.dart';
 
 CalendarEvent event({
   required int id,
   required String date,
   String title = '회의',
   bool important = false,
+  EntryKind kind = EntryKind.task,
   String? deletedAt,
   String? completedAt,
 }) {
@@ -16,6 +18,7 @@ CalendarEvent event({
     title: title,
     eventDate: date,
     isImportant: important,
+    kind: kind,
     deletedAt: deletedAt,
     completedAt: completedAt,
   );
@@ -307,6 +310,98 @@ void main() {
         now: now,
       );
       expect(result.first.title, '일정 알림');
+    });
+  });
+
+  group('제목 순서: 중요 → 업무 → 행사', () {
+    // 6/3(수) 당일 아침 알림의 '오늘' 줄을 꺼낸다.
+    String todayLine(List<CalendarEvent> events) {
+      final result = computeNotifications(
+        events: events,
+        settings: master.copyWith(weeklyEnabled: false),
+        now: now,
+      );
+      return result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 3, 8))
+          .body;
+    }
+
+    test('같은 날이면 업무가 행사보다 먼저 나온다 (가나다순과 반대여도)', () {
+      final body = todayLine([
+        event(id: 1, date: '2026-06-03', title: '가운동회', kind: EntryKind.event),
+        event(id: 2, date: '2026-06-03', title: '나공문 제출'),
+      ]);
+      expect(body, '📅 오늘 — 나공문 제출, 가운동회');
+    });
+
+    test('중요 표시한 행사는 보통 업무보다 먼저 나온다', () {
+      final body = todayLine([
+        event(id: 1, date: '2026-06-03', title: '가공문'),
+        event(
+          id: 2,
+          date: '2026-06-03',
+          title: '나운동회',
+          kind: EntryKind.event,
+          important: true,
+        ),
+      ]);
+      expect(body, '📅 오늘 — 나운동회, 가공문');
+    });
+
+    test('둘 다 중요하면 업무가 먼저 나온다', () {
+      final body = todayLine([
+        event(
+          id: 1,
+          date: '2026-06-03',
+          title: '가운동회',
+          kind: EntryKind.event,
+          important: true,
+        ),
+        event(id: 2, date: '2026-06-03', title: '나공문', important: true),
+      ]);
+      expect(body, '📅 오늘 — 나공문, 가운동회');
+    });
+
+    test('넘친 항목이 있으면 업무가 먼저 자리를 차지하고 행사가 "외 N건"으로 간다', () {
+      final body = todayLine([
+        event(id: 1, date: '2026-06-03', title: '가행사', kind: EntryKind.event),
+        event(id: 2, date: '2026-06-03', title: '나행사', kind: EntryKind.event),
+        event(id: 3, date: '2026-06-03', title: '다업무'),
+        event(id: 4, date: '2026-06-03', title: '라업무'),
+      ]);
+      expect(body, '📅 오늘 — 다업무, 라업무 외 2건');
+    });
+
+    test('이번 주 줄에서도 업무가 행사보다 먼저 나온다 (날짜가 늦어도)', () {
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-02', title: '화행사', kind: EntryKind.event),
+          event(id: 2, date: '2026-06-03', title: '수행사', kind: EntryKind.event),
+          event(id: 3, date: '2026-06-05', title: '금업무'),
+        ],
+        settings: master.copyWith(dayOfEnabled: false),
+        now: now,
+      );
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
+      expect(body, '🗓 이번 주 — 금업무, 화행사 외 1건');
+    });
+
+    test('같은 등급끼리는 가까운 날짜 → 제목순을 유지한다', () {
+      final result = computeNotifications(
+        events: [
+          event(id: 1, date: '2026-06-04', title: '가업무'),
+          event(id: 2, date: '2026-06-02', title: '다업무'),
+          event(id: 3, date: '2026-06-02', title: '나업무'),
+        ],
+        settings: master.copyWith(dayOfEnabled: false),
+        now: now,
+      );
+      final body = result
+          .firstWhere((p) => p.scheduledAt == DateTime(2026, 6, 1, 8))
+          .body;
+      expect(body, '🗓 이번 주 — 나업무, 다업무 외 1건');
     });
   });
 
